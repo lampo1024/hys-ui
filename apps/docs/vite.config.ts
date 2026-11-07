@@ -7,5 +7,5 @@ export default defineConfig(({command})=>({
  {find:'hys-ui/style.css',replacement:fileURLToPath(new URL('../../packages/ui/src/styles/index.css',import.meta.url))},
  {find:'hys-ui',replacement:fileURLToPath(new URL('../../packages/ui/src/index.ts',import.meta.url))}
  ]:[]},
- server:{host:'127.0.0.1',port:5174,strictPort:true},build:{outDir:'dist',emptyOutDir:true}
+ server:{host:'127.0.0.1',port:5174,strictPort:true,watch:{usePolling:process.platform==='win32',interval:300}},build:{outDir:'dist',emptyOutDir:true}
 }))
