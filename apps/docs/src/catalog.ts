@@ -1,0 +1,827 @@
+export const catalog=[
+  {
+    "name": "HysAnimatedNumber",
+    "shortName": "AnimatedNumber",
+    "label": "数字动画",
+    "slug": "hys-animated-number",
+    "category": "基础组件",
+    "description": "数字动画的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysAvatar",
+    "shortName": "Avatar",
+    "label": "头像",
+    "slug": "hys-avatar",
+    "category": "基础组件",
+    "description": "头像的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysBadge",
+    "shortName": "Badge",
+    "label": "状态标签",
+    "slug": "hys-badge",
+    "category": "基础组件",
+    "description": "状态标签的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysButton",
+    "shortName": "Button",
+    "label": "按钮",
+    "slug": "hys-button",
+    "category": "基础组件",
+    "description": "按钮的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCard",
+    "shortName": "Card",
+    "label": "卡片",
+    "slug": "hys-card",
+    "category": "基础组件",
+    "description": "卡片的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysDivider",
+    "shortName": "Divider",
+    "label": "分隔线",
+    "slug": "hys-divider",
+    "category": "基础组件",
+    "description": "分隔线的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysPagination",
+    "shortName": "Pagination",
+    "label": "分页",
+    "slug": "hys-pagination",
+    "category": "基础组件",
+    "description": "分页的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "跳转使用隐藏加减按钮的数字输入框，聚焦后全选。",
+      "页码和每页条数通过事件交由父组件管理。"
+    ]
+  },
+  {
+    "name": "HysPermissionMatrix",
+    "shortName": "PermissionMatrix",
+    "label": "权限矩阵",
+    "slug": "hys-permission-matrix",
+    "category": "基础组件",
+    "description": "权限矩阵的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSortableList",
+    "shortName": "SortableList",
+    "label": "拖拽排序",
+    "slug": "hys-sortable-list",
+    "category": "基础组件",
+    "description": "拖拽排序的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "仅左侧拖拽手柄可启动拖拽，条目正文可正常点击。",
+      "目标指示器显示插入位置，支持 Alt + 上下方向键及上下移按钮。"
+    ]
+  },
+  {
+    "name": "HysCascader",
+    "shortName": "Cascader",
+    "label": "级联选择",
+    "slug": "hys-cascader",
+    "category": "表单输入",
+    "description": "级联选择的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCheckbox",
+    "shortName": "Checkbox",
+    "label": "复选框",
+    "slug": "hys-checkbox",
+    "category": "表单输入",
+    "description": "复选框的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysColorPicker",
+    "shortName": "ColorPicker",
+    "label": "颜色选择",
+    "slug": "hys-color-picker",
+    "category": "表单输入",
+    "description": "颜色选择的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "调色板为自定义实现，包含饱和度、明度、色相和十六进制输入。"
+    ]
+  },
+  {
+    "name": "HysDatePicker",
+    "shortName": "DatePicker",
+    "label": "日期选择",
+    "slug": "hys-date-picker",
+    "category": "表单输入",
+    "description": "日期选择的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "每周从星期一开始。点击标题年份或月份可快速定位，再次点击标题返回日期视图。",
+      "min/max 使用 YYYY-MM-DD 格式，禁用日期无法选择。"
+    ]
+  },
+  {
+    "name": "HysDateRangePicker",
+    "shortName": "DateRangePicker",
+    "label": "日期范围",
+    "slug": "hys-date-range-picker",
+    "category": "表单输入",
+    "description": "日期范围的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "使用一个触发框，依次点击开始与结束日期；跨月和反向选择会自动整理范围。",
+      "每周从星期一开始，支持年月快速定位、预览和取消。"
+    ]
+  },
+  {
+    "name": "HysForm",
+    "shortName": "Form",
+    "label": "表单",
+    "slug": "hys-form",
+    "category": "表单输入",
+    "description": "表单的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysFormItem",
+    "shortName": "FormItem",
+    "label": "表单项",
+    "slug": "hys-form-item",
+    "category": "表单输入",
+    "description": "表单项的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysInput",
+    "shortName": "Input",
+    "label": "文本输入",
+    "slug": "hys-input",
+    "category": "表单输入",
+    "description": "文本输入的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysNumberInput",
+    "shortName": "NumberInput",
+    "label": "数字输入",
+    "slug": "hys-number-input",
+    "category": "表单输入",
+    "description": "数字输入的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "showControls 控制加减按钮显示，默认开启。",
+      "selectOnFocus 控制聚焦全选，分页跳转场景开启此项。"
+    ]
+  },
+  {
+    "name": "HysRadioGroup",
+    "shortName": "RadioGroup",
+    "label": "单选组",
+    "slug": "hys-radio-group",
+    "category": "表单输入",
+    "description": "单选组的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysRating",
+    "shortName": "Rating",
+    "label": "评分",
+    "slug": "hys-rating",
+    "category": "表单输入",
+    "description": "评分的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSearch",
+    "shortName": "Search",
+    "label": "搜索框",
+    "slug": "hys-search",
+    "category": "表单输入",
+    "description": "搜索框的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSegmented",
+    "shortName": "Segmented",
+    "label": "分段选择",
+    "slug": "hys-segmented",
+    "category": "表单输入",
+    "description": "分段选择的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSelect",
+    "shortName": "Select",
+    "slug": "hys-select",
+    "category": "表单输入",
+    "description": "下拉选择的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ],
+    "label": "下拉选择"
+  },
+  {
+    "name": "HysSlider",
+    "shortName": "Slider",
+    "label": "滑块",
+    "slug": "hys-slider",
+    "category": "表单输入",
+    "description": "滑块的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSwitch",
+    "shortName": "Switch",
+    "label": "开关",
+    "slug": "hys-switch",
+    "category": "表单输入",
+    "description": "开关的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTagInput",
+    "shortName": "TagInput",
+    "label": "标签输入",
+    "slug": "hys-tag-input",
+    "category": "表单输入",
+    "description": "标签输入的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTextarea",
+    "shortName": "Textarea",
+    "label": "多行文本",
+    "slug": "hys-textarea",
+    "category": "表单输入",
+    "description": "多行文本的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTransfer",
+    "shortName": "Transfer",
+    "label": "穿梭框",
+    "slug": "hys-transfer",
+    "category": "表单输入",
+    "description": "穿梭框的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "拖动条目到另一侧释放，或使用勾选与方向按钮移动。",
+      "禁用项不参与移动，拖拽预览、目标高亮与释放动画遵循减少动态效果设置。"
+    ]
+  },
+  {
+    "name": "HysTreeSelect",
+    "shortName": "TreeSelect",
+    "label": "树形选择",
+    "slug": "hys-tree-select",
+    "category": "表单输入",
+    "description": "树形选择的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysUpload",
+    "shortName": "Upload",
+    "label": "文件上传",
+    "slug": "hys-upload",
+    "category": "表单输入",
+    "description": "文件上传的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCalendar",
+    "shortName": "Calendar",
+    "label": "事件日历",
+    "slug": "hys-calendar",
+    "category": "数据展示",
+    "description": "事件日历的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCalendarNavigation",
+    "shortName": "CalendarNavigation",
+    "label": "日历导航",
+    "slug": "hys-calendar-navigation",
+    "category": "数据展示",
+    "description": "日历导航的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "month 使用 UTC 月初 Date，通过 update:month 同步变化。",
+      "点击年份进入年份面板，选年后定位月份，再选月返回日期面板。标题也可以返回。"
+    ]
+  },
+  {
+    "name": "HysChart",
+    "shortName": "Chart",
+    "label": "图表",
+    "slug": "hys-chart",
+    "category": "数据展示",
+    "description": "图表的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysDataGrid",
+    "shortName": "DataGrid",
+    "label": "高级表格",
+    "slug": "hys-data-grid",
+    "category": "数据展示",
+    "description": "高级表格的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "筛选图标切换表头下的统一筛选行，可通过“收起筛选”关闭。",
+      "点击升降序图标分别排序，multiSort 支持多列。拖动表头及列设置手柄调整顺序。",
+      "storageKey 只在明确传入时保存列设置，每个表格使用独立键。serverMode 的数据由调用方加载。"
+    ]
+  },
+  {
+    "name": "HysDiffViewer",
+    "shortName": "DiffViewer",
+    "label": "差异对比",
+    "slug": "hys-diff-viewer",
+    "category": "数据展示",
+    "description": "差异对比的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysGantt",
+    "shortName": "Gantt",
+    "label": "甘特图",
+    "slug": "hys-gantt",
+    "category": "数据展示",
+    "description": "甘特图的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysKanban",
+    "shortName": "Kanban",
+    "label": "看板",
+    "slug": "hys-kanban",
+    "category": "数据展示",
+    "description": "看板的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysOrgTree",
+    "shortName": "OrgTree",
+    "label": "组织树",
+    "slug": "hys-org-tree",
+    "category": "数据展示",
+    "description": "组织树的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysProgress",
+    "shortName": "Progress",
+    "label": "进度条",
+    "slug": "hys-progress",
+    "category": "数据展示",
+    "description": "进度条的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTable",
+    "shortName": "Table",
+    "label": "基础表格",
+    "slug": "hys-table",
+    "category": "数据展示",
+    "description": "基础表格的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTimeline",
+    "shortName": "Timeline",
+    "label": "时间轴",
+    "slug": "hys-timeline",
+    "category": "数据展示",
+    "description": "时间轴的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTree",
+    "shortName": "Tree",
+    "label": "树形组件",
+    "slug": "hys-tree",
+    "category": "数据展示",
+    "description": "树形组件的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "方向键导航，Enter 选择，空格勾选；禁用节点跳过交互。",
+      "node-drop 提供 before/inside/after，使用方根据事件更新节点树。",
+      "loadChildren 抛出异常后显示重试入口；虚拟模式需设置视口高度。"
+    ]
+  },
+  {
+    "name": "HysVirtualTable",
+    "shortName": "VirtualTable",
+    "label": "虚拟表格",
+    "slug": "hys-virtual-table",
+    "category": "数据展示",
+    "description": "虚拟表格的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysAccordion",
+    "shortName": "Accordion",
+    "label": "折叠面板",
+    "slug": "hys-accordion",
+    "category": "导航布局",
+    "description": "折叠面板的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysBreadcrumb",
+    "shortName": "Breadcrumb",
+    "label": "面包屑",
+    "slug": "hys-breadcrumb",
+    "category": "导航布局",
+    "description": "面包屑的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "默认使用普通链接，SPA 项目通过 link 插槽提供 RouterLink。"
+    ]
+  },
+  {
+    "name": "HysResizablePanel",
+    "shortName": "ResizablePanel",
+    "label": "可调整面板",
+    "slug": "hys-resizable-panel",
+    "category": "导航布局",
+    "description": "可调整面板的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSplitPane",
+    "shortName": "SplitPane",
+    "label": "分割面板",
+    "slug": "hys-split-pane",
+    "category": "导航布局",
+    "description": "分割面板的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSteps",
+    "shortName": "Steps",
+    "label": "步骤条",
+    "slug": "hys-steps",
+    "category": "导航布局",
+    "description": "步骤条的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTabs",
+    "shortName": "Tabs",
+    "label": "标签页",
+    "slug": "hys-tabs",
+    "category": "导航布局",
+    "description": "标签页的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysAlert",
+    "shortName": "Alert",
+    "label": "消息提示",
+    "slug": "hys-alert",
+    "category": "反馈浮层",
+    "description": "消息提示的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCommandPalette",
+    "shortName": "CommandPalette",
+    "label": "命令面板",
+    "slug": "hys-command-palette",
+    "category": "反馈浮层",
+    "description": "命令面板的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysContextMenu",
+    "shortName": "ContextMenu",
+    "label": "右键菜单",
+    "slug": "hys-context-menu",
+    "category": "反馈浮层",
+    "description": "右键菜单的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysDrawer",
+    "shortName": "Drawer",
+    "label": "抽屉",
+    "slug": "hys-drawer",
+    "category": "反馈浮层",
+    "description": "抽屉的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "支持 Escape 与遮罩关闭，页面缓存停用时清理全局监听。"
+    ]
+  },
+  {
+    "name": "HysEmpty",
+    "shortName": "Empty",
+    "label": "空状态",
+    "slug": "hys-empty",
+    "category": "反馈浮层",
+    "description": "空状态的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysModal",
+    "shortName": "Modal",
+    "label": "对话框",
+    "slug": "hys-modal",
+    "category": "反馈浮层",
+    "description": "对话框的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "打开时限制焦点范围并锁定背景滚动，关闭后恢复触发控件焦点。"
+    ]
+  },
+  {
+    "name": "HysNotificationCenter",
+    "shortName": "NotificationCenter",
+    "label": "通知中心",
+    "slug": "hys-notification-center",
+    "category": "反馈浮层",
+    "description": "通知中心的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysPopover",
+    "shortName": "Popover",
+    "label": "气泡浮层",
+    "slug": "hys-popover",
+    "category": "反馈浮层",
+    "description": "气泡浮层的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysShortcutHelp",
+    "shortName": "ShortcutHelp",
+    "label": "快捷键帮助",
+    "slug": "hys-shortcut-help",
+    "category": "反馈浮层",
+    "description": "快捷键帮助的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysSkeleton",
+    "shortName": "Skeleton",
+    "label": "骨架屏",
+    "slug": "hys-skeleton",
+    "category": "反馈浮层",
+    "description": "骨架屏的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysToast",
+    "shortName": "Toast",
+    "label": "轻提示",
+    "slug": "hys-toast",
+    "category": "反馈浮层",
+    "description": "轻提示的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTooltip",
+    "shortName": "Tooltip",
+    "label": "文字提示",
+    "slug": "hys-tooltip",
+    "category": "反馈浮层",
+    "description": "文字提示的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysTour",
+    "shortName": "Tour",
+    "label": "引导",
+    "slug": "hys-tour",
+    "category": "反馈浮层",
+    "description": "引导的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysColorTokenEditor",
+    "shortName": "ColorTokenEditor",
+    "label": "颜色令牌",
+    "slug": "hys-color-token-editor",
+    "category": "编辑工具",
+    "description": "颜色令牌的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCommentEditor",
+    "shortName": "CommentEditor",
+    "label": "评论编辑",
+    "slug": "hys-comment-editor",
+    "category": "编辑工具",
+    "description": "评论编辑的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysCronEditor",
+    "shortName": "CronEditor",
+    "label": "定时表达式",
+    "slug": "hys-cron-editor",
+    "category": "编辑工具",
+    "description": "定时表达式的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysFileManager",
+    "shortName": "FileManager",
+    "label": "文件管理",
+    "slug": "hys-file-manager",
+    "category": "编辑工具",
+    "description": "文件管理的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "组件只维护文件展示与交互，上传、下载和删除接口由调用方实现。"
+    ]
+  },
+  {
+    "name": "HysJsonEditor",
+    "shortName": "JsonEditor",
+    "label": "JSON 编辑",
+    "slug": "hys-json-editor",
+    "category": "编辑工具",
+    "description": "JSON 编辑的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysMention",
+    "shortName": "Mention",
+    "label": "提及",
+    "slug": "hys-mention",
+    "category": "编辑工具",
+    "description": "提及的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysRichTextEditor",
+    "shortName": "RichTextEditor",
+    "label": "富文本编辑",
+    "slug": "hys-rich-text-editor",
+    "category": "编辑工具",
+    "description": "富文本编辑的独立交互示例、配置场景与类型参考。",
+    "notes": [
+      "通过下面的交互示例体验组件，配置区可即时调整属性。",
+      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  }
+] as const

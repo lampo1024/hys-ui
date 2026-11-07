@@ -1,0 +1,13 @@
+<script setup lang="ts">
+import {useHysRootAttrs} from '../../config'
+const hysRootAttrs=useHysRootAttrs()
+import {toRef,ref,watch,onDeactivated} from 'vue';import {X} from 'lucide-vue-next';import {useDialog} from '../../composables/useDialog'
+const props=withDefaults(defineProps<{open:boolean;title:string;width?:string;closeOnMask?:boolean;closeOnEscape?:boolean;showClose?:boolean;destroyOnClose?:boolean;fullscreen?:boolean;placement?:'left'|'right'|'top'|'bottom';beforeClose?:(reason:'mask'|'escape'|'button')=>boolean|void|Promise<boolean|void>}>(),{width:'520px',closeOnMask:true,closeOnEscape:true,showClose:true,destroyOnClose:true,placement:'right'})
+const emit=defineEmits<{close:[];closeError:[error:unknown]}>(),dialog=ref<HTMLElement>(),closing=ref(false)
+const {active}=useDialog(toRef(props,'open'),dialog,()=>{if(props.closeOnEscape)void requestClose('escape')})
+let epoch=0;function invalidateClose(){epoch++;closing.value=false}watch(()=>props.open,value=>{if(!value)invalidateClose()});onDeactivated(invalidateClose)
+async function requestClose(reason:'mask'|'escape'|'button'='button'){if(closing.value||!props.open)return;const token=++epoch;closing.value=true;try{if(props.beforeClose&&await props.beforeClose(reason)===false)return;if(active.value&&token===epoch)emit('close')}catch(error){emit('closeError',error)}finally{if(token===epoch)closing.value=false}}
+defineExpose({close:requestClose,element:dialog})
+</script>
+<template><Teleport to="body"><Transition name="hys-ui-drawer-motion"><div v-if="active&&(open||!destroyOnClose)" v-show="open" v-bind="hysRootAttrs" class="hys-ui-overlay hys-ui-drawer-overlay" :class="'hys-ui-drawer-'+placement" @pointerdown.self="closeOnMask&&requestClose('mask')"><aside ref="dialog" tabindex="-1" class="hys-ui-drawer" role="dialog" aria-modal="true" :aria-label="title" :aria-busy="closing" :style="placement==='top'||placement==='bottom'?{width:'100%',height:width,maxHeight:'100dvh'}:{width}"><header class="hys-ui-dialog-head"><slot name="header"><h3>{{title}}</h3></slot><button v-if="showClose" type="button" class="hys-ui-icon-action" aria-label="关闭" :disabled="closing" @click="requestClose('button')"><X :size="18"/></button></header><div class="hys-ui-drawer-body"><slot/></div><footer v-if="$slots.footer" class="hys-ui-dialog-foot"><slot name="footer" :close="requestClose" :closing="closing"/></footer></aside></div></Transition></Teleport></template>
+<style scoped>.hys-ui-drawer-left{justify-content:flex-start}.hys-ui-drawer-top{align-items:flex-start;justify-content:stretch}.hys-ui-drawer-bottom{align-items:flex-end;justify-content:stretch}.hys-ui-drawer-top .hys-ui-drawer,.hys-ui-drawer-bottom .hys-ui-drawer{position:relative}</style>

@@ -1,0 +1,13 @@
+<script setup lang="ts">
+import {useHysRootAttrs} from '../../config'
+const hysRootAttrs=useHysRootAttrs()
+import {toRef,ref,watch,onDeactivated} from 'vue';import {X} from 'lucide-vue-next';import {useDialog} from '../../composables/useDialog'
+const props=withDefaults(defineProps<{open:boolean;title:string;width?:string;closeOnMask?:boolean;closeOnEscape?:boolean;showClose?:boolean;destroyOnClose?:boolean;fullscreen?:boolean;placement?:'left'|'right'|'top'|'bottom';beforeClose?:(reason:'mask'|'escape'|'button')=>boolean|void|Promise<boolean|void>}>(),{width:'560px',closeOnMask:true,closeOnEscape:true,showClose:true,destroyOnClose:true,placement:'right'})
+const emit=defineEmits<{close:[];closeError:[error:unknown]}>(),dialog=ref<HTMLElement>(),closing=ref(false)
+const {active}=useDialog(toRef(props,'open'),dialog,()=>{if(props.closeOnEscape)void requestClose('escape')})
+let epoch=0;function invalidateClose(){epoch++;closing.value=false}watch(()=>props.open,value=>{if(!value)invalidateClose()});onDeactivated(invalidateClose)
+async function requestClose(reason:'mask'|'escape'|'button'='button'){if(closing.value||!props.open)return;const token=++epoch;closing.value=true;try{if(props.beforeClose&&await props.beforeClose(reason)===false)return;if(active.value&&token===epoch)emit('close')}catch(error){emit('closeError',error)}finally{if(token===epoch)closing.value=false}}
+defineExpose({close:requestClose,element:dialog})
+</script>
+<template><Teleport to="body"><Transition name="hys-ui-modal-motion"><div v-if="active&&(open||!destroyOnClose)" v-show="open" v-bind="hysRootAttrs" class="hys-ui-overlay " :class="{'hys-ui-modal-fullscreen':fullscreen}" @pointerdown.self="closeOnMask&&requestClose('mask')"><section ref="dialog" tabindex="-1" class="hys-ui-modal" role="dialog" aria-modal="true" :aria-label="title" :aria-busy="closing" :style="{maxWidth:fullscreen?'100%':width,width:fullscreen?'100%':undefined,height:fullscreen?'100dvh':undefined,maxHeight:fullscreen?'100dvh':undefined}"><header class="hys-ui-dialog-head"><slot name="header"><h3>{{title}}</h3></slot><button v-if="showClose" type="button" class="hys-ui-icon-action" aria-label="关闭" :disabled="closing" @click="requestClose('button')"><X :size="18"/></button></header><div class="hys-ui-dialog-body"><slot/></div><footer v-if="$slots.footer" class="hys-ui-dialog-foot"><slot name="footer" :close="requestClose" :closing="closing"/></footer></section></div></Transition></Teleport></template>
+<style scoped>.hys-ui-modal-fullscreen{padding:0}.hys-ui-modal-fullscreen .hys-ui-modal{border-radius:0}</style>

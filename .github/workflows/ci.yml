@@ -1,0 +1,27 @@
+name: Component verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check:release
+      - uses: actions/upload-artifact@v7.0.2
+        if: success()
+        with:
+          name: hys-ui-${{ matrix.os }}
+          path: |
+            artifacts/*.tgz
+            apps/docs/dist

@@ -1,0 +1,34 @@
+{
+  "name": "hys-ui-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:docs": "vite --config apps/docs/vite.config.ts",
+    "build:ui": "node scripts/generate-exports.mjs && npm run build --workspace hys-ui",
+    "build:docs": "npm run build:ui && node scripts/generate-api.mjs && vue-tsc --noEmit -p apps/docs/tsconfig.json && vite build --config apps/docs/vite.config.ts",
+    "typecheck": "vue-tsc --noEmit -p packages/ui/tsconfig.json && vue-tsc --noEmit -p apps/docs/tsconfig.json",
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "check:release": "npm run build:docs && npm test && npm run check:contracts && node scripts/pack.mjs && npm run test:consumer",
+    "pack:ui": "npm run build:ui && node scripts/pack.mjs",
+    "release:ui": "node scripts/release.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:consumer": "node scripts/test-consumer.mjs",
+    "docs:api": "node scripts/generate-api.mjs",
+    "docs:scaffold": "node scripts/generate-api.mjs && node scripts/scaffold-examples.mjs && node scripts/clean-example-sources.mjs"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/compiler-sfc": "^3.5.13",
+    "jsdom": "^26.0.0",
+    "postcss": "^8.4.49",
+    "postcss-selector-parser": "^7.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.5",
+    "vue-component-meta": "3.3.14",
+    "vue-tsc": "^3.3.14"
+  }
+}

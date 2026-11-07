@@ -1,0 +1,6 @@
+<script setup lang="ts">
+import {useHysRootAttrs} from '../../config'
+const hysRootAttrs=useHysRootAttrs()
+import {ref} from 'vue';const props=withDefaults(defineProps<{minWidth?:number;maxWidth?:number;disabled?:boolean}>(),{minWidth:180,maxWidth:1200});const width=defineModel<number>({default:320});const start=ref(0);const initial=ref(0);function down(e:PointerEvent){if(props.disabled)return;start.value=e.clientX;initial.value=width.value;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)}function move(e:PointerEvent){if(!(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId))return;width.value=Math.min(props.maxWidth,Math.max(props.minWidth,initial.value+e.clientX-start.value))}
+</script>
+<template><div v-bind="hysRootAttrs" class="hys-ui-ent-resizable" :style="{width:width+'px',minWidth:minWidth+'px'}"><slot/><div class="hys-ui-ent-resize-edge" role="separator" :tabindex="disabled?-1:0" aria-label="调整面板宽度" aria-orientation="vertical" :aria-valuemin="minWidth" :aria-valuemax="maxWidth" :aria-valuenow="width" @pointerdown="down" @pointermove="move" @keydown.left.prevent="!disabled&&(width=Math.max(minWidth,width-10))" @keydown.right.prevent="!disabled&&(width=Math.min(maxWidth,width+10))"/></div></template>

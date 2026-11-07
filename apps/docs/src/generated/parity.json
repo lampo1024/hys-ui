@@ -1,0 +1,554 @@
+[
+  {
+    "name": "HysAccordion",
+    "element": "collapse",
+    "ant": "collapse",
+    "naive": "collapse",
+    "core": "受控展开、手风琴/多面板、禁用、标题/内容插槽、ARIA 关联",
+    "later": "过渡高度动画"
+  },
+  {
+    "name": "HysAlert",
+    "element": "alert",
+    "ant": "alert",
+    "naive": "alert",
+    "core": "四种语义、图标、关闭事件、受控显示、描述与插槽",
+    "later": "横幅/跑马灯"
+  },
+  {
+    "name": "HysAnimatedNumber",
+    "element": "statistic",
+    "ant": "statistic",
+    "naive": "number-animation",
+    "core": "受控数值、精度、时长、减少动态效果、卸载清理",
+    "later": "本地化分组与复杂格式"
+  },
+  {
+    "name": "HysAvatar",
+    "element": "avatar",
+    "ant": "avatar",
+    "naive": "avatar",
+    "core": "图片与文字、失败回退、尺寸、形状、fit、图片变更恢复",
+    "later": "头像组"
+  },
+  {
+    "name": "HysBadge",
+    "element": "tag",
+    "ant": "tag",
+    "naive": "tag",
+    "core": "语义标签、大小、圆角、可关闭、数字上限、圆点",
+    "later": "标签组与批量选择"
+  },
+  {
+    "name": "HysBreadcrumb",
+    "element": "breadcrumb",
+    "ant": "breadcrumb",
+    "naive": "breadcrumb",
+    "core": "层级、末项语义、自定义分隔、链接插槽、路由解耦",
+    "later": "溢出折叠"
+  },
+  {
+    "name": "HysButton",
+    "element": "button",
+    "ant": "button",
+    "naive": "button",
+    "core": "多种外观、尺寸、禁用/加载、图标插槽、形状、block、虚线、链接、安全 rel、原生类型、focus/blur",
+    "later": "按钮组独立组件、加载延迟与波纹"
+  },
+  {
+    "name": "HysCalendar",
+    "element": "calendar",
+    "ant": "calendar",
+    "naive": "calendar",
+    "core": "月导航、周一起始、日期选择、事件、禁用日期、日期插槽",
+    "later": "周/年视图与本地化"
+  },
+  {
+    "name": "HysCalendarNavigation",
+    "element": "date-picker",
+    "ant": "date-picker",
+    "naive": "date-picker",
+    "core": "年份/月快速定位、范围禁用、标题返回、UTC 月值",
+    "later": "多语言与财务日历"
+  },
+  {
+    "name": "HysCard",
+    "element": "card",
+    "ant": "card",
+    "naive": "card",
+    "core": "标题/描述、头部操作、页脚、加载、边框、阴影、内容样式",
+    "later": "封面及悬浮动效"
+  },
+  {
+    "name": "HysCascader",
+    "element": "cascader",
+    "ant": "cascader",
+    "naive": "cascader",
+    "core": "路径选择、搜索、清空、父级可选、路径显示、禁用、键盘分级导航",
+    "later": "多选、异步加载、自定义字段映射"
+  },
+  {
+    "name": "HysChart",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "柱状/折线图、数据、高度",
+    "later": "专业图表库联动"
+  },
+  {
+    "name": "HysCheckbox",
+    "element": "checkbox",
+    "ant": "checkbox",
+    "naive": "checkbox",
+    "core": "受控勾选、中间态、禁用/只读、原生 name/value/required、change、标签",
+    "later": "独立 CheckboxGroup 与数量约束"
+  },
+  {
+    "name": "HysColorPicker",
+    "element": "color-picker",
+    "ant": "color-picker",
+    "naive": "-",
+    "core": "自定义 HSV 色板、色相、HEX 输入、自定义预设、禁用、清空、键盘微调",
+    "later": "透明度、RGBA/HSL 多格式"
+  },
+  {
+    "name": "HysColorTokenEditor",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "颜色令牌编辑与受控数据",
+    "later": "令牌继承与设计工具同步"
+  },
+  {
+    "name": "HysCommandPalette",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "命令搜索、键盘导航、快捷键、选择、缓存停用清理",
+    "later": "命令分组与远程建议"
+  },
+  {
+    "name": "HysCommentEditor",
+    "element": "-",
+    "ant": "comment",
+    "naive": "-",
+    "core": "评论列表、发送/删除事件、时间与作者",
+    "later": "嵌套回复与附件"
+  },
+  {
+    "name": "HysContextMenu",
+    "element": "dropdown",
+    "ant": "dropdown",
+    "naive": "dropdown",
+    "core": "视口避让、禁用项、选择、关闭与 Escape、缓存清理",
+    "later": "多层子菜单"
+  },
+  {
+    "name": "HysCronEditor",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "五段表达式、预设、基础格式反馈",
+    "later": "完整语义解析与时区预览"
+  },
+  {
+    "name": "HysDataGrid",
+    "element": "table",
+    "ant": "table",
+    "naive": "data-table",
+    "core": "固定列、多排序、筛选行、分组/树形、列显隐/拖拽/宽度、分页、汇总、编辑、CSV、远程查询、持久化恢复",
+    "later": "合并单元格、横向虚拟化、复杂菜单"
+  },
+  {
+    "name": "HysDatePicker",
+    "element": "date-picker",
+    "ant": "date-picker",
+    "naive": "date-picker",
+    "core": "自定义日历、周一起始、单日期、年月定位、范围/函数禁用、键盘、清空",
+    "later": "时间选择、周/月/季度值模式与国际化"
+  },
+  {
+    "name": "HysDateRangePicker",
+    "element": "date-picker",
+    "ant": "date-picker",
+    "naive": "date-picker",
+    "core": "单触发框、起止选择、反选/跨月、范围预览、禁用日期、年月定位、清空",
+    "later": "双月面板、预设范围、时间精度"
+  },
+  {
+    "name": "HysDiffViewer",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "双栏差异、增删内容呈现、相同内容边界",
+    "later": "大文件增量算法与行内词级差异"
+  },
+  {
+    "name": "HysDivider",
+    "element": "divider",
+    "ant": "divider",
+    "naive": "divider",
+    "core": "水平/垂直、文字插槽、分隔线方向、虚线、ARIA 方向",
+    "later": "自定义分隔间距"
+  },
+  {
+    "name": "HysDrawer",
+    "element": "drawer",
+    "ant": "drawer",
+    "naive": "drawer",
+    "core": "受控显示、四方向、宽度/高度、遮罩/Escape/关闭按钮、异步关闭守卫、焦点/滚动管理、销毁策略",
+    "later": "拖拽调整尺寸与嵌套推移"
+  },
+  {
+    "name": "HysEmpty",
+    "element": "empty",
+    "ant": "empty",
+    "naive": "empty",
+    "core": "标题/描述、图片与图标插槽、尺寸、操作插槽",
+    "later": "预置插画资源"
+  },
+  {
+    "name": "HysFileManager",
+    "element": "upload",
+    "ant": "upload",
+    "naive": "upload",
+    "core": "本地文件列表、选择/拖入、上传/移除/下载事件",
+    "later": "目录、服务端进度与断点续传"
+  },
+  {
+    "name": "HysForm",
+    "element": "form",
+    "ant": "form",
+    "naive": "form",
+    "core": "规则、必填/范围/正则、自定义异步校验、字段错误、reset/clear/validate、禁用、布局、错误焦点",
+    "later": "完整 Schema 表单与复杂依赖"
+  },
+  {
+    "name": "HysFormItem",
+    "element": "form",
+    "ant": "form",
+    "naive": "form",
+    "core": "prop 绑定、错误/提示、必填语义、标签/控件关联、校验触发、插槽",
+    "later": "跨字段联动和表单自动生成"
+  },
+  {
+    "name": "HysGantt",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "时间尺度、选择、进度、依赖、可编辑日期",
+    "later": "关键路径与资源排程"
+  },
+  {
+    "name": "HysInput",
+    "element": "input",
+    "ant": "input",
+    "naive": "input",
+    "core": "受控值、原生属性转发、清空、只读/禁用、密码显隐、字数、前后缀、附加内容、IME、焦点方法",
+    "later": "输入掩码与多种格式器"
+  },
+  {
+    "name": "HysJsonEditor",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "JSON 编辑、语法错误、格式化",
+    "later": "Schema 补全和大型文档"
+  },
+  {
+    "name": "HysKanban",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "列/卡片、拖拽移动、选择器移动",
+    "later": "跨列排序及虚拟泳道"
+  },
+  {
+    "name": "HysMention",
+    "element": "mention",
+    "ant": "mentions",
+    "naive": "mention",
+    "core": "受控内容、用户建议、键盘选择",
+    "later": "异步源与自定义标记"
+  },
+  {
+    "name": "HysModal",
+    "element": "dialog",
+    "ant": "modal",
+    "naive": "modal",
+    "core": "受控显示、尺寸、全屏、遮罩/Escape/按钮策略、异步关闭守卫、焦点/滚动管理、销毁策略",
+    "later": "可拖拽、服务式 API 与嵌套管理扩展"
+  },
+  {
+    "name": "HysNotificationCenter",
+    "element": "notification",
+    "ant": "notification",
+    "naive": "notification",
+    "core": "消息列表、未读筛选、单项/全部已读、打开事件、空状态、禁用",
+    "later": "服务式推送与堆叠通知"
+  },
+  {
+    "name": "HysNumberInput",
+    "element": "input-number",
+    "ant": "input-number",
+    "naive": "input-number",
+    "core": "步长/精度、严格步进、上下界、只读/禁用、键盘、控制按钮开关、聚焦全选、focus/blur",
+    "later": "自定义格式器/解析器与空值模型"
+  },
+  {
+    "name": "HysOrgTree",
+    "element": "tree",
+    "ant": "tree",
+    "naive": "tree",
+    "core": "组织层级、搜索、选择、勾选",
+    "later": "组织图连线布局与大树虚拟化"
+  },
+  {
+    "name": "HysPagination",
+    "element": "pagination",
+    "ant": "pagination",
+    "naive": "pagination",
+    "core": "首尾/前后页、页码、总数、每页条数、跳转、禁用/加载、紧凑布局、可配置标签",
+    "later": "动态布局组合与国际化包"
+  },
+  {
+    "name": "HysPermissionMatrix",
+    "element": "checkbox",
+    "ant": "checkbox",
+    "naive": "checkbox",
+    "core": "资源/角色勾选、受控映射、可访问名称",
+    "later": "行列全选和权限继承"
+  },
+  {
+    "name": "HysPopover",
+    "element": "popover",
+    "ant": "popover",
+    "naive": "popover",
+    "core": "点击/悬停/焦点、受控显示、定位、标题、宽度、禁用、内容插槽、外部/Escape 关闭",
+    "later": "箭头/碰撞策略配置"
+  },
+  {
+    "name": "HysProgress",
+    "element": "progress",
+    "ant": "progress",
+    "naive": "progress",
+    "core": "线形/环形、范围归一、状态颜色、粗细、格式器、进度语义、不定进度",
+    "later": "仪表盘与分段进度"
+  },
+  {
+    "name": "HysRadioGroup",
+    "element": "radio",
+    "ant": "radio",
+    "naive": "radio",
+    "core": "受控单选、选项/整体禁用、独立原生组、方向、change、可访问标签",
+    "later": "按钮组外观与异步选项"
+  },
+  {
+    "name": "HysRating",
+    "element": "rate",
+    "ant": "rate",
+    "naive": "rate",
+    "core": "评分、半星、清空、只读/禁用、键盘、分值与图标插槽",
+    "later": "自定义阈值色彩及提示文本"
+  },
+  {
+    "name": "HysResizablePanel",
+    "element": "splitter",
+    "ant": "-",
+    "naive": "-",
+    "core": "拖动/键盘调整、上下界、禁用、分隔条语义",
+    "later": "吸附与折叠布局"
+  },
+  {
+    "name": "HysRichTextEditor",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "受控 HTML、基础格式工具",
+    "later": "文档模型、粘贴净化与扩展插件"
+  },
+  {
+    "name": "HysSearch",
+    "element": "input",
+    "ant": "input",
+    "naive": "input",
+    "core": "防抖、Enter 立即查询、清空、只读/禁用、加载、焦点、缓存停用清理",
+    "later": "远程建议面板"
+  },
+  {
+    "name": "HysSegmented",
+    "element": "segmented",
+    "ant": "segmented",
+    "naive": "radio",
+    "core": "受控选择、选项/整体禁用、方向键/Home/End、block、大小、标签插槽",
+    "later": "图标布局与选择动画"
+  },
+  {
+    "name": "HysSelect",
+    "element": "select",
+    "ant": "select",
+    "naive": "select",
+    "core": "单/多选、搜索/远程搜索事件、清空、禁用、加载、空状态、插槽、大小、键盘、焦点方法",
+    "later": "虚拟选项、分组与自定义值字段"
+  },
+  {
+    "name": "HysShortcutHelp",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "快捷键列表与说明",
+    "later": "冲突检测与动态注册"
+  },
+  {
+    "name": "HysSkeleton",
+    "element": "skeleton",
+    "ant": "skeleton",
+    "naive": "skeleton",
+    "core": "加载/内容切换、动画开关、标题、头像、行数与加载语义",
+    "later": "任意形状骨架组合"
+  },
+  {
+    "name": "HysSlider",
+    "element": "slider",
+    "ant": "slider",
+    "naive": "slider",
+    "core": "单值/范围、上下界/步长、禁用、原生键盘、刻度、显示格式",
+    "later": "垂直模式、吸附与浮动提示"
+  },
+  {
+    "name": "HysSortableList",
+    "element": "-",
+    "ant": "-",
+    "naive": "-",
+    "core": "手柄拖拽、目标指示、释放动画、按钮/Alt 键排序、禁用、插槽",
+    "later": "跨列表拖放和嵌套排序"
+  },
+  {
+    "name": "HysSplitPane",
+    "element": "splitter",
+    "ant": "-",
+    "naive": "-",
+    "core": "方向、受控比例、上下界、禁用、拖动/键盘、分隔条语义",
+    "later": "多分栏、吸附、折叠"
+  },
+  {
+    "name": "HysSteps",
+    "element": "steps",
+    "ant": "steps",
+    "naive": "steps",
+    "core": "步骤与描述、当前/完成/错误、方向、可选跳转、禁用项、事件",
+    "later": "连线自适应和自定义图标"
+  },
+  {
+    "name": "HysSwitch",
+    "element": "switch",
+    "ant": "switch",
+    "naive": "switch",
+    "core": "受控开关、禁用/加载、文字、异步前置守卫、失败事件、原生按钮语义",
+    "later": "自定义值和图标动画"
+  },
+  {
+    "name": "HysTable",
+    "element": "table",
+    "ant": "table",
+    "naive": "table",
+    "core": "稳定行键、列宽/对齐、单列排序、斑马纹/边框/密度、加载/空态、行事件、单元格插槽",
+    "later": "复杂能力由 DataGrid 承接，后续合并单元格"
+  },
+  {
+    "name": "HysTabs",
+    "element": "tabs",
+    "ant": "tabs",
+    "naive": "tabs",
+    "core": "受控页签、禁用、方向键/Home/End、卡片/垂直、关闭事件、标签/内容插槽",
+    "later": "新增、拖动与溢出菜单"
+  },
+  {
+    "name": "HysTagInput",
+    "element": "input-tag",
+    "ant": "select",
+    "naive": "dynamic-tags",
+    "core": "添加/删除/清空草稿、上限/去重、禁用/只读、分隔符、添加守卫、IME、事件",
+    "later": "拖动标签与异步验证"
+  },
+  {
+    "name": "HysTextarea",
+    "element": "input",
+    "ant": "input",
+    "naive": "input",
+    "core": "受控输入、原生属性、只读/禁用、字数、IME、自适应高度、缩放策略、焦点方法",
+    "later": "格式器及富文本"
+  },
+  {
+    "name": "HysTimeline",
+    "element": "timeline",
+    "ant": "timeline",
+    "naive": "timeline",
+    "core": "内容/时间/状态、颜色、反向、待处理项、插槽",
+    "later": "左右交替模式"
+  },
+  {
+    "name": "HysToast",
+    "element": "message",
+    "ant": "message",
+    "naive": "message",
+    "core": "类型、自动关闭、持久显示、悬停暂停、位置、关闭按钮、可访问播报、缓存清理",
+    "later": "全局服务与多消息堆叠"
+  },
+  {
+    "name": "HysTooltip",
+    "element": "tooltip",
+    "ant": "tooltip",
+    "naive": "tooltip",
+    "core": "自定义位置、延时、禁用、hover/focus、内容插槽、唯一关联 ID、缓存清理",
+    "later": "受控显示与交互式内容"
+  },
+  {
+    "name": "HysTour",
+    "element": "tour",
+    "ant": "tour",
+    "naive": "-",
+    "core": "受控显示/步骤、前后导航、跳过/完成事件、键盘关闭、焦点与滚动管理",
+    "later": "目标元素聚光和跨页面引导"
+  },
+  {
+    "name": "HysTransfer",
+    "element": "transfer",
+    "ant": "transfer",
+    "naive": "transfer",
+    "core": "搜索、勾选移动、双向拖拽、目标/释放动画、标题、禁用、选项插槽、空态",
+    "later": "远程分页与可搜索分组"
+  },
+  {
+    "name": "HysTree",
+    "element": "tree",
+    "ant": "tree",
+    "naive": "tree",
+    "core": "搜索、受控选择/展开/勾选、严格勾选、键盘、禁用、虚拟行、异步重试、拖放、上下文菜单、实例方法",
+    "later": "动态节点增删与字段映射"
+  },
+  {
+    "name": "HysTreeSelect",
+    "element": "tree-select",
+    "ant": "tree-select",
+    "naive": "tree-select",
+    "core": "层级、搜索、单/多选、叶子限制、清空、禁用继承、键盘、选项插槽",
+    "later": "异步/虚拟大树与完整父子勾选策略"
+  },
+  {
+    "name": "HysUpload",
+    "element": "upload",
+    "ant": "upload",
+    "naive": "upload",
+    "core": "选择/拖入、键盘、accept、数量/大小限制、异步检查、列表、移除/清空、宿主上传事件",
+    "later": "网络请求适配、进度/重试与目录上传"
+  },
+  {
+    "name": "HysVirtualTable",
+    "element": "table-v2",
+    "ant": "table",
+    "naive": "data-table",
+    "core": "行虚拟化、横向滚动、稳定行键、加载/空态、表头/单元格插槽",
+    "later": "横向虚拟化与动态行高"
+  }
+]

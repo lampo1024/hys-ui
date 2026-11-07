@@ -1,0 +1,5907 @@
+{
+  "HysAccordion": {
+    "props": [
+      {
+        "name": "items",
+        "type": "{ title: string; content?: string | undefined; disabled?: boolean | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许多选",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "number[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "defaultActive",
+        "type": "number[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: number[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: number[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "title",
+        "type": "{ item: { title: string; content?: string | undefined; disabled?: boolean | undefined; }; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "标题"
+      },
+      {
+        "name": "content",
+        "type": "{ item: { title: string; content?: string | undefined; disabled?: boolean | undefined; }; index: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysAlert": {
+    "props": [
+      {
+        "name": "tone",
+        "type": "\"info\" | \"success\" | \"warning\" | \"danger\" | undefined",
+        "required": false,
+        "default": "\"info\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题",
+        "global": false
+      },
+      {
+        "name": "description",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "closable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showIcon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "center",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "visible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "close",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:visible",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "title",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "标题"
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysAnimatedNumber": {
+    "props": [
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "显示或计算用数值",
+        "global": false
+      },
+      {
+        "name": "duration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "650",
+        "description": "动画时长，单位毫秒",
+        "global": false
+      },
+      {
+        "name": "decimals",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [],
+    "exposed": []
+  },
+  "HysAvatar": {
+    "props": [
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "src",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "number | undefined",
+        "required": false,
+        "default": "36",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "shape",
+        "type": "\"circle\" | \"square\" | undefined",
+        "required": false,
+        "default": "\"circle\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "fit",
+        "type": "\"fill\" | \"cover\" | \"contain\" | undefined",
+        "required": false,
+        "default": "\"cover\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "alt",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "error",
+        "type": "[event: Event]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysBadge": {
+    "props": [
+      {
+        "name": "tone",
+        "type": "\"blue\" | \"green\" | \"orange\" | \"red\" | \"purple\" | \"gray\" | undefined",
+        "required": false,
+        "default": "\"blue\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "closable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "dot",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "value",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示或计算用数值",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "99",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "showZero",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "close",
+        "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysBreadcrumb": {
+    "props": [
+      {
+        "name": "separator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "items",
+        "type": "{ label: string; href?: string | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "separator",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "link",
+        "type": "{ item: { label: string; href?: string | undefined; }; index: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysButton": {
+    "props": [
+      {
+        "name": "variant",
+        "type": "HysButtonVariant | undefined",
+        "required": false,
+        "default": "\"primary\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "plain",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "circle",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "block",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "dashed",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "icon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "iconPosition",
+        "type": "\"left\" | \"right\" | undefined",
+        "required": false,
+        "default": "\"left\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"button\" | \"submit\" | \"reset\" | undefined",
+        "required": false,
+        "default": "\"button\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "nativeType",
+        "type": "\"button\" | \"submit\" | \"reset\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "href",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "target",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "rel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "focusable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "click",
+        "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "显示加载状态"
+      },
+      {
+        "name": "icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "suffix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLButtonElement | HTMLAnchorElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysCalendar": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "events",
+        "type": "CalendarEvent[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "日历事件数据",
+        "global": false
+      },
+      {
+        "name": "disabledDate",
+        "type": "((date: string) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[date: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "[date: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "event",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "date",
+        "type": "{ date: string; day: any; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysCalendarNavigation": {
+    "props": [
+      {
+        "name": "month",
+        "type": "Date",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最小值或最早日期",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:month",
+        "type": "[value: Date]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysCard": {
+    "props": [
+      {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题",
+        "global": false
+      },
+      {
+        "name": "subtitle",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "shadow",
+        "type": "\"always\" | \"hover\" | \"never\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "bodyStyle",
+        "type": "Record<string, string> | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "header",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "action",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "footer",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysCascader": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string[]",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "HysCascaderNode[]",
+        "required": true,
+        "default": "",
+        "description": "可选项数据，支持单项禁用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "filterable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "changeOnSelect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showAllLevels",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "separator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\" / \"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"选择分类\"",
+        "description": "空值占位提示",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "option",
+        "type": "{ node: HysCascaderNode; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysChart": {
+    "props": [
+      {
+        "name": "data",
+        "type": "{ label: string; value: number; }[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"bar\" | \"line\" | undefined",
+        "required": false,
+        "default": "\"bar\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "height",
+        "type": "number | undefined",
+        "required": false,
+        "default": "220",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [],
+    "exposed": []
+  },
+  "HysCheckbox": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "value",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示或计算用数值",
+        "global": false
+      },
+      {
+        "name": "required",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "indeterminate",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[v: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysColorPicker": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "presets",
+        "type": "string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysColorTokenEditor": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "Record<string, string> | undefined",
+        "required": false,
+        "default": "{ primary: \"#3674e9\", accent: \"#22a06b\" }",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: Record<string, string>]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysCommandPalette": {
+    "props": [
+      {
+        "name": "actions",
+        "type": "Action[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "select",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysCommentEditor": {
+    "props": [
+      {
+        "name": "comments",
+        "type": "Comment[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "send",
+        "type": "[text: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "remove",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysContextMenu": {
+    "props": [
+      {
+        "name": "items",
+        "type": "{ label: string; value: string; disabled?: boolean | undefined; type?: \"item\" | \"divider\" | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "select",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "item",
+        "type": "{ item: { label: string; value: string; disabled?: boolean | undefined; type?: \"item\" | \"divider\" | undefined; }; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysCronEditor": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"0 0 * * *\"",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysDataGrid": {
+    "props": [
+      {
+        "name": "columns",
+        "type": "GridColumn[]",
+        "required": true,
+        "default": "",
+        "description": "列定义",
+        "global": false
+      },
+      {
+        "name": "rows",
+        "type": "Row[]",
+        "required": true,
+        "default": "",
+        "description": "行数据，由使用方提供",
+        "global": false
+      },
+      {
+        "name": "rowKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"id\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "pageSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "10",
+        "description": "每页条数",
+        "global": false
+      },
+      {
+        "name": "storageKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "启用本地列配置持久化的隔离键",
+        "global": false
+      },
+      {
+        "name": "selectable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无数据\"",
+        "description": "空数据提示",
+        "global": false
+      },
+      {
+        "name": "density",
+        "type": "\"normal\" | \"compact\" | \"comfortable\" | undefined",
+        "required": false,
+        "default": "\"normal\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "serverMode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用外部数据分页，通过事件请求新数据",
+        "global": false
+      },
+      {
+        "name": "totalRows",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "page",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "当前页，从 1 开始",
+        "global": false
+      },
+      {
+        "name": "multiSort",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许多列排序",
+        "global": false
+      },
+      {
+        "name": "stickyHeader",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "groupable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showSummary",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "treeMode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "parentKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"parentId\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "editable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许编辑",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "rowClick",
+        "type": "[row: Row]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "selectionChange",
+        "type": "[keys: (string | number)[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "columnsChange",
+        "type": "[keys: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "sortChange",
+        "type": "[sort: Sort]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "pageChange",
+        "type": "[page: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "queryChange",
+        "type": "[query: { page: number; pageSize: number; sort: SortRule[]; search: string; filters: Record<string, string>; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "pageSizeChange",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "cellEdit",
+        "type": "[payload: { row: Row; rowKey: string | number; column: string; value: string; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "batchEdit",
+        "type": "[payload: { keys: (string | number)[]; column: string; value: string; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "[column.key]",
+        "type": "{ row: Record<string, unknown>; value: unknown; index?: number }",
+        "required": false,
+        "default": "",
+        "description": "与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "resetColumns",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysDatePicker": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最小值或最早日期",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabledDate",
+        "type": "((date: Date) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysDateRangePicker": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "[string, string]",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最小值或最早日期",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabledDate",
+        "type": "((date: Date) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: [string, string]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysDiffViewer": {
+    "props": [
+      {
+        "name": "before",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "after",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [],
+    "exposed": []
+  },
+  "HysDivider": {
+    "props": [
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "direction",
+        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "required": false,
+        "default": "\"horizontal\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "dashed",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "orientation",
+        "type": "\"center\" | \"left\" | \"right\" | undefined",
+        "required": false,
+        "default": "\"center\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysDrawer": {
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "控制浮层显示",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "标题",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"520px\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "closeOnMask",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "点击遮罩是否关闭",
+        "global": false
+      },
+      {
+        "name": "closeOnEscape",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showClose",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "destroyOnClose",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "fullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "\"left\" | \"right\" | \"top\" | \"bottom\" | undefined",
+        "required": false,
+        "default": "\"right\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "beforeClose",
+        "type": "((reason: \"button\" | \"mask\" | \"escape\") => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "close",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "closeError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "header",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "footer",
+        "type": "{ close: (reason?: \"button\" | \"mask\" | \"escape\") => Promise<void>; closing: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "close",
+        "type": "(reason?: \"button\" | \"mask\" | \"escape\") => Promise<void>",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysEmpty": {
+    "props": [
+      {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无数据\"",
+        "description": "标题",
+        "global": false
+      },
+      {
+        "name": "description",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"当前没有符合条件的内容\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "image",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "imageSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "48",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "image",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "description",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysFileManager": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "ManagedFile[] | undefined",
+        "required": false,
+        "default": "[]",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: ManagedFile[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "remove",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "upload",
+        "type": "[files: File[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "download",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysForm": {
+    "props": [
+      {
+        "name": "model",
+        "type": "Record<string, unknown> | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "rules",
+        "type": "Record<string, HysFormRule | HysFormRule[]> | undefined",
+        "required": false,
+        "default": "{}",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "validate",
+        "type": "(() => boolean | Promise<boolean>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "inline",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "labelPosition",
+        "type": "\"left\" | \"right\" | \"top\" | undefined",
+        "required": false,
+        "default": "\"top\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "labelWidth",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"100px\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "submit",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "reset",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "invalid",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "actions",
+        "type": "{ validating: boolean; reset: () => void; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "validateField",
+        "type": "(name: string, trigger?: \"change\" | \"blur\" | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clearValidate",
+        "type": "(names?: string | string[] | undefined) => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "resetFields",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "errors",
+        "type": "Record<string, string>",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "validating",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": ""
+      }
+    ]
+  },
+  "HysFormItem": {
+    "props": [
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "prop",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "required",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "hint",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "for",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{ id: string; invalid: boolean; error: string | undefined; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysGantt": {
+    "props": [
+      {
+        "name": "items",
+        "type": "GanttItem[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "string | number | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "scale",
+        "type": "Scale | undefined",
+        "required": false,
+        "default": "\"day\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "editable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许编辑",
+        "global": false
+      },
+      {
+        "name": "rowHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "46",
+        "description": "每行高度",
+        "global": false
+      },
+      {
+        "name": "labelWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "270",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[id: string | number | null]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[item: GanttItem]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "open",
+        "type": "[item: GanttItem]",
+        "required": false,
+        "default": "",
+        "description": "控制浮层显示"
+      },
+      {
+        "name": "update:items",
+        "type": "[items: GanttItem[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysInput": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"text\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showPassword",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showCount",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "maxlength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "minlength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "autocomplete",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "input",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "prepend",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "prefix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "suffix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "append",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysJsonEditor": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"{}\"",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysKanban": {
+    "props": [
+      {
+        "name": "columns",
+        "type": "{ id: string; title: string; }[]",
+        "required": true,
+        "default": "",
+        "description": "列定义",
+        "global": false
+      },
+      {
+        "name": "cards",
+        "type": "KanbanCard[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "move",
+        "type": "[id: string, column: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysMention": {
+    "props": [
+      {
+        "name": "users",
+        "type": "{ id: string; name: string; disabled?: boolean | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "maxlength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "[user: { id: string; name: string; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "option",
+        "type": "{ user: { id: string; name: string; disabled?: boolean | undefined; }; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysModal": {
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "控制浮层显示",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "标题",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"560px\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "closeOnMask",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "点击遮罩是否关闭",
+        "global": false
+      },
+      {
+        "name": "closeOnEscape",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showClose",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "destroyOnClose",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "fullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "\"left\" | \"right\" | \"top\" | \"bottom\" | undefined",
+        "required": false,
+        "default": "\"right\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "beforeClose",
+        "type": "((reason: \"button\" | \"mask\" | \"escape\") => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "close",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "closeError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "header",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "footer",
+        "type": "{ close: (reason?: \"button\" | \"mask\" | \"escape\") => Promise<void>; closing: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "close",
+        "type": "(reason?: \"button\" | \"mask\" | \"escape\") => Promise<void>",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysNotificationCenter": {
+    "props": [
+      {
+        "name": "items",
+        "type": "Notice[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空数据提示",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "open",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": "控制浮层显示"
+      },
+      {
+        "name": "read",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "read-all",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysNumberInput": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最小值或最早日期",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "step",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "每次调整的步长",
+        "global": false
+      },
+      {
+        "name": "precision",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "stepStrictly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "showControls",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示加减按钮",
+        "global": false
+      },
+      {
+        "name": "selectOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "输入框获得焦点时选中全部内容",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": [
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysOrgTree": {
+    "props": [
+      {
+        "name": "nodes",
+        "type": "OrgNode[]",
+        "required": true,
+        "default": "",
+        "description": "树节点数据",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "searchable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示搜索输入框",
+        "global": false
+      },
+      {
+        "name": "checkable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "checkedKeys",
+        "type": "string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:checkedKeys",
+        "type": "[keys: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysPagination": {
+    "props": [
+      {
+        "name": "page",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "当前页，从 1 开始",
+        "global": false
+      },
+      {
+        "name": "total",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "总记录数",
+        "global": false
+      },
+      {
+        "name": "pageSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "10",
+        "description": "每页条数",
+        "global": false
+      },
+      {
+        "name": "pageSizeOptions",
+        "type": "number[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "siblingCount",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showSizeChanger",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示每页条数选择器",
+        "global": false
+      },
+      {
+        "name": "showQuickJumper",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示页码跳转输入框",
+        "global": false
+      },
+      {
+        "name": "showTotal",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "compact",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "labels",
+        "type": "Partial<{ total: string; perPage: string; jump: string; page: string; first: string; previous: string; next: string; last: string; }> | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "change",
+        "type": "[page: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "pageSizeChange",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:page",
+        "type": "[page: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:pageSize",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysPermissionMatrix": {
+    "props": [
+      {
+        "name": "roles",
+        "type": "string[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "resources",
+        "type": "string[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "Record<string, boolean>",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: Record<string, boolean>]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysPopover": {
+    "props": [
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"bottom-end\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "\"click\" | \"focus\" | \"hover\" | undefined",
+        "required": false,
+        "default": "\"click\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "控制浮层显示",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:open",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "visibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "trigger",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{ close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "show",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "hide",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysProgress": {
+    "props": [
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "显示或计算用数值",
+        "global": false
+      },
+      {
+        "name": "showLabel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | \"normal\" | undefined",
+        "required": false,
+        "default": "\"normal\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "strokeWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "7",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"circle\" | \"line\" | undefined",
+        "required": false,
+        "default": "\"line\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "number | undefined",
+        "required": false,
+        "default": "100",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "format",
+        "type": "((value: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "indeterminate",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{ value: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysRadioGroup": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "{ label: string; value: string; disabled?: boolean | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "可选项数据，支持单项禁用",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysRating": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "5",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "allowClear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "allowHalf",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showScore",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "character",
+        "type": "{ value: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysResizablePanel": {
+    "props": [
+      {
+        "name": "minWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "180",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "maxWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1200",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "number | undefined",
+        "required": false,
+        "default": "320",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysRichTextEditor": {
+    "props": [
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "hideToolbar",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[html: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": [
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "getHTML",
+        "type": "() => string",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysSearch": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"搜索…\"",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "delay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "300",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "search",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": [
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysSegmented": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "{ label: string; value: string; disabled?: boolean | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "可选项数据，支持单项禁用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "block",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "label",
+        "type": "{ option: { label: string; value: string; disabled?: boolean | undefined; }; }",
+        "required": false,
+        "default": "",
+        "description": "显示标签"
+      }
+    ],
+    "exposed": []
+  },
+  "HysSelect": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "T",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "HysSelectOption[]",
+        "required": true,
+        "default": "",
+        "description": "可选项数据，支持单项禁用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"请选择\"",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许多选",
+        "global": false
+      },
+      {
+        "name": "filterable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "remote",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无选项\"",
+        "description": "空数据提示",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "search",
+        "type": "[query: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "label",
+        "type": "{ selected: HysSelectOption[]; }",
+        "required": false,
+        "default": "",
+        "description": "显示标签"
+      },
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "显示加载状态"
+      },
+      {
+        "name": "option",
+        "type": "{ option: HysSelectOption; selected: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "footer",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysShortcutHelp": {
+    "props": [
+      {
+        "name": "shortcuts",
+        "type": "{ keys: string; description: string; }[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [],
+    "exposed": []
+  },
+  "HysSkeleton": {
+    "props": [
+      {
+        "name": "lines",
+        "type": "number | undefined",
+        "required": false,
+        "default": "3",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "active",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "avatar",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "avatarSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "40",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "标题",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysSlider": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "T",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "允许的最小值或最早日期",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "100",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "step",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "每次调整的步长",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "showValue",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "marks",
+        "type": "Record<number, string> | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "formatTooltip",
+        "type": "((value: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysSortableList": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "Item[]",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: Item[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "item",
+        "type": "{ item: Item; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysSplitPane": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "number | undefined",
+        "required": false,
+        "default": "40",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "number | undefined",
+        "required": false,
+        "default": "15",
+        "description": "允许的最小值或最早日期",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "85",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "first",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "second",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysSteps": {
+    "props": [
+      {
+        "name": "items",
+        "type": "(string | { title: string; description?: string | undefined; disabled?: boolean | undefined; })[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "current",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "clickable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"error\" | \"process\" | \"finish\" | \"wait\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "change",
+        "type": "[index: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:current",
+        "type": "[index: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysSwitch": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "activeText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "inactiveText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "beforeChange",
+        "type": "(() => boolean | Promise<boolean>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "error",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysTable": {
+    "props": [
+      {
+        "name": "columns",
+        "type": "HysTableColumn[]",
+        "required": true,
+        "default": "",
+        "description": "列定义",
+        "global": false
+      },
+      {
+        "name": "rows",
+        "type": "T[]",
+        "required": true,
+        "default": "",
+        "description": "行数据，由使用方提供",
+        "global": false
+      },
+      {
+        "name": "rowKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"id\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空数据提示",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "striped",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "caption",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "rowClassName",
+        "type": "((row: T, index: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "rowClick",
+        "type": "[row: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "sortChange",
+        "type": "[sort: { key: string; direction: \"asc\" | \"desc\"; } | null]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "显示加载状态"
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "[column.key]",
+        "type": "{ row: Record<string, unknown>; value: unknown; index?: number }",
+        "required": false,
+        "default": "",
+        "description": "与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。"
+      }
+    ],
+    "exposed": []
+  },
+  "HysTabs": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "items",
+        "type": "{ label: string; value: string; disabled?: boolean | undefined; closable?: boolean | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"line\" | \"card\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "closable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "close",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "label",
+        "type": "{ item: { label: string; value: string; disabled?: boolean | undefined; closable?: boolean | undefined; }; }",
+        "required": false,
+        "default": "",
+        "description": "显示标签"
+      },
+      {
+        "name": "default",
+        "type": "{ active: string; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysTagInput": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string[]",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "10",
+        "description": "允许的最大值或最晚日期",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"输入后按 Enter\"",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "addOnBlur",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "separator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "beforeAdd",
+        "type": "((value: string) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "add",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "remove",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "reject",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "tag",
+        "type": "{ value: string; index: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysTextarea": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "rows",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "行数据，由使用方提供",
+        "global": false
+      },
+      {
+        "name": "maxlength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showCount",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "autosize",
+        "type": "boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "resize",
+        "type": "\"horizontal\" | \"vertical\" | \"none\" | \"both\" | undefined",
+        "required": false,
+        "default": "\"vertical\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "input",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": [
+      {
+        "name": "input",
+        "type": "HTMLTextAreaElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
+  },
+  "HysTimeline": {
+    "props": [
+      {
+        "name": "items",
+        "type": "{ title: string; time?: string | undefined; description?: string | undefined; status?: \"done\" | \"current\" | \"pending\" | undefined; color?: string | undefined; }[]",
+        "required": true,
+        "default": "",
+        "description": "展示项目数据",
+        "global": false
+      },
+      {
+        "name": "reverse",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "pending",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "item",
+        "type": "{ item: { title: string; time?: string | undefined; description?: string | undefined; status?: \"done\" | \"current\" | \"pending\" | undefined; color?: string | undefined; }; index: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysToast": {
+    "props": [
+      {
+        "name": "message",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"info\" | \"success\" | \"error\" | undefined",
+        "required": false,
+        "default": "\"success\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "duration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "3000",
+        "description": "动画时长，单位毫秒",
+        "global": false
+      },
+      {
+        "name": "closable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "position",
+        "type": "\"top\" | \"bottom\" | \"bottom-right\" | \"top-right\" | undefined",
+        "required": false,
+        "default": "\"bottom-right\"",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "close",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysTooltip": {
+    "props": [
+      {
+        "name": "text",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"top-start\"",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "showDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "hideDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "70",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "content",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysTour": {
+    "props": [
+      {
+        "name": "steps",
+        "type": "{ title: string; description: string; }[]",
+        "required": true,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "current",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "closeOnEscape",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[index: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "close",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:current",
+        "type": "[index: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "finish",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [],
+    "exposed": []
+  },
+  "HysTransfer": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string[]",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "Item[]",
+        "required": true,
+        "default": "",
+        "description": "可选项数据，支持单项禁用",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "filterable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "titles",
+        "type": "[string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "option",
+        "type": "{ option: Item; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysTree": {
+    "props": [
+      {
+        "name": "nodes",
+        "type": "TreeNode[]",
+        "required": true,
+        "default": "",
+        "description": "树节点数据",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "checkedKeys",
+        "type": "string[] | undefined",
+        "required": false,
+        "default": "[]",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "expandedKeys",
+        "type": "string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许多选",
+        "global": false
+      },
+      {
+        "name": "checkable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "searchable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示搜索输入框",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "defaultExpandAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showLine",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "virtual",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用可见区域虚拟渲染",
+        "global": false
+      },
+      {
+        "name": "rowHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "38",
+        "description": "每行高度",
+        "global": false
+      },
+      {
+        "name": "viewportHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "340",
+        "description": "虚拟视口高度",
+        "global": false
+      },
+      {
+        "name": "draggable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用拖拽交互",
+        "global": false
+      },
+      {
+        "name": "contextMenu",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "checkStrictly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "filterNode",
+        "type": "((query: string, node: TreeNode) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loadChildren",
+        "type": "((node: TreeNode) => Promise<TreeNode[]>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "展开节点时异步加载子节点，抛出错误后支持重试",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "[node: TreeNode]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:checkedKeys",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:expandedKeys",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "check",
+        "type": "[keys: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "node-drop",
+        "type": "[payload: { dragId: string; targetId: string; position: \"before\" | \"after\" | \"inside\"; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "node-contextmenu",
+        "type": "[payload: { node: TreeNode; x: number; y: number; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "load-error",
+        "type": "[payload: { node: TreeNode; error: unknown; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "children-loaded",
+        "type": "[payload: { node: TreeNode; children: TreeNode[]; }]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "node",
+        "type": "{ node: TreeNode; depth: number; expanded: boolean; selected: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysTreeSelect": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "T",
+        "required": true,
+        "default": "",
+        "description": "受控值，配合 v-model 使用",
+        "global": false
+      },
+      {
+        "name": "nodes",
+        "type": "HysTreeSelectNode[]",
+        "required": true,
+        "default": "",
+        "description": "树节点数据",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许多选",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "searchable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示搜索输入框",
+        "global": false
+      },
+      {
+        "name": "leafOnly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "option",
+        "type": "{ node: HysTreeSelectNode; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": []
+  },
+  "HysUpload": {
+    "props": [
+      {
+        "name": "accept",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许多选",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "limit",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "maxSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "drag",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showFileList",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "beforeUpload",
+        "type": "((file: File) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "change",
+        "type": "[files: HysUploadFile[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "error",
+        "type": "[message: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "select",
+        "type": "[files: File[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "remove",
+        "type": "[file: HysUploadFile]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "exceed",
+        "type": "[files: File[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "file",
+        "type": "{ file: { uid: string; name: string; size: number; raw: { readonly lastModified: number; readonly name: string; readonly webkitRelativePath: string; readonly size: number; readonly type: string; arrayBuffer: () => Promise<ArrayBuffer>; bytes: () => Promise<Uint8Array<ArrayBuffer>>; slice: (start?: number | undefined, end?: number | undefined, contentType?: string | undefined) => Blob; stream: () => ReadableStream<Uint8Array<ArrayBuffer>>; text: () => Promise<string>; }; }; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
+    "exposed": [
+      {
+        "name": "clearFiles",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "open",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "控制浮层显示"
+      }
+    ]
+  },
+  "HysVirtualTable": {
+    "props": [
+      {
+        "name": "rows",
+        "type": "Row[]",
+        "required": true,
+        "default": "",
+        "description": "行数据，由使用方提供",
+        "global": false
+      },
+      {
+        "name": "columns",
+        "type": "Column[]",
+        "required": true,
+        "default": "",
+        "description": "列定义",
+        "global": false
+      },
+      {
+        "name": "rowHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "42",
+        "description": "每行高度",
+        "global": false
+      },
+      {
+        "name": "height",
+        "type": "number | undefined",
+        "required": false,
+        "default": "280",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空数据提示",
+        "global": false
+      },
+      {
+        "name": "rowKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      }
+    ],
+    "events": [],
+    "slots": [
+      {
+        "name": "header",
+        "type": "{ column: Column; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "[column.key]",
+        "type": "{ row: Record<string, unknown>; value: unknown; index?: number }",
+        "required": false,
+        "default": "",
+        "description": "与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。"
+      }
+    ],
+    "exposed": []
+  }
+}

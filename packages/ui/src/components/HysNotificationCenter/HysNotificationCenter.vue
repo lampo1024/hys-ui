@@ -1,0 +1,6 @@
+<script setup lang="ts">
+import {useHysRootAttrs} from '../../config'
+const hysRootAttrs=useHysRootAttrs()
+import {computed,ref} from 'vue';export interface Notice{id:string;title:string;detail?:string;read?:boolean;time?:string}const props=defineProps<{items:Notice[];title?:string;emptyText?:string;disabled?:boolean}>();const emit=defineEmits<{read:[id:string];'read-all':[];open:[id:string]}>();const filter=ref<'all'|'unread'>('all');const shown=computed(()=>props.items.filter(x=>filter.value==='all'||!x.read));
+</script>
+<template><section v-bind="hysRootAttrs" class="hys-ui-ent-panel"><header class="hys-ui-ent-toolbar"><strong>{{title||'通知中心'}} ({{items.filter(x=>!x.read).length}})</strong><button type="button" :disabled="disabled" @click="emit('read-all')">全部已读</button></header><div class="hys-ui-ent-toolbar"><button type="button" :aria-pressed="filter==='all'" @click="filter='all'">全部</button><button type="button" :aria-pressed="filter==='unread'" @click="filter='unread'">未读</button></div><ul class="hys-ui-ent-notices"><li v-for="n in shown" :key="n.id" :class="{'hys-ui-unread':!n.read}"><button type="button" @click="emit('open',n.id);emit('read',n.id)"><strong>{{n.title}}</strong><span>{{n.detail}}</span><small>{{n.time}}</small></button></li></ul><p v-if="!shown.length" class="hys-ui-ent-muted">{{emptyText||'暂无通知'}}</p></section></template>

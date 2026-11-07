@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import {useHysRootAttrs} from '../../config'
+const hysRootAttrs=useHysRootAttrs()
+import {Check,CircleAlert} from 'lucide-vue-next'
+defineProps<{items:(string|{title:string;description?:string;disabled?:boolean})[];current:number;vertical?:boolean;clickable?:boolean;status?:'process'|'error'|'finish'|'wait'}>();const emit=defineEmits<{'update:current':[index:number];change:[index:number]}>()
+</script>
+<template><ol v-bind="hysRootAttrs" class="hys-ui-ex-steps" :class="{'hys-ui-steps-vertical':vertical}" aria-label="流程进度"><li v-for="(item,index) in items" :key="index" :class="{'hys-ui-done':index<current,'hys-ui-active':index===current,'hys-ui-step-error':index===current&&status==='error'}" :aria-current="index===current?'step':undefined"><span><Check v-if="index<current||index===current&&status==='finish'" :size="14"/><CircleAlert v-else-if="index===current&&status==='error'" :size="14"/><template v-else>{{index+1}}</template></span><div><button v-if="clickable" type="button" :disabled="typeof item==='object'&&item.disabled" @click="emit('update:current',index);emit('change',index)">{{typeof item==='string'?item:item.title}}</button><strong v-else>{{typeof item==='string'?item:item.title}}</strong><small v-if="typeof item==='object'&&item.description">{{item.description}}</small></div></li></ol></template>
+<style scoped>.hys-ui-steps-vertical{flex-direction:column;gap:20px}.hys-ui-ex-steps strong{font-weight:500}.hys-ui-ex-steps small{display:block;font-size:11px;color:var(--hys-ui-muted,var(--hys-ui-theme-muted))}.hys-ui-ex-steps button{border:0;background:transparent;color:inherit;font:inherit;padding:0}.hys-ui-step-error{color:#ed4556!important}</style>
