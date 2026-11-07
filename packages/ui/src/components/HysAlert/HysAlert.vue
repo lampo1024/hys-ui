@@ -2,7 +2,7 @@
 import {useHysRootAttrs} from '../../config'
 const hysRootAttrs=useHysRootAttrs()
 import {computed,ref,watch} from 'vue';import {X,Info,CircleCheck,TriangleAlert,CircleAlert} from 'lucide-vue-next'
-const props=withDefaults(defineProps<{tone?:'info'|'success'|'warning'|'danger';title?:string;description?:string;closable?:boolean;showIcon?:boolean;center?:boolean;visible?:boolean}>(),{tone:'info'})
+const props=withDefaults(defineProps<{tone?:'info'|'success'|'warning'|'danger';title?:string;description?:string;closable?:boolean;showIcon?:boolean;center?:boolean;visible?:boolean}>(),{tone:'info',visible:undefined})
 const emit=defineEmits<{close:[];'update:visible':[value:boolean]}>(),local=ref(true),shown=computed(()=>props.visible??local.value)
 watch(()=>props.title,()=>local.value=true)
 function close(){local.value=false;emit('update:visible',false);emit('close')}

@@ -2,7 +2,7 @@
 import {useHysRootAttrs} from '../../config'
 const hysRootAttrs=useHysRootAttrs()
 import {ref,watch,onBeforeUnmount,onDeactivated} from 'vue';import {useFloating,type Placement} from '../../composables/useFloating'
-const props=withDefaults(defineProps<{placement?:Placement;trigger?:'click'|'hover'|'focus';disabled?:boolean;open?:boolean;width?:string;title?:string}>(),{placement:'bottom-end',trigger:'click'}),emit=defineEmits<{'update:open':[value:boolean];visibleChange:[value:boolean]}>(),anchor=ref<HTMLElement>(),panel=ref<HTMLElement>()
+const props=withDefaults(defineProps<{placement?:Placement;trigger?:'click'|'hover'|'focus';disabled?:boolean;open?:boolean;width?:string;title?:string}>(),{placement:'bottom-end',trigger:'click',open:undefined}),emit=defineEmits<{'update:open':[value:boolean];visibleChange:[value:boolean]}>(),anchor=ref<HTMLElement>(),panel=ref<HTMLElement>()
 const {open,style,show,close,restoringFocus}=useFloating(anchor,panel,{get placement(){return props.placement},gap:8})
 let timer:ReturnType<typeof setTimeout>|undefined
 function hover(value:boolean){clearTimeout(timer);if(value)request(true);else timer=setTimeout(()=>request(false),100)}

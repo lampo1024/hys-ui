@@ -130,7 +130,7 @@
         "name": "visible",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "undefined",
         "description": "",
         "global": false
       }
@@ -3280,7 +3280,7 @@
         "name": "open",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "undefined",
         "description": "控制浮层显示",
         "global": false
       },
