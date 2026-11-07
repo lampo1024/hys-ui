@@ -6,6 +6,7 @@ async (page) => {
   const begin=errors.length;
   await page.goto('http://127.0.0.1:5174'+href,{waitUntil:'domcontentloaded'});
   await page.locator('h1').waitFor();
+  await page.locator('.example-stage').first().locator('[data-hys-ui]').first().waitFor();
   await page.locator('.example-card summary').first().click();
   await page.waitForFunction(()=>document.querySelector('.example-card details pre code')?.textContent.length>20);
   results.push({href,scenarios:await page.locator('.example-card').count(),errors:errors.slice(begin),overflow:await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+5)});
