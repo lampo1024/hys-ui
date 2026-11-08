@@ -2280,6 +2280,30 @@
         "global": false
       },
       {
+        "name": "layout",
+        "type": "\"horizontal\" | \"vertical\" | \"inline\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "vertical、horizontal 或 inline；未指定时保留 labelPosition / inline 用法",
+        "global": false
+      },
+      {
+        "name": "columns",
+        "type": "HysFormGridValue | undefined",
+        "required": false,
+        "default": "1",
+        "description": "字段列数或容器断点配置；允许 xs、sm、md、lg、xl、xxl",
+        "global": false
+      },
+      {
+        "name": "gap",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "20",
+        "description": "字段间距，数值单位 px，也可传 CSS 长度",
+        "global": false
+      },
+      {
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
@@ -2300,7 +2324,55 @@
         "type": "string | number | undefined",
         "required": false,
         "default": "\"100px\"",
-        "description": "侧边标签宽度，支持像素数值或 CSS 宽度",
+        "description": "标签宽度；auto 统一测量可见字段，支持数值或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "labelAlign",
+        "type": "\"right\" | \"left\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "标签文字左对齐或右对齐；可覆盖位置的默认对齐",
+        "global": false
+      },
+      {
+        "name": "labelWrap",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许固定宽度标签换行",
+        "global": false
+      },
+      {
+        "name": "labelSuffix",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "标签文本末尾附加的文字",
+        "global": false
+      },
+      {
+        "name": "colon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "横向标签末尾显示冒号",
+        "global": false
+      },
+      {
+        "name": "labelCol",
+        "type": "HysFormCol | undefined",
+        "required": false,
+        "default": "",
+        "description": "24 栅格中的标签 span / offset，支持断点覆盖",
+        "global": false
+      },
+      {
+        "name": "wrapperCol",
+        "type": "HysFormCol | undefined",
+        "required": false,
+        "default": "",
+        "description": "24 栅格中的控件 span / offset，支持断点覆盖",
         "global": false
       },
       {
@@ -2333,6 +2405,46 @@
         "required": false,
         "default": "\"right\"",
         "description": "必填标记在标签左侧或右侧",
+        "global": false
+      },
+      {
+        "name": "optionalMark",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "非必填字段附加说明；默认不显示",
+        "global": false
+      },
+      {
+        "name": "inlineFeedback",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "反馈与控件行内排列；空间不足时换行",
+        "global": false
+      },
+      {
+        "name": "feedbackIcon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示校验状态图标；字段值优先于表单设置",
+        "global": false
+      },
+      {
+        "name": "validateFirst",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "字段遇到首个错误后停止；false 收集全部错误",
+        "global": false
+      },
+      {
+        "name": "preserve",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "字段卸载时保留数据；false 会删除该路径的值",
         "global": false
       },
       {
@@ -2395,20 +2507,20 @@
         "type": "{ errors: Record<string, string>; warnings: Record<string, string>; validating: boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "表单字段；接收 errors、warnings 与 validating"
       },
       {
         "name": "actions",
         "type": "{ validating: boolean; reset: (paths?: HysFormPaths | undefined) => void; errors: Record<string, string>; warnings: Record<string, string>; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "表单操作区；提供 validating、reset、errors、warnings"
       }
     ],
     "exposed": [
       {
         "name": "validateFields",
-        "type": "(paths?: HysFormPaths | undefined) => Promise<boolean>",
+        "type": "(pathsOrCallback?: HysFormPaths | HysFormValidateCallback | undefined, callback?: HysFormValidateCallback | undefined) => Promise<boolean>",
         "required": false,
         "default": "",
         "description": "validate 的别名，可传路径列表"
@@ -2422,10 +2534,10 @@
       },
       {
         "name": "validateField",
-        "type": "(path: HysFormPath, trigger?: HysFormTrigger | undefined) => Promise<boolean>",
+        "type": "(path: HysFormPath, triggerOrCallback?: HysFormTrigger | HysFormValidateCallback | undefined) => Promise<boolean>",
         "required": false,
         "default": "",
-        "description": "检查单个路径；可指定自动触发类型"
+        "description": "检查单个路径，可传 blur/change 或完成回调"
       },
       {
         "name": "clearValidate",
@@ -2447,6 +2559,13 @@
         "required": false,
         "default": "",
         "description": "记录当前值作为后续重置基线，支持指定路径"
+      },
+      {
+        "name": "setInitialValues",
+        "type": "(values: Record<string, unknown>) => void",
+        "required": false,
+        "default": "",
+        "description": "合并更新重置基线，不修改当前表单值"
       },
       {
         "name": "scrollToField",
@@ -2477,6 +2596,69 @@
         "description": "读取当前注册字段列表"
       },
       {
+        "name": "fields",
+        "type": "HysFormField[]",
+        "required": false,
+        "default": "",
+        "description": "当前注册字段上下文列表"
+      },
+      {
+        "name": "getFieldValue",
+        "type": "(path: HysFormPath) => unknown",
+        "required": false,
+        "default": "",
+        "description": "读取单个字段的独立快照"
+      },
+      {
+        "name": "getFieldsValue",
+        "type": "(paths?: HysFormPaths | undefined) => Record<string, unknown>",
+        "required": false,
+        "default": "",
+        "description": "读取全部或指定字段的数据快照"
+      },
+      {
+        "name": "setFieldValue",
+        "type": "(path: HysFormPath, value: unknown) => void",
+        "required": false,
+        "default": "",
+        "description": "赋值单个路径并取消过期检查，不自动校验"
+      },
+      {
+        "name": "setFieldsValue",
+        "type": "(values: Record<string, unknown>) => void",
+        "required": false,
+        "default": "",
+        "description": "深度合并对象并替换数组，不自动校验"
+      },
+      {
+        "name": "getFieldError",
+        "type": "(path: HysFormPath) => string[]",
+        "required": false,
+        "default": "",
+        "description": "读取指定字段的错误消息数组"
+      },
+      {
+        "name": "getFieldsError",
+        "type": "(paths?: HysFormPaths | undefined) => { name: string; errors: string[]; warnings: string[]; }[]",
+        "required": false,
+        "default": "",
+        "description": "读取全部或指定字段的错误与警告数组"
+      },
+      {
+        "name": "setFields",
+        "type": "(fields: readonly HysFormFieldData[]) => void",
+        "required": false,
+        "default": "",
+        "description": "回填字段值、错误数组和警告数组"
+      },
+      {
+        "name": "submit",
+        "type": "() => Promise<HysFormValidationResult | undefined>",
+        "required": false,
+        "default": "",
+        "description": "执行校验并提交；返回结果，禁用或忙碌时不提交"
+      },
+      {
         "name": "errors",
         "type": "Record<string, string>",
         "required": false,
@@ -2489,6 +2671,20 @@
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "errorMessages",
+        "type": "Record<string, string[]>",
+        "required": false,
+        "default": "",
+        "description": "各字段全部错误消息，值为字符串数组"
+      },
+      {
+        "name": "warningMessages",
+        "type": "Record<string, string[]>",
+        "required": false,
+        "default": "",
+        "description": "各字段全部警告消息，值为字符串数组"
       },
       {
         "name": "states",
@@ -2568,7 +2764,7 @@
         "name": "required",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "undefined",
         "description": "显示必填语义；校验仍由 required 规则决定",
         "global": false
       },
@@ -2633,7 +2829,95 @@
         "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "侧边标签宽度，支持像素数值或 CSS 宽度",
+        "description": "标签宽度；auto 统一测量可见字段，支持数值或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "labelAlign",
+        "type": "\"right\" | \"left\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "标签文字左对齐或右对齐；可覆盖位置的默认对齐",
+        "global": false
+      },
+      {
+        "name": "labelWrap",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "允许固定宽度标签换行",
+        "global": false
+      },
+      {
+        "name": "labelSuffix",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标签文本末尾附加的文字",
+        "global": false
+      },
+      {
+        "name": "colon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "横向标签末尾显示冒号",
+        "global": false
+      },
+      {
+        "name": "labelCol",
+        "type": "HysFormCol | undefined",
+        "required": false,
+        "default": "",
+        "description": "24 栅格中的标签 span / offset，支持断点覆盖",
+        "global": false
+      },
+      {
+        "name": "wrapperCol",
+        "type": "HysFormCol | undefined",
+        "required": false,
+        "default": "",
+        "description": "24 栅格中的控件 span / offset，支持断点覆盖",
+        "global": false
+      },
+      {
+        "name": "span",
+        "type": "HysFormGridValue | undefined",
+        "required": false,
+        "default": "",
+        "description": "字段占据的列数或断点配置，不超过表单当前列数",
+        "global": false
+      },
+      {
+        "name": "optionalMark",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "非必填字段附加说明；默认不显示",
+        "global": false
+      },
+      {
+        "name": "tooltip",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标签旁的补充说明，支持 tooltip 插槽",
+        "global": false
+      },
+      {
+        "name": "help",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "替代自动反馈的消息；支持 help 插槽",
+        "global": false
+      },
+      {
+        "name": "extra",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "持续显示的额外说明；可与错误同时显示",
         "global": false
       },
       {
@@ -2656,8 +2940,48 @@
         "name": "feedbackIcon",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
-        "description": "显示检查中、成功、警告或错误图标",
+        "default": "undefined",
+        "description": "显示校验状态图标；字段值优先于表单设置",
+        "global": false
+      },
+      {
+        "name": "inlineFeedback",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "反馈与控件行内排列；空间不足时换行",
+        "global": false
+      },
+      {
+        "name": "validateFirst",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "字段遇到首个错误后停止；false 收集全部错误",
+        "global": false
+      },
+      {
+        "name": "preserve",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "字段卸载时保留数据；false 会删除该路径的值",
+        "global": false
+      },
+      {
+        "name": "autoLink",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "自动关联标签和控件 ID；复杂控件可设为 false 并手动关联",
+        "global": false
+      },
+      {
+        "name": "group",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "将多个控件作为带名称的分组；未指定时自动检测",
         "global": false
       },
       {
@@ -2684,49 +3008,63 @@
         "type": "{ required: boolean; status: HysFormStatus; }",
         "required": false,
         "default": "",
-        "description": "显示标签"
+        "description": "自定义字段标签，提供 required 和 status"
+      },
+      {
+        "name": "tooltip",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "标签提示内容"
       },
       {
         "name": "default",
-        "type": "{ id: string; invalid: boolean; error: string | undefined; warning: string | undefined; status: HysFormStatus; disabled: boolean; size: \"md\" | \"sm\" | \"lg\"; }",
+        "type": "{ id: string; invalid: boolean; error: string | undefined; warning: string | undefined; errors: string[]; warnings: string[]; status: HysFormStatus; disabled: boolean; size: \"md\" | \"sm\" | \"lg\"; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "字段内容；接收关联 ID、状态、错误、警告及尺寸配置"
+      },
+      {
+        "name": "help",
+        "type": "{ error: string | undefined; warning: string | undefined; errors: string[]; warnings: string[]; status: HysFormStatus; }",
+        "required": false,
+        "default": "",
+        "description": "替代整个反馈区域"
       },
       {
         "name": "feedback",
-        "type": "{ error: string | undefined; warning: string | undefined; status: HysFormStatus; }",
+        "type": "{ error: string | undefined; warning: string | undefined; errors: string[]; warnings: string[]; status: HysFormStatus; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义校验反馈，提供 error、warning、errors、warnings、status"
       },
       {
         "name": "error",
-        "type": "{ error: string; }",
+        "type": "{ error: string; errors: string[]; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义错误内容，提供 error 与 errors"
       },
       {
         "name": "warning",
-        "type": "{ warning: string; }",
+        "type": "{ warning: string; warnings: string[]; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义警告内容，提供 warning 与 warnings"
       },
       {
         "name": "hint",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义持续显示的辅助说明"
       },
       {
         "name": "extra",
         "type": "{ status: HysFormStatus; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "额外说明内容，提供 status"
       }
     ],
     "exposed": [
@@ -2735,7 +3073,7 @@
         "type": "(event?: HysFormTrigger | undefined) => Promise<boolean>",
         "required": false,
         "default": "",
-        "description": "检查全部或指定路径并返回 Promise<boolean>"
+        "description": "检查全部或指定字段，返回 Promise<boolean>，可传完成回调；取消时不调用回调"
       },
       {
         "name": "clearValidate",
@@ -2752,6 +3090,13 @@
         "description": "重置当前字段"
       },
       {
+        "name": "setInitialValue",
+        "type": "((value: unknown) => void) | undefined",
+        "required": false,
+        "default": "",
+        "description": "设置当前字段的重置基线"
+      },
+      {
         "name": "focus",
         "type": "() => void",
         "required": false,
@@ -2761,6 +3106,20 @@
       {
         "name": "path",
         "type": "string",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "validateMessage",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "validateState",
+        "type": "HysFormStatus",
         "required": false,
         "default": "",
         "description": ""

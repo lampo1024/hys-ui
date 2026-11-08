@@ -23,11 +23,14 @@ export function focusNumericTab(tabs:TabInstance){tabs.focus(0);tabs.scrollToAct
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {navigationTypeChecks} from './navigation-types'\nvoid navigationTypeChecks\n")
 fs.writeFileSync(path.join(dir,'form-types.ts'),`import {h} from 'vue'
-import {HysForm,HysFormItem,HysInput,type HysFormRules,type HysFormPath,type HysFormValidationContext,type HysFormValidationResult} from 'hys-ui'
+import {HysForm,HysFormItem,HysInput,type HysFormRules,type HysFormPath,type HysFormValidationContext,type HysFormValidationResult,type HysFormCol,type HysFormGridValue,type HysFormFieldData,useHysFormItemContext} from 'hys-ui'
 const path:HysFormPath=['profile','email']
 const rules:HysFormRules={'profile.email':[{type:'email',required:true},{validator:async(_value,_model,context:HysFormValidationContext)=>context.signal.aborted?false:true}]}
-export const formTypeChecks=h(HysForm,{model:{profile:{email:''}},rules,size:'sm',validateTrigger:['change','blur'],scrollToError:{block:'center'},onInvalid:(result:HysFormValidationResult)=>void result.errors},()=>h(HysFormItem,{prop:path,dependencies:[['profile','name']],feedbackIcon:true},()=>h(HysInput,{modelValue:''})))
-export async function validateEmail(form:InstanceType<typeof HysForm>){const result:HysFormValidationResult=await form.validateResult([path]);form.resetFields([path]);form.captureInitialValues();form.focusField(path);return result.cancelled}
+const labelCol:HysFormCol={span:6,sm:{span:8,offset:1}},columns:HysFormGridValue={xs:1,md:2}
+export const fieldData:HysFormFieldData={name:path,errors:['Required']}
+export const controlAdapter=()=>useHysFormItemContext()
+export const formTypeChecks=h(HysForm,{columns,labelCol,feedbackIcon:true,inlineFeedback:true,validateFirst:false,model:{profile:{email:''}},rules,size:'sm',validateTrigger:['change','blur'],scrollToError:{block:'center'},onInvalid:(result:HysFormValidationResult)=>void result.errors},()=>h(HysFormItem,{prop:path,dependencies:[['profile','name']],feedbackIcon:true},()=>h(HysInput,{modelValue:''})))
+export async function validateEmail(form:InstanceType<typeof HysForm>){const result:HysFormValidationResult=await form.validateResult([path]);form.resetFields([path]);form.captureInitialValues();form.focusField(path);form.setFieldValue(path,null);form.setFieldsValue({profile:{email:'user@example.com'}});form.setFields([fieldData]);form.setInitialValues({profile:{email:''}});await form.validate(async(valid,details)=>{void valid;void details.errorMessages});return result.cancelled}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {formTypeChecks} from './form-types'\nvoid formTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))

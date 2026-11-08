@@ -191,6 +191,121 @@ test('Disabling rule-change validation applies to local field rules and preserve
  await form.vm.validate();rules.required=false;await nextTick();await pause(5);assert.equal(form.vm.errors.name,'Required')
  assert.equal(await form.vm.validate(),true);assert.equal(form.vm.errors.name,undefined)
 })
+
+test('Form field reads are snapshots; partial writes merge objects and preserve null',async()=>{
+ const model=reactive({profile:{name:'Before',email:'keep@example.com'},roles:['a'],date:new Date('2026-11-01')})
+ const form=await mount(ui.HysForm,{model})
+ const snapshot=form.vm.getFieldsValue();snapshot.profile.name='outside';snapshot.date.setUTCDate(2);assert.equal(model.profile.name,'Before');assert.equal(model.date.getUTCDate(),1)
+ const profile=model.profile;form.vm.setFieldsValue({profile:{name:'After'},roles:['b']});await nextTick();assert.equal(model.profile,profile);assert.equal(model.profile.email,'keep@example.com');assert.deepEqual([...model.roles],['b'])
+ form.vm.setFieldValue(['profile','name'],null);assert.equal(model.profile.name,null);assert.deepEqual(form.vm.getFieldsValue([['profile','name']]),{profile:{name:null}})
+ form.vm.setFieldsValue(JSON.parse('{"__proto__":{"polluted":true},"constructor":{"polluted":true}}'));assert.equal({}.polluted,undefined)
+})
+
+test('Form service feedback supports multiple errors and is cleared without changing values',async()=>{
+ const form=await mount(ui.HysForm,{model:{name:'Kept'}},{default:()=>h(ui.HysFormItem,{prop:'name',label:'Name'},()=>h(ui.HysInput,{modelValue:'Kept'}))})
+ form.vm.setFields([{name:'name',errors:['Already exists','Choose another'],warnings:['Suggestion']}]);await nextTick()
+ assert.equal(form.find('input').getAttribute('aria-invalid'),'true');assert(form.find('[role="alert"]').textContent.includes('Choose another'));const messages=form.vm.getFieldError('name');messages.push('outside');assert.equal(form.vm.getFieldError('name').length,2)
+ form.vm.clearValidate(['name']);await nextTick();assert.deepEqual(form.vm.getFieldError('name'),[]);assert.equal(form.props.model.name,'Kept');assert(!form.find('[role="alert"]'))
+})
+
+test('Form explicit initial values and per-field baselines do not change the current record',async()=>{
+ const item=ref(),form=await mount(ui.HysForm,{model:{name:'Current',email:'Original'}},{default:()=>[h(ui.HysFormItem,{ref:item,prop:'name',label:'Name'},()=>h(ui.HysInput,{modelValue:'Current'})),h(ui.HysFormItem,{prop:'email',label:'Email'},()=>h(ui.HysInput,{modelValue:'Original'}))]})
+ form.vm.setInitialValues({name:'Reset',email:'Saved'});assert.equal(form.props.model.name,'Current');form.vm.resetFields(['name']);assert.equal(form.props.model.name,'Reset');assert.equal(form.props.model.email,'Original')
+ await nextTick();item.value.setInitialValue('Field baseline');form.vm.setFieldValue('name','Edited');form.vm.resetFields(['name']);assert.equal(form.props.model.name,'Field baseline')
+})
+
+test('Form supports Promise and callback validation and imperative submission',async()=>{
+ const form=await mount(ui.HysForm,{model:{name:''},rules:{name:{required:true,message:'Required'}}})
+ let details;assert.equal(await form.vm.validate((valid,result)=>{assert.equal(valid,false);details=result}),false);assert.equal(details.errors.name,'Required')
+ form.vm.setFieldValue('name','Ready');await nextTick();assert.equal(await form.vm.validateField('name',(valid,result)=>{assert.equal(valid,true);assert.equal(result.values.name,'Ready')}),true)
+ const result=await form.vm.submit();assert.equal(result.valid,true);assert.equal(form.events.submit[0][0].name,'Ready')
+})
+
+test('Programmatic form writes cancel an in-flight submission without emitting stale results',async()=>{
+ let finish;const form=await mount(ui.HysForm,{model:{name:'Old'},rules:{name:{validator:()=>new Promise(resolve=>finish=resolve)}}})
+ let called=false;const pending=form.vm.validate(()=>{called=true});form.vm.setFieldValue('name','New');assert.equal(await pending,false);finish(true);await pause(0);assert.equal(called,false);assert(!form.events.validation)
+})
+
+test('Form can collect all rule errors and apply per-field first-error overrides',async()=>{
+ let called=0;const form=await mount(ui.HysForm,{model:{name:'x',short:'x'},validateFirst:false,rules:{name:[{min:3,message:'Too short'},{pattern:/^[A-Z]+$/,message:'Use capitals'},{validator:()=>{called++;return 'Unavailable'}}],short:[{min:3,message:'Only first'},{validator:()=>{throw Error('Never run')}}]}},{default:()=>h(ui.HysFormItem,{prop:'short',label:'Short',validateFirst:true},()=>h(ui.HysInput,{modelValue:'x'}))})
+ const result=await form.vm.validateResult();assert.equal(result.valid,false);assert.equal(called,1);assert.deepEqual(result.errorMessages.name,['Too short','Use capitals','Unavailable']);assert.deepEqual(form.vm.getFieldError('short'),['Only first'])
+})
+
+test('Callback validators support success, failure, rejection and cancellation',async()=>{
+ let signal,callback;const form=await mount(ui.HysForm,{model:{name:'a'},rules:{name:{asyncValidator:(_value,done,_model,context)=>{callback=done;signal=context.signal}}}})
+ let pending=form.vm.validate();callback('From server');assert.equal(await pending,false);assert.equal(form.vm.errors.name,'From server')
+ pending=form.vm.validate();callback();assert.equal(await pending,true)
+ pending=form.vm.validate();form.vm.clearValidate();assert.equal(await pending,false);assert.equal(signal.aborted,true);callback('Too late');await pause(0);assert.equal(form.vm.errors.name,undefined)
+ form.props.rules={name:{asyncValidator:async()=>{throw Error('Rejected')}}};await nextTick();assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Rejected')
+})
+
+test('Nested descriptor rules reach mounted leaf fields and their required semantics',async()=>{
+ const model=reactive({profile:{email:''},contacts:[{name:''}]})
+ const form=await mount(ui.HysForm,{model,rules:{profile:{type:'object',fields:{email:{required:true,type:'email',message:'Email required'}}},contacts:{type:'array',defaultField:{type:'object',fields:{name:{required:true,message:'Name required'}}}}}},{default:()=>[h(ui.HysFormItem,{prop:['profile','email'],label:'Email'},()=>h(ui.HysInput,{modelValue:model.profile.email})),h(ui.HysFormItem,{prop:['contacts',0,'name'],label:'Contact'},()=>h(ui.HysInput,{modelValue:model.contacts[0].name}))]})
+ assert.equal(form.all('.hys-ui-form-required').length,2);assert.equal(await form.vm.validateField(['profile','email']),false);assert.equal(form.vm.errors['profile.email'],'Email required');assert.equal(await form.vm.validateField(['contacts',0,'name']),false)
+ model.profile.email='person@example.com';model.contacts[0].name='Name';await nextTick();assert.equal(await form.vm.validate(),true)
+})
+
+test('Default-member rules infer each heterogeneous member separately',async()=>{
+ const form=await mount(ui.HysForm,{model:{values:['text',42,true]},rules:{values:{type:'array',defaultField:{required:true}}}})
+ assert.equal(await form.vm.validate(),true);form.props.model.values[1]=null;assert.equal(await form.vm.validate(),false)
+})
+
+test('Nested transforms infer from the transformed values and never mutate the host record',async()=>{
+ let calls=0;const form=await mount(ui.HysForm,{model:{data:'{"age":24}',members:['1',2]},rules:{data:{type:'object',transform:value=>{calls++;return JSON.parse(value)},fields:{age:{min:18}}},members:{type:'array',defaultField:{transform:value=>Number(value),min:1}}}})
+ assert.equal(await form.vm.validate(),true);assert.equal(calls,1);assert.equal(form.props.model.data,'{"age":24}');assert.deepEqual([...form.props.model.members],['1',2])
+ form.props.model.data='{"age":15}';assert.equal(await form.vm.validate(),false)
+})
+
+test('Form conditional fields preserve data by default and can opt out individually',async()=>{
+ const shown=ref(true),form=await mount(ui.HysForm,{model:{keep:'Kept',remove:'Removed'}},{default:()=>shown.value?[h(ui.HysFormItem,{prop:'keep'},()=>h(ui.HysInput,{modelValue:'Kept'})),h(ui.HysFormItem,{prop:'remove',preserve:false},()=>h(ui.HysInput,{modelValue:'Removed'}))]:[]})
+ shown.value=false;await nextTick();assert.equal(form.props.model.keep,'Kept');assert.equal(Object.hasOwn(form.props.model,'remove'),false);assert.equal(form.vm.getFields().length,0)
+})
+
+test('Explicit error status reaches managed controls without requiring an error message',async()=>{
+ const form=await mount(ui.HysForm,{feedbackIcon:true},{default:()=>[h(ui.HysFormItem,{label:'Input',status:'error'},()=>h(ui.HysInput)),h(ui.HysFormItem,{label:'Text',status:'error'},()=>h(ui.HysTextarea))]})
+ assert.equal(form.find('input').getAttribute('aria-invalid'),'true');assert.equal(form.find('textarea').getAttribute('aria-invalid'),'true');assert(form.find('.hys-ui-input-shell-error'));assert.equal(form.all('.hys-ui-form-feedback-icon').length,2)
+})
+
+test('Help, extra, optional marks and feedback overrides preserve accessible references',async()=>{
+ const form=await mount(ui.HysForm,{optionalMark:'Optional',inlineFeedback:true,feedbackIcon:true},{default:()=>[h(ui.HysFormItem,{label:'Name',status:'error',help:'Use a unique name',extra:'Public name',hint:'Hint'},()=>h(ui.HysInput)),h(ui.HysFormItem,{label:'Hidden feedback',help:'Hidden',showFeedback:false,feedbackIcon:false},()=>h(ui.HysInput))]})
+ const input=form.find('input');for(const id of input.getAttribute('aria-describedby').split(' '))assert(document.getElementById(id));assert.equal(form.find('[role="alert"]').textContent,'Use a unique name');assert(form.find('.hys-ui-form-item-extra').textContent.includes('Public name'));assert.equal(form.all('.hys-ui-form-optional').length,2);assert.equal(form.all('.hys-ui-form-feedback-icon').length,1)
+})
+
+test('Multiple controls have a named group rather than duplicate generated control IDs',async()=>{
+ const form=await mount(ui.HysForm,{}, {default:()=>h(ui.HysFormItem,{label:'Full name'},()=>[h(ui.HysInput,{ariaLabel:'First'}),h(ui.HysInput,{ariaLabel:'Last'})])})
+ await nextTick();const group=form.find('[role="group"]');assert(group);assert.equal(document.getElementById(group.getAttribute('aria-labelledby')).textContent,'Full name');assert.equal(form.all('input[id]').length,0);assert.equal(form.all('label[for]').length,0)
+})
+
+test('Custom controls can read field context and trigger checks without native event plumbing',async()=>{
+ const Custom=defineComponent({setup(){const field=ui.useHysFormItemContext();return()=>h('button',{'data-hys-ui-field-managed':'',id:field.id.value,disabled:field.disabled.value,'aria-invalid':field.invalid.value,'aria-describedby':field.describedBy.value,onClick:()=>field.validate('change')},field.label.value)}})
+ const form=await mount(ui.HysForm,{model:{choice:''},rules:{choice:{required:true,message:'Choose'}},size:'sm'},{default:()=>h(ui.HysFormItem,{label:'Choice',prop:'choice'},()=>h(Custom))})
+ await fire(form.find('button'),'click');assert.equal(form.vm.errors.choice,'Choose');assert.equal(form.find('button').getAttribute('aria-invalid'),'true');form.props.disabled=true;await nextTick();assert(form.find('button').disabled)
+})
+
+test('Cached forms disconnect layout observers and reconnect without growing registrations',async()=>{
+ const previous=globalThis.ResizeObserver,observers=[]
+ globalThis.ResizeObserver=class{constructor(callback){this.callback=callback;this.active=false;observers.push(this)}observe(){this.active=true}disconnect(){this.active=false}}
+ try{
+  const shown=ref(true),position=ref('right'),FormPage=defineComponent({setup(){return()=>h(ui.HysForm,{model:{name:''},labelPosition:position.value,labelWidth:'auto'},()=>h(ui.HysFormItem,{label:'Name',prop:'name'},()=>h(ui.HysInput)))}})
+  const Wrapper=defineComponent({setup(){return()=>h(KeepAlive,{},()=>shown.value?h(FormPage):null)}}),wrapper=await mount(Wrapper)
+  await nextTick();assert(observers.some(observer=>observer.active))
+  for(let index=0;index<3;index++){position.value='left';shown.value=false;await nextTick();await nextTick();assert.equal(observers.filter(observer=>observer.active).length,0);shown.value=true;await nextTick();await nextTick();assert.equal(observers.filter(observer=>observer.active).length,2)}
+  wrapper.unmount();await nextTick();assert.equal(observers.filter(observer=>observer.active).length,0)
+ }finally{if(previous)globalThis.ResizeObserver=previous;else delete globalThis.ResizeObserver}
+})
+
+test('Editing one field in a large form only validates that field',async()=>{
+ const model=reactive(Object.fromEntries(Array.from({length:120},(_,index)=>['f'+index,'Initial']))),counts={}
+ const rules=Object.fromEntries(Object.keys(model).map(name=>[name,{validator:()=>{counts[name]=(counts[name]??0)+1;return true}}]))
+ const form=await mount(ui.HysForm,{model,rules},{default:()=>Object.keys(model).map(name=>h(ui.HysFormItem,{prop:name,label:name},()=>h(ui.HysInput,{modelValue:model[name]})))})
+ model.f42='Changed';await nextTick();await pause(0);assert.deepEqual(counts,{f42:1});assert.equal(form.vm.getFields().length,120)
+})
+
+test('Hidden labels do not reserve implicit grid columns and field state remains inspectable',async()=>{
+ const field=ref(),form=await mount(ui.HysForm,{layout:'horizontal',showLabel:false,labelCol:{span:6},wrapperCol:{span:18},size:'sm'},{default:()=>h(ui.HysFormItem,{ref:field,label:'Name',status:'error',error:'Required'},()=>h(ui.HysInput))})
+ assert.equal(form.find('.hys-ui-form-item-body').style.gridColumn,'');assert.equal(field.value.size,'sm');assert.equal(field.value.validateMessage,'Required');assert.equal(field.value.validateState,'error')
+})
 test('Tabs keyboard skips disabled items',async()=>{const tabs=await mount(ui.HysTabs,{modelValue:'a',items:[{value:'a',label:'A'},{value:'b',label:'B',disabled:true},{value:'c',label:'C'}]});await fire(tabs.find('[role="tablist"]'),'keydown',{key:'ArrowRight'});assert.equal(tabs.props.modelValue,'c');assert.equal(tabs.all('[role="tab"]')[2].getAttribute('tabindex'),'0')})
 
 test('Tabs support uncontrolled numeric values and manual keyboard activation',async()=>{

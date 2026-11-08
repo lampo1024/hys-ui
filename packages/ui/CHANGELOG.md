@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add shared automatic label alignment, responsive field columns, 24-column label/control layouts and inline forms.
+- Add label suffixes, wrapping, optional markers, tooltip/help/extra content, inherited icons and inline feedback.
+- Add snapshot reads, partial writes, server feedback arrays, configurable reset baselines, callback validation and imperative submit.
+- Add per-field first-error policy, callback validators, transformed nested/member rules and conditional data preservation.
+- Add accessible grouped controls, a public custom-control context hook and layout observer cleanup for cached pages.
+- Add independent scenarios for complete forms, query filters, alignment, grids, numeric validation, policies, record hydration and accessibility.
+
 - Add typed and nested form rules, warning-only feedback, field dependencies, partial validation/reset and structured results.
 - Add field lookup/focus/scroll methods, initial-value capture, rule-change checks, label/feedback slots and inherited layout settings.
 - Cancel stale form checks and submissions on reset, clear, disable and cached-page leave; provide AbortSignal to custom validators.
