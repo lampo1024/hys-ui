@@ -570,4 +570,4 @@ async (page) => {
         JSON.stringify(warnings),
     );
   }
-};
+}

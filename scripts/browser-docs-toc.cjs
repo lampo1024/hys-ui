@@ -175,4 +175,4 @@ async (page) => {
       hidden &&
       errors.length === 0,
   };
-};
+}

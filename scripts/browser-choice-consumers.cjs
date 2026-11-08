@@ -153,4 +153,4 @@ async (page) => {
     errors.length === 0 && warnings.length === 0,
   );
   return { checks, errors, warnings };
-};
+}
