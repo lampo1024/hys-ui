@@ -3833,34 +3833,50 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "number",
-        "required": true,
+        "type": "T | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控值，支持 number、stringMode 的十进制字符串和 null；模板从 v-model 推导类型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始值，默认 null",
         "global": false
       },
       {
         "name": "min",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "允许的最小值或最早日期",
+        "description": "最小值；字符串模式可传精确字符串，普通模式默认安全数值下限",
         "global": false
       },
       {
         "name": "max",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "允许的最大值或最晚日期",
+        "description": "最大值；字符串模式可传精确字符串，普通模式默认安全数值上限",
         "global": false
       },
       {
         "name": "step",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "1",
-        "description": "每次调整的步长",
+        "description": "步长，支持十进制和科学计数法字符串；非法或零步长按 1 处理",
+        "global": false
+      },
+      {
+        "name": "stepBase",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "严格步进网格的起点，默认 0",
         "global": false
       },
       {
@@ -3868,7 +3884,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "提交和默认展示的小数位数，0–100；至少保留步长所需位数",
         "global": false
       },
       {
@@ -3876,7 +3892,79 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "提交值必须落在 stepBase + n × step 的网格上，并遵守范围",
+        "global": false
+      },
+      {
+        "name": "stringMode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用十进制字符串作为模型和更新事件值，适用于大整数及高精度小数",
+        "global": false
+      },
+      {
+        "name": "valueOnClear",
+        "type": "string | number | null | undefined",
+        "required": false,
+        "default": "null",
+        "description": "清空后的值，可为 null、数值、十进制字符串、min 或 max",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示清空按钮；禁用、加载和只读时隐藏",
+        "global": false
+      },
+      {
+        "name": "updateOnInput",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "合法输入即时更新模型；默认在确认、失焦或 change 时更新",
+        "global": false
+      },
+      {
+        "name": "formatter",
+        "type": "((value: HysNumberInputValue, info: HysNumberInputFormatInfo) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示格式函数 (value, {userTyping,input})；不会改变模型类型",
+        "global": false
+      },
+      {
+        "name": "parser",
+        "type": "((input: string) => string | number | null | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "把显示文本还原为数值或十进制字符串；无效返回值拒绝提交",
+        "global": false
+      },
+      {
+        "name": "decimalSeparator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\".\"",
+        "description": "小数分隔符，默认点号；自定义 parser 优先",
+        "global": false
+      },
+      {
+        "name": "validator",
+        "type": "((value: HysNumberInputValue) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "同步检查提交候选值，必须返回 true 才接受；业务异步校验可使用 HysForm",
+        "global": false
+      },
+      {
+        "name": "allowInput",
+        "type": "((input: string) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "筛选原始草稿；false 或抛出错误会撤销此次输入",
         "global": false
       },
       {
@@ -3892,7 +3980,15 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "只读；可聚焦和复制，不能清空或步进",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载图标并禁用输入及按钮",
         "global": false
       },
       {
@@ -3904,11 +4000,51 @@
         "global": false
       },
       {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位文字",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单字段名；提交原始数值，不包含格式化符号",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "调用方提供的错误说明，关联到输入控件",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "外观状态；实际字段错误、范围错误和显式 error 状态优先",
+        "global": false
+      },
+      {
         "name": "showControls",
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "是否显示加减按钮",
+        "description": "显示加减按钮；隐藏后键盘仍可用",
+        "global": false
+      },
+      {
+        "name": "controlsPosition",
+        "type": "\"right\" | \"both\" | undefined",
+        "required": false,
+        "default": "\"both\"",
+        "description": "both 两侧按钮，或 right 右侧上下按钮",
         "global": false
       },
       {
@@ -3916,7 +4052,47 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "输入框获得焦点时选中全部内容",
+        "description": "输入获得焦点时选中全部内容",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | Partial<Record<\"ArrowUp\" | \"ArrowDown\" | \"Home\" | \"End\" | \"PageUp\" | \"PageDown\", boolean>> | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用键盘步进，或按键分别开关；方向键、Home/End、PageUp/PageDown",
+        "global": false
+      },
+      {
+        "name": "wheel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "聚焦时允许滚轮调整，默认关闭；不拦截未聚焦时的页面滚动",
+        "global": false
+      },
+      {
+        "name": "repeat",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许按住鼠标按钮连续步进",
+        "global": false
+      },
+      {
+        "name": "repeatDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "450",
+        "description": "开始重复前的等待时间，单位毫秒",
+        "global": false
+      },
+      {
+        "name": "repeatInterval",
+        "type": "number | undefined",
+        "required": false,
+        "default": "80",
+        "description": "重复步进间隔，单位毫秒，最小 20",
         "global": false
       },
       {
@@ -3926,67 +4102,220 @@
         "default": "继承字段/表单配置或 md",
         "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示边框",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用胶囊形边框",
+        "global": false
+      },
+      {
+        "name": "block",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "占满父容器宽度；默认最大宽度 210px",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载时自动聚焦，禁用或加载时不聚焦",
+        "global": false
+      },
+      {
+        "name": "align",
+        "type": "\"right\" | \"left\" | \"center\" | undefined",
+        "required": false,
+        "default": "\"center\"",
+        "description": "输入文字对齐方式",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: number]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: number]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际接受的新值，按模式返回 number、string 或 null"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "执行清空策略后触发"
       },
       {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "输入获得焦点的原生事件"
       },
       {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "输入失焦的原生事件，未提交草稿会先尝试提交"
       },
       {
         "name": "input",
-        "type": "[value: number | null]",
+        "type": "[value: T | null]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "草稿解析后的值，空或无效草稿为 null；不代表已提交"
+      },
+      {
+        "name": "invalid",
+        "type": "[info: HysNumberInputInvalidInfo]",
+        "required": false,
+        "default": "",
+        "description": "拒绝提交：{input,reason}，原因可为 parse、validator 或 range"
+      },
+      {
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "非中文组合输入时按 Enter；先提交草稿，再触发此事件"
+      },
+      {
+        "name": "step",
+        "type": "[value: T, info: HysNumberInputStepInfo]",
+        "required": false,
+        "default": "",
+        "description": "步进完成：value、{offset,type,source}，偏移量为实际变化量"
       }
     ],
-    "slots": [],
-    "exposed": [
+    "slots": [
       {
-        "name": "focus",
-        "type": "() => void | undefined",
+        "name": "prepend",
+        "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "组合框前置内容"
+      },
+      {
+        "name": "prefix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "输入内部前缀"
+      },
+      {
+        "name": "suffix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "输入内部后缀"
+      },
+      {
+        "name": "clear-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "清空图标"
+      },
+      {
+        "name": "decrease-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "减少按钮图标"
+      },
+      {
+        "name": "increase-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "增加按钮图标"
+      },
+      {
+        "name": "append",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "组合框后置内容"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "实际输入元素引用"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦可用输入，可传 FocusOptions"
       },
       {
         "name": "blur",
-        "type": "() => void | undefined",
-        "required": false,
+        "type": "() => void",
+        "required": true,
         "default": "",
-        "description": ""
+        "description": "移开输入焦点并按规则提交草稿"
       },
       {
         "name": "select",
-        "type": "() => void | undefined",
-        "required": false,
+        "type": "() => void",
+        "required": true,
         "default": "",
-        "description": ""
+        "description": "选中全部输入内容"
+      },
+      {
+        "name": "clear",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "清空并应用 valueOnClear；遵守禁用、只读和同步检查"
+      },
+      {
+        "name": "commit",
+        "type": "() => boolean",
+        "required": true,
+        "default": "",
+        "description": "尝试提交当前草稿，返回 boolean"
+      },
+      {
+        "name": "increase",
+        "type": "(multiplier?: number) => void",
+        "required": true,
+        "default": "",
+        "description": "增加一步，可传正整数倍数"
+      },
+      {
+        "name": "decrease",
+        "type": "(multiplier?: number) => void",
+        "required": true,
+        "default": "",
+        "description": "减少一步，可传正整数倍数"
       }
     ]
   },
@@ -6936,7 +7265,7 @@
       },
       {
         "name": "resize",
-        "type": "\"horizontal\" | \"vertical\" | \"none\" | \"both\" | undefined",
+        "type": "\"horizontal\" | \"vertical\" | \"both\" | \"none\" | undefined",
         "required": false,
         "default": "\"vertical\"",
         "description": "",

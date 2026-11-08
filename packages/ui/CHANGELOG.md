@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Expand number inputs with nullable/uncontrolled values, clear policies, decimal-safe steps, bounded strict grids and exact string-mode values.
+- Add display formatting/parsing, decimal separators, input filtering, synchronous validation and configurable draft/live updates.
+- Add stacked right controls, affix/icon slots, loading states, keyboard policies, opt-in wheel adjustment and held-button stepping with cached-page cleanup.
+- Preserve form feedback, native field submission and reset behavior; add public number types, instance methods and independent numeric scenarios.
+
 - Expand select values to numbers, booleans and stable-key objects, with configurable empty/clear values, groups and business-field mappings.
 - Add removable/collapsed tags, selection limits, created options, separator input, controlled open/search state and richer slots/events.
 - Add cancellable/debounced remote methods with retry, bounded virtual lists, page navigation, typeahead and native form submission fields.

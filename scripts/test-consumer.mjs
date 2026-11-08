@@ -44,6 +44,16 @@ export function verifyActualSelectInstance(actual:ActualSelect):HysSelectInstanc
 export async function inspectSelect(api:HysSelectInstance){await api.open();api.scrollTo(0);api.focus();api.close();api.retry();return api.selected}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {selectTypeChecks} from './select-types'\nvoid selectTypeChecks\n")
+fs.writeFileSync(path.join(dir,'number-types.ts'),`import {h,ref} from 'vue'
+import {HysNumberInput,type HysNumberInputValue,type HysNumberInputInstance,type HysNumberInputFormatInfo,type HysNumberInputStepInfo,type HysNumberInputInvalidInfo} from 'hys-ui'
+const instance=ref<HysNumberInputInstance>(),empty:HysNumberInputValue=null
+export const numberTypeChecks=[h(HysNumberInput<number|null>,{ref:instance,modelValue:empty,step:.25,precision:2,controlsPosition:'right',clearable:true,updateOnInput:true,autocomplete:'off',formatter:(value:HysNumberInputValue,info:HysNumberInputFormatInfo)=>info.userTyping?info.input:String(value??''),parser:text=>text,onChange:(value:number|null)=>void value,onInvalid:(info:HysNumberInputInvalidInfo)=>void info.reason}),h(HysNumberInput<string|null>,{modelValue:'9007199254740993.1',step:'0.00000001',stringMode:true,min:'0',valueOnClear:'min',keyboard:{ArrowDown:false},onStep:(value:string|null,info:HysNumberInputStepInfo)=>{void value;void info.offset}})]
+type ActualNumber=Parameters<NonNullable<Parameters<typeof HysNumberInput>[2]>>[0]
+export function verifyNumberInstance(actual:ActualNumber):HysNumberInputInstance{return actual}
+export const genericNumber=h(HysNumberInput,{onChange:(value:HysNumberInputValue)=>void value})
+export function operateNumber(api:HysNumberInputInstance){api.focus({preventScroll:true});api.select();api.increase(2);api.decrease();api.clear();return api.commit()}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {numberTypeChecks} from './number-types'\nvoid numberTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

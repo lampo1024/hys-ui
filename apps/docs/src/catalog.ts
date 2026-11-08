@@ -202,9 +202,12 @@ export const catalog=[
     "label": "数字输入",
     "slug": "hys-number-input",
     "category": "表单输入",
-    "description": "数字输入的独立交互示例、配置场景与类型参考。",
+    "description": "支持空值、小数与大数精度、格式解析及多种步进方式的数字输入控件。",
     "notes": [
-      "showControls 控制加减按钮显示，默认开启。",
+      "空值使用 null；需要清空的模型建议声明为 number | null，0 仍是有效数值。",
+      "默认确认或失焦时提交，updateOnInput 可启用合法输入即时更新；Escape 撤销未提交草稿。",
+      "stringMode 使用十进制字符串保留大数与小数精度，步长和范围也建议使用字符串。",
+      "showControls 控制加减按钮显示，controlsPosition 可切换两侧或右侧布局。",
       "selectOnFocus 控制聚焦全选，分页跳转场景开启此项。"
     ]
   },

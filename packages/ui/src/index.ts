@@ -100,5 +100,6 @@ export type {HysFormRule,HysFormRules,HysFormPath,HysFormPaths,HysFormTrigger,Hy
 export {useHysFormItemContext} from './composables/formContext'
 export type {HysFormCol,HysFormColSize,HysFormGridValue,HysFormBreakpoint} from './composables/formLayout'
 export type {HysSelectValue,HysSelectModelValue,HysSelectOption,HysSelectGroup,HysSelectDataOption,HysSelectFieldNames,HysSelectSearchContext,HysSelectInstance} from './composables/selectOptions'
+export type {HysNumberInputValue,HysNumberInputFormatInfo,HysNumberInputStepInfo,HysNumberInputInvalidInfo,HysNumberInputInstance} from './composables/numberInput'
 export {useHysToast,createHysToast} from './composables/useHysToast'
 export type {HysToastApi,HysToastOptions,HysToastConfig,HysToastHandle,HysToastServiceConfig,HysToastService} from './composables/useHysToast'

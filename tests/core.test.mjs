@@ -29,6 +29,75 @@ test('Button disabled links cannot navigate; blank links have safe rel and slots
 test('Input forwards native attributes, composition, clear and password visibility',async()=>{const input=await mount(ui.HysInput,{modelValue:'abc',id:'native-field',name:'username',clearable:true,type:'password',showPassword:true});const field=input.find('input');assert.equal(field.id,'native-field');assert.equal(field.name,'username');await fire(field,'compositionstart');field.value='中文';await fire(field,'input');assert(!input.events.input);await fire(field,'compositionend');assert.equal(input.props.modelValue,'中文');await fire(input.find('[aria-label="显示密码"]'),'click');assert.equal(field.type,'text');await fire(input.find('[aria-label="清空输入"]'),'click');assert.equal(input.props.modelValue,'');assert.equal(input.events.clear.length,1)})
 test('Readonly Input never offers a clearing action',async()=>{const input=await mount(ui.HysInput,{modelValue:'fixed',readonly:true,clearable:true});assert(input.find('input').readOnly);assert(!input.find('[aria-label="清空输入"]'))})
 test('NumberInput has precise stepping, bounds, hidden controls and readonly',async()=>{const input=await mount(ui.HysNumberInput,{modelValue:.1,step:.2,min:0,max:.5});await fire(input.find('[aria-label="增加"]'),'click');assert.equal(input.props.modelValue,.3);await fire(input.find('[aria-label="增加"]'),'click');assert.equal(input.props.modelValue,.5);assert(input.find('[aria-label="增加"]').disabled);input.props.showControls=false;await nextTick();assert.equal(input.all('button').length,0);input.props.readonly=true;await nextTick();await fire(input.find('input'),'keydown',{key:'ArrowDown'});assert.equal(input.props.modelValue,.5);input.props.readonly=false;input.props.modelValue=1;input.props.step=1;input.props.max=10;await nextTick();const field=input.find('input');field.value='2.5';await fire(field,'change');assert.equal(input.props.modelValue,2.5);input.props.modelValue=0;input.props.step=1e-7;await nextTick();await fire(field,'keydown',{key:'ArrowUp'});assert.equal(input.props.modelValue,1e-7);field.value='0.25';await fire(field,'input');assert.equal(input.events.input.at(-1)[0],.25);assert.equal(input.props.modelValue,1e-7);field.value='';await fire(field,'input');assert.equal(input.events.input.at(-1)[0],null)})
+
+test('NumberInput empty state, default values and clear policies remain distinct from zero',async()=>{
+ const number=await mount(ui.HysNumberInput,{defaultValue:0,clearable:true});assert.equal(number.find('input').value,'0');await fire(number.find('[aria-label="清空数值"]'),'click');assert.equal(number.props.modelValue,null);assert.equal(number.find('input').value,'')
+ number.props.min=5;number.props.max=20;number.props.valueOnClear='min';number.props.modelValue=8;await nextTick();await fire(number.find('[aria-label="清空数值"]'),'click');assert.equal(number.props.modelValue,5);number.props.valueOnClear='max';await nextTick();await fire(number.find('[aria-label="清空数值"]'),'click');assert.equal(number.props.modelValue,20)
+})
+
+test('NumberInput decimal steps avoid binary drift, preserve precision and use bounded strict grids',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:1.005,precision:2,step:.01});await fire(number.find('input'),'change');assert.equal(number.props.modelValue,1.01);assert.equal(number.find('input').value,'1.01')
+ number.props.modelValue=-1.005;await nextTick();await fire(number.find('input'),'change');assert.equal(number.props.modelValue,-1.01)
+ number.props.modelValue=.2;number.props.step=.2;number.props.min=.15;number.props.max=.9;number.props.stepStrictly=true;await nextTick();number.find('input').value='1';await fire(number.find('input'),'change');assert.equal(number.props.modelValue,.8);assert(number.find('[aria-label="增加"]').disabled)
+ number.props.min=.11;number.props.max=.19;await nextTick();assert(number.find('[aria-label="增加"]').disabled);assert(number.find('[aria-label="减少"]').disabled);number.find('input').value='.15';await fire(number.find('input'),'change');assert.equal(number.props.modelValue,.8);assert.equal(number.events.invalid.at(-1)[0].reason,'range')
+})
+
+test('NumberInput string mode preserves high precision and exponent values across steps',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:'9007199254740993.0000000000000001',step:'0.0000000000000001',stringMode:true});await fire(number.find('[aria-label="增加"]'),'click');assert.equal(number.props.modelValue,'9007199254740993.0000000000000002');assert.equal(number.events.step.at(-1)[1].offset,'0.0000000000000001')
+ number.props.modelValue='1e-20';number.props.step='1e-20';await nextTick();await fire(number.find('[aria-label="减少"]'),'click');assert.equal(number.props.modelValue,'0');assert.equal(number.find('input').getAttribute('role'),'spinbutton')
+})
+
+test('NumberInput formatter/parser separates displayed text from raw model and native form values',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:1000,formatter:value=>value===null?'':'$ '+String(value).replace(/\B(?=(\d{3})+(?!\d))/g,','),parser:text=>text.replace(/[$,\s]/g,''),name:'amount'})
+ assert.equal(number.find('input:not([type="hidden"])').value,'$ 1,000');const input=number.find('input:not([type="hidden"])');input.value='$ 2,500';await fire(input,'input');assert.equal(number.props.modelValue,1000);assert.equal(number.events.input.at(-1)[0],2500);await fire(input,'change');assert.equal(number.props.modelValue,2500);assert.equal(number.find('input[type="hidden"]').value,'2500');assert.equal(input.name,'')
+})
+
+test('NumberInput keeps incomplete drafts, commits on Enter/blur and can revert with Escape',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:4,parser:text=>text});const input=number.find('input');input.value='-';await fire(input,'input');assert.equal(number.props.modelValue,4);assert.equal(input.value,'-');await fire(input,'keydown',{key:'Escape'});assert.equal(input.value,'4')
+ input.value='8.5';await fire(input,'input');await fire(input,'keydown',{key:'Enter'});assert.equal(number.props.modelValue,8.5);assert.equal(number.events.pressEnter.length,1);await fire(input,'change');await fire(input,'blur');assert.equal(number.events.change.length,1)
+ input.value='bad';await fire(input,'input');await fire(input,'blur');assert.equal(number.props.modelValue,8.5);assert.equal(input.value,'8.5');assert.equal(number.events.invalid.at(-1)[0].reason,'parse')
+})
+
+test('NumberInput live updates preserve typing and controlled parents can veto a requested value',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:1,updateOnInput:true,parser:text=>text});const input=number.find('input');input.value='1.';await fire(input,'input');assert.equal(input.value,'1.');input.value='1.2';await fire(input,'input');assert.equal(number.props.modelValue,1.2);assert.equal(input.value,'1.2')
+ number.unmount();const requests=[],Wrapper=defineComponent({setup(){return()=>h(ui.HysNumberInput,{modelValue:3,updateOnInput:true,'onUpdate:modelValue':value=>requests.push(value)})}}),controlled=await mount(Wrapper);controlled.find('input').value='4';await fire(controlled.find('input'),'input');await nextTick();assert.deepEqual(requests,[4]);assert.equal(controlled.find('input').value,'3')
+})
+
+test('NumberInput validates candidate values, filters raw input and honors keyboard configuration',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:2,validator:value=>value===null||Number(value)%2===0,allowInput:text=>/^-?\d*$/.test(text),keyboard:false});const input=number.find('input');input.value='abc';await fire(input,'input');assert.equal(input.value,'2');input.value='3';await fire(input,'input');await fire(input,'change');assert.equal(number.props.modelValue,2);assert.equal(number.events.invalid.at(-1)[0].reason,'validator')
+ await fire(input,'keydown',{key:'ArrowUp'});assert.equal(number.props.modelValue,2);number.props.keyboard={ArrowDown:false};number.props.step=2;await nextTick();await fire(input,'keydown',{key:'ArrowUp'});assert.equal(number.props.modelValue,4);await fire(input,'keydown',{key:'ArrowDown'});assert.equal(number.props.modelValue,4)
+})
+
+test('NumberInput right/hidden controls, status and forwarded native attributes share field context',async()=>{
+ const form=await mount(ui.HysForm,{model:{count:1},size:'lg'},{default:()=>h(ui.HysFormItem,{label:'Quantity',prop:'count',status:'error',help:'Server feedback'},()=>h(ui.HysNumberInput,{modelValue:1,controlsPosition:'right',id:'quantity',name:'quantity',placeholder:'Enter quantity',autocomplete:'off'}))})
+ const input=form.find('input:not([type="hidden"])');assert.equal(input.id,'quantity');assert.equal(input.getAttribute('aria-invalid'),'true');assert.equal(input.placeholder,'Enter quantity');assert.equal(input.autocomplete,'off');assert(form.find('.hys-ui-number-lg'));assert(form.find('.hys-ui-number-controls'));assert.equal(form.find('label').htmlFor,'quantity');assert.equal(document.getElementById(input.getAttribute('aria-describedby')).textContent,'Server feedback')
+})
+
+test('NumberInput form reset discards an uncommitted draft even when model value did not change',async()=>{
+ const model=reactive({count:1}),form=await mount(ui.HysForm,{model},{default:()=>h(ui.HysFormItem,{label:'Count',prop:'count'},()=>h(ui.HysNumberInput,{modelValue:model.count,'onUpdate:modelValue':value=>model.count=value}))})
+ const input=form.find('input');input.value='9';await fire(input,'input');assert.equal(model.count,1);form.vm.resetFields();await nextTick();assert.equal(input.value,'1')
+})
+
+test('NumberInput bound changes never silently mutate host data and contradictory bounds block actions',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:10,min:0,max:20});number.props.max=5;await nextTick();assert.equal(number.props.modelValue,10);assert.equal(number.events.change,undefined);assert.equal(number.find('input').getAttribute('aria-invalid'),'true');await fire(number.find('[aria-label="减少"]'),'click');assert.equal(number.props.modelValue,5)
+ number.props.min=8;await nextTick();await fire(number.find('[aria-label="增加"]'),'click');assert.equal(number.props.modelValue,5);assert(number.find('[aria-label="增加"]').disabled)
+})
+
+test('NumberInput long-press repetition stops at bounds and is cleaned when a cached page leaves',async()=>{
+ const visible=ref(true),value=ref(0),Page=defineComponent({setup(){return()=>h(ui.HysNumberInput,{modelValue:value.value,repeatDelay:5,repeatInterval:20,max:3,'onUpdate:modelValue':next=>value.value=next})}}),Wrapper=defineComponent({setup(){return()=>h(KeepAlive,{},()=>visible.value?h(Page):null)}}),wrapper=await mount(Wrapper)
+ const event=new Event('pointerdown',{bubbles:true,cancelable:true});Object.defineProperty(event,'button',{value:0});wrapper.find('[aria-label="增加"]').dispatchEvent(event);await pause(75);assert.equal(value.value,3);visible.value=false;await nextTick();const before=value.value;await pause(60);assert.equal(value.value,before)
+ visible.value=true;await nextTick();value.value=0;await nextTick();const another=new Event('pointerdown',{bubbles:true,cancelable:true});Object.defineProperty(another,'button',{value:0});wrapper.find('[aria-label="增加"]').dispatchEvent(another);visible.value=false;await nextTick();const stopped=value.value;await pause(60);assert.equal(value.value,stopped)
+})
+
+test('NumberInput wheel is opt-in, focus-scoped and Home/End leave unbounded text editing alone',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:2});const input=number.find('input');input.focus();let event=new window.WheelEvent('wheel',{deltaY:-100,bubbles:true,cancelable:true});input.dispatchEvent(event);await nextTick();assert.equal(event.defaultPrevented,true);assert.equal(number.props.modelValue,2)
+ number.props.wheel=true;await nextTick();event=new window.WheelEvent('wheel',{deltaY:-100,bubbles:true,cancelable:true});input.dispatchEvent(event);await nextTick();assert.equal(number.props.modelValue,3);input.blur();event=new window.WheelEvent('wheel',{deltaY:100,bubbles:true,cancelable:true});input.dispatchEvent(event);assert.equal(event.defaultPrevented,false)
+ number.props.formatter=value=>String(value);await nextTick();await fire(input,'keydown',{key:'Home'});await fire(input,'keydown',{key:'End'});assert.equal(number.props.modelValue,3)
+})
+
+test('NumberInput rejects disallowed composition text without corrupting the previous draft',async()=>{
+ const number=await mount(ui.HysNumberInput,{modelValue:2,allowInput:text=>/^\d*$/.test(text)}),input=number.find('input');await fire(input,'compositionstart');input.value='中文';await fire(input,'input');assert.equal(number.events.input,undefined);await fire(input,'compositionend');assert.equal(input.value,'2');assert.equal(number.props.modelValue,2)
+})
 test('Select filters, skips disabled options and closes single selection',async()=>{const select=await mount(ui.HysSelect,{modelValue:'a',filterable:true,options:[{value:'a',label:'Alpha'},{value:'b',label:'Blocked',disabled:true},{value:'c',label:'Charlie'}]});await fire(select.find('[role="combobox"]'),'click');await pause(20);const search=document.querySelector('[aria-label="搜索选项"]');assert(search);search.value='Charlie';await fire(search,'input');const options=[...document.querySelectorAll('[role="option"]')];assert.equal(options.length,1);await fire(options[0],'click');assert.equal(select.props.modelValue,'c');assert(!document.querySelector('[role="listbox"]'))})
 test('Multiple Select toggles entries and stays open; clear emits empty array',async()=>{const select=await mount(ui.HysSelect,{modelValue:[],multiple:true,clearable:true,options:[{value:'a',label:'One'},{value:'b',label:'Two'}]});await fire(select.find('[role="combobox"]'),'click');await pause(20);await fire(document.querySelector('[role="option"]'),'click');assert.deepEqual([...select.props.modelValue],['a']);assert(document.querySelector('[role="listbox"]'));await fire(select.find('[aria-label="清空选择"]'),'click');assert.deepEqual([...select.props.modelValue],[])})
 
