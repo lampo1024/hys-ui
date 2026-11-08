@@ -3,6 +3,7 @@ import path from 'node:path'
 import {createHash} from 'node:crypto'
 import {fileURLToPath} from 'node:url'
 import {npm,registry} from './npm.mjs'
+import {waitForPublication} from './wait-for-publication.mjs'
 const root=fileURLToPath(new URL('..',import.meta.url))
 npm(['run','check:release'],{cwd:root,stdio:'inherit'})
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'artifacts/package.json'),'utf8'))
@@ -13,4 +14,7 @@ let existing
 try{existing=JSON.parse(npm(['view',manifest.name,'--json','--registry',registry],{cwd:root,stdio:['ignore','pipe','pipe']}))}catch(error){if(!String(error.stderr).includes('E404'))throw error}
 if(existing&&(!existing.maintainers?.some(x=>x.name===account)||existing.versions?.includes(manifest.version)))throw Error('Package name or version is unavailable for this account')
 npm(['publish',manifest.file,'--access','public','--tag','latest','--registry',registry],{cwd:root,stdio:'inherit'})
-console.log(npm(['view',`${manifest.name}@${manifest.version}`,'version','dist.integrity','--registry',registry],{cwd:root}))
+console.log('Publication accepted. Waiting for registry availability and verifying the tested archive…')
+const integrity='sha512-'+createHash('sha512').update(fs.readFileSync(manifest.file)).digest('base64')
+const published=await waitForPublication({name:manifest.name,version:manifest.version,integrity,registry})
+console.log(`Verified public package ${published.name}@${published.version}: ${published.dist.integrity}`)
