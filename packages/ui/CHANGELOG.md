@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Replace native range inputs with custom pointer-driven slider tracks and accessible handles, including decimal-safe steps, ordered intervals, track dragging and keyboard controls.
+- Add marks-only selection, stops, vertical/reverse layouts, size inheritance, tooltip/handle/mark slots, optional numeric editors and named form values.
+- Clean active pointer listeners and animation frames on cancellation and cached-page leave; add dedicated slider scenarios and public instance types.
+
 - Expand text inputs with custom clear/password icons, icon props, formatting/parsing, uncontrolled defaults, controlled password visibility and held-password cleanup.
 - Share Input textarea mode and standalone Textarea behavior, with bounded autosize, width/size remeasurement, native form values, composition-safe updates and public instance methods.
 - Add UTF-16, grapheme and custom length strategies, safe truncation, inside/outside counters, custom count output and independent examples for each input capability.

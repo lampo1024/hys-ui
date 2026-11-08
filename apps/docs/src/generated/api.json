@@ -6474,10 +6474,26 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "T",
-        "required": true,
+        "type": "T | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控数值或有序双值元组；支持 v-model",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始值；单值默认 min，range 默认 [min,max]",
+        "global": false
+      },
+      {
+        "name": "range",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显式启用范围选择；未指定时由值是否为数组推导",
         "global": false
       },
       {
@@ -6485,7 +6501,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "0",
-        "description": "允许的最小值或最早日期",
+        "description": "最小值，也是步进网格的起点",
         "global": false
       },
       {
@@ -6493,15 +6509,15 @@
         "type": "number | undefined",
         "required": false,
         "default": "100",
-        "description": "允许的最大值或最晚日期",
+        "description": "最大值；未落在步进网格上时仍可选中终点",
         "global": false
       },
       {
         "name": "step",
-        "type": "number | undefined",
+        "type": "HysSliderStep | undefined",
         "required": false,
         "default": "1",
-        "description": "每次调整的步长",
+        "description": "正数步长；mark 或 null 仅允许选择 marks 中的值",
         "global": false
       },
       {
@@ -6513,11 +6529,43 @@
         "global": false
       },
       {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许聚焦与查看，禁止拖动、键盘调整和数字编辑",
+        "global": false
+      },
+      {
         "name": "label",
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "显示标签",
+        "description": "数值区域及辅助技术使用的标签",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "rangeStartLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "范围下限的可访问名称；默认在 label 后添加下限",
+        "global": false
+      },
+      {
+        "name": "rangeEndLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "范围上限的可访问名称；默认在 label 后添加上限",
         "global": false
       },
       {
@@ -6525,23 +6573,183 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "显示标签与当前数值",
         "global": false
       },
       {
         "name": "marks",
-        "type": "Record<number, string> | undefined",
+        "type": "HysSliderMarks | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "刻度标签，支持字符串或 {label,style}；忽略范围外刻度",
         "global": false
       },
       {
         "name": "formatTooltip",
+        "type": "((value: number) => string | number | null) | undefined",
+        "required": false,
+        "default": "",
+        "description": "数值和提示的显示格式；返回 null 隐藏提示",
+        "global": false
+      },
+      {
+        "name": "formatValueText",
         "type": "((value: number) => string) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "屏幕阅读器使用的数值描述，不改变实际模型",
+        "global": false
+      },
+      {
+        "name": "showTooltip",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用滑块提示，默认在悬停、聚焦、拖动时展示",
+        "global": false
+      },
+      {
+        "name": "tooltipVisible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显式控制提示显示；不设置时跟随交互",
+        "global": false
+      },
+      {
+        "name": "tooltipPlacement",
+        "type": "\"right\" | \"left\" | \"top\" | \"bottom\" | undefined",
+        "required": false,
+        "default": "\"top\"",
+        "description": "提示位于滑块的上、下、左或右侧",
+        "global": false
+      },
+      {
+        "name": "showStops",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示步进停靠点",
+        "global": false
+      },
+      {
+        "name": "maxStops",
+        "type": "number | undefined",
+        "required": false,
+        "default": "200",
+        "description": "数值步长停靠点的渲染数量上限，默认 200，最多 1000",
+        "global": false
+      },
+      {
+        "name": "included",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示已选区间的轨道颜色",
+        "global": false
+      },
+      {
+        "name": "reverse",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "反转物理位置与方向键方向",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "竖向布局，数值默认从下向上增加",
+        "global": false
+      },
+      {
+        "name": "height",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "200",
+        "description": "竖向轨道区域高度，数值单位为 px",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用方向键、Home/End、PageUp/PageDown 及 Shift 加速",
+        "global": false
+      },
+      {
+        "name": "draggableTrack",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "范围模式中允许整体拖动已选轨道，保持区间宽度；仅数值步长可用",
+        "global": false
+      },
+      {
+        "name": "showInput",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "同时展示 HysNumberInput 数值编辑器",
+        "global": false
+      },
+      {
+        "name": "showInputControls",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "展示数字编辑器的加减按钮",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单字段名；范围模式提交两个同名隐藏字段",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "滑块的 Tab 顺序，禁用时固定为 -1",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "初次挂载时聚焦第一个可用滑块",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式校验状态；实际字段错误和 error 优先",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "错误说明，关联至两个滑块的可访问描述",
         "global": false
       }
     ],
@@ -6558,11 +6766,118 @@
         "type": "[value: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "接受实际变化后确认；拖动在释放时触发一次，键盘、刻度和数字编辑在提交时触发"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "滑块获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "滑块失去焦点的原生事件"
+      },
+      {
+        "name": "input",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": "拖动或调整值时立即触发；每个动画帧最多处理一次指针移动"
+      },
+      {
+        "name": "dragStart",
+        "type": "[value: T, info: HysSliderDragInfo]",
+        "required": false,
+        "default": "",
+        "description": "拖动开始：value、{index,track,cancelled:false}"
+      },
+      {
+        "name": "dragEnd",
+        "type": "[value: T, info: HysSliderDragInfo]",
+        "required": false,
+        "default": "",
+        "description": "拖动结束或取消：value、{index,track,cancelled}"
       }
     ],
-    "slots": [],
-    "exposed": []
+    "slots": [
+      {
+        "name": "thumb",
+        "type": "{ value: number; index: number; dragging: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "自定义滑块内容，接收 value、index、dragging"
+      },
+      {
+        "name": "tooltip",
+        "type": "{ value: number; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "提示内容，接收 value、index"
+      },
+      {
+        "name": "mark",
+        "type": "{ value: number; label: string; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "刻度标签，接收 value、label、active"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素"
+      },
+      {
+        "name": "dragging",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前是否正在拖动"
+      },
+      {
+        "name": "values",
+        "type": "number[]",
+        "required": true,
+        "default": "",
+        "description": "当前显示的数值数组"
+      },
+      {
+        "name": "focus",
+        "type": "(index?: number) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦指定端点，index 默认为 0"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开组件内的当前焦点"
+      },
+      {
+        "name": "setValue",
+        "type": "(value: HysSliderValue) => void",
+        "required": true,
+        "default": "",
+        "description": "按范围与步长设置值，遵守禁用、只读及宿主受控值"
+      },
+      {
+        "name": "cancel",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "取消当前拖动并恢复其开始时的数值"
+      }
+    ]
   },
   "HysSortableList": {
     "props": [

@@ -64,6 +64,15 @@ export function actualInput(actual:InstanceType<typeof HysInput>):HysInputInstan
 export function actualTextarea(actual:InstanceType<typeof HysTextarea>):HysTextareaInstance{return actual}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {textTypeChecks} from './text-types'\nvoid textTypeChecks\n")
+fs.writeFileSync(path.join(dir,'slider-types.ts'),`import {h,ref} from 'vue'
+import {HysSlider,type HysSliderValue,type HysSliderStep,type HysSliderMarks,type HysSliderDragInfo,type HysSliderInstance} from 'hys-ui'
+const instance=ref<HysSliderInstance>(),step:HysSliderStep='mark',marks:HysSliderMarks={0:'Off',40:{label:'Normal',style:{color:'blue'}},100:'Full'}
+export const sliderTypeChecks=[h(HysSlider<number>,{ref:instance,modelValue:40,step,marks,vertical:true,showInput:true,onChange:(value:number)=>void value,onDragEnd:(_value:number,info:HysSliderDragInfo)=>void info.cancelled}),h(HysSlider<[number,number]>,{modelValue:[20,70],draggableTrack:true,onChange:(value:[number,number])=>void value[0]})]
+type ActualSlider=Parameters<NonNullable<Parameters<typeof HysSlider>[2]>>[0]
+export function verifySliderInstance(actual:ActualSlider):HysSliderInstance{return actual}
+export function operateSlider(api:HysSliderInstance,value:HysSliderValue){api.setValue(value);api.focus(1);api.cancel();return api.values}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {sliderTypeChecks} from './slider-types'\nvoid sliderTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

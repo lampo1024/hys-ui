@@ -104,3 +104,4 @@ export type {HysNumberInputValue,HysNumberInputFormatInfo,HysNumberInputStepInfo
 export type {HysInputProps,HysTextareaProps,HysInputFormatInfo,HysInputCountInfo,HysInputCountStrategy,HysInputInstance,HysTextareaInstance} from './composables/textInput'
 export {useHysToast,createHysToast} from './composables/useHysToast'
 export type {HysToastApi,HysToastOptions,HysToastConfig,HysToastHandle,HysToastServiceConfig,HysToastService} from './composables/useHysToast'
+export type {HysSliderValue,HysSliderStep,HysSliderMarks,HysSliderDragInfo,HysSliderInstance} from './composables/slider'

@@ -77,6 +77,18 @@ for(const name of fs.readdirSync(dir).sort()){
   const slots={prefix:'输入内部前缀',suffix:'输入内部后缀',prepend:'组合框前置内容',append:'组合框后置内容','increase-icon':'增加按钮图标','decrease-icon':'减少按钮图标','clear-icon':'清空图标'}
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
+ if(name==='HysSlider'){
+  const file=ts.createSourceFile('slider.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/slider.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(node=>ts.isInterfaceDeclaration(node)&&node.name.text==='HysSliderInstance')
+  if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
+  const text={modelValue:'受控数值或有序双值元组；支持 v-model',defaultValue:'非受控初始值；单值默认 min，range 默认 [min,max]',range:'显式启用范围选择；未指定时由值是否为数组推导',min:'最小值，也是步进网格的起点',max:'最大值；未落在步进网格上时仍可选中终点',step:'正数步长；mark 或 null 仅允许选择 marks 中的值',readonly:'允许聚焦与查看，禁止拖动、键盘调整和数字编辑',label:'数值区域及辅助技术使用的标签',rangeStartLabel:'范围下限的可访问名称；默认在 label 后添加下限',rangeEndLabel:'范围上限的可访问名称；默认在 label 后添加上限',showValue:'显示标签与当前数值',marks:'刻度标签，支持字符串或 {label,style}；忽略范围外刻度',formatTooltip:'数值和提示的显示格式；返回 null 隐藏提示',formatValueText:'屏幕阅读器使用的数值描述，不改变实际模型',showTooltip:'启用滑块提示，默认在悬停、聚焦、拖动时展示',tooltipVisible:'显式控制提示显示；不设置时跟随交互',tooltipPlacement:'提示位于滑块的上、下、左或右侧',showStops:'显示步进停靠点',maxStops:'数值步长停靠点的渲染数量上限，默认 200，最多 1000',included:'显示已选区间的轨道颜色',reverse:'反转物理位置与方向键方向',vertical:'竖向布局，数值默认从下向上增加',height:'竖向轨道区域高度，数值单位为 px',keyboard:'启用方向键、Home/End、PageUp/PageDown 及 Shift 加速',draggableTrack:'范围模式中允许整体拖动已选轨道，保持区间宽度；仅数值步长可用',showInput:'同时展示 HysNumberInput 数值编辑器',showInputControls:'展示数字编辑器的加减按钮',name:'原生表单字段名；范围模式提交两个同名隐藏字段',tabindex:'滑块的 Tab 顺序，禁用时固定为 -1',autofocus:'初次挂载时聚焦第一个可用滑块',status:'显式校验状态；实际字段错误和 error 优先',error:'错误说明，关联至两个滑块的可访问描述'}
+  for(const prop of api[name].props)prop.description=text[prop.name]||prop.description
+  const events={input:'拖动或调整值时立即触发；每个动画帧最多处理一次指针移动',change:'接受实际变化后确认；拖动在释放时触发一次，键盘、刻度和数字编辑在提交时触发',dragStart:'拖动开始：value、{index,track,cancelled:false}',dragEnd:'拖动结束或取消：value、{index,track,cancelled}',focus:'滑块获得焦点的原生事件',blur:'滑块失去焦点的原生事件'}
+  for(const event of api[name].events)event.description=events[event.name]||event.description
+  const methods={element:'组件根元素',dragging:'当前是否正在拖动',values:'当前显示的数值数组',focus:'聚焦指定端点，index 默认为 0',blur:'移开组件内的当前焦点',setValue:'按范围与步长设置值，遵守禁用、只读及宿主受控值',cancel:'取消当前拖动并恢复其开始时的数值'}
+  for(const exposed of api[name].exposed)exposed.description=methods[exposed.name]||exposed.description
+  const slots={thumb:'自定义滑块内容，接收 value、index、dragging',tooltip:'提示内容，接收 value、index',mark:'刻度标签，接收 value、label、active'}
+  for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
+ }
  if(name==='HysToast'){
   const text={message:'提示文本，可使用默认插槽自定义内容',duration:'自动关闭时长（毫秒）；普通状态默认 3000，loading 默认 0。0 表示不自动关闭',type:'success、info、warning、error、loading 五种状态',position:'七种显示位置，默认 top-center；top/bottom 为兼容别名',offset:'与窗口边缘的距离，单位 px',zIndex:'浮层层级',showIcon:'显示状态图标，可通过 icon 插槽替换',pauseOnHover:'鼠标悬停时暂停剩余关闭时间',closeOnEscape:'按 Escape 关闭最近一条允许关闭的提示',repeat:'重复次数，大于 1 时显示次数标记',plain:'使用柔和背景',teleport:'是否渲染到浮层容器，false 时在原位置显示',appendTo:'浮层挂载目标，默认 body'}
   for(const prop of api[name].props)if(text[prop.name])prop.description=text[prop.name]

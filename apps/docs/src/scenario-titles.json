@@ -81,6 +81,17 @@
     "HysTextarea": {
       "Basic": "基础多行输入",
       "Graphemes": "可见字符与长度限制"
+    },
+    "HysSlider": {
+      "Basic": "基础滑动",
+      "Precision": "小数步长与负数",
+      "Range": "范围与整体拖动",
+      "Marks": "刻度与停靠点",
+      "Number": "数字输入联动",
+      "Orientation": "竖向与反向",
+      "Custom": "提示与自定义内容",
+      "Keyboard": "键盘操作与事件",
+      "Sizes": "尺寸与拖动区域"
     }
   }
 }
