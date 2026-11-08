@@ -120,6 +120,18 @@ export const catalog=[
     ]
   },
   {
+    "name": "HysAutocomplete",
+    "shortName": "Autocomplete",
+    "label": "自动补全",
+    "slug": "hys-autocomplete",
+    "category": "表单输入",
+    "description": "在自由输入中提供本地、分组或远程建议，支持自定义输入与建议内容。",
+    "notes": [
+      "输入值始终是字符串；选择事件同时返回原始建议对象和最终文本。",
+      "远程查询支持回调、数组和 Promise，通过 AbortSignal 取消过期请求。"
+    ]
+  },
+  {
     "name": "HysCascader",
     "shortName": "Cascader",
     "label": "级联选择",

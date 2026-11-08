@@ -4,6 +4,7 @@ const positions=new Map<string,{top:number;left:number}>()
 export const router=createRouter({history:createWebHistory(import.meta.env.BASE_URL),routes:[{path:'/',name:'overview',component:()=>import('./Overview.vue'),meta:{title:'概览'}},{path:'/components/hys-accordion',name:'HysAccordion',component:()=>import('./pages/HysAccordionPage.vue'),meta:{title:'HysAccordion 折叠面板'}},
 {path:'/components/hys-alert',name:'HysAlert',component:()=>import('./pages/HysAlertPage.vue'),meta:{title:'HysAlert 消息提示'}},
 {path:'/components/hys-animated-number',name:'HysAnimatedNumber',component:()=>import('./pages/HysAnimatedNumberPage.vue'),meta:{title:'HysAnimatedNumber 数字动画'}},
+{path:'/components/hys-autocomplete',name:'HysAutocomplete',component:()=>import('./pages/HysAutocompletePage.vue'),meta:{title:'HysAutocomplete 自动补全'}},
 {path:'/components/hys-avatar',name:'HysAvatar',component:()=>import('./pages/HysAvatarPage.vue'),meta:{title:'HysAvatar 头像'}},
 {path:'/components/hys-avatar-group',name:'HysAvatarGroup',component:()=>import('./pages/HysAvatarGroupPage.vue'),meta:{title:'HysAvatarGroup 头像组'}},
 {path:'/components/hys-badge',name:'HysBadge',component:()=>import('./pages/HysBadgePage.vue'),meta:{title:'HysBadge 状态标签'}},

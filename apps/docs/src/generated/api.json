@@ -300,6 +300,680 @@
     "slots": [],
     "exposed": []
   },
+  "HysAutocomplete": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控的自由输入文本；始终为字符串",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "非受控初始文本，默认空字符串",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "readonly HysAutocompleteDataOption[] | undefined",
+        "required": false,
+        "default": "[]",
+        "description": "字符串、对象或带 options / children 的分组建议",
+        "global": false
+      },
+      {
+        "name": "fetchSuggestions",
+        "type": "readonly HysAutocompleteDataOption[] | HysAutocompleteFetch | undefined",
+        "required": false,
+        "default": "",
+        "description": "静态建议数组或 (query,callback,{signal}) 提供函数；支持同步数组、回调和 Promise",
+        "global": false
+      },
+      {
+        "name": "valueKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"value\"",
+        "description": "建议对象作为输入值的字段名，默认 value",
+        "global": false
+      },
+      {
+        "name": "labelKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"label\"",
+        "description": "建议对象显示标签的字段名，默认 label",
+        "global": false
+      },
+      {
+        "name": "filterOption",
+        "type": "boolean | ((query: string, item: HysAutocompleteItem) => boolean) | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "本地过滤开关或 (query,item) 函数；本地默认开启，远程默认关闭",
+        "global": false
+      },
+      {
+        "name": "caseSensitive",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认过滤是否区分大小写，默认 false",
+        "global": false
+      },
+      {
+        "name": "debounce",
+        "type": "number | undefined",
+        "required": false,
+        "default": "300",
+        "description": "远程查询防抖等待，单位毫秒；默认 300",
+        "global": false
+      },
+      {
+        "name": "minQueryLength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "查询需要的最少输入字符数；默认 0",
+        "global": false
+      },
+      {
+        "name": "triggerOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "聚焦时打开建议列表；默认 true",
+        "global": false
+      },
+      {
+        "name": "highlightFirst",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "结果可用后默认高亮第一个可选项，默认 false",
+        "global": false
+      },
+      {
+        "name": "loopNavigation",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "键盘首尾循环导航，默认 true",
+        "global": false
+      },
+      {
+        "name": "backfill",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "键盘移动高亮时预览回填，不提前修改模型",
+        "global": false
+      },
+      {
+        "name": "selectWhenUnmatched",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "没有高亮建议时，Enter 将当前文本作为自定义选择",
+        "global": false
+      },
+      {
+        "name": "selectOnTab",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "Tab 离开前确认高亮项，默认 false",
+        "global": false
+      },
+      {
+        "name": "append",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "把建议值追加到当前输入后；默认替换",
+        "global": false
+      },
+      {
+        "name": "clearAfterSelect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "选择后清空模型；select 仍返回完整选中值",
+        "global": false
+      },
+      {
+        "name": "blurAfterSelect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "选择后移开输入焦点；默认保持焦点",
+        "global": false
+      },
+      {
+        "name": "getShow",
+        "type": "((query: string) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(query) => boolean，额外控制是否允许显示建议",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "只读输入，不查询、不打开建议、不允许选择",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "由调用方控制忙碌状态，与内部远程查询状态合并",
+        "global": false
+      },
+      {
+        "name": "hideLoading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "隐藏默认加载提示；不允许确认等待中的建议",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非空且可编辑时显示清空按钮",
+        "global": false
+      },
+      {
+        "name": "clearIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义清空图标组件，clear-icon 插槽优先",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示标签",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单字段名，提交输入文本",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 error / warning / success 状态；继承表单反馈",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "字段错误说明，与内部输入关联",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示默认输入边框，默认 true",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后自动聚焦可用输入",
+        "global": false
+      },
+      {
+        "name": "inputProps",
+        "type": "Omit<HysInputProps, \"modelValue\" | \"defaultValue\"> | undefined",
+        "required": false,
+        "default": "",
+        "description": "传给 HysInput 的配置；可用于 formatter、prefixIcon、原生输入属性等",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控的建议显示状态，配合 v-model:open",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始显示状态；受控 open 优先",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"bottom-start\"",
+        "description": "建议浮层首选位置，空间不足时自动翻转",
+        "global": false
+      },
+      {
+        "name": "popupMatchWidth",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认与输入框等宽；false 时可按内容扩展，仍限制在视口内",
+        "global": false
+      },
+      {
+        "name": "popupWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "建议浮层宽度，支持数值或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层附加类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层附加样式；组件定位及视口限制优先",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "浮层挂载目标，默认 body；false 时留在原处",
+        "global": false
+      },
+      {
+        "name": "listHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "256",
+        "description": "建议列表最大高度，默认 256px，范围 64–1200",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无建议\"",
+        "description": "无建议时的文本",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"正在加载建议…\"",
+        "description": "加载中的文本",
+        "global": false
+      },
+      {
+        "name": "errorText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"建议加载失败，请重试\"",
+        "description": "查询失败时的文本",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "请求更新输入文本"
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "宿主实际接受的文本变化；不会因外部赋值重复触发"
+      },
+      {
+        "name": "search",
+        "type": "[query: string]",
+        "required": false,
+        "default": "",
+        "description": "接受用户查询输入后触发，不包含外部赋值和选择回填"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "清空按钮或实例 clear 调用后触发"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "请求更新浮层显示状态"
+      },
+      {
+        "name": "input",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "用户输入或操作请求的新文本"
+      },
+      {
+        "name": "select",
+        "type": "[item: HysAutocompleteItem, value: string]",
+        "required": false,
+        "default": "",
+        "description": "选择完成：(原始 item, 最终文本)；宿主拒绝模型更新时不触发"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个组件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开输入和浮层区域"
+      },
+      {
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "非输入法组合状态按下 Enter 的原生事件"
+      },
+      {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "建议浮层实际显示状态变化"
+      },
+      {
+        "name": "searchError",
+        "type": "[error: unknown, query: string]",
+        "required": false,
+        "default": "",
+        "description": "远程查询失败：(错误, query)；过期或取消的请求不触发"
+      }
+    ],
+    "slots": [
+      {
+        "name": "input",
+        "type": "{ value: string; setValue: (value: string | number | null) => void; inputProps: { disabled: boolean; readonly: boolean; size: \"md\" | \"sm\" | \"lg\"; clearable: boolean | undefined; clearIcon: Component | undefined; placeholder: string | undefined; label: string | undefined; name: string | undefined; status: \"success\" | \"warning\" | \"error\" | undefined; error: string | undefined; bordered: boolean; id: string | undefined; role: string; autocomplete: string; ariaLabel: string; \"aria-autocomplete\": string; \"aria-expanded\": boolean; \"aria-controls\": string | undefined; \"aria-activedescendant\": string | undefined; \"aria-busy\": true | undefined; type?: string | undefined; autofocus?: boolean | undefined; inputProps?: InputHTMLAttributes | TextareaHTMLAttributes | undefined; prefixIcon?: Component | undefined; suffixIcon?: Component | undefined; showPassword?: boolean | undefined; showPasswordOn?: \"click\" | \"mousedown\" | undefined; passwordVisible?: boolean | undefined; defaultPasswordVisible?: boolean | undefined; showCount?: boolean | { formatter: (info: HysInputCountInfo) => string; } | undefined; showWordLimit?: boolean | undefined; countPosition?: \"inside\" | \"outside\" | undefined; wordLimitPosition?: \"inside\" | \"outside\" | undefined; countGraphemes?: HysInputCountStrategy | undefined; maxlength?: string | number | undefined; minlength?: string | number | undefined; formatter?: ((value: string, info: HysInputFormatInfo) => string) | undefined; parser?: ((value: string) => string | number) | undefined; allowInput?: ((value: string) => boolean) | undefined; rows?: number | undefined; autosize?: boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined; resize?: \"none\" | \"both\" | \"horizontal\" | \"vertical\" | undefined; selectOnFocus?: boolean | undefined; round?: boolean | undefined; }; loading: boolean; clear: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "自定义输入，参数为 value、setValue、inputProps、loading、clear"
+      },
+      {
+        "name": "prefix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "输入内部前缀"
+      },
+      {
+        "name": "suffix",
+        "type": "{ loading: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "输入内部后缀，接收 loading；默认显示加载图标"
+      },
+      {
+        "name": "prepend",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "组合输入外部前置内容"
+      },
+      {
+        "name": "append",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "组合输入外部后置内容"
+      },
+      {
+        "name": "clear-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "清空按钮图标"
+      },
+      {
+        "name": "header",
+        "type": "{ query: string; loading: boolean; options: HysAutocompleteItem[]; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "浮层头部，参数为 query、loading、options、close"
+      },
+      {
+        "name": "loading",
+        "type": "{ query: string; }",
+        "required": false,
+        "default": "",
+        "description": "加载内容，参数为 query"
+      },
+      {
+        "name": "error",
+        "type": "{ error: unknown; query: string; retry: () => Promise<void>; }",
+        "required": false,
+        "default": "",
+        "description": "查询失败内容，参数为 error、query、retry"
+      },
+      {
+        "name": "group",
+        "type": "{ label: string; group: HysAutocompleteGroup | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "分组标题，参数为 label、group"
+      },
+      {
+        "name": "option",
+        "type": "{ item: HysAutocompleteItem; option: HysAutocompleteRow; query: string; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "default 的具名别名，优先于默认插槽"
+      },
+      {
+        "name": "default",
+        "type": "{ item: HysAutocompleteItem; option: HysAutocompleteRow; query: string; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "自定义建议，参数为 item、option、query、active"
+      },
+      {
+        "name": "empty",
+        "type": "{ query: string; }",
+        "required": false,
+        "default": "",
+        "description": "空结果内容，参数为 query"
+      },
+      {
+        "name": "footer",
+        "type": "{ query: string; loading: boolean; options: HysAutocompleteItem[]; close: () => void; clear: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "浮层底部，参数为 query、loading、options、close、clear"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "input",
+        "type": "HTMLInputElement | HTMLTextAreaElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "当前原生 input 或 textarea 元素"
+      },
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "建议浮层当前是否显示"
+      },
+      {
+        "name": "loading",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "内部请求与外部 loading 合并后的状态"
+      },
+      {
+        "name": "highlightedIndex",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "高亮在过滤后的建议列表中的索引；无高亮为 -1"
+      },
+      {
+        "name": "suggestions",
+        "type": "readonly HysAutocompleteDataOption[]",
+        "required": true,
+        "default": "",
+        "description": "过滤后的建议原始项目列表，不包含组标题"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦可用输入，可传 FocusOptions"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开输入焦点并关闭建议"
+      },
+      {
+        "name": "open",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "按只读、禁用、最小输入长度和受控 open 规则打开"
+      },
+      {
+        "name": "close",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "请求关闭建议并撤销预览"
+      },
+      {
+        "name": "clear",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "清空文本并取消查询、关闭建议"
+      },
+      {
+        "name": "getData",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "立即按当前输入刷新建议，绕过防抖"
+      },
+      {
+        "name": "retry",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "getData 的别名，重新查询当前输入"
+      },
+      {
+        "name": "highlight",
+        "type": "(index: number) => void",
+        "required": true,
+        "default": "",
+        "description": "高亮指定建议索引；禁用或越界项清除高亮"
+      },
+      {
+        "name": "select",
+        "type": "(option: HysAutocompleteItem) => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "按选择规则提交原始建议，返回 Promise<void>"
+      }
+    ]
+  },
   "HysAvatar": {
     "props": [
       {
@@ -575,18 +1249,18 @@
       },
       {
         "name": "trigger",
-        "type": "\"hover\" | \"focus\" | \"click\" | undefined",
+        "type": "\"focus\" | \"click\" | \"hover\" | undefined",
         "required": false,
         "default": "\"hover\"",
         "description": "成员浮层触发方式：hover、focus 或 click",
         "global": false
       },
       {
-        "name": "gap",
-        "type": "number | undefined",
+        "name": "placement",
+        "type": "Placement | undefined",
         "required": false,
-        "default": "-10",
-        "description": "头像间距，负数重叠，正数分离；默认 -10px",
+        "default": "\"top-start\"",
+        "description": "成员浮层首选位置，自动避让边缘",
         "global": false
       },
       {
@@ -598,19 +1272,19 @@
         "global": false
       },
       {
+        "name": "gap",
+        "type": "number | undefined",
+        "required": false,
+        "default": "-10",
+        "description": "头像间距，负数重叠，正数分离；默认 -10px",
+        "global": false
+      },
+      {
         "name": "expandOnHover",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
         "description": "悬停或焦点进入时将负间距展开为 0",
-        "global": false
-      },
-      {
-        "name": "placement",
-        "type": "Placement | undefined",
-        "required": false,
-        "default": "\"top-start\"",
-        "description": "成员浮层首选位置，自动避让边缘",
         "global": false
       },
       {
@@ -627,6 +1301,14 @@
         "required": false,
         "default": "",
         "description": "组内统一尺寸，支持像素、预设或响应式对象",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "readonly HysAvatarOption[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "数据模式的头像配置；不传时使用默认插槽",
         "global": false
       },
       {
@@ -651,14 +1333,6 @@
         "required": false,
         "default": "",
         "description": "折叠计数头像的额外类名",
-        "global": false
-      },
-      {
-        "name": "options",
-        "type": "readonly HysAvatarOption[] | undefined",
-        "required": false,
-        "default": "",
-        "description": "数据模式的头像配置；不传时使用默认插槽",
         "global": false
       },
       {
@@ -2271,7 +2945,7 @@
       },
       {
         "name": "direction",
-        "type": "\"vertical\" | \"horizontal\" | undefined",
+        "type": "\"horizontal\" | \"vertical\" | undefined",
         "required": false,
         "default": "\"horizontal\"",
         "description": "",
@@ -2650,7 +3324,7 @@
       },
       {
         "name": "layout",
-        "type": "\"vertical\" | \"horizontal\" | \"inline\" | undefined",
+        "type": "\"horizontal\" | \"vertical\" | \"inline\" | undefined",
         "required": false,
         "default": "",
         "description": "vertical、horizontal 或 inline；未指定时保留 labelPosition / inline 用法",
@@ -3869,7 +4543,7 @@
       },
       {
         "name": "resize",
-        "type": "\"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined",
+        "type": "\"none\" | \"both\" | \"horizontal\" | \"vertical\" | undefined",
         "required": false,
         "default": "\"vertical\"",
         "description": "非自动高度时允许的原生拉伸方向",
@@ -3939,13 +4613,6 @@
         "description": "执行清空操作后触发"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -3953,11 +4620,25 @@
         "description": "接受本次输入后返回解析后的原始文本"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "非输入法组合状态下按 Enter 的原生事件"
       },
       {
         "name": "compositionend",
@@ -3979,13 +4660,6 @@
         "required": false,
         "default": "",
         "description": "输入法组合更新"
-      },
-      {
-        "name": "pressEnter",
-        "type": "[event: KeyboardEvent]",
-        "required": false,
-        "default": "",
-        "description": "非输入法组合状态下按 Enter 的原生事件"
       },
       {
         "name": "update:passwordVisible",
@@ -4819,18 +5493,18 @@
         "description": "执行清空策略后触发"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入获得焦点的原生事件"
-      },
-      {
         "name": "input",
         "type": "[value: T | null]",
         "required": false,
         "default": "",
         "description": "草稿解析后的值，空或无效草稿为 null；不代表已提交"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入获得焦点的原生事件"
       },
       {
         "name": "blur",
@@ -4840,18 +5514,18 @@
         "description": "输入失焦的原生事件，未提交草稿会先尝试提交"
       },
       {
-        "name": "invalid",
-        "type": "[info: HysNumberInputInvalidInfo]",
-        "required": false,
-        "default": "",
-        "description": "拒绝提交：{input,reason}，原因可为 parse、validator 或 range"
-      },
-      {
         "name": "pressEnter",
         "type": "[event: KeyboardEvent]",
         "required": false,
         "default": "",
         "description": "非中文组合输入时按 Enter；先提交草稿，再触发此事件"
+      },
+      {
+        "name": "invalid",
+        "type": "[info: HysNumberInputInvalidInfo]",
+        "required": false,
+        "default": "",
+        "description": "拒绝提交：{input,reason}，原因可为 parse、validator 或 range"
       },
       {
         "name": "step",
@@ -5255,7 +5929,7 @@
       },
       {
         "name": "trigger",
-        "type": "\"hover\" | \"focus\" | \"click\" | undefined",
+        "type": "\"focus\" | \"click\" | \"hover\" | undefined",
         "required": false,
         "default": "\"click\"",
         "description": "",
@@ -5296,14 +5970,14 @@
     ],
     "events": [
       {
-        "name": "visibleChange",
+        "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "update:open",
+        "name": "visibleChange",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
@@ -6504,18 +7178,11 @@
         "description": ""
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
-      },
-      {
-        "name": "visibleChange",
+        "name": "update:open",
         "type": "[open: boolean]",
         "required": false,
         "default": "",
-        "description": "实际浮层状态变化；update:open 表示请求状态"
+        "description": ""
       },
       {
         "name": "select",
@@ -6525,6 +7192,13 @@
         "description": "选中选项：value、option"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
+      },
+      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
@@ -6532,11 +7206,18 @@
         "description": "焦点离开触发器和浮层后触发"
       },
       {
-        "name": "update:open",
+        "name": "visibleChange",
         "type": "[open: boolean]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际浮层状态变化；update:open 表示请求状态"
+      },
+      {
+        "name": "searchError",
+        "type": "[error: unknown, query: string]",
+        "required": false,
+        "default": "",
+        "description": "远程检查失败：error、query；已取消的请求不触发"
       },
       {
         "name": "update:searchValue",
@@ -6572,13 +7253,6 @@
         "required": false,
         "default": "",
         "description": "批量输入超出上限或创建失败：value、limit/create"
-      },
-      {
-        "name": "searchError",
-        "type": "[error: unknown, query: string]",
-        "required": false,
-        "default": "",
-        "description": "远程检查失败：error、query；已取消的请求不触发"
       },
       {
         "name": "popupScroll",
@@ -7138,18 +7812,18 @@
         "description": "接受实际变化后确认；拖动在释放时触发一次，键盘、刻度和数字编辑在提交时触发"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "滑块获得焦点的原生事件"
-      },
-      {
         "name": "input",
         "type": "[value: T]",
         "required": false,
         "default": "",
         "description": "拖动或调整值时立即触发；每个动画帧最多处理一次指针移动"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "滑块获得焦点的原生事件"
       },
       {
         "name": "blur",
@@ -7843,7 +8517,7 @@
       },
       {
         "name": "trigger",
-        "type": "\"hover\" | \"click\" | undefined",
+        "type": "\"click\" | \"hover\" | undefined",
         "required": false,
         "default": "\"click\"",
         "description": "鼠标激活方式：点击或悬停；键盘始终可用",
@@ -8183,59 +8857,11 @@
         "global": false
       },
       {
-        "name": "name",
-        "type": "string | undefined",
+        "name": "defaultValue",
+        "type": "string | number | null | undefined",
         "required": false,
         "default": "",
-        "description": "原生表单字段名；格式化输入提交原始文本",
-        "global": false
-      },
-      {
-        "name": "error",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "label",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "独立标签，自动关联内部输入 ID",
-        "global": false
-      },
-      {
-        "name": "resize",
-        "type": "\"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined",
-        "required": false,
-        "default": "\"vertical\"",
-        "description": "非自动高度时允许的原生拉伸方向",
-        "global": false
-      },
-      {
-        "name": "round",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "圆角外观",
-        "global": false
-      },
-      {
-        "name": "ariaLabel",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "辅助技术使用的控件名称",
-        "global": false
-      },
-      {
-        "name": "autofocus",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "挂载后自动聚焦；禁用时不聚焦",
+        "description": "未传 modelValue 时使用的初始文本",
         "global": false
       },
       {
@@ -8255,6 +8881,14 @@
         "global": false
       },
       {
+        "name": "clearIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空图标组件，clear-icon 插槽优先",
+        "global": false
+      },
+      {
         "name": "placeholder",
         "type": "string | undefined",
         "required": false,
@@ -8263,11 +8897,27 @@
         "global": false
       },
       {
-        "name": "rows",
-        "type": "number | undefined",
+        "name": "label",
+        "type": "string | undefined",
         "required": false,
-        "default": "4",
-        "description": "多行模式初始行数；Input 默认 2，Textarea 默认 4",
+        "default": "",
+        "description": "独立标签，自动关联内部输入 ID",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单字段名；格式化输入提交原始文本",
         "global": false
       },
       {
@@ -8279,19 +8929,27 @@
         "global": false
       },
       {
-        "name": "defaultValue",
-        "type": "string | number | null | undefined",
+        "name": "error",
+        "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "未传 modelValue 时使用的初始文本",
+        "description": "",
         "global": false
       },
       {
-        "name": "clearIcon",
-        "type": "Component | undefined",
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后自动聚焦；禁用时不聚焦",
+        "global": false
+      },
+      {
+        "name": "inputProps",
+        "type": "InputHTMLAttributes | TextareaHTMLAttributes | undefined",
         "required": false,
         "default": "",
-        "description": "清空图标组件，clear-icon 插槽优先",
+        "description": "内部原生输入的属性与样式；组件管理的状态优先",
         "global": false
       },
       {
@@ -8399,6 +9057,14 @@
         "global": false
       },
       {
+        "name": "rows",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "多行模式初始行数；Input 默认 2，Textarea 默认 4",
+        "global": false
+      },
+      {
         "name": "autosize",
         "type": "boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined",
         "required": false,
@@ -8407,11 +9073,11 @@
         "global": false
       },
       {
-        "name": "inputProps",
-        "type": "InputHTMLAttributes | TextareaHTMLAttributes | undefined",
+        "name": "resize",
+        "type": "\"none\" | \"both\" | \"horizontal\" | \"vertical\" | undefined",
         "required": false,
-        "default": "",
-        "description": "内部原生输入的属性与样式；组件管理的状态优先",
+        "default": "\"vertical\"",
+        "description": "非自动高度时允许的原生拉伸方向",
         "global": false
       },
       {
@@ -8420,6 +9086,14 @@
         "required": false,
         "default": "false",
         "description": "聚焦时选择全部文本",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "圆角外观",
         "global": false
       }
     ],
@@ -8446,13 +9120,6 @@
         "description": "执行清空操作后触发"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -8460,11 +9127,25 @@
         "description": "接受本次输入后返回解析后的原始文本"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "非输入法组合状态下按 Enter 的原生事件"
       },
       {
         "name": "compositionend",
@@ -8486,13 +9167,6 @@
         "required": false,
         "default": "",
         "description": "输入法组合更新"
-      },
-      {
-        "name": "pressEnter",
-        "type": "[event: KeyboardEvent]",
-        "required": false,
-        "default": "",
-        "description": "非输入法组合状态下按 Enter 的原生事件"
       }
     ],
     "slots": [
@@ -9243,7 +9917,7 @@
       },
       {
         "name": "node-drop",
-        "type": "[payload: { dragId: string; targetId: string; position: \"before\" | \"after\" | \"inside\"; }]",
+        "type": "[payload: { dragId: string; targetId: string; position: \"inside\" | \"before\" | \"after\"; }]",
         "required": false,
         "default": "",
         "description": ""

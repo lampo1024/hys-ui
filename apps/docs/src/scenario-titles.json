@@ -116,6 +116,25 @@
       "States": "空数据与折叠边界",
       "Keyboard": "聚焦触发与实例方法",
       "Content": "自定义成员浮层"
+    },
+    "HysAutocomplete": {
+      "Basic": "基础输入与建议",
+      "Configure": "交互配置",
+      "Template": "自定义建议模板",
+      "CustomInput": "自定义输入组件",
+      "Remote": "远程搜索与错误重试",
+      "Loading": "自定义加载内容",
+      "HeaderFooter": "自定义头部与底部",
+      "Status": "校验状态",
+      "ClearIcon": "自定义清空图标",
+      "Options": "业务字段与自定义选项",
+      "CaseInsensitive": "大小写与匹配规则",
+      "Categories": "确定类目查询",
+      "Query": "不确定类目查询",
+      "Keyboard": "键盘导航与预览回填",
+      "AfterSelect": "追加与选择后行为",
+      "Form": "表单校验与尺寸继承",
+      "States": "空数据与受限状态"
     }
   }
 }

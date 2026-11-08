@@ -26,6 +26,7 @@ export function useFloating(
     matchWidth?: boolean | "min" | (() => boolean | "min");
     width?: () => number | string | undefined;
     requestOpen?: (open: boolean) => boolean | void;
+    closeOnTab?: boolean;
   } = {},
 ) {
   const { disabled } = useHysControlState({});
@@ -141,7 +142,7 @@ export function useFloating(
       e.preventDefault();
       e.stopImmediatePropagation();
       close(true);
-    } else if (e.key === "Tab") {
+    } else if (e.key === "Tab" && options.closeOnTab !== false) {
       const focused = document.activeElement;
       if (anchor.value?.contains(focused)) {
         close();

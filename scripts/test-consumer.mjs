@@ -84,6 +84,16 @@ export function actualAvatarGroup(actual:InstanceType<typeof HysAvatarGroup>):Hy
 export async function operateGroup(api:HysAvatarGroupInstance){await api.open();api.close()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {avatarTypeChecks} from './avatar-types'\nvoid avatarTypeChecks\n")
+fs.writeFileSync(path.join(dir,'autocomplete-types.ts'),`import {h,ref} from 'vue'
+import {HysAutocomplete,type HysAutocompleteProps,type HysAutocompleteOption,type HysAutocompleteItem,type HysAutocompleteDataOption,type HysAutocompleteGroup,type HysAutocompleteContext,type HysAutocompleteCallback,type HysAutocompleteFetch,type HysAutocompleteInstance} from 'hys-ui'
+const option:HysAutocompleteOption={value:'Vue',label:'Vue Framework'},group:HysAutocompleteGroup={label:'Tools',options:[option]},options:HysAutocompleteDataOption[]=[group,'Vite']
+const provider:HysAutocompleteFetch=async(query:string,callback:HysAutocompleteCallback,context:HysAutocompleteContext)=>context.signal.aborted?[]:options
+const props:HysAutocompleteProps={options,fetchSuggestions:provider,filterOption:(query,item)=>typeof item==='string'?item.includes(query):true,inputProps:{type:'search',clearable:true},popupMatchWidth:false}
+export const autocompleteTypeChecks=h(HysAutocomplete,{...props,ref:ref<HysAutocompleteInstance>(),onSelect:(item:HysAutocompleteItem,value:string)=>void [item,value]})
+export function actualAutocomplete(actual:InstanceType<typeof HysAutocomplete>):HysAutocompleteInstance{return actual}
+export async function operateAutocomplete(api:HysAutocompleteInstance){api.focus();await api.open();api.highlight(0);await api.select(option);await api.getData();api.close();api.clear()}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {autocompleteTypeChecks} from './autocomplete-types'\nvoid autocompleteTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

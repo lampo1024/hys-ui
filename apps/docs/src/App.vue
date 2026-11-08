@@ -22,6 +22,7 @@ const groups=computed(()=>[...new Set(catalog.map(x=>x.category))].map(category=
   </aside>
   <div v-if="menu" class="nav-backdrop" @click="menu=false"></div>
   <main class="docs-main"><header class="docs-topbar"><HysButton variant="ghost" class="mobile-nav" aria-label="切换导航" @click="menu=!menu"><component :is="menu?X:Menu" :size="20"/></HysButton><div>开发者文档<span>/</span><strong>{{String(route.meta.title||'概览')}}</strong></div><div class="topbar-tools"><HysSelect v-model="theme" aria-label="文档主题" :options="[{label:'科技蓝',value:'blue'},{label:'深色',value:'dark'},{label:'清新绿',value:'green'},{label:'紫色',value:'purple'},{label:'暖橙',value:'orange'},{label:'森林',value:'forest'}]"/><a href="https://github.com/lampo1024/hys-ui" target="_blank" rel="noreferrer">GitHub<ArrowUpRight :size="14"/></a></div></header>
+   <div id="docs-toc-host"></div>
    <RouterView v-slot="{Component,route:current}"><Transition name="docs-page" mode="out-in"><KeepAlive><component :is="Component" :key="current.name"/></KeepAlive></Transition></RouterView>
    <footer class="docs-footer">HYS UI · 独立维护，可用于你的下一个 Vue 项目</footer>
   </main>

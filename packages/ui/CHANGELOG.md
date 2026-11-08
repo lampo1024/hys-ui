@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add Autocomplete with free text input, grouped/local/remote suggestions, mapped business fields, custom matching and cancellable debounced queries.
+- Support custom input/option/loading/header/footer/clear content, retryable errors, keyboard preview and selection policies, controlled state and form integration.
+- Add dedicated autocomplete scenarios, public TypeScript interfaces and input/async/accessibility guidance.
+- Keep the documentation table of contents fixed during page transitions and asynchronous example loading, with independent scrolling for long navigation lists.
+
 - Expand Avatar with icon/text/image types, image fit modes and source attributes, fallback sources/slots, loading hooks, responsive sizes and auto-fit text with configurable gaps.
 - Add AvatarGroup for data/slot composition, shared sizes/shapes, overlap and vertical layouts, collapsed members, keyboard-accessible overflow panels and cached-page cleanup.
 - Add independent avatar/group scenarios, public types and API guidance.
