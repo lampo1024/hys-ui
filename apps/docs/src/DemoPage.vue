@@ -10,6 +10,7 @@ import SelectReference from './SelectReference.vue'
 import NumberInputReference from './NumberInputReference.vue'
 import InputReference from './InputReference.vue'
 import SliderReference from './SliderReference.vue'
+import AvatarReference from './AvatarReference.vue'
 import type {ExampleSourceData} from './sourceTypes'
 import {catalog} from './catalog'
 import capabilities from './component-capabilities.json'
@@ -23,7 +24,8 @@ const sources=import.meta.glob('./examples/*/*.vue',{query:'?example-source&raw'
 const order:Record<string,number>={Basic:0,Configure:1,Features:2,Rules:2,Width:3,Search:4,Remote:5,Dynamic:5,Custom:6,Keyboard:7,Lifecycle:8,Nested:8,Dependencies:9,Guard:9,Overflow:10,Methods:10,Feedback:11,Registration:2,Inline:3,Alignment:4,Layout:4,Number:6,Policy:12,Data:13,Accessibility:14,Presentation:7,Conditional:8,ControlAdapter:9,Groups:3,Values:4,Limits:5,Create:6,AsyncSearch:7,Virtual:8,Control:9,Infinite:10,Nullable:2,Precision:3,Format:4,StringMode:5,Controls:6,Timing:7,Events:8,Form:9,States:98,Disabled:99}
 const inputOrder=['Basic','Configure','Disabled','Clearable','ClearIcon','Formatter','Password','Icons','Textarea','Autosize','Mixed','Sizes','Length','Graphemes','Methods','Affixes']
 const sliderOrder=['Basic','Configure','Sizes','Precision','Range','Marks','Number','Orientation','Custom','Tooltip','Performance','Keyboard','Form','States']
-function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');return props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
+const avatarOrder=['Basic','Configure','Types','Fallback','Fit','Autosize','Responsive','Badge','Image','Group','Collapse','Custom','Vertical','Dynamic','States']
+function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');return props.name==='HysAvatar'||props.name==='HysAvatarGroup'?Math.max(0,avatarOrder.indexOf(scene)):props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
 const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
@@ -56,6 +58,7 @@ function jumpToSection(event:MouseEvent){
   <InputReference v-if="name==='HysInput'||name==='HysTextarea'"/>
   <NumberInputReference v-if="name==='HysNumberInput'"/>
   <SliderReference v-if="name==='HysSlider'"/>
+  <AvatarReference v-if="name==='HysAvatar'||name==='HysAvatarGroup'"/>
   <section id="api" class="api-section"><h2>API 参考</h2><p>以下签名与默认值从组件源码生成。</p><HysTabs v-model="section" :items="[{label:'参数 Props',value:'props'},{label:'事件 Events',value:'events'},{label:'插槽 Slots',value:'slots'},{label:'实例方法',value:'exposed'}]"/>
    <div class="api-scroll"><table><thead><tr><th>名称</th><th>类型 / 签名</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr v-for="row in rows" :key="row.name"><td><code>{{row.name}}</code><span v-if="row.required" class="required">必填</span></td><td><code>{{row.type}}</code></td><td><code>{{row.default||'—'}}</code></td><td>{{row.description||'详见类型签名及对应交互示例'}}</td></tr><tr v-if="!rows.length"><td colspan="4">此组件未声明此类接口。</td></tr></tbody></table></div>
   </section>

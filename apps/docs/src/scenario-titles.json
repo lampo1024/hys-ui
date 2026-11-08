@@ -94,6 +94,28 @@
       "Sizes": "尺寸与拖动区域",
       "Tooltip": "提示边界与长文本",
       "Performance": "连续调节与更新时机"
+    },
+    "HysAvatar": {
+      "Basic": "尺寸与形状",
+      "Types": "图片、图标与文字",
+      "Fallback": "图片失败与回退",
+      "Fit": "图片适配模式",
+      "Autosize": "文字自动缩放",
+      "Responsive": "响应式尺寸",
+      "Badge": "与徽标组合",
+      "Image": "图片属性与加载状态",
+      "Group": "组合为头像组"
+    },
+    "HysAvatarGroup": {
+      "Basic": "基础头像组",
+      "Collapse": "折叠成员与键盘",
+      "Custom": "插槽与自定义入口",
+      "Responsive": "统一响应式尺寸",
+      "Vertical": "排列方向与间距",
+      "Dynamic": "动态增删成员",
+      "States": "空数据与折叠边界",
+      "Keyboard": "聚焦触发与实例方法",
+      "Content": "自定义成员浮层"
     }
   }
 }

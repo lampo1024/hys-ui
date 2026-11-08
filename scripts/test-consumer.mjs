@@ -73,6 +73,17 @@ export function verifySliderInstance(actual:ActualSlider):HysSliderInstance{retu
 export function operateSlider(api:HysSliderInstance,value:HysSliderValue){api.setValue(value);api.focus(1);api.cancel();return api.values}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {sliderTypeChecks} from './slider-types'\nvoid sliderTypeChecks\n")
+fs.writeFileSync(path.join(dir,'avatar-types.ts'),`import {h,ref} from 'vue'
+import {HysAvatar,HysAvatarGroup,type HysAvatarProps,type HysAvatarSize,type HysAvatarBreakpoint,type HysAvatarFit,type HysAvatarLoadInfo,type HysAvatarOption,type HysAvatarInstance,type HysAvatarGroupProps,type HysAvatarGroupInstance} from 'hys-ui'
+const breakpoint:HysAvatarBreakpoint='md',size:HysAvatarSize={[breakpoint]:48,xs:24},fit:HysAvatarFit='scale-down',avatar=ref<HysAvatarInstance>(),group=ref<HysAvatarGroupInstance>()
+const props:HysAvatarProps={size,fit,srcset:'photo.png 1x',crossOrigin:'anonymous',fallbackSrc:'backup.png',loadError:()=>false,imgProps:{referrerpolicy:'no-referrer'}}
+const options:HysAvatarOption[]=[{key:1,name:'Alex',...props}],groupProps:HysAvatarGroupProps={options,size,maxCount:2,trigger:'focus',gap:-8}
+export const avatarTypeChecks=[h(HysAvatar,{...props,ref:avatar,onLoad:(_event:Event,info:HysAvatarLoadInfo)=>void info.fallback}),h(HysAvatarGroup,{...groupProps,ref:group})]
+export function actualAvatar(actual:InstanceType<typeof HysAvatar>):HysAvatarInstance{return actual}
+export function actualAvatarGroup(actual:InstanceType<typeof HysAvatarGroup>):HysAvatarGroupInstance{return actual}
+export async function operateGroup(api:HysAvatarGroupInstance){await api.open();api.close()}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {avatarTypeChecks} from './avatar-types'\nvoid avatarTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

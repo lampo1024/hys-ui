@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Expand Avatar with icon/text/image types, image fit modes and source attributes, fallback sources/slots, loading hooks, responsive sizes and auto-fit text with configurable gaps.
+- Add AvatarGroup for data/slot composition, shared sizes/shapes, overlap and vertical layouts, collapsed members, keyboard-accessible overflow panels and cached-page cleanup.
+- Add independent avatar/group scenarios, public types and API guidance.
+
 - Prevent slider tooltip clipping with independent, themed overlays, viewport edge shifting/flipping, long-text wrapping and scroll/resize positioning cleanup.
 - Move slider handles and selected tracks through transforms; cache stable tooltip styles and dimensions and update tip positions in the handle's paint cycle.
 

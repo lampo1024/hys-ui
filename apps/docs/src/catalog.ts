@@ -17,10 +17,22 @@ export const catalog=[
     "label": "头像",
     "slug": "hys-avatar",
     "category": "基础组件",
-    "description": "头像的独立交互示例、配置场景与类型参考。",
+    "description": "展示图片、图标或文字，支持自动缩放、图片回退和响应式尺寸。",
     "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "使用 name、alt 或 aria-label 为头像提供完整名称。",
+      "可组合 HysBadge 展示消息，使用 HysAvatarGroup 管理头像组。"
+    ]
+  },
+  {
+    "name": "HysAvatarGroup",
+    "shortName": "AvatarGroup",
+    "label": "头像组",
+    "slug": "hys-avatar-group",
+    "category": "基础组件",
+    "description": "组合成员头像，支持重叠排列、折叠数量、响应式尺寸和成员浮层。",
+    "notes": [
+      "单个头像显式设置的尺寸和形状优先于头像组。",
+      "计数按钮支持鼠标与键盘操作；页面离开时关闭浮层。"
     ]
   },
   {
@@ -173,7 +185,10 @@ export const catalog=[
     "slug": "hys-form",
     "category": "表单输入",
     "description": "表单的独立交互示例、配置场景与类型参考。",
-    "notes": ["字段路径支持点号、括号字符串与数组；表单规则和字段规则合并，手动校验应用全部规则。","异步 validator 接收数据快照与 AbortSignal；跨字段检查应声明 dependencies。resetFields 可局部重置，远程回填后可用 captureInitialValues 更新基线。"]
+    "notes": [
+      "字段路径支持点号、括号字符串与数组；表单规则和字段规则合并，手动校验应用全部规则。",
+      "异步 validator 接收数据快照与 AbortSignal；跨字段检查应声明 dependencies。resetFields 可局部重置，远程回填后可用 captureInitialValues 更新基线。"
+    ]
   },
   {
     "name": "HysFormItem",
@@ -182,7 +197,10 @@ export const catalog=[
     "slug": "hys-form-item",
     "category": "表单输入",
     "description": "表单项的独立交互示例、配置场景与类型参考。",
-    "notes": ["通过 prop 关联 HysForm 的 model；独立使用可由调用方传入 error、warning 和状态。","字段配置优先于表单默认设置，控件显式 size 优先于字段尺寸。隐藏反馈不影响校验和必填语义。"]
+    "notes": [
+      "通过 prop 关联 HysForm 的 model；独立使用可由调用方传入 error、warning 和状态。",
+      "字段配置优先于表单默认设置，控件显式 size 优先于字段尺寸。隐藏反馈不影响校验和必填语义。"
+    ]
   },
   {
     "name": "HysInput",
@@ -522,7 +540,10 @@ export const catalog=[
     "slug": "hys-accordion",
     "category": "导航布局",
     "description": "折叠面板的独立交互示例、配置场景与类型参考。",
-    "notes": ["稳定 id 用于受控展开；未提供 id 时继续使用索引。多个条目应使用不同标识。","标题支持上下方向键、Home 和 End 导航；Enter 或空格切换展开。保留模式下可通过 lazy 控制首次挂载。"]
+    "notes": [
+      "稳定 id 用于受控展开；未提供 id 时继续使用索引。多个条目应使用不同标识。",
+      "标题支持上下方向键、Home 和 End 导航；Enter 或空格切换展开。保留模式下可通过 lazy 控制首次挂载。"
+    ]
   },
   {
     "name": "HysBreadcrumb",
@@ -531,7 +552,10 @@ export const catalog=[
     "slug": "hys-breadcrumb",
     "category": "导航布局",
     "description": "面包屑的独立交互示例、配置场景与类型参考。",
-    "notes": ["link 插槽适配宿主路由，组件库不依赖 Vue Router。item 与 separator 插槽可自定义显示内容。","末项表示当前页面；禁用项不产生链接。新窗口默认链接会补充安全 rel 属性。"]
+    "notes": [
+      "link 插槽适配宿主路由，组件库不依赖 Vue Router。item 与 separator 插槽可自定义显示内容。",
+      "末项表示当前页面；禁用项不产生链接。新窗口默认链接会补充安全 rel 属性。"
+    ]
   },
   {
     "name": "HysResizablePanel",
@@ -564,7 +588,10 @@ export const catalog=[
     "slug": "hys-steps",
     "category": "导航布局",
     "description": "步骤条的独立交互示例、配置场景与类型参考。",
-    "notes": ["current 从 0 开始；-1 表示尚未开始，items.length 表示全部完成。单项 status 优先。","clickable 开启后可点击或用方向键选择可用步骤，业务前置条件由调用方控制。"]
+    "notes": [
+      "current 从 0 开始；-1 表示尚未开始，items.length 表示全部完成。单项 status 优先。",
+      "clickable 开启后可点击或用方向键选择可用步骤，业务前置条件由调用方控制。"
+    ]
   },
   {
     "name": "HysTabs",
@@ -573,7 +600,10 @@ export const catalog=[
     "slug": "hys-tabs",
     "category": "导航布局",
     "description": "标签页的独立交互示例、配置场景与类型参考。",
-    "notes": ["页签值支持字符串或数字；使用 panel 插槽可为各项建立独立的内容实例。","beforeLeave 和 beforeClose 可异步阻止操作；添加和关闭事件由调用方维护 items。"]
+    "notes": [
+      "页签值支持字符串或数字；使用 panel 插槽可为各项建立独立的内容实例。",
+      "beforeLeave 和 beforeClose 可异步阻止操作；添加和关闭事件由调用方维护 items。"
+    ]
   },
   {
     "name": "HysAlert",

@@ -307,7 +307,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "\"\"",
-        "description": "",
+        "description": "完整名称；没有默认插槽时取前两个 Unicode 字符显示，并用于可访问名称",
         "global": false
       },
       {
@@ -315,31 +315,55 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "图片来源，优先于 imgProps.src",
+        "global": false
+      },
+      {
+        "name": "srcset",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "响应式图片候选列表；切换时重试图片",
+        "global": false
+      },
+      {
+        "name": "srcSet",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "srcset 的驼峰别名",
+        "global": false
+      },
+      {
+        "name": "sizes",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "响应式图片的 sizes 属性",
         "global": false
       },
       {
         "name": "size",
-        "type": "number | undefined",
+        "type": "HysAvatarSize | undefined",
         "required": false,
-        "default": "36",
-        "description": "",
+        "default": "",
+        "description": "像素数值、尺寸预设或断点对象；继承头像组，默认 36px",
         "global": false
       },
       {
         "name": "shape",
         "type": "\"circle\" | \"square\" | undefined",
         "required": false,
-        "default": "\"circle\"",
-        "description": "",
+        "default": "",
+        "description": "circle 圆形或 square 方形；显式值优先于头像组",
         "global": false
       },
       {
         "name": "fit",
-        "type": "\"fill\" | \"cover\" | \"contain\" | undefined",
+        "type": "HysAvatarFit | undefined",
         "required": false,
         "default": "\"cover\"",
-        "description": "",
+        "description": "图片适配：cover、contain、fill、none、scale-down",
         "global": false
       },
       {
@@ -347,35 +371,380 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "图片替代文本和头像可访问名称",
+        "global": false
+      },
+      {
+        "name": "icon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "图标组件；icon 插槽优先",
+        "global": false
+      },
+      {
+        "name": "gap",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "文字与头像两侧的最小间距，单位 px",
+        "global": false
+      },
+      {
+        "name": "autoFit",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "自动缩放长文字，文字、字体和容器尺寸变化时重新测量",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "头像背景颜色",
+        "global": false
+      },
+      {
+        "name": "textColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "文字或图标颜色",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示分隔描边；默认继承头像组，否则关闭",
+        "global": false
+      },
+      {
+        "name": "radius",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "方形头像的圆角半径，数字单位 px",
+        "global": false
+      },
+      {
+        "name": "fallbackSrc",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "主图失败后的备用图片；备用图继续失败时使用内容回退",
+        "global": false
+      },
+      {
+        "name": "loadError",
+        "type": "((event: Event) => boolean | void) | undefined",
+        "required": false,
+        "default": "",
+        "description": "图片失败处理，返回 false 保留原图节点并阻止默认回退",
+        "global": false
+      },
+      {
+        "name": "draggable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "原生图片是否可拖动，默认 false",
+        "global": false
+      },
+      {
+        "name": "crossOrigin",
+        "type": "\"\" | \"anonymous\" | \"use-credentials\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "图片跨域属性",
+        "global": false
+      },
+      {
+        "name": "lazy",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用浏览器的图片懒加载",
+        "global": false
+      },
+      {
+        "name": "imgProps",
+        "type": "ImgHTMLAttributes | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部图片属性及样式；组件管理的来源、适配和事件处理优先",
         "global": false
       }
     ],
     "events": [
       {
         "name": "error",
-        "type": "[event: Event]",
+        "type": "[event: Event, info: HysAvatarLoadInfo]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "图片加载失败：原生事件、{src,fallback}，第一个参数保持兼容"
+      },
+      {
+        "name": "load",
+        "type": "[event: Event, info: HysAvatarLoadInfo]",
+        "required": false,
+        "default": "",
+        "description": "图片加载成功：原生事件、{src,fallback}"
       }
     ],
     "slots": [
+      {
+        "name": "placeholder",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "图片加载期间的占位内容"
+      },
+      {
+        "name": "fallback",
+        "type": "{ error: Event | undefined; reload: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "图片失败后的内容，接收 error、reload"
+      },
+      {
+        "name": "icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "自定义图标，优先于 icon 属性"
+      },
       {
         "name": "default",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "头像自定义文字或头像组的成员内容"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "头像根元素"
+      },
+      {
+        "name": "image",
+        "type": "HTMLImageElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "当前图片元素；回退到文字时为空"
+      },
+      {
+        "name": "loaded",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": "当前图片是否已完成加载或由 loadError 接管"
+      },
+      {
+        "name": "failed",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": "本次请求是否发生过加载失败；重新加载时重置"
+      },
+      {
+        "name": "reload",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "重新尝试当前主图，并重置加载和失败状态"
+      }
+    ]
+  },
+  "HysAvatarGroup": {
+    "props": [
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "给组内头像添加分隔描边",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "\"hover\" | \"focus\" | \"click\" | undefined",
+        "required": false,
+        "default": "\"hover\"",
+        "description": "成员浮层触发方式：hover、focus 或 click",
+        "global": false
+      },
+      {
+        "name": "gap",
+        "type": "number | undefined",
+        "required": false,
+        "default": "-10",
+        "description": "头像间距，负数重叠，正数分离；默认 -10px",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用竖向排列",
+        "global": false
+      },
+      {
+        "name": "expandOnHover",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "悬停或焦点进入时将负间距展开为 0",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"top-start\"",
+        "description": "成员浮层首选位置，自动避让边缘",
+        "global": false
+      },
+      {
+        "name": "showOverflow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示折叠计数入口；false 仅保留可见成员",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "HysAvatarSize | undefined",
+        "required": false,
+        "default": "",
+        "description": "组内统一尺寸，支持像素、预设或响应式对象",
+        "global": false
+      },
+      {
+        "name": "shape",
+        "type": "\"circle\" | \"square\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "组内默认形状，单个头像显式配置优先",
+        "global": false
+      },
+      {
+        "name": "maxCount",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "最多显示的成员数，不含 +N 入口；0 表示仅显示入口",
+        "global": false
+      },
+      {
+        "name": "maxClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "折叠计数头像的额外类名",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "readonly HysAvatarOption[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "数据模式的头像配置；不传时使用默认插槽",
+        "global": false
+      },
+      {
+        "name": "maxStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "折叠计数头像的额外样式",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "visibleChange",
+        "type": "[_open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "成员浮层实际显示状态变化"
+      },
+      {
+        "name": "overflowClick",
+        "type": "[_count: number, _event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击折叠入口：隐藏数量、原生鼠标事件"
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "头像自定义文字或头像组的成员内容"
+      },
+      {
+        "name": "avatar",
+        "type": "{ option: HysAvatarOption; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "数据模式的单个成员，接收 option、index"
+      },
+      {
+        "name": "overflow",
+        "type": "{ count: number; options: HysAvatarOption[]; }",
+        "required": false,
+        "default": "",
+        "description": "折叠入口内容，接收 count、options；使用非交互内容"
+      },
+      {
+        "name": "content",
+        "type": "{ options: HysAvatarOption[]; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "成员浮层内容，接收 options、close"
+      },
+      {
+        "name": "empty",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "头像组没有成员时的内容"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "open",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "打开当前可用的折叠成员浮层"
+      },
+      {
+        "name": "close",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "关闭成员浮层"
+      }
+    ]
   },
   "HysBadge": {
     "props": [
       {
         "name": "tone",
-        "type": "\"blue\" | \"green\" | \"orange\" | \"red\" | \"purple\" | \"gray\" | undefined",
+        "type": "\"blue\" | \"green\" | \"purple\" | \"orange\" | \"red\" | \"gray\" | undefined",
         "required": false,
         "default": "\"blue\"",
         "description": "",
@@ -627,7 +996,7 @@
       },
       {
         "name": "type",
-        "type": "\"button\" | \"submit\" | \"reset\" | undefined",
+        "type": "\"button\" | \"reset\" | \"submit\" | undefined",
         "required": false,
         "default": "\"button\"",
         "description": "",
@@ -635,7 +1004,7 @@
       },
       {
         "name": "nativeType",
-        "type": "\"button\" | \"submit\" | \"reset\" | undefined",
+        "type": "\"button\" | \"reset\" | \"submit\" | undefined",
         "required": false,
         "default": "",
         "description": "",
@@ -913,7 +1282,7 @@
       },
       {
         "name": "shadow",
-        "type": "\"never\" | \"always\" | \"hover\" | undefined",
+        "type": "\"hover\" | \"never\" | \"always\" | undefined",
         "required": false,
         "default": "\"never\"",
         "description": "",
@@ -1902,7 +2271,7 @@
       },
       {
         "name": "direction",
-        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | undefined",
         "required": false,
         "default": "\"horizontal\"",
         "description": "",
@@ -2281,7 +2650,7 @@
       },
       {
         "name": "layout",
-        "type": "\"horizontal\" | \"vertical\" | \"inline\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | \"inline\" | undefined",
         "required": false,
         "default": "",
         "description": "vertical、horizontal 或 inline；未指定时保留 labelPosition / inline 用法",
@@ -2466,11 +2835,11 @@
     ],
     "events": [
       {
-        "name": "submit",
-        "type": "[values: Record<string, unknown>]",
+        "name": "invalid",
+        "type": "[result: HysFormValidationResult]",
         "required": false,
         "default": "",
-        "description": "有效且未过期的提交，参数为表单数据快照"
+        "description": "提交未通过，参数包含 valid、cancelled、values、errors 和 warnings"
       },
       {
         "name": "reset",
@@ -2480,18 +2849,18 @@
         "description": "完成重置，参数为字段路径列表"
       },
       {
+        "name": "submit",
+        "type": "[values: Record<string, unknown>]",
+        "required": false,
+        "default": "",
+        "description": "有效且未过期的提交，参数为表单数据快照"
+      },
+      {
         "name": "validate",
         "type": "[name: string, valid: boolean, message: string]",
         "required": false,
         "default": "",
         "description": "字段检查完成：path、是否有效、错误消息"
-      },
-      {
-        "name": "invalid",
-        "type": "[result: HysFormValidationResult]",
-        "required": false,
-        "default": "",
-        "description": "提交未通过，参数包含 valid、cancelled、values、errors 和 warnings"
       },
       {
         "name": "validation",
@@ -3500,7 +3869,7 @@
       },
       {
         "name": "resize",
-        "type": "\"horizontal\" | \"vertical\" | \"none\" | \"both\" | undefined",
+        "type": "\"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined",
         "required": false,
         "default": "\"vertical\"",
         "description": "非自动高度时允许的原生拉伸方向",
@@ -3577,13 +3946,6 @@
         "description": ""
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -3591,11 +3953,18 @@
         "description": "接受本次输入后返回解析后的原始文本"
       },
       {
-        "name": "pressEnter",
-        "type": "[event: KeyboardEvent]",
+        "name": "blur",
+        "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": "非输入法组合状态下按 Enter 的原生事件"
+        "description": ""
+      },
+      {
+        "name": "compositionend",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合结束；随后统一解析、裁剪与发布"
       },
       {
         "name": "compositionstart",
@@ -3612,11 +3981,11 @@
         "description": "输入法组合更新"
       },
       {
-        "name": "compositionend",
-        "type": "[event: CompositionEvent]",
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
         "required": false,
         "default": "",
-        "description": "输入法组合结束；随后统一解析、裁剪与发布"
+        "description": "非输入法组合状态下按 Enter 的原生事件"
       },
       {
         "name": "update:passwordVisible",
@@ -4457,18 +4826,18 @@
         "description": "输入获得焦点的原生事件"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入失焦的原生事件，未提交草稿会先尝试提交"
-      },
-      {
         "name": "input",
         "type": "[value: T | null]",
         "required": false,
         "default": "",
         "description": "草稿解析后的值，空或无效草稿为 null；不代表已提交"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入失焦的原生事件，未提交草稿会先尝试提交"
       },
       {
         "name": "invalid",
@@ -4886,7 +5255,7 @@
       },
       {
         "name": "trigger",
-        "type": "\"click\" | \"focus\" | \"hover\" | undefined",
+        "type": "\"hover\" | \"focus\" | \"click\" | undefined",
         "required": false,
         "default": "\"click\"",
         "description": "",
@@ -4927,14 +5296,14 @@
     ],
     "events": [
       {
-        "name": "update:open",
+        "name": "visibleChange",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "visibleChange",
+        "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
@@ -6135,18 +6504,25 @@
         "description": ""
       },
       {
-        "name": "select",
-        "type": "[value: HysSelectValue, option: HysSelectOption]",
-        "required": false,
-        "default": "",
-        "description": "选中选项：value、option"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
+      },
+      {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际浮层状态变化；update:open 表示请求状态"
+      },
+      {
+        "name": "select",
+        "type": "[value: HysSelectValue, option: HysSelectOption]",
+        "required": false,
+        "default": "",
+        "description": "选中选项：value、option"
       },
       {
         "name": "blur",
@@ -6161,13 +6537,6 @@
         "required": false,
         "default": "",
         "description": ""
-      },
-      {
-        "name": "visibleChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际浮层状态变化；update:open 表示请求状态"
       },
       {
         "name": "update:searchValue",
@@ -6776,18 +7145,18 @@
         "description": "滑块获得焦点的原生事件"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "滑块失去焦点的原生事件"
-      },
-      {
         "name": "input",
         "type": "[value: T]",
         "required": false,
         "default": "",
         "description": "拖动或调整值时立即触发；每个动画帧最多处理一次指针移动"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "滑块失去焦点的原生事件"
       },
       {
         "name": "dragStart",
@@ -7474,7 +7843,7 @@
       },
       {
         "name": "trigger",
-        "type": "\"click\" | \"hover\" | undefined",
+        "type": "\"hover\" | \"click\" | undefined",
         "required": false,
         "default": "\"click\"",
         "description": "鼠标激活方式：点击或悬停；键盘始终可用",
@@ -7830,6 +8199,22 @@
         "global": false
       },
       {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立标签，自动关联内部输入 ID",
+        "global": false
+      },
+      {
+        "name": "resize",
+        "type": "\"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined",
+        "required": false,
+        "default": "\"vertical\"",
+        "description": "非自动高度时允许的原生拉伸方向",
+        "global": false
+      },
+      {
         "name": "round",
         "type": "boolean | undefined",
         "required": false,
@@ -7875,14 +8260,6 @@
         "required": false,
         "default": "",
         "description": "空值占位提示",
-        "global": false
-      },
-      {
-        "name": "label",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "独立标签，自动关联内部输入 ID",
         "global": false
       },
       {
@@ -8030,14 +8407,6 @@
         "global": false
       },
       {
-        "name": "resize",
-        "type": "\"horizontal\" | \"vertical\" | \"none\" | \"both\" | undefined",
-        "required": false,
-        "default": "\"vertical\"",
-        "description": "非自动高度时允许的原生拉伸方向",
-        "global": false
-      },
-      {
         "name": "inputProps",
         "type": "InputHTMLAttributes | TextareaHTMLAttributes | undefined",
         "required": false,
@@ -8084,13 +8453,6 @@
         "description": ""
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -8098,11 +8460,18 @@
         "description": "接受本次输入后返回解析后的原始文本"
       },
       {
-        "name": "pressEnter",
-        "type": "[event: KeyboardEvent]",
+        "name": "blur",
+        "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": "非输入法组合状态下按 Enter 的原生事件"
+        "description": ""
+      },
+      {
+        "name": "compositionend",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合结束；随后统一解析、裁剪与发布"
       },
       {
         "name": "compositionstart",
@@ -8119,11 +8488,11 @@
         "description": "输入法组合更新"
       },
       {
-        "name": "compositionend",
-        "type": "[event: CompositionEvent]",
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
         "required": false,
         "default": "",
-        "description": "输入法组合结束；随后统一解析、裁剪与发布"
+        "description": "非输入法组合状态下按 Enter 的原生事件"
       }
     ],
     "slots": [

@@ -5,6 +5,7 @@ export const router=createRouter({history:createWebHistory(import.meta.env.BASE_
 {path:'/components/hys-alert',name:'HysAlert',component:()=>import('./pages/HysAlertPage.vue'),meta:{title:'HysAlert 消息提示'}},
 {path:'/components/hys-animated-number',name:'HysAnimatedNumber',component:()=>import('./pages/HysAnimatedNumberPage.vue'),meta:{title:'HysAnimatedNumber 数字动画'}},
 {path:'/components/hys-avatar',name:'HysAvatar',component:()=>import('./pages/HysAvatarPage.vue'),meta:{title:'HysAvatar 头像'}},
+{path:'/components/hys-avatar-group',name:'HysAvatarGroup',component:()=>import('./pages/HysAvatarGroupPage.vue'),meta:{title:'HysAvatarGroup 头像组'}},
 {path:'/components/hys-badge',name:'HysBadge',component:()=>import('./pages/HysBadgePage.vue'),meta:{title:'HysBadge 状态标签'}},
 {path:'/components/hys-breadcrumb',name:'HysBreadcrumb',component:()=>import('./pages/HysBreadcrumbPage.vue'),meta:{title:'HysBreadcrumb 面包屑'}},
 {path:'/components/hys-button',name:'HysButton',component:()=>import('./pages/HysButtonPage.vue'),meta:{title:'HysButton 按钮'}},

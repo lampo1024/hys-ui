@@ -77,6 +77,20 @@ for(const name of fs.readdirSync(dir).sort()){
   const slots={prefix:'输入内部前缀',suffix:'输入内部后缀',prepend:'组合框前置内容',append:'组合框后置内容','increase-icon':'增加按钮图标','decrease-icon':'减少按钮图标','clear-icon':'清空图标'}
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
+ if(name==='HysAvatar'||name==='HysAvatarGroup'){
+  const text=name==='HysAvatar'?{name:'完整名称；没有默认插槽时取前两个 Unicode 字符显示，并用于可访问名称',src:'图片来源，优先于 imgProps.src',srcset:'响应式图片候选列表；切换时重试图片',srcSet:'srcset 的驼峰别名',sizes:'响应式图片的 sizes 属性',size:'像素数值、尺寸预设或断点对象；继承头像组，默认 36px',shape:'circle 圆形或 square 方形；显式值优先于头像组',fit:'图片适配：cover、contain、fill、none、scale-down',alt:'图片替代文本和头像可访问名称',icon:'图标组件；icon 插槽优先',gap:'文字与头像两侧的最小间距，单位 px',autoFit:'自动缩放长文字，文字、字体和容器尺寸变化时重新测量',color:'头像背景颜色',textColor:'文字或图标颜色',bordered:'显示分隔描边；默认继承头像组，否则关闭',radius:'方形头像的圆角半径，数字单位 px',fallbackSrc:'主图失败后的备用图片；备用图继续失败时使用内容回退',loadError:'图片失败处理，返回 false 保留原图节点并阻止默认回退',draggable:'原生图片是否可拖动，默认 false',crossOrigin:'图片跨域属性',lazy:'使用浏览器的图片懒加载',imgProps:'内部图片属性及样式；组件管理的来源、适配和事件处理优先'}:{options:'数据模式的头像配置；不传时使用默认插槽',size:'组内统一尺寸，支持像素、预设或响应式对象',shape:'组内默认形状，单个头像显式配置优先',gap:'头像间距，负数重叠，正数分离；默认 -10px',maxCount:'最多显示的成员数，不含 +N 入口；0 表示仅显示入口',vertical:'使用竖向排列',bordered:'给组内头像添加分隔描边',maxStyle:'折叠计数头像的额外样式',maxClass:'折叠计数头像的额外类名',placement:'成员浮层首选位置，自动避让边缘',trigger:'成员浮层触发方式：hover、focus 或 click',showOverflow:'显示折叠计数入口；false 仅保留可见成员',expandOnHover:'悬停或焦点进入时将负间距展开为 0'}
+  for(const prop of api[name].props)prop.description=text[prop.name]||prop.description
+  const events={load:'图片加载成功：原生事件、{src,fallback}',error:'图片加载失败：原生事件、{src,fallback}，第一个参数保持兼容',visibleChange:'成员浮层实际显示状态变化',overflowClick:'点击折叠入口：隐藏数量、原生鼠标事件'}
+  for(const event of api[name].events)event.description=events[event.name]||event.description
+  const slots={default:'头像自定义文字或头像组的成员内容',icon:'自定义图标，优先于 icon 属性',placeholder:'图片加载期间的占位内容',fallback:'图片失败后的内容，接收 error、reload',avatar:'数据模式的单个成员，接收 option、index',overflow:'折叠入口内容，接收 count、options；使用非交互内容',content:'成员浮层内容，接收 options、close',empty:'头像组没有成员时的内容'}
+  for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
+  if(name==='HysAvatarGroup'){
+   const file=ts.createSourceFile('avatar.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/avatar.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(node=>ts.isInterfaceDeclaration(node)&&node.name.text==='HysAvatarGroupInstance')
+   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
+  }
+  const methods={element:'头像根元素',image:'当前图片元素；回退到文字时为空',loaded:'当前图片是否已完成加载或由 loadError 接管',failed:'本次请求是否发生过加载失败；重新加载时重置',reload:'重新尝试当前主图，并重置加载和失败状态',open:'打开当前可用的折叠成员浮层',close:'关闭成员浮层'}
+  for(const exposed of api[name].exposed)exposed.description=methods[exposed.name]||exposed.description
+ }
  if(name==='HysSlider'){
   const file=ts.createSourceFile('slider.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/slider.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(node=>ts.isInterfaceDeclaration(node)&&node.name.text==='HysSliderInstance')
   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
