@@ -5038,18 +5038,42 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "T",
-        "required": true,
+        "type": "T | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控选择值；支持文本、数字、布尔值、对象及其数组，也可为 null",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控模式的初始选择值",
         "global": false
       },
       {
         "name": "options",
-        "type": "HysSelectOption[]",
-        "required": true,
-        "default": "",
-        "description": "可选项数据，支持单项禁用",
+        "type": "HysSelectDataOption[] | undefined",
+        "required": false,
+        "default": "[]",
+        "description": "选项或分组数据；分组通过 options 字段提供子选项",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "HysSelectFieldNames | undefined",
+        "required": false,
+        "default": "{}",
+        "description": "映射 label、value、options 和 disabled 的业务字段名",
+        "global": false
+      },
+      {
+        "name": "valueKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"value\"",
+        "description": "对象值的稳定标识路径；刷新选项时按此路径匹配",
         "global": false
       },
       {
@@ -5058,6 +5082,14 @@
         "required": false,
         "default": "false",
         "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许查看和搜索，但不可选择、移除或创建",
         "global": false
       },
       {
@@ -5089,7 +5121,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示选项搜索输入框",
         "global": false
       },
       {
@@ -5097,7 +5129,103 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示清空按钮；禁用和只读时隐藏",
+        "global": false
+      },
+      {
+        "name": "emptyValues",
+        "type": "readonly unknown[] | undefined",
+        "required": false,
+        "default": "[\"\", null, undefined]",
+        "description": "视为空值的配置；null / undefined 始终表示未选，默认也将空字符串视为空值",
+        "global": false
+      },
+      {
+        "name": "clearValue",
+        "type": "HysSelectValue | null | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "单选清空后的值；默认空字符串，可显式设置 null",
+        "global": false
+      },
+      {
+        "name": "fallbackOption",
+        "type": "false | ((value: HysSelectValue) => HysSelectOption) | undefined",
+        "required": false,
+        "default": "",
+        "description": "缺少对应选项时的显示项工厂；false 不显示回退项",
+        "global": false
+      },
+      {
+        "name": "multipleLimit",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "多选数量上限；0 表示不限制",
+        "global": false
+      },
+      {
+        "name": "maxTagCount",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "多选最多展示的标签数，其余以计数折叠",
+        "global": false
+      },
+      {
+        "name": "maxTagTextLength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "标签文字截断长度；完整内容保留在 title",
+        "global": false
+      },
+      {
+        "name": "removable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许移除单个多选标签",
+        "global": false
+      },
+      {
+        "name": "clearSearchAfterSelect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "多选后清除搜索词；默认保留",
+        "global": false
+      },
+      {
+        "name": "allowCreate",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许输入并创建新选项，自动启用搜索输入",
+        "global": false
+      },
+      {
+        "name": "createOption",
+        "type": "((label: string) => false | HysSelectOption | null) | undefined",
+        "required": false,
+        "default": "",
+        "description": "确认创建时调用，返回选项；false / null 拒绝创建",
+        "global": false
+      },
+      {
+        "name": "tokenSeparators",
+        "type": "string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "多选创建模式中用于批量输入的分隔符",
+        "global": false
+      },
+      {
+        "name": "clearCreatedOnClear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "清空选择时移除本组件创建的选项",
         "global": false
       },
       {
@@ -5113,15 +5241,31 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "由调用方提供搜索结果，不应用本地筛选",
         "global": false
       },
       {
-        "name": "popupMatchWidth",
-        "type": "boolean | undefined",
+        "name": "remoteMethod",
+        "type": "((query: string, context: HysSelectSearchContext) => void | HysSelectDataOption[] | Promise<void | HysSelectDataOption[]>) | undefined",
         "required": false,
-        "default": "false",
-        "description": "浮层是否严格与选择框等宽；默认按内容扩展，并限制在视口内",
+        "default": "",
+        "description": "异步搜索函数 (query, {signal})，返回选项数组；自动管理加载、取消、失败和重试",
+        "global": false
+      },
+      {
+        "name": "debounce",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "remoteMethod 的防抖等待时间，单位毫秒；search 事件仍立即触发",
+        "global": false
+      },
+      {
+        "name": "searchValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控搜索词，配合 v-model:searchValue",
         "global": false
       },
       {
@@ -5133,6 +5277,142 @@
         "global": false
       },
       {
+        "name": "filterSort",
+        "type": "((a: HysSelectOption, b: HysSelectOption) => number) | undefined",
+        "required": false,
+        "default": "",
+        "description": "本地结果排序函数；不修改宿主数组",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控浮层状态，配合 v-model:open；可拒绝展开或关闭请求",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "初次挂载时默认展开",
+        "global": false
+      },
+      {
+        "name": "showOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "触发器获得焦点时展开；关闭后的焦点恢复不会重新展开",
+        "global": false
+      },
+      {
+        "name": "retainSearch",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "重新展开时保留上次搜索词",
+        "global": false
+      },
+      {
+        "name": "defaultActiveFirst",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "没有已选项时激活首个可用项",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用方向键、首末项、翻页和输入首字母定位",
+        "global": false
+      },
+      {
+        "name": "popupMatchWidth",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "浮层是否严格与选择框等宽；默认按内容扩展，并限制在视口内",
+        "global": false
+      },
+      {
+        "name": "popupWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式浮层宽度，数值单位 px；仍限制在可视区域内",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"bottom-start\"",
+        "description": "优先展开位置；空间不足时自动调整",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "浮层挂载位置；false 保留在组件内，默认 body",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "额外浮层类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层样式；定位和尺寸由组件维护",
+        "global": false
+      },
+      {
+        "name": "listHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "256",
+        "description": "选项滚动区域的最大高度，默认 256px",
+        "global": false
+      },
+      {
+        "name": "virtual",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "长列表超过可见渲染阈值时启用虚拟滚动",
+        "global": false
+      },
+      {
+        "name": "itemHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "虚拟列表单行高度，包含行间距；默认随尺寸变化",
+        "global": false
+      },
+      {
+        "name": "overscan",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "虚拟列表在可见范围前后额外渲染的行数",
+        "global": false
+      },
+      {
         "name": "emptyText",
         "type": "string | undefined",
         "required": false,
@@ -5141,11 +5421,75 @@
         "global": false
       },
       {
+        "name": "noMatchText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"没有匹配选项\"",
+        "description": "本地搜索无匹配时的说明",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"加载中…\"",
+        "description": "加载中的说明",
+        "global": false
+      },
+      {
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
         "default": "继承字段/表单配置或 md",
         "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式校验状态；否则继承字段状态",
+        "global": false
+      },
+      {
+        "name": "showArrow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示展开箭头",
+        "global": false
+      },
+      {
+        "name": "showCheckmark",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示选中图标",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示控件边框",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "初次挂载时自动聚焦，禁用时不聚焦",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单提交字段名；多选输出多个同名隐藏字段",
         "global": false
       }
     ],
@@ -5159,17 +5503,17 @@
       },
       {
         "name": "change",
-        "type": "[value: T]",
+        "type": "[value: T, options: HysSelectOption | HysSelectOption[] | undefined]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选择实际变化后触发：value、单个选项或选项数组"
       },
       {
         "name": "search",
         "type": "[query: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "搜索词提交后立即触发，中文组合输入结束后触发"
       },
       {
         "name": "clear",
@@ -5179,51 +5523,262 @@
         "description": ""
       },
       {
-        "name": "visibleChange",
+        "name": "select",
+        "type": "[value: HysSelectValue, option: HysSelectOption]",
+        "required": false,
+        "default": "",
+        "description": "选中选项：value、option"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开触发器和浮层后触发"
+      },
+      {
+        "name": "update:open",
         "type": "[open: boolean]",
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际浮层状态变化；update:open 表示请求状态"
+      },
+      {
+        "name": "update:searchValue",
+        "type": "[query: string]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "deselect",
+        "type": "[value: HysSelectValue, option: HysSelectOption]",
+        "required": false,
+        "default": "",
+        "description": "取消选项：value、option"
+      },
+      {
+        "name": "removeTag",
+        "type": "[value: HysSelectValue, option: HysSelectOption]",
+        "required": false,
+        "default": "",
+        "description": "通过标签移除选项：value、option"
+      },
+      {
+        "name": "create",
+        "type": "[option: HysSelectOption]",
+        "required": false,
+        "default": "",
+        "description": "确认创建新选项时触发，参数为 option"
+      },
+      {
+        "name": "reject",
+        "type": "[value: HysSelectValue, reason: \"create\" | \"limit\"]",
+        "required": false,
+        "default": "",
+        "description": "批量输入超出上限或创建失败：value、limit/create"
+      },
+      {
+        "name": "searchError",
+        "type": "[error: unknown, query: string]",
+        "required": false,
+        "default": "",
+        "description": "远程检查失败：error、query；已取消的请求不触发"
+      },
+      {
+        "name": "popupScroll",
+        "type": "[event: Event]",
+        "required": false,
+        "default": "",
+        "description": "选项滚动区域的原生滚动事件"
+      },
+      {
+        "name": "reachEnd",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "滚动到末尾时触发，可用于追加选项"
       }
     ],
     "slots": [
       {
         "name": "label",
-        "type": "{ selected: { label: string; value: string; disabled?: boolean | undefined; }[]; }",
+        "type": "{ selected: HysSelectOption[]; }",
         "required": false,
         "default": "",
-        "description": "显示标签"
+        "description": "自定义整个选中内容，接收 selected 数组"
+      },
+      {
+        "name": "tag",
+        "type": "{ option: HysSelectOption; remove: () => void; disabled: boolean | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "单个多选标签，接收 option、remove、disabled"
+      },
+      {
+        "name": "remove-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "标签移除图标"
+      },
+      {
+        "name": "max-tag",
+        "type": "{ omitted: HysSelectOption[]; }",
+        "required": false,
+        "default": "",
+        "description": "折叠标签内容，接收 omitted"
+      },
+      {
+        "name": "suffix",
+        "type": "{ open: boolean; loading: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "后缀图标，接收 open、loading"
+      },
+      {
+        "name": "clear-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "清空图标"
+      },
+      {
+        "name": "header",
+        "type": "{ query: string; selected: HysSelectOption[]; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "浮层顶部区域，接收 query、selected、close"
       },
       {
         "name": "loading",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": "显示加载状态"
+        "description": "加载说明"
+      },
+      {
+        "name": "error",
+        "type": "{ error: {}; retry: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "远程异常内容，接收 error、retry"
+      },
+      {
+        "name": "group",
+        "type": "{ label: string | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "分组标题，接收 label"
       },
       {
         "name": "option",
-        "type": "{ option: HysSelectOption; selected: boolean; }",
+        "type": "{ option: HysSelectOption; selected: boolean; created: boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选项内容，接收 option、selected 和 created"
+      },
+      {
+        "name": "selected-icon",
+        "type": "{ option: HysSelectOption; }",
+        "required": false,
+        "default": "",
+        "description": "选中状态图标，接收 option"
       },
       {
         "name": "empty",
-        "type": "{}",
+        "type": "{ query: string; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "无结果说明，接收 query"
       },
       {
         "name": "footer",
-        "type": "{}",
+        "type": "{ query: string; selected: HysSelectOption[]; close: () => void; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "浮层底部区域，接收 query、selected、close"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦可用的触发器"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开当前控件内的焦点并请求关闭，不影响外部控件"
+      },
+      {
+        "name": "open",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "请求展开并聚焦搜索区域，返回 Promise<void>"
+      },
+      {
+        "name": "close",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "请求关闭浮层"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(value: HysSelectValue) => void",
+        "required": true,
+        "default": "",
+        "description": "在已展开列表中按值定位，支持虚拟列表"
+      },
+      {
+        "name": "retry",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "立即重试当前远程搜索"
+      },
+      {
+        "name": "selected",
+        "type": "HysSelectOption[]",
+        "required": true,
+        "default": "",
+        "description": "当前选项数据列表"
+      },
+      {
+        "name": "query",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "当前实际搜索词"
+      },
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "浮层实际是否展开"
+      }
+    ]
   },
   "HysShortcutHelp": {
     "props": [

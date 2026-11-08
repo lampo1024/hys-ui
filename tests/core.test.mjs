@@ -31,6 +31,120 @@ test('Readonly Input never offers a clearing action',async()=>{const input=await
 test('NumberInput has precise stepping, bounds, hidden controls and readonly',async()=>{const input=await mount(ui.HysNumberInput,{modelValue:.1,step:.2,min:0,max:.5});await fire(input.find('[aria-label="增加"]'),'click');assert.equal(input.props.modelValue,.3);await fire(input.find('[aria-label="增加"]'),'click');assert.equal(input.props.modelValue,.5);assert(input.find('[aria-label="增加"]').disabled);input.props.showControls=false;await nextTick();assert.equal(input.all('button').length,0);input.props.readonly=true;await nextTick();await fire(input.find('input'),'keydown',{key:'ArrowDown'});assert.equal(input.props.modelValue,.5);input.props.readonly=false;input.props.modelValue=1;input.props.step=1;input.props.max=10;await nextTick();const field=input.find('input');field.value='2.5';await fire(field,'change');assert.equal(input.props.modelValue,2.5);input.props.modelValue=0;input.props.step=1e-7;await nextTick();await fire(field,'keydown',{key:'ArrowUp'});assert.equal(input.props.modelValue,1e-7);field.value='0.25';await fire(field,'input');assert.equal(input.events.input.at(-1)[0],.25);assert.equal(input.props.modelValue,1e-7);field.value='';await fire(field,'input');assert.equal(input.events.input.at(-1)[0],null)})
 test('Select filters, skips disabled options and closes single selection',async()=>{const select=await mount(ui.HysSelect,{modelValue:'a',filterable:true,options:[{value:'a',label:'Alpha'},{value:'b',label:'Blocked',disabled:true},{value:'c',label:'Charlie'}]});await fire(select.find('[role="combobox"]'),'click');await pause(20);const search=document.querySelector('[aria-label="搜索选项"]');assert(search);search.value='Charlie';await fire(search,'input');const options=[...document.querySelectorAll('[role="option"]')];assert.equal(options.length,1);await fire(options[0],'click');assert.equal(select.props.modelValue,'c');assert(!document.querySelector('[role="listbox"]'))})
 test('Multiple Select toggles entries and stays open; clear emits empty array',async()=>{const select=await mount(ui.HysSelect,{modelValue:[],multiple:true,clearable:true,options:[{value:'a',label:'One'},{value:'b',label:'Two'}]});await fire(select.find('[role="combobox"]'),'click');await pause(20);await fire(document.querySelector('[role="option"]'),'click');assert.deepEqual([...select.props.modelValue],['a']);assert(document.querySelector('[role="listbox"]'));await fire(select.find('[aria-label="清空选择"]'),'click');assert.deepEqual([...select.props.modelValue],[])})
+
+test('Select distinguishes zero, false, empty strings and numeric versus text identities',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:0,emptyValues:[null,undefined],options:[{label:'Zero',value:0},{label:'False',value:false},{label:'Empty',value:''},{label:'Text zero',value:'0'}],clearable:true,clearValue:null})
+ assert.equal(select.find('[role="combobox"]').textContent.trim(),'Zero');await fire(select.find('[role="combobox"]'),'click');assert.equal(document.querySelectorAll('[role="option"]').length,4)
+ const options=[...document.querySelectorAll('[role="option"]')];assert.equal(options[0].getAttribute('aria-selected'),'true');assert.equal(options[3].getAttribute('aria-selected'),'false');await fire(options[1],'click');assert.equal(select.props.modelValue,false)
+ await fire(select.find('[role="combobox"]'),'click');await fire(document.querySelectorAll('[role="option"]')[2],'click');assert.equal(select.props.modelValue,'');assert(select.host.textContent.includes('Empty'))
+ await fire(select.find('[aria-label="清空选择"]'),'click');assert.equal(select.props.modelValue,null);assert.equal(select.events.change.at(-1)[1],undefined)
+})
+
+test('Select uncontrolled defaults and value-key object identities survive data replacement',async()=>{
+ const select=await mount(ui.HysSelect,{defaultValue:{id:1,name:'Original'},valueKey:'id',options:[{label:'One',value:{id:1,name:'One'}},{label:'Two',value:{id:2,name:'Two'}}]})
+ assert(select.host.textContent.includes('One'));select.props.options=[{label:'Updated',value:{id:1,name:'Replaced'}},{label:'Two',value:{id:2,name:'Two'}}];await nextTick();assert(select.host.textContent.includes('Updated'))
+ await fire(select.find('[role="combobox"]'),'click');assert.equal(document.querySelectorAll('[aria-selected="true"]').length,1);await fire(document.querySelectorAll('[role="option"]')[1],'click');assert.equal(select.props.modelValue.id,2);assert.equal(select.events.change.at(-1)[1].label,'Two')
+})
+
+test('Grouped options use custom data fields, inherit disabled groups and search individual labels',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:null,filterable:true,fieldNames:{label:'name',value:'id',options:'children',disabled:'blocked'},options:[{name:'Team A',children:[{id:1,name:'Alice'},{id:2,name:'Amy'}]},{name:'Team B',blocked:true,children:[{id:3,name:'Bob'}]}]})
+ await fire(select.find('[role="combobox"]'),'click');await pause(0);assert.equal(document.querySelectorAll('.hys-ui-select-group').length,2);assert(document.querySelectorAll('[role="option"]')[2].disabled)
+ const search=document.querySelector('[aria-label="搜索选项"]');search.value='Amy';await fire(search,'input');assert.equal(document.querySelectorAll('.hys-ui-select-group').length,1);assert.equal(document.querySelectorAll('[role="option"]').length,1);await fire(document.querySelector('[role="option"]'),'click');assert.equal(select.props.modelValue,2)
+})
+
+test('Select enforces multiple limits but keeps deselection and removable tags available',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:[0],multiple:true,multipleLimit:2,maxTagCount:1,options:[{label:'Zero',value:0},{label:'One',value:1},{label:'Two',value:2}]})
+ await fire(select.find('[role="combobox"]'),'click');await fire(document.querySelectorAll('[role="option"]')[1],'click');assert.deepEqual([...select.props.modelValue],[0,1]);assert(document.querySelectorAll('[role="option"]')[2].disabled);assert(!document.querySelectorAll('[role="option"]')[0].disabled);assert(select.host.textContent.includes('+1'))
+ await fire(select.find('[aria-label="移除 Zero"]'),'click');assert.deepEqual([...select.props.modelValue],[1]);assert.equal(select.events.removeTag.at(-1)[0],0);assert(!document.querySelectorAll('[role="option"]')[2].disabled)
+})
+
+test('Readonly Select cannot change via options, token input or Backspace',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:['A'],multiple:true,readonly:true,allowCreate:true,tokenSeparators:[','],options:[{label:'A',value:'A'}]})
+ await fire(select.find('[role="combobox"]'),'click');await pause(0);assert(document.querySelector('[role="option"]').disabled);const search=document.querySelector('[aria-label="搜索选项"]');search.value='B,';await fire(search,'input');await fire(search,'keydown',{key:'Backspace'});assert.deepEqual([...select.props.modelValue],['A']);assert(!select.find('[aria-label="移除 A"]'))
+})
+
+test('Select creates options on commit, deduplicates separator input and respects limits',async()=>{
+ let calls=0;const select=await mount(ui.HysSelect,{modelValue:[],multiple:true,allowCreate:true,multipleLimit:3,tokenSeparators:[',',';'],createOption:label=>{calls++;return {label,value:label.toLowerCase()}},options:[]})
+ await fire(select.find('[role="combobox"]'),'click');const search=document.querySelector('[aria-label="搜索选项"]');search.value='Alpha';await fire(search,'input');assert.equal(calls,0);await fire(search,'keydown',{key:'Enter'});assert.deepEqual([...select.props.modelValue],['alpha']);assert.equal(calls,1)
+ search.value='Beta;Beta,Gamma,Delta,';await fire(search,'input');assert.deepEqual([...select.props.modelValue],['alpha','beta','gamma']);assert.equal(select.events.create.length,3);assert.equal(select.events.reject.at(-1)[1],'limit');assert.equal(search.value,'')
+})
+
+test('Select composition defers search requests and created token commits',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:[],multiple:true,allowCreate:true,tokenSeparators:[','],options:[]})
+ await fire(select.find('[role="combobox"]'),'click');const input=document.querySelector('[aria-label="搜索选项"]');await fire(input,'compositionstart');input.value='中文,';await fire(input,'input');await fire(input,'keydown',{key:'Enter',isComposing:true});assert.equal(select.events.search,undefined);assert.deepEqual([...select.props.modelValue],[])
+ await fire(input,'compositionend');assert.deepEqual([...select.props.modelValue],['中文']);assert.equal(select.events.create.length,1)
+})
+
+test('Select controlled open requests can be vetoed and external changes remain authoritative',async()=>{
+ const shown=ref(false),requests=[],Wrapper=defineComponent({setup(){return()=>h(ui.HysSelect,{open:shown.value,options:[{label:'One',value:1}],'onUpdate:open':value=>requests.push(value)})}}),select=await mount(Wrapper)
+ await fire(select.find('[role="combobox"]'),'click');assert.equal(document.querySelector('[role="listbox"]'),null);assert.deepEqual(requests,[true])
+ shown.value=true;await nextTick();await nextTick();assert(document.querySelector('[role="listbox"]'));await fire(document,'keydown',{key:'Escape'});assert(document.querySelector('[role="listbox"]'));assert.equal(requests.at(-1),false)
+ shown.value=false;await nextTick();assert.equal(document.querySelector('[role="listbox"]'),null)
+})
+
+test('Select controlled search and stable sorting do not mutate host options',async()=>{
+ const search=ref('B'),updates=[],options=[{label:'Beta',value:'b'},{label:'Alpha',value:'a'}],Wrapper=defineComponent({setup(){return()=>h(ui.HysSelect,{defaultOpen:true,filterable:true,searchValue:search.value,options,filterSort:(a,b)=>a.label.localeCompare(b.label),'onUpdate:searchValue':value=>updates.push(value)})}})
+ const select=await mount(Wrapper);await pause(0);const input=document.querySelector('[aria-label="搜索选项"]');assert.equal(input.value,'B');assert.equal(document.querySelectorAll('[role="option"]').length,1)
+ input.value='A';await fire(input,'input');assert.equal(updates.at(-1),'A');assert.equal(document.querySelectorAll('[role="option"]').length,1);search.value='';await nextTick();assert.equal(document.querySelector('[role="option"]').textContent,'Alpha');assert.equal(options[0].label,'Beta')
+})
+
+test('Select remote method aborts stale work, preserves selected labels and can retry failures',async()=>{
+ const pending=[],select=await mount(ui.HysSelect,{modelValue:1,filterable:true,options:[{label:'Original',value:1}],remoteMethod:(query,{signal})=>new Promise((resolve,reject)=>pending.push({query,signal,resolve,reject}))})
+ await fire(select.find('[role="combobox"]'),'click');await pause(0);assert.equal(pending.length,1);const input=document.querySelector('[aria-label="搜索选项"]');input.value='New';await fire(input,'input');assert.equal(pending[0].signal.aborted,true)
+ pending[0].resolve([{label:'Stale',value:0}]);pending[1].resolve([{label:'Server alias',value:2}]);await pause(0);assert.equal(document.querySelector('[role="option"]').textContent,'Server alias');assert(select.host.textContent.includes('Original'))
+ input.value='Failure';await fire(input,'input');pending.at(-1).reject(Error('Offline'));await pause(0);assert(document.querySelector('.hys-ui-select-retry'));await fire(document.querySelector('.hys-ui-select-retry'),'click');pending.at(-1).resolve([{label:'Recovered',value:3}]);await pause(0);assert.equal(document.querySelector('[role="option"]').textContent,'Recovered');assert.equal(select.events.searchError.length,1)
+ select.vm.close();await nextTick();assert.equal(document.querySelector('[role="listbox"]'),null)
+})
+
+test('Switching a Select from failed remote search to local options clears obsolete errors',async()=>{
+ const select=await mount(ui.HysSelect,{defaultOpen:true,remoteMethod:async()=>{throw Error('Offline')},options:[{label:'Local option',value:0}]});await pause(0);assert(document.querySelector('.hys-ui-select-retry'))
+ select.props.remoteMethod=undefined;await nextTick();await nextTick();assert.equal(document.querySelector('.hys-ui-select-retry'),null);assert.equal(document.querySelector('[role="option"]').textContent,'Local option')
+})
+
+test('Select debounce timers and remote callbacks are cleaned on cached-page leave',async()=>{
+ const shown=ref(true),signals=[],Page=defineComponent({setup(){return()=>h(ui.HysSelect,{defaultOpen:true,filterable:true,debounce:10,remoteMethod:(_query,{signal})=>{signals.push(signal);return new Promise(()=>{})}})}}),Wrapper=defineComponent({setup(){return()=>h(KeepAlive,{},()=>shown.value?h(Page):null)}})
+ await mount(Wrapper);shown.value=false;await nextTick();await pause(20);assert.equal(signals.length,0);assert.equal(document.querySelector('[role="listbox"]'),null)
+ shown.value=true;await nextTick();const trigger=document.querySelector('[role="combobox"]');await fire(trigger,'click');await pause(20);assert.equal(signals.length,1);shown.value=false;await nextTick();assert.equal(signals[0].aborted,true)
+})
+
+test('Virtual Select bounds DOM rows while End and Home reveal real active descendants',async()=>{
+ const options=Array.from({length:10000},(_,index)=>({value:index,label:'Option '+index})),select=await mount(ui.HysSelect,{modelValue:0,options,listHeight:210})
+ await fire(select.find('[role="combobox"]'),'click');await pause(0);assert(document.querySelectorAll('[role="option"]').length<25)
+ await fire(select.find('[role="combobox"]'),'keydown',{key:'End'});assert.equal(document.getElementById(select.find('[role="combobox"]').getAttribute('aria-activedescendant')).textContent,'Option 9999');assert(document.querySelectorAll('[role="option"]').length<25)
+ await fire(select.find('[role="combobox"]'),'keydown',{key:'Home'});assert.equal(document.getElementById(select.find('[role="combobox"]').getAttribute('aria-activedescendant')).textContent,'Option 0');await fire(select.find('[role="combobox"]'),'keydown',{key:'End'});await fire(select.find('[role="combobox"]'),'keydown',{key:'Enter'});assert.equal(select.props.modelValue,9999)
+})
+
+test('Select supports local popup mounting and native form data without duplicate visible controls',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:[0,false],multiple:true,name:'selection',appendTo:false,options:[{label:'Zero',value:0},{label:'False',value:false}]})
+ await fire(select.find('[role="combobox"]'),'click');assert(select.find('[role="listbox"]'));assert.deepEqual(select.all('input[type="hidden"]').map(input=>[input.name,input.value]),[['selection','0'],['selection','false']]);select.props.disabled=true;await nextTick();assert(select.all('input').every(input=>input.disabled));assert(!select.find('[role="listbox"]'))
+})
+
+test('Wrapping labels open custom Select controls without activating the clear action',async()=>{
+ const value=ref('a'),Wrapper=defineComponent({setup(){return()=>h('label',{},[h('span','Role label'),h(ui.HysSelect,{modelValue:value.value,clearable:true,options:[{value:'a',label:'Alpha'}],'onUpdate:modelValue':next=>value.value=next})])}}),select=await mount(Wrapper)
+ await fire(select.find('[role="combobox"]'),'click');assert.equal(value.value,'a');assert(document.querySelector('[role="listbox"]'));assert.equal(select.find('[role="combobox"]').getAttribute('aria-label'),'Role label')
+ await fire(document,'keydown',{key:'Escape'});await fire(select.find('label>span'),'click');assert(document.querySelector('[role="listbox"]'));assert.equal(value.value,'a')
+})
+
+test('Duplicate selected values display one tag and reselecting a single value does not emit change',async()=>{
+ const select=await mount(ui.HysSelect,{modelValue:[1,1],options:[{value:1,label:'One'}]});assert.equal(select.all('.hys-ui-select-tag').length,1);select.unmount()
+ const single=await mount(ui.HysSelect,{modelValue:1,options:[{value:1,label:'One'}]});await fire(single.find('[role="combobox"]'),'click');await fire(document.querySelector('[role="option"]'),'click');assert.equal(single.events.change,undefined);assert.equal(single.events.select.length,1)
+})
+
+test('Select renders error, warning and success states with required form semantics',async()=>{
+ const select=await mount(ui.HysSelect,{status:'success',modelValue:1,options:[{label:'One',value:1}]});assert(select.find('.hys-ui-select-success'));assert.equal(select.find('[role="combobox"]').getAttribute('aria-invalid'),'false');select.props.status='error';await nextTick();assert(select.find('.hys-ui-select-error'));assert.equal(select.find('[role="combobox"]').getAttribute('aria-invalid'),'true');select.props.status='warning';await nextTick();assert(select.find('.hys-ui-select-warning'))
+})
+
+test('Appending virtual options preserves scroll position and never leaves dangling active IDs',async()=>{
+ const options=Array.from({length:300},(_,value)=>({value,label:'Item '+value})),select=await mount(ui.HysSelect,{modelValue:0,options})
+ await fire(select.find('[role="combobox"]'),'click');await pause(0);const list=document.querySelector('[role="listbox"]');list.scrollTop=840;await fire(list,'scroll');assert.equal(select.find('[role="combobox"]').getAttribute('aria-activedescendant'),null)
+ select.props.options=[...options,...Array.from({length:50},(_,index)=>({value:300+index,label:'Item '+(300+index)}))];await nextTick();await nextTick();assert.equal(list.scrollTop,840);assert(document.querySelectorAll('[role="option"]').length<30)
+ await fire(select.find('[role="combobox"]'),'keydown',{key:'End'});const active=select.find('[role="combobox"]').getAttribute('aria-activedescendant');assert.equal(document.getElementById(active).textContent,'Item 349')
+})
+
+test('Select custom footer buttons retain their own keyboard actions',async()=>{
+ let actions=0;const select=await mount(ui.HysSelect,{defaultOpen:true,modelValue:0,options:[{label:'One',value:0},{label:'Two',value:1}]},{footer:()=>h('button',{onClick:()=>actions++},'Load more')});await pause(0)
+ const footer=document.querySelector('.hys-ui-select-footer button'),event=new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true});footer.dispatchEvent(event);await nextTick();assert.equal(event.defaultPrevented,false);assert.equal(select.events.change,undefined);await fire(footer,'click');assert.equal(actions,1);assert(document.querySelector('[role="listbox"]'))
+})
 test('Form supports required, async rules, reset and isolated field errors',async()=>{const model=reactive({name:''});const form=await mount(ui.HysForm,{model,rules:{name:[{required:true,message:'Name required'},{validator:async value=>value==='bad'?'Rejected':true}]}},{default:()=>h(ui.HysFormItem,{label:'Name',prop:'name'},()=>h(ui.HysInput,{modelValue:model.name}))});assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Name required');form.props.model.name='bad';assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Rejected');form.props.model.name='good';assert.equal(await form.vm.validate(),true);form.vm.resetFields();assert.equal(form.props.model.name,'');assert.deepEqual({...form.vm.errors},{})})
 test('Form stale async results do not replace newer errors',async()=>{let finish;const form=await mount(ui.HysForm,{model:{name:'old'},rules:{name:{validator:value=>value==='old'?new Promise(resolve=>finish=resolve):'New error'}}});const old=form.vm.validateField('name');form.props.model.name='new';await form.vm.validateField('name');finish('Old error');await old;assert.equal(form.vm.errors.name,'New error')})
 

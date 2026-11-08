@@ -5,6 +5,7 @@ import {RotateCcw,Code2} from 'lucide-vue-next'
 import api from './generated/api.json'
 import ExampleSource from './ExampleSource.vue'
 import FormRuleReference from './FormRuleReference.vue'
+import SelectReference from './SelectReference.vue'
 import type {ExampleSourceData} from './sourceTypes'
 import {catalog} from './catalog'
 import capabilities from './component-capabilities.json'
@@ -14,11 +15,11 @@ const entry=computed(()=>catalog.find(x=>x.name===props.name)!)
 const capability=computed(()=>capabilities[props.name as keyof typeof capabilities])
 const modules=import.meta.glob('./examples/*/*.vue')
 const sources=import.meta.glob('./examples/*/*.vue',{query:'?example-source&raw',import:'default'})
-const order:Record<string,number>={Basic:0,Configure:1,Features:2,Rules:2,Width:3,Search:4,Remote:5,Dynamic:5,Custom:6,Keyboard:7,Lifecycle:8,Nested:8,Dependencies:9,Guard:9,Overflow:10,Methods:10,Feedback:11,Registration:2,Inline:3,Alignment:4,Layout:4,Number:6,Policy:12,Data:13,Accessibility:14,Presentation:7,Conditional:8,ControlAdapter:9,States:98,Disabled:99}
+const order:Record<string,number>={Basic:0,Configure:1,Features:2,Rules:2,Width:3,Search:4,Remote:5,Dynamic:5,Custom:6,Keyboard:7,Lifecycle:8,Nested:8,Dependencies:9,Guard:9,Overflow:10,Methods:10,Feedback:11,Registration:2,Inline:3,Alignment:4,Layout:4,Number:6,Policy:12,Data:13,Accessibility:14,Presentation:7,Conditional:8,ControlAdapter:9,Groups:3,Values:4,Limits:5,Create:6,AsyncSearch:7,Virtual:8,Control:9,Infinite:10,States:98,Disabled:99}
 const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>(order[a.split('/').pop()!.replace('.vue','')]??10)-(order[b.split('/').pop()!.replace('.vue','')]??10)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
-const titles:Record<string,string>={Basic:'基础与常用场景',Configure:'交互配置',Async:'异步加载与条件检查',States:'状态与边界',Server:'远程分页',Editing:'编辑与批量操作',Tree:'树形数据与汇总',Disabled:'禁用与受限状态',Features:'常用外观与操作',Affixes:'前后缀与密码输入',Rules:'规则与异步校验',Multiple:'多选与搜索',Bounds:'范围约束',Selection:'受控选择',DragDrop:'拖动更新数据',Caret:'随提及位置展示候选',Positions:'显示位置',Service:'调用与消息队列',Content:'自定义内容与操作',Width:'浮层宽度与长文本',Search:'本地搜索与匹配规则',Remote:'远程搜索与异步状态',Custom:'自定义内容与插槽',Keyboard:'键盘操作',Dynamic:'动态增删与受控数据',Lifecycle:'内容挂载与状态保留',Guard:'异步切换检查',Overflow:'溢出滚动',Nested:'嵌套对象与数组',Dependencies:'字段联动与依赖',Methods:'局部校验与实例方法',Feedback:'警告与反馈',Registration:'完整资料表单',Inline:'行内筛选表单',Alignment:'标签宽度与对齐',Layout:'响应式与栅格布局',Number:'数字类型与范围校验',Policy:'触发策略与多条错误',Data:'数据回填与服务端反馈',Accessibility:'无障碍与组合字段',Presentation:'反馈布局与字段说明',Conditional:'条件字段与数据保留',ControlAdapter:'接入自定义复合控件'}
+const titles:Record<string,string>={Basic:'基础与常用场景',Configure:'交互配置',Async:'异步加载与条件检查',States:'状态与边界',Server:'远程分页',Editing:'编辑与批量操作',Tree:'树形数据与汇总',Disabled:'禁用与受限状态',Features:'常用外观与操作',Affixes:'前后缀与密码输入',Rules:'规则与异步校验',Multiple:'多选与搜索',Bounds:'范围约束',Selection:'受控选择',DragDrop:'拖动更新数据',Caret:'随提及位置展示候选',Positions:'显示位置',Service:'调用与消息队列',Content:'自定义内容与操作',Width:'浮层宽度与长文本',Search:'本地搜索与匹配规则',Remote:'远程搜索与异步状态',Custom:'自定义内容与插槽',Keyboard:'键盘操作',Dynamic:'动态增删与受控数据',Lifecycle:'内容挂载与状态保留',Guard:'异步切换检查',Overflow:'溢出滚动',Nested:'嵌套对象与数组',Dependencies:'字段联动与依赖',Methods:'局部校验与实例方法',Feedback:'警告与反馈',Registration:'完整资料表单',Inline:'行内筛选表单',Alignment:'标签宽度与对齐',Layout:'响应式与栅格布局',Number:'数字类型与范围校验',Policy:'触发策略与多条错误',Data:'数据回填与服务端反馈',Accessibility:'无障碍与组合字段',Presentation:'反馈布局与字段说明',Conditional:'条件字段与数据保留',ControlAdapter:'接入自定义复合控件',Groups:'分组选项与字段映射',Values:'基础类型与对象值',Limits:'多选限制与标签管理',Create:'创建选项与批量输入',AsyncSearch:'远程方法与请求取消',Virtual:'长列表与虚拟滚动',Control:'受控浮层与搜索',Infinite:'追加数据与滚动加载'}
 function reset(s:typeof scenarios[number]){if(props.name==='HysDataGrid'){const scene=s.path.split('/').pop()!.replace('.vue','').toLowerCase();localStorage.removeItem('hys-ui-grid:hys-docs-data-grid-'+scene)}s.version.value++}
 </script>
 <template>
@@ -33,6 +34,7 @@ function reset(s:typeof scenarios[number]){if(props.name==='HysDataGrid'){const 
    <ExampleSource :load-source="scenario.loadSource" :filename="scenario.path.split('/').pop()!"/>
   </section>
   <FormRuleReference v-if="name==='HysForm'||name==='HysFormItem'"/>
+  <SelectReference v-if="name==='HysSelect'"/>
   <section id="api" class="api-section"><h2>API 参考</h2><p>以下签名与默认值从组件源码生成。</p><HysTabs v-model="section" :items="[{label:'参数 Props',value:'props'},{label:'事件 Events',value:'events'},{label:'插槽 Slots',value:'slots'},{label:'实例方法',value:'exposed'}]"/>
    <div class="api-scroll"><table><thead><tr><th>名称</th><th>类型 / 签名</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr v-for="row in rows" :key="row.name"><td><code>{{row.name}}</code><span v-if="row.required" class="required">必填</span></td><td><code>{{row.type}}</code></td><td><code>{{row.default||'—'}}</code></td><td>{{row.description||'详见类型签名及对应交互示例'}}</td></tr><tr v-if="!rows.length"><td colspan="4">此组件未声明此类接口。</td></tr></tbody></table></div>
   </section>

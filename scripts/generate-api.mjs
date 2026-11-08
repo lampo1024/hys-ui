@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {createRequire} from 'node:module'
+import ts from 'typescript'
 const root=fileURLToPath(new URL('..',import.meta.url)),require=createRequire(import.meta.url)
 const {createChecker}=require('vue-component-meta')
 const checker=createChecker(path.join(root,'packages/ui/tsconfig.json'),{schema:true})
@@ -38,6 +39,23 @@ for(const name of fs.readdirSync(dir).sort()){
   for(const prop of api[name].props)prop.description=text[prop.name]||common[prop.name]||prop.description
   const events={change:'实际值变化后触发；参数为更新后的值',guardError:'异步检查抛出错误或 Promise 被拒绝时触发；取消与过期请求不会覆盖当前值',add:'请求添加页签，由调用方维护 items',close:'请求关闭页签，由调用方移除 items 并维护当前值',edit:'添加/关闭操作：value、add 或 remove',tabClick:'点击可用页签时触发：value、MouseEvent',itemClick:'请求展开或收起时触发：key、目标展开状态',select:'默认链接点击事件：item、index、MouseEvent'}
   for(const event of api[name].events)event.description=events[event.name]||event.description
+ }
+ if(name==='HysSelect'){
+  // Generic SFCs do not expose their instance through vue-component-meta.
+  // Read the public, independently type-checked instance interface instead.
+  const instanceFile=ts.createSourceFile('selectOptions.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/selectOptions.ts'),'utf8'),ts.ScriptTarget.Latest,true)
+  const instance=instanceFile.statements.find(node=>ts.isInterfaceDeclaration(node)&&node.name.text==='HysSelectInstance')
+  if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(instanceFile),type:member.type.getText(instanceFile),required:!member.questionToken,default:'',description:''}))
+  const text={modelValue:'受控选择值；支持文本、数字、布尔值、对象及其数组，也可为 null',defaultValue:'非受控模式的初始选择值',options:'选项或分组数据；分组通过 options 字段提供子选项',fieldNames:'映射 label、value、options 和 disabled 的业务字段名',valueKey:'对象值的稳定标识路径；刷新选项时按此路径匹配',emptyValues:'视为空值的配置；null / undefined 始终表示未选，默认也将空字符串视为空值',clearValue:'单选清空后的值；默认空字符串，可显式设置 null',fallbackOption:'缺少对应选项时的显示项工厂；false 不显示回退项',multipleLimit:'多选数量上限；0 表示不限制',maxTagCount:'多选最多展示的标签数，其余以计数折叠',maxTagTextLength:'标签文字截断长度；完整内容保留在 title',removable:'允许移除单个多选标签',clearSearchAfterSelect:'多选后清除搜索词；默认保留',allowCreate:'允许输入并创建新选项，自动启用搜索输入',createOption:'确认创建时调用，返回选项；false / null 拒绝创建',tokenSeparators:'多选创建模式中用于批量输入的分隔符',clearCreatedOnClear:'清空选择时移除本组件创建的选项',remoteMethod:'异步搜索函数 (query, {signal})，返回选项数组；自动管理加载、取消、失败和重试',debounce:'remoteMethod 的防抖等待时间，单位毫秒；search 事件仍立即触发',searchValue:'受控搜索词，配合 v-model:searchValue',filterSort:'本地结果排序函数；不修改宿主数组',open:'受控浮层状态，配合 v-model:open；可拒绝展开或关闭请求',defaultOpen:'初次挂载时默认展开',showOnFocus:'触发器获得焦点时展开；关闭后的焦点恢复不会重新展开',retainSearch:'重新展开时保留上次搜索词',defaultActiveFirst:'没有已选项时激活首个可用项',keyboard:'启用方向键、首末项、翻页和输入首字母定位',popupWidth:'显式浮层宽度，数值单位 px；仍限制在可视区域内',placement:'优先展开位置；空间不足时自动调整',appendTo:'浮层挂载位置；false 保留在组件内，默认 body',popupClass:'额外浮层类名',popupStyle:'浮层样式；定位和尺寸由组件维护',listHeight:'选项滚动区域的最大高度，默认 256px',virtual:'长列表超过可见渲染阈值时启用虚拟滚动',itemHeight:'虚拟列表单行高度，包含行间距；默认随尺寸变化',overscan:'虚拟列表在可见范围前后额外渲染的行数',noMatchText:'本地搜索无匹配时的说明',loadingText:'加载中的说明',status:'显式校验状态；否则继承字段状态',showArrow:'显示展开箭头',showCheckmark:'显示选中图标',bordered:'显示控件边框',readonly:'允许查看和搜索，但不可选择、移除或创建',autofocus:'初次挂载时自动聚焦，禁用时不聚焦',name:'原生表单提交字段名；多选输出多个同名隐藏字段'}
+  for(const prop of api[name].props)prop.description=text[prop.name]||prop.description
+  const basics={filterable:'显示选项搜索输入框',clearable:'显示清空按钮；禁用和只读时隐藏',remote:'由调用方提供搜索结果，不应用本地筛选'}
+  for(const prop of api[name].props)prop.description=basics[prop.name]||prop.description
+  const eventText={change:'选择实际变化后触发：value、单个选项或选项数组',select:'选中选项：value、option',deselect:'取消选项：value、option',removeTag:'通过标签移除选项：value、option',create:'确认创建新选项时触发，参数为 option',reject:'批量输入超出上限或创建失败：value、limit/create',search:'搜索词提交后立即触发，中文组合输入结束后触发',searchError:'远程检查失败：error、query；已取消的请求不触发',focus:'整个控件首次获得焦点；在触发器与浮层间移动不重复触发',blur:'焦点离开触发器和浮层后触发',popupScroll:'选项滚动区域的原生滚动事件',reachEnd:'滚动到末尾时触发，可用于追加选项',visibleChange:'实际浮层状态变化；update:open 表示请求状态'}
+  for(const event of api[name].events)event.description=eventText[event.name]||event.description
+  const methodText={focus:'聚焦可用的触发器',blur:'移开当前控件内的焦点并请求关闭，不影响外部控件',open:'请求展开并聚焦搜索区域，返回 Promise<void>',close:'请求关闭浮层',scrollTo:'在已展开列表中按值定位，支持虚拟列表',retry:'立即重试当前远程搜索',selected:'当前选项数据列表',query:'当前实际搜索词',isOpen:'浮层实际是否展开'}
+  for(const exposed of api[name].exposed)exposed.description=methodText[exposed.name]||exposed.description
+  const slotText={label:'自定义整个选中内容，接收 selected 数组',option:'选项内容，接收 option、selected 和 created',tag:'单个多选标签，接收 option、remove、disabled',group:'分组标题，接收 label',header:'浮层顶部区域，接收 query、selected、close',footer:'浮层底部区域，接收 query、selected、close',empty:'无结果说明，接收 query',loading:'加载说明',error:'远程异常内容，接收 error、retry',suffix:'后缀图标，接收 open、loading','max-tag':'折叠标签内容，接收 omitted','clear-icon':'清空图标','remove-icon':'标签移除图标','selected-icon':'选中状态图标，接收 option'}
+  for(const slot of api[name].slots)slot.description=slotText[slot.name]||slot.description
  }
  if(name==='HysToast'){
   const text={message:'提示文本，可使用默认插槽自定义内容',duration:'自动关闭时长（毫秒）；普通状态默认 3000，loading 默认 0。0 表示不自动关闭',type:'success、info、warning、error、loading 五种状态',position:'七种显示位置，默认 top-center；top/bottom 为兼容别名',offset:'与窗口边缘的距离，单位 px',zIndex:'浮层层级',showIcon:'显示状态图标，可通过 icon 插槽替换',pauseOnHover:'鼠标悬停时暂停剩余关闭时间',closeOnEscape:'按 Escape 关闭最近一条允许关闭的提示',repeat:'重复次数，大于 1 时显示次数标记',plain:'使用柔和背景',teleport:'是否渲染到浮层容器，false 时在原位置显示',appendTo:'浮层挂载目标，默认 body'}

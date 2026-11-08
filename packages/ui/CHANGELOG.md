@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Expand select values to numbers, booleans and stable-key objects, with configurable empty/clear values, groups and business-field mappings.
+- Add removable/collapsed tags, selection limits, created options, separator input, controlled open/search state and richer slots/events.
+- Add cancellable/debounced remote methods with retry, bounded virtual lists, page navigation, typeahead and native form submission fields.
+- Preserve wrapping-label activation, form feedback, theme and size inheritance; clean remote requests and popup observers on cached-page leave.
+- Add independent select scenes and public type/keyboard/remote-search notes.
+
 - Add shared automatic label alignment, responsive field columns, 24-column label/control layouts and inline forms.
 - Add label suffixes, wrapping, optional markers, tooltip/help/extra content, inherited icons and inline feedback.
 - Add snapshot reads, partial writes, server feedback arrays, configurable reset baselines, callback validation and imperative submit.
