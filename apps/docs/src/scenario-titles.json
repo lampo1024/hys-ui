@@ -91,7 +91,9 @@
       "Orientation": "竖向与反向",
       "Custom": "提示与自定义内容",
       "Keyboard": "键盘操作与事件",
-      "Sizes": "尺寸与拖动区域"
+      "Sizes": "尺寸与拖动区域",
+      "Tooltip": "提示边界与长文本",
+      "Performance": "连续调节与更新时机"
     }
   }
 }

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Prevent slider tooltip clipping with independent, themed overlays, viewport edge shifting/flipping, long-text wrapping and scroll/resize positioning cleanup.
+- Move slider handles and selected tracks through transforms; cache stable tooltip styles and dimensions and update tip positions in the handle's paint cycle.
+
 - Replace native range inputs with custom pointer-driven slider tracks and accessible handles, including decimal-safe steps, ordered intervals, track dragging and keyboard controls.
 - Add marks-only selection, stops, vertical/reverse layouts, size inheritance, tooltip/handle/mark slots, optional numeric editors and named form values.
 - Clean active pointer listeners and animation frames on cancellation and cached-page leave; add dedicated slider scenarios and public instance types.

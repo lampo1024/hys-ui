@@ -22,7 +22,7 @@ const modules=import.meta.glob('./examples/*/*.vue')
 const sources=import.meta.glob('./examples/*/*.vue',{query:'?example-source&raw',import:'default'})
 const order:Record<string,number>={Basic:0,Configure:1,Features:2,Rules:2,Width:3,Search:4,Remote:5,Dynamic:5,Custom:6,Keyboard:7,Lifecycle:8,Nested:8,Dependencies:9,Guard:9,Overflow:10,Methods:10,Feedback:11,Registration:2,Inline:3,Alignment:4,Layout:4,Number:6,Policy:12,Data:13,Accessibility:14,Presentation:7,Conditional:8,ControlAdapter:9,Groups:3,Values:4,Limits:5,Create:6,AsyncSearch:7,Virtual:8,Control:9,Infinite:10,Nullable:2,Precision:3,Format:4,StringMode:5,Controls:6,Timing:7,Events:8,Form:9,States:98,Disabled:99}
 const inputOrder=['Basic','Configure','Disabled','Clearable','ClearIcon','Formatter','Password','Icons','Textarea','Autosize','Mixed','Sizes','Length','Graphemes','Methods','Affixes']
-const sliderOrder=['Basic','Configure','Sizes','Precision','Range','Marks','Number','Orientation','Custom','Keyboard','Form','States']
+const sliderOrder=['Basic','Configure','Sizes','Precision','Range','Marks','Number','Orientation','Custom','Tooltip','Performance','Keyboard','Form','States']
 function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');return props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
 const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
 const section=ref('props')

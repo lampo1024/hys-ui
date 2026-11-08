@@ -6621,7 +6621,7 @@
         "type": "\"right\" | \"left\" | \"top\" | \"bottom\" | undefined",
         "required": false,
         "default": "\"top\"",
-        "description": "提示位于滑块的上、下、左或右侧",
+        "description": "首选提示方向：上、下、左或右侧；空间不足时自动翻转并避让视口边缘",
         "global": false
       },
       {

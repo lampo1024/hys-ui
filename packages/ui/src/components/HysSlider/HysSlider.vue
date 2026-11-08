@@ -14,6 +14,7 @@ import {
   watch,
 } from "vue";
 import HysNumberInput from "../HysNumberInput/HysNumberInput.vue";
+import SliderTooltip from "./SliderTooltip.vue";
 import {
   fieldKey,
   formKey,
@@ -110,6 +111,7 @@ const {
   controlId = useId();
 const root = ref<HTMLElement>(),
   rail = ref<HTMLElement>(),
+  railSize = shallowRef({ width: 0, height: 0 }),
   thumbs = ref<HTMLElement[]>([]),
   local = shallowRef<HysSliderValue>(
     props.defaultValue ?? (props.range ? [props.min, props.max] : props.min),
@@ -240,6 +242,16 @@ function tooltip(value: number) {
     return String(value);
   }
 }
+function tooltipShown(index: number, value: number) {
+  return (
+    props.showTooltip &&
+    tooltip(value) !== null &&
+    (props.tooltipVisible ??
+      (focused.value === index ||
+        hovered.value === index ||
+        (dragging.value && dragIndex.value === index)))
+  );
+}
 function valueText(value: number) {
   try {
     return props.formatValueText?.(value) ?? String(tooltip(value) ?? value);
@@ -260,17 +272,20 @@ const offset = (value: number) =>
   props.vertical
     ? { bottom: position(value) + "%" }
     : { left: position(value) + "%" };
+const thumbTransform = (value: number) => ({
+  transform: props.vertical
+    ? `translate3d(-50%, ${railSize.value.height * (1 - position(value) / 100)}px, 0) translateY(-50%)`
+    : `translate3d(${(railSize.value.width * position(value)) / 100}px, -50%, 0) translateX(-50%)`,
+});
 const selection = computed(() => {
   const first = position(isRange.value ? values.value[0] : minimum.value),
     last = position(values.value[isRange.value ? 1 : 0]);
   return props.vertical
     ? {
-        bottom: Math.min(first, last) + "%",
-        height: Math.abs(last - first) + "%",
+        transform: `translate3d(-50%, ${100 - Math.max(first, last)}%, 0) scaleY(${Math.abs(last - first) / 100})`,
       }
     : {
-        left: Math.min(first, last) + "%",
-        width: Math.abs(last - first) + "%",
+        transform: `translate3d(${Math.min(first, last)}%, -50%, 0) scaleX(${Math.abs(last - first) / 100})`,
       };
 });
 const stops = computed(() => {
@@ -550,6 +565,7 @@ function focus(index = 0) {
     ]?.focus();
 }
 function cleanup() {
+  stopRailMeasurement();
   stop(true);
   live = false;
   epoch++;
@@ -605,10 +621,38 @@ watch(
   },
   { flush: "sync" },
 );
+let railObserver: ResizeObserver | undefined;
+function measureRail() {
+  if (!live || !rail.value) return;
+  const width =
+    rail.value.clientWidth || rail.value.getBoundingClientRect().width;
+  const height =
+    rail.value.clientHeight || rail.value.getBoundingClientRect().height;
+  if (width !== railSize.value.width || height !== railSize.value.height)
+    railSize.value = { width, height };
+}
+function stopRailMeasurement() {
+  railObserver?.disconnect();
+  railObserver = undefined;
+  window.removeEventListener("resize", measureRail);
+}
+function startRailMeasurement() {
+  stopRailMeasurement();
+  measureRail();
+  if (typeof ResizeObserver !== "undefined" && rail.value) {
+    railObserver = new ResizeObserver(measureRail);
+    railObserver.observe(rail.value);
+  }
+  window.addEventListener("resize", measureRail);
+}
 onMounted(() => {
+  startRailMeasurement();
   if (props.autofocus) focus();
 });
-onActivated(() => (live = true));
+onActivated(() => {
+  live = true;
+  void nextTick(startRailMeasurement);
+});
 onDeactivated(cleanup);
 onBeforeUnmount(cleanup);
 defineExpose({
@@ -688,6 +732,7 @@ defineExpose({
           <div
             v-for="(item, index) in values"
             :key="index"
+            :style="thumbTransform(item)"
             :ref="
               (element) => {
                 if (element) thumbs[index] = element as HTMLElement;
@@ -734,11 +779,13 @@ defineExpose({
               [
                 error ? errorId : field?.describedBy.value,
                 attrs['aria-describedby'],
+                tooltipShown(index, item)
+                  ? controlId + '-tooltip-' + index
+                  : undefined,
               ]
                 .filter(Boolean)
                 .join(' ') || undefined
             "
-            :style="offset(item)"
             @pointerdown.stop="begin($event, index)"
             @keydown="key($event, index)"
             @mouseenter="hovered = index"
@@ -759,21 +806,16 @@ defineExpose({
                 :index="index"
                 :dragging="dragging && dragIndex === index"
             /></span>
-            <span
-              v-if="
-                showTooltip &&
-                tooltip(item) !== null &&
-                (tooltipVisible ??
-                  (focused === index ||
-                    hovered === index ||
-                    (dragging && dragIndex === index)))
-              "
-              class="hys-ui-slider-tooltip"
-              :class="'hys-ui-slider-tooltip-' + tooltipPlacement"
-              role="tooltip"
+            <SliderTooltip
+              v-if="tooltipShown(index, item)"
+              :id="controlId + '-tooltip-' + index"
+              :anchor="thumbs[index]"
+              :container="root"
+              :placement="tooltipPlacement"
+              :position="position(item)"
               ><slot name="tooltip" :value="item" :index="index">{{
                 tooltip(item)
-              }}</slot></span
+              }}</slot></SliderTooltip
             >
           </div>
         </div>
@@ -897,6 +939,9 @@ defineExpose({
   pointer-events: none;
 }
 .hys-ui-slider-selection {
+  left: 0;
+  width: 100%;
+  transform-origin: left center;
   background: var(--hys-ui-primary, var(--hys-ui-theme-primary));
 }
 .hys-ui-slider-selection-draggable {
@@ -907,6 +952,7 @@ defineExpose({
 }
 .hys-ui-slider-thumb {
   position: absolute;
+  left: 0;
   top: 50%;
   width: var(--hys-ui-slider-hit-size);
   height: var(--hys-ui-slider-hit-size);
@@ -916,6 +962,7 @@ defineExpose({
   outline: none;
   cursor: grab;
   z-index: 2;
+  pointer-events: auto;
 }
 .hys-ui-slider-thumb-active {
   z-index: 3;
@@ -996,39 +1043,6 @@ defineExpose({
 .hys-ui-slider-mark:hover:not(:disabled) {
   color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
 }
-.hys-ui-slider-tooltip {
-  position: absolute;
-  z-index: 5;
-  pointer-events: none;
-  border-radius: 6px;
-  padding: 4px 8px;
-  background: var(--hys-ui-text, var(--hys-ui-theme-text));
-  color: var(--hys-ui-surface, var(--hys-ui-theme-surface));
-  font-size: 11px;
-  line-height: 1.5;
-  white-space: nowrap;
-  box-shadow: 0 3px 12px #1727441a;
-}
-.hys-ui-slider-tooltip-top {
-  bottom: calc(100% - 3px);
-  left: 50%;
-  transform: translateX(-50%);
-}
-.hys-ui-slider-tooltip-bottom {
-  top: calc(100% - 3px);
-  left: 50%;
-  transform: translateX(-50%);
-}
-.hys-ui-slider-tooltip-left {
-  right: calc(100% - 3px);
-  top: 50%;
-  transform: translateY(-50%);
-}
-.hys-ui-slider-tooltip-right {
-  left: calc(100% - 3px);
-  top: 50%;
-  transform: translateY(-50%);
-}
 .hys-ui-slider-inputs {
   display: flex;
   gap: 10px;
@@ -1097,10 +1111,15 @@ defineExpose({
   height: 100%;
   bottom: 0;
 }
+.hys-ui-slider-vertical .hys-ui-slider-selection {
+  top: 0;
+  height: 100%;
+  transform-origin: center top;
+}
 .hys-ui-slider-vertical .hys-ui-slider-thumb {
-  top: auto;
+  top: 0;
   left: 50%;
-  transform: translate(-50%, 50%);
+  transform: translate(-50%, -50%);
 }
 .hys-ui-slider-vertical .hys-ui-slider-stop {
   top: auto;
