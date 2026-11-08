@@ -51,7 +51,14 @@ const demoConfig = demoReactive<{
     showSummary: boolean;
 }>({ "pageSize": 10, "selectable": true, "loading": false, "emptyText": "暂无数据", "density": "normal", "multiSort": false, "stickyHeader": false, "groupable": false, "showSummary": false });
 </script>
-<template><div><div class="demo-controls"><label class="demo-field">pageSize<DemoNumber v-model="demoConfig.pageSize" :show-controls="false"/></label><DemoCheckbox v-model="demoConfig.selectable" label="selectable"/><DemoCheckbox v-model="demoConfig.loading" label="loading"/><label class="demo-field">emptyText<DemoInput v-model="demoConfig.emptyText"/></label><label class="demo-field">density<DemoSelect :model-value="demoConfig.density" @update:model-value="demoConfig.density=$event as typeof demoConfig.density" :options='[{"label":"normal","value":"normal"},{"label":"compact","value":"compact"},{"label":"comfortable","value":"comfortable"}]'/></label><DemoCheckbox v-model="demoConfig.multiSort" label="multiSort"/><DemoCheckbox v-model="demoConfig.stickyHeader" label="stickyHeader"/><DemoCheckbox v-model="demoConfig.groupable" label="groupable"/><DemoCheckbox v-model="demoConfig.showSummary" label="showSummary"/></div><div class="demo-content">
+<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>每页条数</span><code>pageSize</code></span><DemoNumber v-model="demoConfig.pageSize" :show-controls="false"/></label>
+<label class="demo-field"><span class="demo-control-label"><span>空数据提示</span><code>emptyText</code></span><DemoInput v-model="demoConfig.emptyText"/></label>
+<label class="demo-field"><span class="demo-control-label"><span>表格密度</span><code>density</code></span><DemoSelect :model-value="demoConfig.density" @update:model-value="demoConfig.density=$event as typeof demoConfig.density" :options='[{"label":"normal","value":"normal"},{"label":"compact","value":"compact"},{"label":"comfortable","value":"comfortable"}]'/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.selectable" label="selectable"/><small>允许选择</small></div>
+<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div>
+<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.multiSort" label="multiSort"/><small>多列排序</small></div>
+<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.stickyHeader" label="stickyHeader"/><small>固定表头</small></div>
+<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.groupable" label="groupable"/><small>允许分组</small></div>
+<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.showSummary" label="showSummary"/><small>显示汇总</small></div></div></section></div><div class="demo-content">
  <div class="page">
 
   <div class="grid-demo-controls">

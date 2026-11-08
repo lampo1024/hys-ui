@@ -1,8 +1,9 @@
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import {fileURLToPath,URL} from 'node:url'
+import exampleSourcePlugin from './source-plugin.mjs'
 export default defineConfig(({command})=>({
- root:fileURLToPath(new URL('.',import.meta.url)),plugins:[vue()],
+ root:fileURLToPath(new URL('.',import.meta.url)),plugins:[exampleSourcePlugin(),vue()],
  resolve:{dedupe:['vue'],alias:command==='serve'?[
  {find:'hys-ui/style.css',replacement:fileURLToPath(new URL('../../packages/ui/src/styles/index.css',import.meta.url))},
  {find:'hys-ui',replacement:fileURLToPath(new URL('../../packages/ui/src/index.ts',import.meta.url))}

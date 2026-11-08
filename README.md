@@ -1,6 +1,6 @@
 # HYS UI
 
-69 个独立的 Vue 3.5+ 组件，提供 TypeScript 类型、六套主题和独立的中文交互文档。
+面向 Vue 3.5+ 的组件库，提供 TypeScript 类型、主题配置和独立的中文交互文档。
 
 ## 安装
 
@@ -47,7 +47,7 @@ npm run dev:docs
 访问 http://127.0.0.1:5174。每个组件有独立路由、运行场景、源码、API 与说明，页面状态通过 KeepAlive 保留。API 从源码生成。
 
 - `packages/ui`：唯一的组件源码及 npm 包。
-- `apps/docs`：独立文档应用，包含 69 个组件页面。
+- `apps/docs`：独立组件文档与交互示例。
 - `tests`：核心行为回归。
 - `scripts`：元信息提取、完整性检查、打包与发布验证。
 
@@ -59,15 +59,25 @@ npm run check:contracts
 npm run check:release
 ```
 
-`build:docs` 输出到 `apps/docs/dist`，部署服务需要将未知路径回退到 `index.html`。本仓库独立于项目治理平台，平台仅作为组件库的使用方。
+`build:docs` 输出到 `apps/docs/dist`，部署服务需要将未知路径回退到 `index.html`。
 
-## 功能对标
+## 轻提示
 
-参考 Element Plus、Ant Design Vue、Naive UI 的成熟使用模式，覆盖所有能找到同类组件的核心场景。具体对应项、能力边界和高级能力迭代见 [组件能力对标](docs/COMPONENT_PARITY.md)。HYS UI 保持自己的 API，不提供这三家组件库的直接替换兼容层。
+轻提示默认显示在顶部中间，支持七种位置、五种状态和自定义内容。
+
+```ts
+import { useHysToast } from 'hys-ui'
+
+// 在组件 setup 中使用
+const toast = useHysToast({ maxCount: 5 })
+toast.success('保存成功')
+const task = toast.loading('正在上传…')
+task.update({ type: 'success', message: '上传完成', duration: 2000 })
+```
 
 ## 发布
 
-根工作区和文档应用为私有，npm 包名为 `hys-ui`，首版 `0.1.0`，MIT 公开发布。
+根工作区和文档应用为私有，npm 包名为 `hys-ui`，版本 `0.1.1`，MIT 公开发布。
 
 ```bash
 npm run pack:ui

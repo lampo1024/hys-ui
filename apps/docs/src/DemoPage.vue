@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import {computed,defineAsyncComponent,ref} from 'vue'
 import {HysButton,HysBadge,HysTabs} from 'hys-ui'
-import {Copy,RotateCcw,Check,Code2} from 'lucide-vue-next'
+import {RotateCcw,Code2} from 'lucide-vue-next'
 import api from './generated/api.json'
+import ExampleSource from './ExampleSource.vue'
+import type {ExampleSourceData} from './sourceTypes'
 import {catalog} from './catalog'
-import parity from './generated/parity.json'
+import capabilities from './component-capabilities.json'
 const props=defineProps<{name:string}>()
 const metadata=computed(()=>api[props.name as keyof typeof api])
 const entry=computed(()=>catalog.find(x=>x.name===props.name)!)
-const comparison=computed(()=>parity.find(x=>x.name===props.name)!)
+const capability=computed(()=>capabilities[props.name as keyof typeof capabilities])
 const modules=import.meta.glob('./examples/*/*.vue')
-const sources=import.meta.glob('./examples/*/*.vue',{query:'?raw',import:'default'})
-const order:Record<string,number>={Basic:0,Configure:1,Features:2,States:98,Disabled:99}
-const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>(order[a.split('/').pop()!.replace('.vue','')]??10)-(order[b.split('/').pop()!.replace('.vue','')]??10)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),source:ref(''),copied:ref(false)}))
+const sources=import.meta.glob('./examples/*/*.vue',{query:'?example-source&raw',import:'default'})
+const order:Record<string,number>={Basic:0,Configure:1,Features:2,Width:3,Search:4,Remote:5,Custom:6,Keyboard:7,States:98,Disabled:99}
+const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>(order[a.split('/').pop()!.replace('.vue','')]??10)-(order[b.split('/').pop()!.replace('.vue','')]??10)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
-const titles:Record<string,string>={Basic:'基础与常用场景',Configure:'交互配置',Async:'异步加载与失败重试',States:'状态与边界',Server:'远程分页',Editing:'编辑与批量操作',Tree:'树形数据与汇总',Disabled:'禁用与受限状态',Features:'常用外观与操作',Affixes:'前后缀与密码输入',Rules:'规则与异步校验',Multiple:'多选与搜索',Bounds:'范围约束',Selection:'受控选择',DragDrop:'拖动更新数据',Caret:'随提及位置展示候选'}
-async function showCode(s:typeof scenarios[number]){if(!s.source.value)s.source.value=String(await sources[s.path]())}
-async function copy(s:typeof scenarios[number]){await showCode(s);await navigator.clipboard.writeText(s.source.value);s.copied.value=true;setTimeout(()=>s.copied.value=false,1500)}
+const titles:Record<string,string>={Basic:'基础与常用场景',Configure:'交互配置',Async:'异步加载与失败重试',States:'状态与边界',Server:'远程分页',Editing:'编辑与批量操作',Tree:'树形数据与汇总',Disabled:'禁用与受限状态',Features:'常用外观与操作',Affixes:'前后缀与密码输入',Rules:'规则与异步校验',Multiple:'多选与搜索',Bounds:'范围约束',Selection:'受控选择',DragDrop:'拖动更新数据',Caret:'随提及位置展示候选',Positions:'显示位置',Service:'调用与消息队列',Content:'自定义内容与操作',Width:'浮层宽度与长文本',Search:'本地搜索与匹配规则',Remote:'远程搜索与异步状态',Custom:'自定义选项与选中内容',Keyboard:'键盘操作'}
 function reset(s:typeof scenarios[number]){if(props.name==='HysDataGrid'){const scene=s.path.split('/').pop()!.replace('.vue','').toLowerCase();localStorage.removeItem('hys-ui-grid:hys-docs-data-grid-'+scene)}s.version.value++}
 </script>
 <template>
@@ -25,16 +25,17 @@ function reset(s:typeof scenarios[number]){if(props.name==='HysDataGrid'){const 
   <div class="doc-eyebrow">{{entry.category}} / COMPONENT</div>
   <header class="doc-heading"><div><h1>{{name}} <span>{{entry.label}}</span></h1><p>{{entry.description}}</p></div><HysBadge tone="blue">Vue 3.5+</HysBadge></header>
   <div class="usage"><Code2 :size="16"/><code>import { {{name}} } from 'hys-ui'</code></div>
-  <aside class="doc-toc" aria-label="页内导航"><span>本页内容</span><a v-for="scenario in scenarios" :key="scenario.path" :href="'#scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()">{{titles[scenario.path.split('/').pop()!.replace('.vue','')]||'进阶用法'}}</a><a href="#api">API 参考</a><a href="#capabilities">对标范围</a><a href="#usage">使用说明</a></aside>
+  <aside class="doc-toc" aria-label="页内导航"><span>本页内容</span><a v-for="scenario in scenarios" :key="scenario.path" :href="'#scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()">{{titles[scenario.path.split('/').pop()!.replace('.vue','')]||'进阶用法'}}</a><a href="#api">API 参考</a><a href="#capabilities">功能说明</a><a href="#usage">使用说明</a></aside>
   <section v-for="scenario in scenarios" :id="'scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()" :key="scenario.path" class="example-card">
    <header><div><span class="section-dot"></span><h2>{{titles[scenario.path.split('/').pop()!.replace('.vue','')]||'进阶用法'}}</h2></div><HysButton variant="ghost" size="sm" @click="reset(scenario)"><RotateCcw :size="14"/>重置</HysButton></header>
    <div class="example-stage"><component :is="scenario.component" :key="scenario.version.value"/></div>
-   <details @toggle="($event.target as HTMLDetailsElement).open&&showCode(scenario)"><summary><Code2 :size="14"/> 查看示例源码</summary><HysButton class="copy-code" variant="secondary" size="sm" @click="copy(scenario)"><component :is="scenario.copied.value?Check:Copy" :size="14"/>{{scenario.copied.value?'已复制':'复制'}}</HysButton><pre><code>{{scenario.source.value}}</code></pre></details>
+   <ExampleSource :load-source="scenario.loadSource" :filename="scenario.path.split('/').pop()!"/>
   </section>
   <section id="api" class="api-section"><h2>API 参考</h2><p>以下签名与默认值从组件源码生成。</p><HysTabs v-model="section" :items="[{label:'参数 Props',value:'props'},{label:'事件 Events',value:'events'},{label:'插槽 Slots',value:'slots'},{label:'实例方法',value:'exposed'}]"/>
    <div class="api-scroll"><table><thead><tr><th>名称</th><th>类型 / 签名</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr v-for="row in rows" :key="row.name"><td><code>{{row.name}}</code><span v-if="row.required" class="required">必填</span></td><td><code>{{row.type}}</code></td><td><code>{{row.default||'—'}}</code></td><td>{{row.description||'详见类型签名及对应交互示例'}}</td></tr><tr v-if="!rows.length"><td colspan="4">此组件未声明此类接口。</td></tr></tbody></table></div>
   </section>
-  <section id="capabilities" class="notes"><h2>核心能力与对标范围</h2><p>{{comparison.core}}</p><p class="comparison-next">后续高级能力：{{comparison.later}}</p><a href="https://github.com/lampo1024/hys-ui/blob/main/docs/COMPONENT_PARITY.md" target="_blank" rel="noreferrer">查看全部 69 个组件的对标清单</a></section>
+  <section v-if="name==='HysToast'" class="notes"><h2>调用 API</h2><p>在组件 setup 中调用 <code>useHysToast({maxCount:5})</code>，消息继承当前主题与动效，页面离开时自动清理。</p><div class="api-scroll"><table><thead><tr><th>方法</th><th>说明</th></tr></thead><tbody><tr><td><code>show(options | string)</code></td><td>创建提示，支持 id、content、icon、grouping、onClose 与 onAfterClose。</td></tr><tr><td><code>success / info / warning / error / loading</code></td><td>快捷创建对应状态。loading 默认保留，其余默认 3000ms。</td></tr><tr><td><code>handle.update(options | string)</code></td><td>更新原提示的内容、状态或配置；相同 id 会复用现有提示。</td></tr><tr><td><code>handle.close() / handle.closed</code></td><td>主动关闭，或等待退出动画完成。</td></tr><tr><td><code>createHysToast(config)</code></td><td>在 setup 外创建共享服务，可用于请求回调等场景。支持 theme、motion，结束时调用 dispose()。</td></tr><tr><td><code>closeAll()</code></td><td>关闭当前调用范围中的全部提示。</td></tr></tbody></table></div><p>调用配置还支持 <code>maxCount</code>（默认 5）、<code>appendTo</code> 及组件的显示参数。<code>grouping</code> 默认关闭，启用后合并相同位置、状态和文本的消息。位置参数使用七种标准值，原有 <code>top</code>、<code>bottom</code> 分别对应顶部中间和底部中间。</p></section>
+  <section id="capabilities" class="notes"><h2>功能说明</h2><p>{{capability}}</p></section>
   <section id="usage" class="notes"><h2>使用说明</h2><ul><li v-for="note in entry.notes" :key="note">{{note}}</li><li>交互控件可通过 Tab 聚焦，浮层支持 Escape 关闭。减少动态效果设置优先于组件动效。</li><li>主题颜色通过 <code>--hys-ui-primary</code> 等变量覆盖，使用 <code>provideHysConfig</code> 可响应式切换主题与动效。</li></ul></section>
  </article>
 </template>

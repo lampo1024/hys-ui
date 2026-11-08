@@ -8,4 +8,4 @@ const demoConfig = demoReactive<{
     disabled: boolean;
 }>({ "disabled": false });
 </script>
-<template><div><div class="demo-controls"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/></div><div class="demo-content"><section class="card" style="padding:20px"><HysSortableList v-bind="demoConfig" v-model="sorted"/><p class="hint">支持拖拽和上移、下移按钮</p></section></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template><div><div class="demo-controls"><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div></div></section></div><div class="demo-content"><section class="card" style="padding:20px"><HysSortableList v-bind="demoConfig" v-model="sorted"/><p class="hint">支持拖拽和上移、下移按钮</p></section></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>

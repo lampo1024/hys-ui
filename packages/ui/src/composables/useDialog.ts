@@ -49,6 +49,6 @@ export function useDialog(open: Ref<boolean>, dialog: Ref<HTMLElement | undefine
       if (token === generation && active.value && target?.isConnected) target.focus()
     }
   }, { immediate: true, flush: 'post' })
-  onBeforeUnmount(() => { generation++; cleanup() })
+  onBeforeUnmount(() => { active.value=false; generation++; cleanup() })
   return {active}
 }

@@ -1,7 +1,11 @@
 async (page) => {
  const errors=[],results=[];
  const listener=error=>errors.push(String(error));page.on('pageerror',listener);
+ await page.setViewportSize({width:1440,height:1000});
+ await page.goto('http://127.0.0.1:5174/components/hys-button',{waitUntil:'domcontentloaded'});
+ await page.locator('.docs-sidebar nav a[href^="/components/"]').first().waitFor({state:'attached'});
  const links=await page.locator('.docs-sidebar nav a[href^="/components/"]').evaluateAll(elements=>elements.map(element=>element.getAttribute('href')));
+ if(!links.length)throw Error('Component navigation did not load');
  for(const href of links){
   const begin=errors.length;
   await page.goto('http://127.0.0.1:5174'+href,{waitUntil:'domcontentloaded'});

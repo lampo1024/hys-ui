@@ -2,7 +2,7 @@ import { ref, nextTick, onBeforeUnmount, onDeactivated, type Ref } from 'vue'
 import { registerOverlay } from './overlayManager'
 export type Placement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | 'right' | 'left'
 export interface FloatingAnchor {getBoundingClientRect():DOMRect;contains(node:Node|null):boolean;focus():void;readonly isConnected:boolean}
-export function useFloating(anchor: Readonly<Ref<FloatingAnchor | undefined>>, panel: Ref<HTMLElement | undefined>, options: { placement?: Placement; gap?: number; padding?: number; matchWidth?: boolean } = {}) {
+export function useFloating(anchor: Readonly<Ref<FloatingAnchor | undefined>>, panel: Ref<HTMLElement | undefined>, options: { placement?: Placement; gap?: number; padding?: number; matchWidth?: boolean | 'min' | (()=>boolean|'min') } = {}) {
   const open = ref(false)
   const restoringFocus = ref(false)
   const style = ref<Record<string,string>>({position:'fixed',top:'0px',left:'0px',visibility:'hidden'})
@@ -15,11 +15,13 @@ export function useFloating(anchor: Readonly<Ref<FloatingAnchor | undefined>>, p
     if (!a.width && !a.height) { close(); return }
     const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight
     const matchedWidth = Math.min(a.width, Math.max(0, vw - 2 * pad))
-    if (options.matchWidth) {
+    const widthMode=typeof options.matchWidth==='function'?options.matchWidth():options.matchWidth
+    if (widthMode===true) {
       panel.value.style.width = `${matchedWidth}px`
       panel.value.style.minWidth = '0'
       panel.value.style.maxWidth = `${matchedWidth}px`
     }
+    if(widthMode==='min'){panel.value.style.width='max-content';panel.value.style.minWidth=`${matchedWidth}px`;panel.value.style.maxWidth=`calc(100vw - ${pad*2}px)`}
     const p = panel.value.getBoundingClientRect()
     const w = Math.min(p.width, Math.max(0,vw-2*pad)), h = Math.min(p.height,Math.max(0,vh-2*pad))
     let place = options.placement ?? 'bottom-start'
@@ -33,7 +35,7 @@ export function useFloating(anchor: Readonly<Ref<FloatingAnchor | undefined>>, p
     if(place==='right'||place==='left'){x=place==='right'?a.right+gap:a.left-w-gap;y=a.top+(a.height-h)/2}
     x=Math.max(pad,Math.min(x,vw-w-pad));y=Math.max(pad,Math.min(y,vh-h-pad))
     placement.value=place
-    style.value={...(options.matchWidth ? {width:`${matchedWidth}px`,minWidth:'0'} : {}),position:'fixed',left:`${Math.round(x)}px`,top:`${Math.round(y)}px`,visibility:'visible',zIndex:'1200',maxWidth:`calc(100vw - ${pad*2}px)`,maxHeight:`calc(100vh - ${pad*2}px)`,overflowY:'auto',overscrollBehavior:'contain'}
+    style.value={...(widthMode===true?{width:`${matchedWidth}px`,minWidth:'0'}:widthMode==='min'?{width:'max-content',minWidth:`${matchedWidth}px`}:{}),position:'fixed',left:`${Math.round(x)}px`,top:`${Math.round(y)}px`,visibility:'visible',zIndex:'1200',maxWidth:`calc(100vw - ${pad*2}px)`,maxHeight:`calc(100vh - ${pad*2}px)`,overflowY:'auto',overscrollBehavior:'contain'}
   }
   function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(update)}
   function outside(e:PointerEvent){if(!isTop?.())return;if(!anchor.value?.contains(e.target as Node)&&!panel.value?.contains(e.target as Node))close()}

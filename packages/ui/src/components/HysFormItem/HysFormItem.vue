@@ -3,15 +3,17 @@ import {computed,inject,onBeforeUnmount,onMounted,onUpdated,provide,ref,useId,wa
 import {formKey,fieldKey} from '../../composables/formContext'
 import {useHysRootAttrs} from '../../config'
 const props=defineProps<{label?:string;prop?:string;error?:string;required?:boolean;hint?:string;for?:string}>()
-const hysRootAttrs=useHysRootAttrs(),form=inject(formKey,undefined),root=ref<HTMLElement>(),id=useId(),controlId=ref(props.for||id),errorId=id+'-error'
+const hysRootAttrs=useHysRootAttrs(),form=inject(formKey,undefined),root=ref<HTMLElement>(),id=useId(),controlId=ref(props.for||id),errorId=id+'-error',hintId=id+'-hint'
 const error=computed(()=>props.error||(props.prop?form?.errors.value[props.prop]:'')),invalid=computed(()=>!!error.value)
 const required=computed(()=>!!(props.required||(props.prop&&[form?.rules.value[props.prop]||[]].flat().some(rule=>rule.required))))
-provide(fieldKey,{id:controlId,error,errorId,required})
+const describedBy=computed(()=>invalid.value?errorId:props.hint?hintId:undefined)
+provide(fieldKey,{id:controlId,label:computed(()=>props.label),error,errorId,describedBy,required})
+watch(()=>props.prop?props.prop.split('.').reduce<unknown>((value,key)=>(value as Record<string,unknown>|undefined)?.[key],form?.model.value):undefined,()=>{if(form?.model.value&&!form.resetting.value)validate('change')},{deep:true})
 let unregister:(()=>void)|undefined
 watch(()=>props.prop,name=>{unregister?.();unregister=name?form?.register(name):undefined},{immediate:true})
 onBeforeUnmount(()=>unregister?.())
-function sync(){const control=root.value?.querySelector<HTMLElement>('input:not([type="hidden"]),textarea,select,button[role="combobox"],button[role="switch"]');if(!control)return;if(!control.id)control.id=controlId.value;else controlId.value=control.id;control.setAttribute('aria-invalid',String(invalid.value));if(required.value)control.setAttribute('aria-required','true');const descriptions=new Set((control.getAttribute('aria-describedby')||'').split(' ').filter(Boolean));if(invalid.value)descriptions.add(errorId);else descriptions.delete(errorId);if(descriptions.size)control.setAttribute('aria-describedby',[...descriptions].join(' '));else control.removeAttribute('aria-describedby')}
+function sync(){const control=root.value?.querySelector<HTMLElement>('input:not([type="hidden"]):not([hidden]),textarea,select,button[role="combobox"],button[role="switch"],[role="radiogroup"],[role="slider"]');if(!control)return;if(!control.id)control.id=controlId.value;else controlId.value=control.id;if(control.hasAttribute('data-hys-ui-field-managed'))return;control.setAttribute('aria-invalid',String(invalid.value));if(required.value)control.setAttribute('aria-required','true');else control.removeAttribute('aria-required');const descriptions=new Set((control.getAttribute('aria-describedby')||'').split(' ').filter(Boolean));descriptions.delete(errorId);descriptions.delete(hintId);if(describedBy.value)descriptions.add(describedBy.value);if(descriptions.size)control.setAttribute('aria-describedby',[...descriptions].join(' '));else control.removeAttribute('aria-describedby')}
 onMounted(sync);onUpdated(sync)
-function validate(trigger:'blur'|'change'){if(props.prop)void form?.validateField(props.prop,trigger)}
+function validate(trigger:'blur'|'change'){if(!form?.resetting.value&&props.prop)void form?.validateField(props.prop,trigger)}
 </script>
-<template><div ref="root" v-bind="hysRootAttrs" class="hys-ui-ent-field" @change="validate('change')" @focusout="validate('blur')"><label v-if="label" :for="controlId">{{label}} <span v-if="required" aria-hidden="true">*</span></label><div :class="{'hys-ui-ent-invalid':invalid}"><slot :id="controlId" :invalid="invalid" :error="error"/></div><small v-if="error" :id="errorId" role="alert" class="hys-ui-ent-error">{{error}}</small><small v-else-if="hint">{{hint}}</small></div></template>
+<template><div ref="root" v-bind="hysRootAttrs" class="hys-ui-ent-field" @change="!form?.model.value&&validate('change')" @focusout="validate('blur')"><label v-if="label" :for="controlId">{{label}} <span v-if="required" aria-hidden="true">*</span></label><div :class="{'hys-ui-ent-invalid':invalid}"><slot :id="controlId" :invalid="invalid" :error="error"/></div><small v-if="error" :id="errorId" role="alert" class="hys-ui-ent-error">{{error}}</small><small v-else-if="hint" :id="hintId">{{hint}}</small></div></template>

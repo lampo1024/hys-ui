@@ -641,6 +641,22 @@
         "global": false
       },
       {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
         "name": "disabledDate",
         "type": "((date: string) => boolean) | undefined",
         "required": false,
@@ -760,15 +776,15 @@
         "name": "bordered",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "true",
         "description": "",
         "global": false
       },
       {
         "name": "shadow",
-        "type": "\"always\" | \"hover\" | \"never\" | undefined",
+        "type": "\"never\" | \"always\" | \"hover\" | undefined",
         "required": false,
-        "default": "",
+        "default": "\"never\"",
         "description": "",
         "global": false
       },
@@ -784,7 +800,7 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "",
+        "default": "\"md\"",
         "description": "",
         "global": false
       }
@@ -954,7 +970,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "220",
-        "description": "",
+        "description": "顶部、底部抽屉高度；未设置时使用 width",
         "global": false
       }
     ],
@@ -1035,12 +1051,28 @@
         "default": "false",
         "description": "",
         "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[v: boolean]",
+        "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": ""
@@ -1051,9 +1083,30 @@
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
       }
     ],
     "slots": [
+      {
+        "name": "icon",
+        "type": "{ checked: boolean; indeterminate: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
       {
         "name": "default",
         "type": "{}",
@@ -1062,7 +1115,29 @@
         "description": ""
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
   },
   "HysColorPicker": {
     "props": [
@@ -1758,6 +1833,14 @@
         "global": false
       },
       {
+        "name": "height",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "顶部、底部抽屉高度；未设置时使用 width",
+        "global": false
+      },
+      {
         "name": "closeOnMask",
         "type": "boolean | undefined",
         "required": false,
@@ -2231,6 +2314,14 @@
         "default": "270",
         "description": "",
         "global": false
+      },
+      {
+        "name": "fitContainer",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "时间轴是否自动填满剩余容器宽度",
+        "global": false
       }
     ],
     "events": [
@@ -2254,6 +2345,20 @@
         "required": false,
         "default": "",
         "description": "控制浮层显示"
+      },
+      {
+        "name": "update:scale",
+        "type": "[value: Scale]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "scaleChange",
+        "type": "[value: Scale]",
+        "required": false,
+        "default": "",
+        "description": ""
       },
       {
         "name": "update:items",
@@ -3236,11 +3341,42 @@
         "default": "",
         "description": "受控值，配合 v-model 使用",
         "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "showSelectAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
+        "type": "[value: Record<string, boolean>]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
         "type": "[value: Record<string, boolean>]",
         "required": false,
         "default": "",
@@ -3441,15 +3577,15 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string",
-        "required": true,
+        "type": "T | undefined",
+        "required": false,
         "default": "",
         "description": "受控值，配合 v-model 使用",
         "global": false
       },
       {
         "name": "options",
-        "type": "{ label: string; value: string; disabled?: boolean | undefined; }[]",
+        "type": "HysRadioOption<T>[]",
         "required": true,
         "default": "",
         "description": "可选项数据，支持单项禁用",
@@ -3472,10 +3608,34 @@
         "global": false
       },
       {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "required",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
         "name": "vertical",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
         "description": "",
         "global": false
       },
@@ -3491,20 +3651,42 @@
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: string]",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": ""
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "label",
+        "type": "{ option: HysRadioOption<T>; }",
+        "required": false,
+        "default": "",
+        "description": "显示标签"
+      }
+    ],
     "exposed": []
   },
   "HysRating": {
@@ -3628,6 +3810,14 @@
         "global": false
       },
       {
+        "name": "step",
+        "type": "number | undefined",
+        "required": false,
+        "default": "10",
+        "description": "每次调整的步长",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "number | undefined",
         "required": false,
@@ -3639,6 +3829,20 @@
     "events": [
       {
         "name": "update:modelValue",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "resizeStart",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "resizeEnd",
         "type": "[value: number]",
         "required": false,
         "default": "",
@@ -4037,6 +4241,22 @@
         "global": false
       },
       {
+        "name": "popupMatchWidth",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "浮层是否严格与选择框等宽；默认按内容扩展，并限制在视口内",
+        "global": false
+      },
+      {
+        "name": "filterMethod",
+        "type": "((query: string, option: HysSelectOption) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义本地搜索规则，参数为关键词与选项；remote 模式由调用方提供结果",
+        "global": false
+      },
+      {
         "name": "emptyText",
         "type": "string | undefined",
         "required": false,
@@ -4093,7 +4313,7 @@
     "slots": [
       {
         "name": "label",
-        "type": "{ selected: HysSelectOption[]; }",
+        "type": "{ selected: { label: string; value: string; disabled?: boolean | undefined; }[]; }",
         "required": false,
         "default": "",
         "description": "显示标签"
@@ -4381,11 +4601,33 @@
         "default": "false",
         "description": "禁止用户操作",
         "global": false
+      },
+      {
+        "name": "step",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2",
+        "description": "每次调整的步长",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
+        "type": "[value: number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "resizeStart",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "resizeEnd",
         "type": "[value: number]",
         "required": false,
         "default": "",
@@ -4442,6 +4684,14 @@
         "required": false,
         "default": "false",
         "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
         "global": false
       },
       {
@@ -4524,7 +4774,7 @@
       },
       {
         "name": "beforeChange",
-        "type": "(() => boolean | Promise<boolean>) | undefined",
+        "type": "((next: boolean) => boolean | void | Promise<boolean | void>) | undefined",
         "required": false,
         "default": "",
         "description": "",
@@ -5099,26 +5349,26 @@
     "props": [
       {
         "name": "message",
-        "type": "string",
-        "required": true,
-        "default": "",
-        "description": "",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "提示文本，可使用默认插槽自定义内容",
         "global": false
       },
       {
         "name": "type",
-        "type": "\"info\" | \"success\" | \"error\" | undefined",
+        "type": "HysToastType | undefined",
         "required": false,
         "default": "\"success\"",
-        "description": "",
+        "description": "success、info、warning、error、loading 五种状态",
         "global": false
       },
       {
         "name": "duration",
         "type": "number | undefined",
         "required": false,
-        "default": "3000",
-        "description": "动画时长，单位毫秒",
+        "default": "",
+        "description": "自动关闭时长（毫秒）；普通状态默认 3000，loading 默认 0。0 表示不自动关闭",
         "global": false
       },
       {
@@ -5131,10 +5381,82 @@
       },
       {
         "name": "position",
-        "type": "\"top\" | \"bottom\" | \"bottom-right\" | \"top-right\" | undefined",
+        "type": "HysToastPosition | undefined",
         "required": false,
-        "default": "\"bottom-right\"",
-        "description": "",
+        "default": "\"top-center\"",
+        "description": "七种显示位置，默认 top-center；top/bottom 为兼容别名",
+        "global": false
+      },
+      {
+        "name": "offset",
+        "type": "number | undefined",
+        "required": false,
+        "default": "24",
+        "description": "与窗口边缘的距离，单位 px",
+        "global": false
+      },
+      {
+        "name": "zIndex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2000",
+        "description": "浮层层级",
+        "global": false
+      },
+      {
+        "name": "showIcon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示状态图标，可通过 icon 插槽替换",
+        "global": false
+      },
+      {
+        "name": "pauseOnHover",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "鼠标悬停时暂停剩余关闭时间",
+        "global": false
+      },
+      {
+        "name": "closeOnEscape",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "按 Escape 关闭最近一条允许关闭的提示",
+        "global": false
+      },
+      {
+        "name": "repeat",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "重复次数，大于 1 时显示次数标记",
+        "global": false
+      },
+      {
+        "name": "plain",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用柔和背景",
+        "global": false
+      },
+      {
+        "name": "teleport",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否渲染到浮层容器，false 时在原位置显示",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "浮层挂载目标，默认 body",
         "global": false
       }
     ],
@@ -5144,11 +5466,76 @@
         "type": "[]",
         "required": false,
         "default": "",
+        "description": "开始关闭时触发"
+      },
+      {
+        "name": "afterClose",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "退出动画结束后触发"
+      }
+    ],
+    "slots": [
+      {
+        "name": "icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "action",
+        "type": "{ close: () => void; }",
+        "required": false,
+        "default": "",
         "description": ""
       }
     ],
-    "slots": [],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "close",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "pause",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "resume",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "restart",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
   },
   "HysTooltip": {
     "props": [
@@ -5325,7 +5712,7 @@
         "name": "filterable",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "true",
         "description": "",
         "global": false
       },
@@ -5342,6 +5729,20 @@
       {
         "name": "update:modelValue",
         "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: string[], direction: \"left\" | \"right\", movedKeys: string[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "checkChange",
+        "type": "[side: \"left\" | \"right\", values: string[]]",
         "required": false,
         "default": "",
         "description": ""
@@ -5850,7 +6251,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "280",
-        "description": "",
+        "description": "顶部、底部抽屉高度；未设置时使用 width",
         "global": false
       },
       {

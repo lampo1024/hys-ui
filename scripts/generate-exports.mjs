@@ -7,5 +7,5 @@ for(const name of fs.readdirSync(root+'components').sort()){
  const source=fs.readFileSync(`${root}components/${name}/${name}.vue`,'utf8')
  for(const match of source.matchAll(/export (?:type|interface) (\w+)/g))code+=`export type {${match[1]}} from './components/${name}/${name}.vue'\n`
 }
-code+="export {provideHysConfig} from './config'\nexport type {HysConfig,HysTheme,HysMotion} from './config'\nexport type {Placement} from './composables/useFloating'\nexport type {HysFormRule} from './composables/formContext'\n"
+code+="export {provideHysConfig} from './config'\nexport type {HysConfig,HysTheme,HysMotion} from './config'\nexport type {Placement} from './composables/useFloating'\nexport type {HysFormRule} from './composables/formContext'\nexport {useHysToast,createHysToast} from './composables/useHysToast'\nexport type {HysToastApi,HysToastOptions,HysToastConfig,HysToastHandle,HysToastServiceConfig,HysToastService} from './composables/useHysToast'\n"
 fs.writeFileSync(root+'index.ts',code)

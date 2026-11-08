@@ -9,4 +9,5 @@ const demoConfig = demoReactive<{
     labelWidth: number;
 }>({ "rowHeight": 46, "labelWidth": 270 });
 </script>
-<template><div><div class="demo-controls"><label class="demo-field">rowHeight<DemoNumber v-model="demoConfig.rowHeight" :show-controls="false"/></label><label class="demo-field">labelWidth<DemoNumber v-model="demoConfig.labelWidth" :show-controls="false"/></label></div><div class="demo-content"><HysGantt v-bind="demoConfig" v-model:items="items" editable/></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field">rowHeight<DemoNumber v-model="demoConfig.rowHeight" :show-controls="false"/></label>
+<label class="demo-field"><span class="demo-control-label"><span>标签宽度</span><code>labelWidth</code></span><DemoNumber v-model="demoConfig.labelWidth" :show-controls="false"/></label></div></section></div><div class="demo-content"><HysGantt v-bind="demoConfig" v-model:items="items" editable/></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>

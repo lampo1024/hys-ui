@@ -1,23 +1,58 @@
 {
   "name": "hys-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Themeable Vue 3 components with TypeScript and interactive documentation",
   "type": "module",
   "license": "MIT",
   "author": "hys-ui contributors",
-  "repository": {"type": "git", "url": "git+https://github.com/lampo1024/hys-ui.git", "directory": "packages/ui"},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lampo1024/hys-ui.git",
+    "directory": "packages/ui"
+  },
   "homepage": "https://github.com/lampo1024/hys-ui#readme",
   "bugs": "https://github.com/lampo1024/hys-ui/issues",
-  "keywords": ["vue", "vue3", "components", "typescript", "hys-ui"],
-  "files": ["dist", "README.md", "LICENSE", "CHANGELOG.md"],
+  "keywords": [
+    "vue",
+    "vue3",
+    "components",
+    "typescript",
+    "hys-ui"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/types/index.d.ts",
-  "exports": {".": {"types": "./dist/types/index.d.ts", "import": "./dist/index.js"}, "./style.css": "./dist/style.css", "./package.json": "./package.json"},
-  "sideEffects": ["**/*.css"],
-  "peerDependencies": {"vue": ">=3.5.0 <4"},
-  "dependencies": {"lucide-vue-next": "^0.468.0"},
-  "devDependencies": {"vue": "^3.5.13"},
-  "publishConfig": {"access": "public", "registry": "https://registry.npmjs.org/"},
-  "scripts": {"build": "vite build --config vite.config.ts && vue-tsc -p tsconfig.build.json"}
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "peerDependencies": {
+    "vue": ">=3.5.0 <4"
+  },
+  "dependencies": {
+    "lucide-vue-next": "^0.468.0"
+  },
+  "devDependencies": {
+    "vue": "^3.5.13"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "vite build --config vite.config.ts && vue-tsc -p tsconfig.build.json"
+  }
 }

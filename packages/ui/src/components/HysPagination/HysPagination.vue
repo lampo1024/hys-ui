@@ -47,7 +47,7 @@ function submitJump() {const n=Number(jump.value);if(validJump.value && Number.i
 
 </script>
 <template>
-  <nav v-bind="hysRootAttrs" class="hys-ui-pf-pagination" :class="{'pf-pagination--compact':compact}" aria-label="分页导航" :aria-busy="loading">
+  <nav v-bind="hysRootAttrs" class="hys-ui-pf-pagination" :class="{'hys-ui-pf-pagination-compact':compact}" aria-label="分页导航" :aria-busy="loading">
     <span v-if="showTotal" class="hys-ui-pf-pagination-total" aria-live="polite">{{totalLabel}}</span>
     <div class="hys-ui-pf-pagination-actions">
     <div class="hys-ui-pf-pagination-controls">
