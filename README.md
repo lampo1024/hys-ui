@@ -2,6 +2,8 @@
 
 面向 Vue 3.5+ 的组件库，提供 TypeScript 类型、主题配置和独立的中文交互文档。
 
+[在线文档与交互示例](https://lampo1024.github.io/hys-ui/)
+
 ## 安装
 
 ```bash
@@ -60,6 +62,8 @@ npm run check:release
 ```
 
 `build:docs` 输出到 `apps/docs/dist`，部署服务需要将未知路径回退到 `index.html`。
+
+在线文档通过 GitHub Pages 发布，推送到 `main` 后自动更新，也可在 Actions 中手动运行 `Publish component documentation`。`npm run build:docs:pages` 会生成组件页面的静态入口，支持详情页直接访问和刷新；部署到子目录时通过 `DOCS_BASE_PATH` 设置路径。
 
 ## 轻提示
 

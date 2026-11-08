@@ -2,6 +2,8 @@
 
 面向 Vue 3.5+ 的组件库，提供 TypeScript 类型、主题配置和独立的中文交互文档。
 
+[在线文档与交互示例](https://lampo1024.github.io/hys-ui/)
+
 ## 安装
 
 ```bash

@@ -10,6 +10,7 @@
     "dev:docs": "vite --config apps/docs/vite.config.ts",
     "build:ui": "node scripts/generate-exports.mjs && npm run build --workspace hys-ui",
     "build:docs": "npm run build:ui && node scripts/generate-api.mjs && vue-tsc --noEmit -p apps/docs/tsconfig.json && vite build --config apps/docs/vite.config.ts",
+    "build:docs:pages": "npm run build:docs && node scripts/prepare-docs-pages.mjs",
     "typecheck": "vue-tsc --noEmit -p packages/ui/tsconfig.json && vue-tsc --noEmit -p apps/docs/tsconfig.json",
     "check:contracts": "node scripts/check-contracts.mjs",
     "check:release": "npm run build:docs && npm test && npm run check:contracts && node scripts/pack.mjs && npm run test:consumer",
