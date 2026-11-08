@@ -3,10 +3,10 @@
     "props": [
       {
         "name": "items",
-        "type": "{ title: string; content?: string | undefined; disabled?: boolean | undefined; }[]",
+        "type": "HysAccordionItem[]",
         "required": true,
         "default": "",
-        "description": "展示项目数据",
+        "description": "展示项；每项的字段见公开类型",
         "global": false
       },
       {
@@ -14,23 +14,23 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "允许多选",
+        "description": "允许多个面板同时展开；默认仅展开一项",
         "global": false
       },
       {
         "name": "modelValue",
-        "type": "number[] | undefined",
+        "type": "HysAccordionKey[] | undefined",
         "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "展开项标识数组；有 id 时使用 id，否则使用索引",
         "global": false
       },
       {
         "name": "defaultActive",
-        "type": "number[] | undefined",
+        "type": "HysAccordionKey[] | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "非受控模式的默认展开项",
         "global": false
       },
       {
@@ -40,35 +40,135 @@
         "default": "false",
         "description": "禁止用户操作",
         "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示外框",
+        "global": false
+      },
+      {
+        "name": "ghost",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "透明背景与无边框外观",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "组件尺寸",
+        "global": false
+      },
+      {
+        "name": "arrowPlacement",
+        "type": "\"right\" | \"left\" | undefined",
+        "required": false,
+        "default": "\"right\"",
+        "description": "图标位于标题左侧或右侧",
+        "global": false
+      },
+      {
+        "name": "showArrow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示展开图标；仅图标触发模式始终保留图标",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "\"header\" | \"icon\" | undefined",
+        "required": false,
+        "default": "\"header\"",
+        "description": "点击整段标题，或仅点击图标按钮展开",
+        "global": false
+      },
+      {
+        "name": "lazy",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "保留内容模式下，是否延迟到首次访问时挂载",
+        "global": false
+      },
+      {
+        "name": "destroyOnHide",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "收起时销毁内容；设为 false 可保留已访问面板的局部状态",
+        "global": false
+      },
+      {
+        "name": "beforeToggle",
+        "type": "((key: HysAccordionKey, expanded: boolean) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "展开或收起前检查，参数为 key、expanded；false 或拒绝的 Promise 阻止操作",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: number[]]",
+        "type": "[value: HysAccordionKey[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: number[]]",
+        "type": "[value: HysAccordionKey[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际值变化后触发；参数为更新后的值"
+      },
+      {
+        "name": "itemClick",
+        "type": "[key: HysAccordionKey, expanded: boolean]",
+        "required": false,
+        "default": "",
+        "description": "请求展开或收起时触发：key、目标展开状态"
+      },
+      {
+        "name": "guardError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "异步检查抛出错误或 Promise 被拒绝时触发；取消与过期请求不会覆盖当前值"
       }
     ],
     "slots": [
       {
         "name": "title",
-        "type": "{ item: { title: string; content?: string | undefined; disabled?: boolean | undefined; }; index: number; }",
+        "type": "{ item: HysAccordionItem; index: number; expanded: boolean; }",
         "required": false,
         "default": "",
         "description": "标题"
       },
       {
+        "name": "icon",
+        "type": "{ item: HysAccordionItem; index: number; expanded: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "extra",
+        "type": "{ item: HysAccordionItem; index: number; expanded: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
         "name": "content",
-        "type": "{ item: { title: string; content?: string | undefined; disabled?: boolean | undefined; }; index: number; }",
+        "type": "{ item: HysAccordionItem; index: number; expanded: boolean; }",
         "required": false,
         "default": "",
         "description": ""
@@ -364,31 +464,62 @@
         "name": "separator",
         "type": "string | undefined",
         "required": false,
+        "default": "\"/\"",
+        "description": "默认分隔文本；单项 separator 优先",
+        "global": false
+      },
+      {
+        "name": "separatorIcon",
+        "type": "Component | undefined",
+        "required": false,
         "default": "",
-        "description": "",
+        "description": "分隔图标组件；separator 插槽优先",
         "global": false
       },
       {
         "name": "items",
-        "type": "{ label: string; href?: string | undefined; }[]",
+        "type": "HysBreadcrumbItem[]",
         "required": true,
         "default": "",
-        "description": "展示项目数据",
+        "description": "展示项；每项的字段见公开类型",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"面包屑\"",
+        "description": "辅助技术使用的组件名称",
         "global": false
       }
     ],
-    "events": [],
+    "events": [
+      {
+        "name": "select",
+        "type": "[item: HysBreadcrumbItem, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "默认链接点击事件：item、index、MouseEvent"
+      }
+    ],
     "slots": [
       {
         "name": "separator",
-        "type": "{}",
+        "type": "{ item: HysBreadcrumbItem; index: number; }",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "link",
-        "type": "{ item: { label: string; href?: string | undefined; }; index: number; }",
+        "type": "{ item: HysBreadcrumbItem; index: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "item",
+        "type": "{ item: HysBreadcrumbItem; index: number; current: boolean; }",
         "required": false,
         "default": "",
         "description": ""
@@ -488,7 +619,7 @@
       },
       {
         "name": "iconPosition",
-        "type": "\"left\" | \"right\" | undefined",
+        "type": "\"right\" | \"left\" | undefined",
         "required": false,
         "default": "\"left\"",
         "description": "",
@@ -1787,7 +1918,7 @@
       },
       {
         "name": "orientation",
-        "type": "\"center\" | \"left\" | \"right\" | undefined",
+        "type": "\"right\" | \"left\" | \"center\" | undefined",
         "required": false,
         "default": "\"center\"",
         "description": "",
@@ -1882,7 +2013,7 @@
       },
       {
         "name": "placement",
-        "type": "\"left\" | \"right\" | \"top\" | \"bottom\" | undefined",
+        "type": "\"right\" | \"left\" | \"top\" | \"bottom\" | undefined",
         "required": false,
         "default": "\"right\"",
         "description": "",
@@ -2118,7 +2249,7 @@
       },
       {
         "name": "labelPosition",
-        "type": "\"left\" | \"right\" | \"top\" | undefined",
+        "type": "\"right\" | \"left\" | \"top\" | undefined",
         "required": false,
         "default": "\"top\"",
         "description": "",
@@ -2844,7 +2975,7 @@
       },
       {
         "name": "placement",
-        "type": "\"left\" | \"right\" | \"top\" | \"bottom\" | undefined",
+        "type": "\"right\" | \"left\" | \"top\" | \"bottom\" | undefined",
         "required": false,
         "default": "\"right\"",
         "description": "",
@@ -4671,18 +4802,18 @@
     "props": [
       {
         "name": "items",
-        "type": "(string | { title: string; description?: string | undefined; disabled?: boolean | undefined; })[]",
+        "type": "(string | HysStepItem)[]",
         "required": true,
         "default": "",
-        "description": "展示项目数据",
+        "description": "展示项；每项的字段见公开类型",
         "global": false
       },
       {
         "name": "current",
-        "type": "number",
-        "required": true,
-        "default": "",
-        "description": "",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "当前步骤，索引从 0 开始；-1 表示尚未开始，items.length 表示全部完成",
         "global": false
       },
       {
@@ -4690,7 +4821,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "使用纵向布局",
         "global": false
       },
       {
@@ -4698,7 +4829,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "允许通过点击和方向键切换可用步骤",
         "global": false
       },
       {
@@ -4711,10 +4842,58 @@
       },
       {
         "name": "status",
-        "type": "\"error\" | \"process\" | \"finish\" | \"wait\" | undefined",
+        "type": "HysStepStatus | undefined",
+        "required": false,
+        "default": "\"process\"",
+        "description": "当前步骤状态；单项 status 优先于自动计算",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "组件尺寸",
+        "global": false
+      },
+      {
+        "name": "labelPlacement",
+        "type": "\"right\" | \"bottom\" | undefined",
+        "required": false,
+        "default": "\"right\"",
+        "description": "横向布局中，标题与描述位于图标右侧或下方",
+        "global": false
+      },
+      {
+        "name": "progressDot",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用点状进度标记",
+        "global": false
+      },
+      {
+        "name": "simple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "简洁背景并隐藏描述",
+        "global": false
+      },
+      {
+        "name": "responsive",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "小屏幕下使用纵向布局",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "辅助技术使用的组件名称",
         "global": false
       }
     ],
@@ -4724,7 +4903,7 @@
         "type": "[index: number]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际值变化后触发；参数为更新后的值"
       },
       {
         "name": "update:current",
@@ -4734,7 +4913,36 @@
         "description": ""
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "icon",
+        "type": "{ item: HysStepItem; index: number; status: HysStepStatus; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "title",
+        "type": "{ item: HysStepItem; index: number; status: HysStepStatus; }",
+        "required": false,
+        "default": "",
+        "description": "标题"
+      },
+      {
+        "name": "subtitle",
+        "type": "{ item: HysStepItem; index: number; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "description",
+        "type": "{ item: HysStepItem; index: number; status: HysStepStatus; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ],
     "exposed": []
   },
   "HysSwitch": {
@@ -4950,18 +5158,26 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string",
-        "required": true,
+        "type": "HysTabValue | undefined",
+        "required": false,
         "default": "",
         "description": "受控值，配合 v-model 使用",
         "global": false
       },
       {
+        "name": "defaultValue",
+        "type": "HysTabValue | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控模式的初始页签；未指定时使用首个可用项",
+        "global": false
+      },
+      {
         "name": "items",
-        "type": "{ label: string; value: string; disabled?: boolean | undefined; closable?: boolean | undefined; }[]",
+        "type": "HysTabItem[]",
         "required": true,
         "default": "",
-        "description": "展示项目数据",
+        "description": "展示项；每项的字段见公开类型",
         "global": false
       },
       {
@@ -4974,10 +5190,10 @@
       },
       {
         "name": "type",
-        "type": "\"line\" | \"card\" | undefined",
+        "type": "\"line\" | \"card\" | \"border-card\" | \"segment\" | undefined",
         "required": false,
-        "default": "",
-        "description": "",
+        "default": "\"line\"",
+        "description": "line、card、border-card 或 segment 外观",
         "global": false
       },
       {
@@ -4985,7 +5201,39 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "兼容纵向导航设置；显式 placement 优先",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "\"right\" | \"left\" | \"top\" | \"bottom\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "导航位置；未指定时 vertical=true 对应 left，否则 top",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "组件尺寸",
+        "global": false
+      },
+      {
+        "name": "stretch",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "将标签均分到导航容器的可用宽度",
+        "global": false
+      },
+      {
+        "name": "centered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "标签在可用空间居中",
         "global": false
       },
       {
@@ -4993,7 +5241,71 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "允许关闭页签；单项 closable 优先",
+        "global": false
+      },
+      {
+        "name": "addable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示添加按钮",
+        "global": false
+      },
+      {
+        "name": "editable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "同时启用添加和关闭操作",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "\"click\" | \"hover\" | undefined",
+        "required": false,
+        "default": "\"click\"",
+        "description": "鼠标激活方式：点击或悬停；键盘始终可用",
+        "global": false
+      },
+      {
+        "name": "activation",
+        "type": "\"auto\" | \"manual\" | undefined",
+        "required": false,
+        "default": "\"auto\"",
+        "description": "方向键自动激活，或只移动焦点并等待 Enter/空格确认",
+        "global": false
+      },
+      {
+        "name": "lazy",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "首次访问时才挂载面板；用于 panel 插槽",
+        "global": false
+      },
+      {
+        "name": "destroyOnHide",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "离开时销毁面板；默认保留已访问面板的局部状态",
+        "global": false
+      },
+      {
+        "name": "animated",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用内容进入动画；遵循减少动态效果配置",
+        "global": false
+      },
+      {
+        "name": "showScrollButtons",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "标签溢出时显示滚动按钮",
         "global": false
       },
       {
@@ -5001,50 +5313,144 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "辅助技术使用的控件名称",
+        "description": "辅助技术使用的组件名称",
+        "global": false
+      },
+      {
+        "name": "beforeLeave",
+        "type": "((next: HysTabValue, current: HysTabValue) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "切换前检查，参数为 next、current；false、拒绝的 Promise 或抛出错误会阻止切换",
+        "global": false
+      },
+      {
+        "name": "beforeClose",
+        "type": "((value: HysTabValue) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "关闭前检查，参数为页签值；false、拒绝的 Promise 或抛出错误会阻止关闭",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string]",
+        "type": "[value: HysTabValue]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: string]",
+        "type": "[value: HysTabValue]",
+        "required": false,
+        "default": "",
+        "description": "实际值变化后触发；参数为更新后的值"
+      },
+      {
+        "name": "guardError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "异步检查抛出错误或 Promise 被拒绝时触发；取消与过期请求不会覆盖当前值"
+      },
+      {
+        "name": "add",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "请求添加页签，由调用方维护 items"
+      },
+      {
+        "name": "close",
+        "type": "[value: HysTabValue]",
+        "required": false,
+        "default": "",
+        "description": "请求关闭页签，由调用方移除 items 并维护当前值"
+      },
+      {
+        "name": "tabClick",
+        "type": "[value: HysTabValue, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击可用页签时触发：value、MouseEvent"
+      },
+      {
+        "name": "edit",
+        "type": "[value: HysTabValue | undefined, action: \"add\" | \"remove\"]",
+        "required": false,
+        "default": "",
+        "description": "添加/关闭操作：value、add 或 remove"
+      }
+    ],
+    "slots": [
+      {
+        "name": "prefix",
+        "type": "{}",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "close",
-        "type": "[value: string]",
-        "required": false,
-        "default": "",
-        "description": ""
-      }
-    ],
-    "slots": [
-      {
         "name": "label",
-        "type": "{ item: { label: string; value: string; disabled?: boolean | undefined; closable?: boolean | undefined; }; }",
+        "type": "{ item: HysTabItem; active: boolean; }",
         "required": false,
         "default": "",
         "description": "显示标签"
       },
       {
+        "name": "close-icon",
+        "type": "{ item: HysTabItem; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "add-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "suffix",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "panel",
+        "type": "{ item: HysTabItem; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
         "name": "default",
-        "type": "{ active: string; }",
+        "type": "{ active: HysTabValue; }",
         "required": false,
         "default": "",
         "description": ""
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "scrollToActiveTab",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "focus",
+        "type": "(value?: HysTabValue) => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
   },
   "HysTagInput": {
     "props": [
@@ -5680,15 +6086,15 @@
         "description": ""
       },
       {
-        "name": "update:current",
-        "type": "[index: number]",
+        "name": "finish",
+        "type": "[]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "finish",
-        "type": "[]",
+        "name": "update:current",
+        "type": "[index: number]",
         "required": false,
         "default": "",
         "description": ""
@@ -5750,14 +6156,14 @@
       },
       {
         "name": "change",
-        "type": "[value: string[], direction: \"left\" | \"right\", movedKeys: string[]]",
+        "type": "[value: string[], direction: \"right\" | \"left\", movedKeys: string[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "checkChange",
-        "type": "[side: \"left\" | \"right\", values: string[]]",
+        "type": "[side: \"right\" | \"left\", values: string[]]",
         "required": false,
         "default": "",
         "description": ""

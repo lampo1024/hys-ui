@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Expand tabs with placements, presentation styles, numeric values, dynamic actions, asynchronous guards, panel lifecycle options and overflow navigation.
+- Add stable accordion keys, keyboard navigation, configurable trigger areas, panel lifecycle options, guarded expansion and extra content slots.
+- Add per-step status, subtitles, custom content, compact/dot layouts and responsive keyboard navigation.
+- Add breadcrumb label slots, per-item separators, disabled links and safe external-link attributes.
+- Expand navigation examples and regression coverage for state preservation, rapid input, guard failures and cached-page cleanup.
+
 ## 0.1.1
 
 - Center toast messages at the top by default and add seven placement options.

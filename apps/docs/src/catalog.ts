@@ -523,10 +523,7 @@ export const catalog=[
     "slug": "hys-accordion",
     "category": "导航布局",
     "description": "折叠面板的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "notes": ["稳定 id 用于受控展开；未提供 id 时继续使用索引。多个条目应使用不同标识。","标题支持上下方向键、Home 和 End 导航；Enter 或空格切换展开。保留模式下可通过 lazy 控制首次挂载。"]
   },
   {
     "name": "HysBreadcrumb",
@@ -535,9 +532,7 @@ export const catalog=[
     "slug": "hys-breadcrumb",
     "category": "导航布局",
     "description": "面包屑的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "默认使用普通链接，SPA 项目通过 link 插槽提供 RouterLink。"
-    ]
+    "notes": ["link 插槽适配宿主路由，组件库不依赖 Vue Router。item 与 separator 插槽可自定义显示内容。","末项表示当前页面；禁用项不产生链接。新窗口默认链接会补充安全 rel 属性。"]
   },
   {
     "name": "HysResizablePanel",
@@ -570,10 +565,7 @@ export const catalog=[
     "slug": "hys-steps",
     "category": "导航布局",
     "description": "步骤条的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "notes": ["current 从 0 开始；-1 表示尚未开始，items.length 表示全部完成。单项 status 优先。","clickable 开启后可点击或用方向键选择可用步骤，业务前置条件由调用方控制。"]
   },
   {
     "name": "HysTabs",
@@ -582,10 +574,7 @@ export const catalog=[
     "slug": "hys-tabs",
     "category": "导航布局",
     "description": "标签页的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "notes": ["页签值支持字符串或数字；使用 panel 插槽可为各项建立独立的内容实例。","beforeLeave 和 beforeClose 可异步阻止操作；添加和关闭事件由调用方维护 items。"]
   },
   {
     "name": "HysAlert",

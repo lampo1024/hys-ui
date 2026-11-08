@@ -13,11 +13,11 @@ const entry=computed(()=>catalog.find(x=>x.name===props.name)!)
 const capability=computed(()=>capabilities[props.name as keyof typeof capabilities])
 const modules=import.meta.glob('./examples/*/*.vue')
 const sources=import.meta.glob('./examples/*/*.vue',{query:'?example-source&raw',import:'default'})
-const order:Record<string,number>={Basic:0,Configure:1,Features:2,Width:3,Search:4,Remote:5,Custom:6,Keyboard:7,States:98,Disabled:99}
+const order:Record<string,number>={Basic:0,Configure:1,Features:2,Width:3,Search:4,Remote:5,Dynamic:5,Custom:6,Keyboard:7,Lifecycle:8,Guard:9,Overflow:10,States:98,Disabled:99}
 const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>(order[a.split('/').pop()!.replace('.vue','')]??10)-(order[b.split('/').pop()!.replace('.vue','')]??10)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
-const titles:Record<string,string>={Basic:'基础与常用场景',Configure:'交互配置',Async:'异步加载与失败重试',States:'状态与边界',Server:'远程分页',Editing:'编辑与批量操作',Tree:'树形数据与汇总',Disabled:'禁用与受限状态',Features:'常用外观与操作',Affixes:'前后缀与密码输入',Rules:'规则与异步校验',Multiple:'多选与搜索',Bounds:'范围约束',Selection:'受控选择',DragDrop:'拖动更新数据',Caret:'随提及位置展示候选',Positions:'显示位置',Service:'调用与消息队列',Content:'自定义内容与操作',Width:'浮层宽度与长文本',Search:'本地搜索与匹配规则',Remote:'远程搜索与异步状态',Custom:'自定义选项与选中内容',Keyboard:'键盘操作'}
+const titles:Record<string,string>={Basic:'基础与常用场景',Configure:'交互配置',Async:'异步加载与条件检查',States:'状态与边界',Server:'远程分页',Editing:'编辑与批量操作',Tree:'树形数据与汇总',Disabled:'禁用与受限状态',Features:'常用外观与操作',Affixes:'前后缀与密码输入',Rules:'规则与异步校验',Multiple:'多选与搜索',Bounds:'范围约束',Selection:'受控选择',DragDrop:'拖动更新数据',Caret:'随提及位置展示候选',Positions:'显示位置',Service:'调用与消息队列',Content:'自定义内容与操作',Width:'浮层宽度与长文本',Search:'本地搜索与匹配规则',Remote:'远程搜索与异步状态',Custom:'自定义内容与插槽',Keyboard:'键盘操作',Dynamic:'动态添加与关闭',Lifecycle:'内容挂载与状态保留',Guard:'异步切换检查',Overflow:'溢出滚动'}
 function reset(s:typeof scenarios[number]){if(props.name==='HysDataGrid'){const scene=s.path.split('/').pop()!.replace('.vue','').toLowerCase();localStorage.removeItem('hys-ui-grid:hys-docs-data-grid-'+scene)}s.version.value++}
 </script>
 <template>

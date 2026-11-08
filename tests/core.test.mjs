@@ -34,6 +34,121 @@ test('Multiple Select toggles entries and stays open; clear emits empty array',a
 test('Form supports required, async rules, reset and isolated field errors',async()=>{const model=reactive({name:''});const form=await mount(ui.HysForm,{model,rules:{name:[{required:true,message:'Name required'},{validator:async value=>value==='bad'?'Rejected':true}]}},{default:()=>h(ui.HysFormItem,{label:'Name',prop:'name'},()=>h(ui.HysInput,{modelValue:model.name}))});assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Name required');form.props.model.name='bad';assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Rejected');form.props.model.name='good';assert.equal(await form.vm.validate(),true);form.vm.resetFields();assert.equal(form.props.model.name,'');assert.deepEqual({...form.vm.errors},{})})
 test('Form stale async results do not replace newer errors',async()=>{let finish;const form=await mount(ui.HysForm,{model:{name:'old'},rules:{name:{validator:value=>value==='old'?new Promise(resolve=>finish=resolve):'New error'}}});const old=form.vm.validateField('name');form.props.model.name='new';await form.vm.validateField('name');finish('Old error');await old;assert.equal(form.vm.errors.name,'New error')})
 test('Tabs keyboard skips disabled items',async()=>{const tabs=await mount(ui.HysTabs,{modelValue:'a',items:[{value:'a',label:'A'},{value:'b',label:'B',disabled:true},{value:'c',label:'C'}]});await fire(tabs.find('[role="tablist"]'),'keydown',{key:'ArrowRight'});assert.equal(tabs.props.modelValue,'c');assert.equal(tabs.all('[role="tab"]')[2].getAttribute('tabindex'),'0')})
+
+test('Tabs support uncontrolled numeric values and manual keyboard activation',async()=>{
+ const tabs=await mount(ui.HysTabs,{defaultValue:0,activation:'manual',items:[{value:0,label:'Zero'},{value:1,label:'Blocked',disabled:true},{value:2,label:'Two'}]})
+ const buttons=tabs.all('[role="tab"]');assert.equal(buttons[0].getAttribute('aria-selected'),'true')
+ buttons[0].focus();await fire(buttons[0],'keydown',{key:'ArrowRight'})
+ assert.equal(document.activeElement,buttons[2]);assert(!tabs.events.change)
+ await fire(buttons[2],'keydown',{key:'Enter'});assert.equal(tabs.events.change.at(-1)[0],2)
+ await fire(buttons[2],'keydown',{key:'Home'});assert.equal(document.activeElement,buttons[0]);assert.equal(tabs.events.change.length,1)
+ await fire(buttons[0],'keydown',{key:' '});assert.equal(tabs.events.change.at(-1)[0],0)
+})
+
+test('Tabs latest guard wins; rejected, externally superseded and disabled requests cannot switch',async()=>{
+ const pending=new Map(),tabs=await mount(ui.HysTabs,{modelValue:'a',items:[{value:'a',label:'A'},{value:'b',label:'B'},{value:'c',label:'C'}],beforeLeave:value=>new Promise(resolve=>pending.set(value,resolve))})
+ await fire(tabs.all('[role="tab"]')[1],'click');await fire(tabs.all('[role="tab"]')[2],'click')
+ pending.get('b')(true);await pause(0);assert.equal(tabs.props.modelValue,'a')
+ pending.get('c')(true);await pause(0);assert.equal(tabs.props.modelValue,'c');assert.equal(tabs.events.change.length,1)
+ tabs.props.beforeLeave=async()=>false;await nextTick();await fire(tabs.all('[role="tab"]')[1],'click');await pause(0);assert.equal(tabs.props.modelValue,'c')
+ tabs.props.beforeLeave=async()=>{throw Error('guard failed')};await nextTick();await fire(tabs.all('[role="tab"]')[1],'click');await pause(0);assert.equal(tabs.events.guardError.length,1)
+ tabs.props.beforeLeave=value=>new Promise(resolve=>pending.set(value,resolve));await nextTick();await fire(tabs.all('[role="tab"]')[1],'click');tabs.props.modelValue='a';await nextTick();pending.get('b')(true);await pause(0);assert.equal(tabs.props.modelValue,'a')
+ await fire(tabs.all('[role="tab"]')[1],'click');tabs.props.disabled=true;await nextTick();pending.get('b')(true);await pause(0);assert.equal(tabs.props.modelValue,'a');assert.equal(tabs.find('[role="tablist"]').getAttribute('aria-busy'),null)
+})
+
+test('Tabs panel lazy mounting, preservation, destruction and ARIA remain consistent',async()=>{
+ const Editor=defineComponent({setup(){const text=ref('');return()=>h('input',{value:text.value,onInput:event=>text.value=event.target.value})}})
+ const tabs=await mount(ui.HysTabs,{modelValue:'a',items:[{value:'a',label:'A'},{value:'b',label:'B'},{value:'c',label:'C',forceRender:true}]},{panel:()=>h(Editor)})
+ assert.equal(tabs.all('[role="tabpanel"]').length,2)
+ const field=tabs.find('input');field.value='retained draft';await fire(field,'input')
+ await fire(tabs.all('[role="tab"]')[1],'click');assert.equal(tabs.all('[role="tabpanel"]').length,3);assert.equal(field.closest('[role="tabpanel"]').style.display,'none')
+ await fire(tabs.all('[role="tab"]')[0],'click');assert.equal(tabs.find('input'),field);assert.equal(field.value,'retained draft')
+ const active=tabs.find('[role="tab"][aria-selected="true"]'),panel=document.getElementById(active.getAttribute('aria-controls'));assert.equal(panel.getAttribute('aria-labelledby'),active.id)
+ tabs.props.destroyOnHide=true;await nextTick();await fire(tabs.all('[role="tab"]')[1],'click');assert(!field.isConnected)
+ await fire(tabs.all('[role="tab"]')[0],'click');assert.equal(tabs.find('input').value,'')
+})
+
+test('Tabs add and guarded close honor explicit nonclosable and disabled items',async()=>{
+ const tabs=await mount(ui.HysTabs,{modelValue:'a',editable:true,items:[{value:'a',label:'A',closable:false},{value:'b',label:'B'},{value:'c',label:'C',disabled:true}],beforeClose:async()=>false})
+ assert(!tabs.find('[aria-label="关闭A"]'));await fire(tabs.find('[aria-label="添加页签"]'),'click');assert.equal(tabs.events.add.length,1)
+ await fire(tabs.find('[aria-label="关闭B"]'),'click');await pause(0);assert(!tabs.events.close)
+ tabs.props.beforeClose=async()=>true;await nextTick();await fire(tabs.find('[aria-label="关闭B"]'),'click');await pause(0);assert.equal(tabs.events.close[0][0],'b');assert.equal(tabs.events.edit.at(-1)[1],'remove');assert.equal(tabs.props.items.length,3)
+ await fire(tabs.find('[aria-label="关闭C"]'),'click');assert.equal(tabs.events.close.length,1)
+})
+
+test('Tabs cancel guard callbacks on KeepAlive deactivation',async()=>{
+ const visible=ref(true),pending=[],changes=[],host=document.createElement('div');document.body.append(host)
+ const Cached=defineComponent({setup(){return()=>h(ui.HysTabs,{modelValue:'a',items:[{value:'a',label:'A'},{value:'b',label:'B'}],beforeLeave:()=>new Promise(resolve=>pending.push(resolve)),onChange:value=>changes.push(value)})}})
+ const app=createApp({setup(){ui.provideHysConfig({motion:'off'});return()=>h(KeepAlive,null,{default:()=>visible.value?h(Cached):h('div','Away')})}})
+ try{app.mount(host);await nextTick();await fire(host.querySelectorAll('[role="tab"]')[1],'click');visible.value=false;await nextTick();pending[0](true);await pause(0);assert.deepEqual(changes,[]);visible.value=true;await nextTick();await fire(host.querySelectorAll('[role="tab"]')[1],'click');pending[1](true);await pause(0);assert.deepEqual(changes,['b'])}finally{app.unmount();host.remove()}
+})
+
+test('Tabs loaded asynchronously select a usable initial item and preserve unrelated panel keystrokes',async()=>{
+ const tabs=await mount(ui.HysTabs,{items:[]},{panel:()=>h('input')})
+ tabs.props.items=[{value:0,label:'Blocked',disabled:true},{value:1,label:'One'},{value:2,label:'Two'}];await nextTick()
+ assert.equal(tabs.find('[aria-selected="true"]').textContent,'One')
+ await fire(tabs.find('input'),'keydown',{key:'ArrowRight'});assert(!tabs.events.change)
+ tabs.props.items=[{value:2,label:'Two'}];await nextTick();assert.equal(tabs.find('[aria-selected="true"]').textContent,'Two')
+})
+
+test('Tabs stale close guards cannot close replaced items or clear newer pending actions',async()=>{
+ const pending=[],tabs=await mount(ui.HysTabs,{modelValue:'a',closable:true,items:[{value:'a',label:'A'},{value:'b',label:'B'}],beforeClose:()=>new Promise(resolve=>pending.push(resolve))})
+ await fire(tabs.find('[aria-label="关闭B"]'),'click')
+ tabs.props.items=[{value:'a',label:'A'}];await nextTick();tabs.props.items.push({value:'b',label:'New B'});await nextTick()
+ await fire(tabs.find('[aria-label="关闭New B"]'),'click');pending[0](true);await pause(0)
+ assert(!tabs.events.close);assert(tabs.find('[aria-label="关闭New B"]').disabled)
+ pending[1](true);await pause(0);assert.equal(tabs.events.close[0][0],'b')
+})
+
+test('Accordion guard errors and disabled transitions cannot expand panels',async()=>{
+ let finish
+ const accordion=await mount(ui.HysAccordion,{items:[{id:'a',title:'A'}],beforeToggle:async()=>{throw Error('blocked')}})
+ await fire(accordion.find('.hys-ui-accordion-trigger'),'click');await pause(0);assert.equal(accordion.events.guardError.length,1);assert(!accordion.events.change)
+ accordion.props.beforeToggle=()=>new Promise(resolve=>finish=resolve);await nextTick();await fire(accordion.find('.hys-ui-accordion-trigger'),'click');accordion.props.disabled=true;await nextTick();finish(true);await pause(0);assert(!accordion.events.change)
+})
+
+test('Accordion stable keys survive reordering, normalize selection and skip disabled headers',async()=>{
+ const accordion=await mount(ui.HysAccordion,{multiple:true,modelValue:['b','missing','b'],items:[{id:'a',title:'A',disabled:true},{id:'b',title:'B'},{id:'c',title:'C'}]})
+ assert.equal(accordion.all('[aria-expanded="true"]').length,1)
+ const buttons=accordion.all('.hys-ui-accordion-trigger');buttons[1].focus();await fire(buttons[1],'keydown',{key:'ArrowDown'});assert.equal(document.activeElement,buttons[2]);await fire(buttons[2],'keydown',{key:'Home'});assert.equal(document.activeElement,buttons[1])
+ accordion.props.items=[accordion.props.items[2],accordion.props.items[0],accordion.props.items[1]];await nextTick();assert.equal(accordion.all('[aria-expanded="true"]')[0].textContent.trim(),'B')
+ await fire(accordion.all('.hys-ui-accordion-trigger')[0],'click');assert.deepEqual([...accordion.props.modelValue],['b','c'])
+ accordion.props.multiple=false;await nextTick();assert.equal(accordion.all('[aria-expanded="true"]').length,1)
+})
+
+test('Accordion preserves panel state on request and extra actions do not toggle headers',async()=>{
+ const accordion=await mount(ui.HysAccordion,{items:[{title:'A'}],destroyOnHide:false},{content:()=>h('input'),extra:()=>h(ui.HysButton,{variant:'ghost'},()=> 'Extra')})
+ await fire(accordion.find('.hys-ui-accordion-trigger'),'click');const input=accordion.find('input');input.value='draft'
+ await fire(accordion.find('.hys-ui-accordion-extra button'),'click');assert.equal(accordion.events.change.length,1)
+ await fire(accordion.find('.hys-ui-accordion-trigger'),'click');assert.equal(input.closest('[role="region"]').style.display,'none')
+ await fire(accordion.find('.hys-ui-accordion-trigger'),'click');assert.equal(accordion.find('input'),input);assert.equal(input.value,'draft')
+ accordion.props.destroyOnHide=true;await nextTick();await fire(accordion.find('.hys-ui-accordion-trigger'),'click');assert(!accordion.find('input'))
+})
+
+test('Accordion icon-only triggers and guards handle refusal, races and unmount',async()=>{
+ const pending=[],accordion=await mount(ui.HysAccordion,{items:[{id:'a',title:'A'},{id:'b',title:'B'}],trigger:'icon',beforeToggle:()=>new Promise(resolve=>pending.push(resolve))})
+ await fire(accordion.find('.hys-ui-accordion-title'),'click');assert.equal(pending.length,0)
+ await fire(accordion.all('.hys-ui-accordion-trigger')[0],'click');pending[0](false);await pause(0);assert(!accordion.events.change)
+ await fire(accordion.all('.hys-ui-accordion-trigger')[0],'click');await fire(accordion.all('.hys-ui-accordion-trigger')[1],'click');pending[1](true);pending[2](true);await pause(0);assert.deepEqual([...accordion.props.modelValue],['b'])
+ await fire(accordion.all('.hys-ui-accordion-trigger')[0],'click');accordion.unmount();pending[3](true);await pause(0);assert.equal(accordion.events.change.length,1)
+})
+
+test('Steps honor individual status, boundary states, custom content and keyboard selection',async()=>{
+ const steps=await mount(ui.HysSteps,{current:1,clickable:true,items:[{title:'A',status:'error'},{title:'B'},{title:'C',disabled:true},{title:'D',description:'Description'}]},{icon:({index,status})=>h('i',index+':'+status),subtitle:({index})=>'Phase '+index})
+ assert(steps.all('li')[0].classList.contains('hys-ui-step-error'));assert.equal(steps.all('i')[0].textContent,'0:error')
+ await fire(steps.all('button')[1],'keydown',{key:'ArrowRight'});assert.equal(steps.props.current,3);assert.equal(document.activeElement,steps.all('button')[3])
+ await fire(steps.all('button')[3],'click');assert.equal(steps.events.change.length,1)
+ steps.props.current=100;await nextTick();assert.equal(steps.all('[aria-current]').length,0);assert(steps.all('li')[3].classList.contains('hys-ui-done'))
+ steps.props.current=-100;await nextTick();assert(steps.all('li')[3].classList.contains('hys-ui-step-wait'))
+})
+
+test('Breadcrumb supports per-item separators, disabled links, safe targets and label slots',async()=>{
+ const breadcrumb=await mount(ui.HysBreadcrumb,{items:[{label:'Home',href:'#home',target:'_blank'},{label:'Disabled',href:'#blocked',disabled:true,separator:'>'},{label:'Current',href:'#current',showSeparator:false}],separator:'/'},{item:({item,current})=>h('strong',item.label+(current?' current':''))})
+ assert.equal(breadcrumb.all('a').length,1);assert.equal(breadcrumb.find('a').rel,'noopener noreferrer')
+ assert.equal(breadcrumb.find('.hys-ui-breadcrumb-separator').textContent,'>');assert.equal(breadcrumb.all('.hys-ui-breadcrumb-separator').length,1)
+ assert.equal(breadcrumb.find('[aria-current="page"]').textContent,'Current current');assert(breadcrumb.find('[aria-disabled="true"]'))
+ await fire(breadcrumb.find('a'),'click');assert.equal(breadcrumb.events.select[0][1],0)
+})
 test('SortableList Alt+Arrow keys reorder and disabled prevents changes',async()=>{const list=await mount(ui.HysSortableList,{modelValue:[{id:'a',label:'A'},{id:'b',label:'B'}]});await fire(list.all('[role="listitem"]')[1],'keydown',{key:'ArrowUp',altKey:true});assert.equal(list.props.modelValue[0].id,'b');list.props.disabled=true;await nextTick();await fire(list.all('[role="listitem"]')[1],'keydown',{key:'ArrowUp',altKey:true});assert.equal(list.props.modelValue[0].id,'b')})
 test('Tree strict checking does not automatically select descendants',async()=>{const tree=await mount(ui.HysTree,{nodes:[{id:'a',label:'A',children:[{id:'b',label:'B'}]}],checkable:true,checkStrictly:true,defaultExpandAll:true,checkedKeys:[]});await fire(tree.find('input[type="checkbox"]'),'change');assert.deepEqual([...tree.props.checkedKeys],['a']);assert.equal(tree.vm.getNode('b').label,'B')})
 test('Date picker starts on Monday and disables excluded dates',async()=>{const picker=await mount(ui.HysDatePicker,{modelValue:'2026-11-07',min:'2026-11-01',max:'2026-11-30',disabledDate:date=>date.getUTCDay()===0});await fire(picker.find('button'),'click');await pause(20);const calendar=document.querySelector('[data-date="2026-11-01"]');assert(calendar?.disabled);const dates=[...document.querySelectorAll('[data-date]')];assert.equal(new Date(dates[0].dataset.date+'T00:00:00Z').getUTCDay(),1)})
@@ -81,7 +196,7 @@ test('Checkbox preserves mixed semantics, readonly and focus methods',async()=>{
 test('Radio groups preserve numeric values and readonly selections',async()=>{const radio=await mount(ui.HysRadioGroup,{modelValue:1,options:[{label:'One',value:1},{label:'Two',value:2}],readonly:true});await fire(radio.all('input')[1],'change');assert.equal(radio.props.modelValue,1);radio.props.readonly=false;await nextTick();await fire(radio.all('input')[1],'change');assert.equal(radio.props.modelValue,2);assert.equal(radio.events.change.at(-1)[0],2)})
 test('Permission matrix supports partial, row and global selection',async()=>{const matrix=await mount(ui.HysPermissionMatrix,{roles:['A','B'],resources:['One','Two'],modelValue:{'One:A':true}});assert.equal(matrix.find('[aria-label="全选所有权限"]').indeterminate,true);const row=matrix.find('[aria-label="全选资源 One"]');row.checked=true;await fire(row,'change');assert.equal(matrix.props.modelValue['One:B'],true);const all=matrix.find('[aria-label="全选所有权限"]');all.checked=true;await fire(all,'change');assert.equal(Object.values(matrix.props.modelValue).filter(Boolean).length,4);matrix.props.readonly=true;await nextTick();all.checked=false;await fire(all,'change');assert.equal(Object.values(matrix.props.modelValue).filter(Boolean).length,4)})
 test('Transfer emits moved keys before synchronous model updates and disables both panes',async()=>{const transfer=await mount(ui.HysTransfer,{modelValue:['b'],options:[{value:'a',label:'A'},{value:'b',label:'B'}]});const first=transfer.find('input[type="checkbox"]');first.checked=true;await fire(first,'change');await fire(transfer.find('[aria-label="添加选中项"]'),'click');assert.deepEqual([...transfer.props.modelValue],['b','a']);assert.deepEqual([...transfer.events.change.at(-1)[2]],['a']);transfer.props.disabled=true;await nextTick();await pause(80);assert(transfer.all('input[type="checkbox"]').every(input=>input.disabled))})
-test('Tabs and Segmented have keyboard fallback and stable change payloads',async()=>{for(const [Component,prop,role]of [[ui.HysTabs,'items','tab'],[ui.HysSegmented,'options','radio']]){const control=await mount(Component,{modelValue:'missing',[prop]:[{value:'a',label:'A',disabled:true},{value:'b',label:'B'},{value:'c',label:'C'}]});assert.equal(control.all('[role="'+role+'"]').filter(x=>x.tabIndex===0).length,1);await fire(control.host.firstElementChild,'keydown',{key:'ArrowLeft'});assert.equal(control.props.modelValue,'c');assert.equal(control.events.change.at(-1)[0],'c');control.unmount()}})
+test('Tabs and Segmented have keyboard fallback and stable change payloads',async()=>{for(const [Component,prop,role]of [[ui.HysTabs,'items','tab'],[ui.HysSegmented,'options','radio']]){const control=await mount(Component,{modelValue:'missing',[prop]:[{value:'a',label:'A',disabled:true},{value:'b',label:'B'},{value:'c',label:'C'}]});assert.equal(control.all('[role="'+role+'"]').filter(x=>x.tabIndex===0).length,1);await fire(control.find('[role="tablist"]')??control.host.firstElementChild,'keydown',{key:'ArrowLeft'});assert.equal(control.props.modelValue,'c');assert.equal(control.events.change.at(-1)[0],'c');control.unmount()}})
 test('Switch emits the requested value and ignores disabled async completions',async()=>{const control=await mount(ui.HysSwitch,{modelValue:false});await fire(control.find('button'),'click');assert.equal(control.props.modelValue,true);assert.equal(control.events.change.at(-1)[0],true);let finish;control.props.beforeChange=next=>new Promise(resolve=>{assert.equal(next,false);finish=resolve});await nextTick();await fire(control.find('button'),'click');control.props.disabled=true;await nextTick();finish(true);await pause(5);assert.equal(control.props.modelValue,true);assert.equal(control.events.change.length,1)})
 test('Upload clear cancels pending validation; single-file limit allows replacement',async()=>{let finish;const upload=await mount(ui.HysUpload,{multiple:false,limit:1,beforeUpload:()=>new Promise(resolve=>finish=resolve)});const input=upload.find('input[type="file"]');const choose=async name=>{Object.defineProperty(input,'files',{configurable:true,value:[new window.File(['file'],name)]});await fire(input,'change')};await choose('old.txt');upload.vm.clearFiles();finish(true);await pause(5);assert.equal(upload.events.change.length,1);assert.equal(upload.events.change[0][0].length,0);upload.props.beforeUpload=undefined;await nextTick();await choose('first.txt');await choose('second.txt');assert.equal(upload.events.change.at(-1)[0][0].name,'second.txt');assert(!upload.events.exceed);upload.props.beforeUpload=()=>false;await nextTick();await choose('rejected.txt');assert.equal(upload.events.change.at(-1)[0][0].name,'second.txt');assert(upload.host.textContent.includes('second.txt'))})
 test('Select opens on an enabled option, preserves remote labels and ignores IME Enter',async()=>{const select=await mount(ui.HysSelect,{modelValue:'',options:[{value:'a',label:'Blocked',disabled:true},{value:'b',label:'Beta'}]});await fire(select.find('[role="combobox"]'),'click');await pause(10);await fire(select.find('[role="combobox"]'),'keydown',{key:'Enter',isComposing:true});assert.equal(select.props.modelValue,'');await fire(select.find('[role="combobox"]'),'keydown',{key:'Enter'});assert.equal(select.props.modelValue,'b');select.props.options=[{value:'c',label:'Charlie'}];await nextTick();await nextTick();assert(select.host.textContent.includes('Beta'));assert(!select.host.textContent.includes('Charlie'))})

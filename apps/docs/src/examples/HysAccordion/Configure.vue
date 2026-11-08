@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { HysAccordion } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox } from 'hys-ui';
-const demoConfig = demoReactive<{
-    disabled: boolean;
-}>({ "disabled": false });
+import {reactive} from 'vue'
+import {HysAccordion,HysSelect,HysCheckbox} from 'hys-ui'
+const config=reactive({multiple:false,bordered:true,ghost:false,disabled:false,showArrow:true,arrowPlacement:'right' as 'left'|'right',trigger:'header' as 'header'|'icon',size:'md' as 'sm'|'md'|'lg'})
+const items=[{title:'账户设置',content:'维护昵称、头像和登录偏好。'},{title:'消息通知',content:'设置接收通知的渠道和频率。'},{title:'受限设置',content:'当前不可操作。',disabled:true}]
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div></div></section></div><div class="demo-content"><HysAccordion v-bind="demoConfig" :items="[{title:'准入条件',content:'需求已评审，技术方案已批准。'},{title:'准出条件',content:'测试通过，发布审批完成。'}]"/></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template><div><div class="demo-controls"><section class="demo-control-section"><h3>外观与触发</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label">图标位置 <code>arrowPlacement</code></span><HysSelect v-model="config.arrowPlacement" :options="['left','right'].map(value=>({label:value,value}))"/></label><label class="demo-field"><span class="demo-control-label">触发区域 <code>trigger</code></span><HysSelect v-model="config.trigger" :options="['header','icon'].map(value=>({label:value,value}))"/></label><label class="demo-field"><span class="demo-control-label">尺寸 <code>size</code></span><HysSelect v-model="config.size" :options="['sm','md','lg'].map(value=>({label:value,value}))"/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><HysCheckbox v-model="config.multiple" label="允许同时展开"/><small>multiple</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.bordered" label="显示边框"/><small>bordered</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.ghost" label="透明背景"/><small>ghost</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.showArrow" label="显示图标"/><small>showArrow</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.disabled" label="禁用全部"/><small>disabled</small></div></div></section></div><div class="demo-content"><HysAccordion v-bind="config" :items="items"/></div><p class="scenario-note">仅图标触发时始终保留图标按钮，标题文本可以正常选择；额外操作区独立于展开按钮。</p></div></template>
