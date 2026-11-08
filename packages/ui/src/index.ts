@@ -112,3 +112,5 @@ export type {HysSliderValue,HysSliderStep,HysSliderMarks,HysSliderDragInfo,HysSl
 export type {HysAvatarProps,HysAvatarSize,HysAvatarBreakpoint,HysAvatarFit,HysAvatarLoadInfo,HysAvatarOption,HysAvatarInstance,HysAvatarGroupProps,HysAvatarGroupInstance} from './composables/avatar'
 export type {HysAutocompleteProps,HysAutocompleteRow,HysAutocompleteOption,HysAutocompleteItem,HysAutocompleteGroup,HysAutocompleteDataOption,HysAutocompleteContext,HysAutocompleteCallback,HysAutocompleteFetch,HysAutocompleteInstance} from './composables/autocomplete'
 export type {HysChoiceValue,HysChoiceFieldNames,HysChoiceOption,HysChoiceDataOption,HysCheckboxChange,HysCheckboxReject,HysCheckboxInstance,HysCheckboxGroupInstance,HysRadioInstance,HysRadioGroupInstance,HysSwitchGuardContext,HysSwitchInstance} from './composables/choice'
+export type {HysRatingIcon,HysRatingLevels,HysRatingInstance} from './composables/rating'
+export type {HysSegmentedOption,HysSegmentedInstance} from './composables/segmented'

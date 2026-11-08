@@ -6994,18 +6994,50 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "number",
-        "required": true,
+        "type": "number | null | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控评分；null、非有限值显示为空值，超出范围只裁剪展示，不改写宿主",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "非受控初值；原生表单 reset 时恢复",
         "global": false
       },
       {
         "name": "max",
         "type": "number | undefined",
         "required": false,
-        "default": "5",
-        "description": "允许的最大值或最晚日期",
+        "default": "",
+        "description": "评分上限，默认 5；支持 0，按整数渲染，最多 1000 项",
+        "global": false
+      },
+      {
+        "name": "count",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "max 的别名；提供 max 时优先",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "继承字段/表单的 sm、md、lg 尺寸",
+        "global": false
+      },
+      {
+        "name": "iconSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立图标尺寸，单位 px，范围 8–128",
         "global": false
       },
       {
@@ -7013,7 +7045,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "允许聚焦与查看，不允许修改或预览",
         "global": false
       },
       {
@@ -7029,7 +7061,15 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "再次点击当前评分可清零，保留默认 true",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "allowClear 的显式别名，提供时优先",
         "global": false
       },
       {
@@ -7037,7 +7077,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "允许选择半分，键盘步长同步为 0.5",
         "global": false
       },
       {
@@ -7045,7 +7085,175 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示分值，优先于 showText",
+        "global": false
+      },
+      {
+        "name": "showText",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示当前评分的文字；悬停时显示预览文字",
+        "global": false
+      },
+      {
+        "name": "texts",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "每一分对应的文字数组，半分取向上一级",
+        "global": false
+      },
+      {
+        "name": "scoreTemplate",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"{value}\"",
+        "description": "分值文本模板，将 {value} 替换为当前展示值",
+        "global": false
+      },
+      {
+        "name": "formatScore",
+        "type": "((value: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义分值文本，优先于 scoreTemplate",
+        "global": false
+      },
+      {
+        "name": "textColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "评分说明颜色",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "统一激活颜色，优先于 colors",
+        "global": false
+      },
+      {
+        "name": "colors",
+        "type": "HysRatingLevels<string> | undefined",
+        "required": false,
+        "default": "",
+        "description": "低/中/高三级颜色数组，或按数值阈值排序的对象；excluded=true 不包含该阈值",
+        "global": false
+      },
+      {
+        "name": "lowThreshold",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2",
+        "description": "低等级上限，默认 2",
+        "global": false
+      },
+      {
+        "name": "highThreshold",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "高等级下限，默认 4",
+        "global": false
+      },
+      {
+        "name": "voidColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "未激活部分颜色",
+        "global": false
+      },
+      {
+        "name": "disabledVoidColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "禁用时未激活部分颜色",
+        "global": false
+      },
+      {
+        "name": "icon",
+        "type": "HysRatingIcon | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认激活图标组件，默认为星形",
+        "global": false
+      },
+      {
+        "name": "icons",
+        "type": "HysRatingLevels<HysRatingIcon> | undefined",
+        "required": false,
+        "default": "",
+        "description": "与 colors 相同规则的分级图标配置",
+        "global": false
+      },
+      {
+        "name": "voidIcon",
+        "type": "HysRatingIcon | undefined",
+        "required": false,
+        "default": "",
+        "description": "未激活图标",
+        "global": false
+      },
+      {
+        "name": "disabledVoidIcon",
+        "type": "HysRatingIcon | undefined",
+        "required": false,
+        "default": "",
+        "description": "禁用时未激活图标",
+        "global": false
+      },
+      {
+        "name": "character",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义文字字符；character 插槽优先",
+        "global": false
+      },
+      {
+        "name": "tooltips",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "各评分项的原生悬停说明数组",
+        "global": false
+      },
+      {
+        "name": "hoverValue",
+        "type": "number | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控预览分值；null 为无预览，配合 v-model:hoverValue",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用方向键和首尾定位",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
+        "global": false
+      },
+      {
+        "name": "focusable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许 Tab 和实例方法聚焦，默认 true",
         "global": false
       },
       {
@@ -7054,6 +7262,46 @@
         "required": false,
         "default": "",
         "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "formatValueText",
+        "type": "((value: number, max: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义屏幕阅读器数值描述，不改变模型",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联外部原生表单 ID",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式反馈状态；字段错误优先",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "与控件关联的错误说明",
         "global": false
       }
     ],
@@ -7070,19 +7318,132 @@
         "type": "[value: number]",
         "required": false,
         "default": "",
+        "description": "一次有效操作请求的新值；宿主可拒绝，实例方法结果反映最终接受情况"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "评分实际清零后触发，未接受或已为空时不触发"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入组件的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开组件的原生事件"
+      },
+      {
+        "name": "keydown",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "评分根元素收到的键盘事件；可 preventDefault 阻止默认调整"
+      },
+      {
+        "name": "update:hoverValue",
+        "type": "[value: number | null]",
+        "required": false,
+        "default": "",
         "description": ""
+      },
+      {
+        "name": "hoverChange",
+        "type": "[value: number | null]",
+        "required": false,
+        "default": "",
+        "description": "预览分值变化；null 表示退出预览，不修改评分"
       }
     ],
     "slots": [
       {
         "name": "character",
-        "type": "{ value: number; }",
+        "type": "{ value: number; index: number; fraction: number; filled: boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义评分图形，分别渲染空层和裁剪填充层；接收 value、index、fraction、filled"
+      },
+      {
+        "name": "text",
+        "type": "{ value: number; text: string; }",
+        "required": false,
+        "default": "",
+        "description": "评分说明，接收 value 和 text"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素"
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "实际展示评分或选中值"
+      },
+      {
+        "name": "hoverValue",
+        "type": "number | null",
+        "required": true,
+        "default": "",
+        "description": "当前预览评分，无预览为 null"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦评分或组内指定可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开当前组件内部焦点"
+      },
+      {
+        "name": "setValue",
+        "type": "(value: number) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按范围与半分步长请求更新，返回 Promise<boolean>"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "允许清空时请求清零，返回 Promise<boolean>"
+      },
+      {
+        "name": "setCurrentValue",
+        "type": "(value: number) => void",
+        "required": true,
+        "default": "",
+        "description": "仅预览评分，不提交；遵守只读与禁用"
+      },
+      {
+        "name": "resetCurrentValue",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "撤销非受控预览，受控模式发送 null 请求"
+      }
+    ]
   },
   "HysResizablePanel": {
     "props": [
@@ -7385,18 +7746,34 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string",
-        "required": true,
+        "type": "T | null | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控选中值，保留字符串、数字和布尔类型；缺失选项不会改写模型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初值；原生表单 reset 时恢复",
         "global": false
       },
       {
         "name": "options",
-        "type": "{ label: string; value: string; disabled?: boolean | undefined; }[]",
-        "required": true,
+        "type": "readonly HysChoiceDataOption<T>[] | undefined",
+        "required": false,
         "default": "",
-        "description": "可选项数据，支持单项禁用",
+        "description": "基础值或对象数组；重复的同类型值与非法值忽略",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "HysChoiceFieldNames | undefined",
+        "required": false,
+        "default": "",
+        "description": "映射业务对象的 label、value、disabled 字段",
         "global": false
       },
       {
@@ -7408,11 +7785,35 @@
         "global": false
       },
       {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许聚焦与查看，不允许修改或预览",
+        "global": false
+      },
+      {
         "name": "block",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "铺满容器，横向选项均分宽度",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "竖向排列；direction 显式值优先",
+        "global": false
+      },
+      {
+        "name": "direction",
+        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "horizontal 或 vertical，显式布局方向",
         "global": false
       },
       {
@@ -7420,7 +7821,47 @@
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
         "default": "继承字段/表单配置或 md",
-        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "description": "继承字段/表单的 sm、md、lg 尺寸",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "胶囊形外观",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用方向键和首尾定位",
+        "global": false
+      },
+      {
+        "name": "loopNavigation",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "方向键在可用项首尾循环，默认 true",
+        "global": false
+      },
+      {
+        "name": "focusable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许 Tab 和实例方法聚焦，默认 true",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
         "global": false
       },
       {
@@ -7430,34 +7871,145 @@
         "default": "",
         "description": "辅助技术使用的控件名称",
         "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联外部原生表单 ID",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式反馈状态；字段错误优先",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "与控件关联的错误说明",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无选项\"",
+        "description": "无选项时的说明",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: string]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "一次有效操作请求的新值；宿主可拒绝，实例方法结果反映最终接受情况"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入组件的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开组件的原生事件"
       }
     ],
     "slots": [
       {
-        "name": "label",
-        "type": "{ option: { label: string; value: string; disabled?: boolean | undefined; }; }",
+        "name": "icon",
+        "type": "{ option: HysSegmentedOption<T>; checked: boolean; }",
         "required": false,
         "default": "",
-        "description": "显示标签"
+        "description": "分段选项图标，接收 option、checked"
+      },
+      {
+        "name": "label",
+        "type": "{ option: HysSegmentedOption<T>; checked: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "分段选项内容，接收 option、checked"
+      },
+      {
+        "name": "default",
+        "type": "{ item: HysSegmentedOption<T>; option: HysSegmentedOption<T>; checked: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "分段选项的 label 别名，另提供 item 参数"
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "分段选择无选项时的内容"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素"
+      },
+      {
+        "name": "value",
+        "type": "HysChoiceValue | null",
+        "required": true,
+        "default": "",
+        "description": "实际展示评分或选中值"
+      },
+      {
+        "name": "focus",
+        "type": "(value?: HysChoiceValue) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦评分或组内指定可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开当前组件内部焦点"
+      },
+      {
+        "name": "select",
+        "type": "(value: HysChoiceValue) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求选择已存在且可用的选项，返回 Promise<boolean>"
+      }
+    ]
   },
   "HysSelect": {
     "props": [

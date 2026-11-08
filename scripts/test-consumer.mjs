@@ -101,6 +101,14 @@ export const choiceTypeChecks=[h(HysCheckbox<boolean>,{modelValue:false,onChange
 export async function operateChoices(checkbox:HysCheckboxInstance,group:HysCheckboxGroupInstance,radio:HysRadioInstance,radios:HysRadioGroupInstance,switchControl:HysSwitchInstance){const accepted:boolean=await group.toggle(0);await group.checkAll();await group.clear();checkbox.focus();await checkbox.toggle();radio.focus();await radio.select();await radios.select('a');await switchControl.toggle();return accepted}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {choiceTypeChecks} from './choice-types'\nvoid choiceTypeChecks\n")
+fs.writeFileSync(path.join(dir,'rating-segmented-types.ts'),`import {h,ref} from 'vue'
+import {HysRating,HysSegmented,type HysRatingLevels,type HysRatingIcon,type HysRatingInstance,type HysSegmentedInstance,type HysSegmentedOption} from 'hys-ui'
+const colors:HysRatingLevels<string>={2:'red',4:{value:'orange',excluded:true},5:'green'},icons:HysRatingLevels<HysRatingIcon>=['span','strong','b'],options:HysSegmentedOption<number>[]=[{label:'One',value:1},{label:'Two',value:2,style:{color:'green'}}]
+export const ratingSegmentedChecks=[h(HysRating,{ref:ref<HysRatingInstance>(),modelValue:2.5,colors,icons,allowHalf:true,onChange:(value:number)=>void value,onHoverChange:(value:number|null)=>void value}),h(HysSegmented<number>,{ref:ref<HysSegmentedInstance>(),modelValue:1,options,direction:'vertical',onChange:(value:number)=>void value}),h(HysSegmented<string|number|boolean>,{modelValue:false,options:[false,0,'0']})]
+export async function operateRatingAndSegmented(rating:HysRatingInstance,segmented:HysSegmentedInstance){rating.setCurrentValue(4);rating.resetCurrentValue();const accepted:boolean=await rating.setValue(3);await rating.clear();segmented.focus(1);await segmented.select(2);return accepted}
+export function actualRating(actual:InstanceType<typeof HysRating>):HysRatingInstance{return actual}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {ratingSegmentedChecks} from './rating-segmented-types'\nvoid ratingSegmentedChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

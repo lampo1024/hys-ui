@@ -247,6 +247,35 @@
       "Icons": "提示与滑块图标",
       "Async": "异步保存与错误处理",
       "Controlled": "受控更新与拒绝"
+    },
+    "HysRating": {
+      "Basic": "基础评分",
+      "Configure": "交互配置",
+      "Half": "半分选择与小数展示",
+      "Text": "文字说明与悬停预览",
+      "Colors": "分级颜色与阈值",
+      "Icons": "图标与自定义字符",
+      "Sizes": "控件与图标尺寸",
+      "Tooltips": "悬停说明与自定义文本",
+      "Controlled": "受控更新与拒绝",
+      "Keyboard": "键盘操作",
+      "Methods": "预览与实例方法",
+      "Form": "表单校验与重置",
+      "States": "只读、禁用与边界值"
+    },
+    "HysSegmented": {
+      "Basic": "基础选择",
+      "Configure": "交互配置",
+      "Values": "值类型与字段映射",
+      "Layout": "尺寸与布局方向",
+      "Content": "图标与自定义内容",
+      "Dynamic": "动态选项",
+      "Controlled": "受控更新与拒绝",
+      "Keyboard": "键盘导航",
+      "RTL": "从右向左布局",
+      "Methods": "焦点与实例方法",
+      "Form": "表单校验与重置",
+      "States": "禁用、只读与空数据"
     }
   }
 }

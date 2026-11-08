@@ -13,6 +13,7 @@ import SliderReference from './SliderReference.vue'
 import AvatarReference from './AvatarReference.vue'
 import AutocompleteReference from './AutocompleteReference.vue'
 import ChoiceReference from './ChoiceReference.vue'
+import RatingSegmentedReference from './RatingSegmentedReference.vue'
 import type {ExampleSourceData} from './sourceTypes'
 import {catalog} from './catalog'
 import capabilities from './component-capabilities.json'
@@ -32,7 +33,8 @@ const sliderOrder=['Basic','Configure','Sizes','Precision','Range','Marks','Numb
 const avatarOrder=['Basic','Configure','Types','Fallback','Fit','Autosize','Responsive','Badge','Image','Group','Collapse','Custom','Vertical','Dynamic','States']
 const autocompleteOrder=['Basic','Configure','Template','CustomInput','Remote','Loading','HeaderFooter','Status','ClearIcon','Options','CaseInsensitive','Categories','Query','Keyboard','AfterSelect','Form','States']
 const choiceOrder=['Basic','Configure','Values','Array','All','Limits','Appearance','Buttons','Grid','Sizes','Content','Icons','Slots','Custom','Dynamic','Async','Controlled','Keyboard','RTL','Methods','Form','States']
-function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');return ['HysCheckbox','HysCheckboxGroup','HysRadio','HysRadioGroup','HysSwitch'].includes(props.name)?Math.max(0,choiceOrder.indexOf(scene)):props.name==='HysAutocomplete'?Math.max(0,autocompleteOrder.indexOf(scene)):props.name==='HysAvatar'||props.name==='HysAvatarGroup'?Math.max(0,avatarOrder.indexOf(scene)):props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
+const ratingOrder=['Basic','Configure','Half','Text','Colors','Icons','Sizes','Tooltips','Controlled','Keyboard','Methods','Form','States'],segmentedOrder=['Basic','Configure','Values','Layout','Content','Dynamic','Controlled','Keyboard','RTL','Methods','Form','States']
+function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');return props.name==='HysRating'?Math.max(0,ratingOrder.indexOf(scene)):props.name==='HysSegmented'?Math.max(0,segmentedOrder.indexOf(scene)):['HysCheckbox','HysCheckboxGroup','HysRadio','HysRadioGroup','HysSwitch'].includes(props.name)?Math.max(0,choiceOrder.indexOf(scene)):props.name==='HysAutocomplete'?Math.max(0,autocompleteOrder.indexOf(scene)):props.name==='HysAvatar'||props.name==='HysAvatarGroup'?Math.max(0,avatarOrder.indexOf(scene)):props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
 const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
@@ -68,6 +70,7 @@ function jumpToSection(event:MouseEvent){
   <AvatarReference v-if="name==='HysAvatar'||name==='HysAvatarGroup'"/>
   <AutocompleteReference v-if="name==='HysAutocomplete'"/>
   <ChoiceReference v-if="['HysCheckbox','HysCheckboxGroup','HysRadio','HysRadioGroup','HysSwitch'].includes(name)"/>
+  <RatingSegmentedReference v-if="name==='HysRating'||name==='HysSegmented'" :name="name"/>
   <section id="api" class="api-section"><h2>API 参考</h2><p>以下签名与默认值从组件源码生成。</p><HysTabs v-model="section" :items="[{label:'参数 Props',value:'props'},{label:'事件 Events',value:'events'},{label:'插槽 Slots',value:'slots'},{label:'实例方法',value:'exposed'}]"/>
    <div class="api-scroll"><table><thead><tr><th>名称</th><th>类型 / 签名</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr v-for="row in rows" :key="row.name"><td><code>{{row.name}}</code><span v-if="row.required" class="required">必填</span></td><td><code>{{row.type}}</code></td><td><code>{{row.default||'—'}}</code></td><td>{{row.description||'详见类型签名及对应交互示例'}}</td></tr><tr v-if="!rows.length"><td colspan="4">此组件未声明此类接口。</td></tr></tbody></table></div>
   </section>

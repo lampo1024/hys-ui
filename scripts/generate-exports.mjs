@@ -12,4 +12,5 @@ code+="export type {HysSliderValue,HysSliderStep,HysSliderMarks,HysSliderDragInf
 code+="export type {HysAvatarProps,HysAvatarSize,HysAvatarBreakpoint,HysAvatarFit,HysAvatarLoadInfo,HysAvatarOption,HysAvatarInstance,HysAvatarGroupProps,HysAvatarGroupInstance} from './composables/avatar'\n"
 code+="export type {HysAutocompleteProps,HysAutocompleteRow,HysAutocompleteOption,HysAutocompleteItem,HysAutocompleteGroup,HysAutocompleteDataOption,HysAutocompleteContext,HysAutocompleteCallback,HysAutocompleteFetch,HysAutocompleteInstance} from './composables/autocomplete'\n"
 code+="export type {HysChoiceValue,HysChoiceFieldNames,HysChoiceOption,HysChoiceDataOption,HysCheckboxChange,HysCheckboxReject,HysCheckboxInstance,HysCheckboxGroupInstance,HysRadioInstance,HysRadioGroupInstance,HysSwitchGuardContext,HysSwitchInstance} from './composables/choice'\n"
+code+="export type {HysRatingIcon,HysRatingLevels,HysRatingInstance} from './composables/rating'\nexport type {HysSegmentedOption,HysSegmentedInstance} from './composables/segmented'\n"
 fs.writeFileSync(root+'index.ts',code)

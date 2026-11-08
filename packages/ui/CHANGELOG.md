@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Expand Rating with precise fractional display, custom level colors/icons, score/text templates, controlled hover previews, keyboard/RTL and form/reset integration.
+- Expand Segmented with typed/mapped options, custom content, vertical/block/rounded layouts, animated selection, keyboard navigation and cached-page observer cleanup.
+- Remove obsolete Gantt scale-button styles and keep segmented labels readable on their selected surfaces across themes.
+- Add independent rating and segmented scenarios, public instance types and interaction guidance.
+
 - Expand checkboxes with scalar/array values, mapped checked values, uncontrolled defaults, button/border variants and form reset behavior.
 - Add CheckboxGroup and standalone Radio; support mapped/typed options, composed children, selection limits and bulk actions, keyboard navigation and native form values.
 - Expand Switch with mapped values, sizes, inline text/icons, custom rails/thumbs and cancellation-aware async guards; retain change-only consumers and discard stale completions.

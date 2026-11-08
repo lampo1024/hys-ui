@@ -1,20 +1,69 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysRating } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysNumberInput as DemoNumber } from 'hys-ui';
-const rating = ref(4);
-const demoConfig = demoReactive<{
-    max: number;
-    readonly: boolean;
-    disabled: boolean;
-    allowClear: boolean;
-    allowHalf: boolean;
-    showScore: boolean;
-}>({ "max": 5, "readonly": false, "disabled": false, "allowClear": true, "allowHalf": false, "showScore": false });
+import { ref, reactive } from "vue";
+import { HysRating, HysSelect, HysNumberInput, HysCheckbox } from "hys-ui";
+const score = ref(3),
+  config = reactive({
+    max: 5,
+    size: "md" as "sm" | "md" | "lg",
+    allowHalf: false,
+    allowClear: true,
+    showScore: true,
+    showText: false,
+    disabled: false,
+    readonly: false,
+  });
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>最大值</span><code>max</code></span><DemoNumber v-model="demoConfig.max" :show-controls="false"/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.readonly" label="readonly"/><small>只读模式</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.allowClear" label="allowClear"/></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.allowHalf" label="allowHalf"/></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.showScore" label="showScore"/></div></div></section></div><div class="demo-content"><HysRating v-bind="demoConfig" v-model="rating"/></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div class="demo-content">
+    <div class="demo-controls">
+      <section class="demo-control-section">
+        <h3>尺寸与数量</h3>
+        <div class="demo-control-fields">
+          <label class="demo-field"
+            ><span>评分上限</span
+            ><HysNumberInput
+              v-model="config.max"
+              :min="0"
+              :max="10"
+              :show-controls="false" /></label
+          ><label class="demo-field"
+            ><span>尺寸</span
+            ><HysSelect
+              v-model="config.size"
+              :options="
+                ['sm', 'md', 'lg'].map((value) => ({ label: value, value }))
+              "
+          /></label>
+        </div>
+      </section>
+      <section class="demo-control-section">
+        <h3>交互与展示</h3>
+        <div class="demo-control-toggles">
+          <div
+            v-for="item in [
+              { key: 'allowHalf', label: '允许半分' },
+              { key: 'allowClear', label: '允许清空' },
+              { key: 'showScore', label: '显示分数' },
+              { key: 'showText', label: '显示说明' },
+              { key: 'disabled', label: '禁用' },
+              { key: 'readonly', label: '只读' },
+            ] as const"
+            :key="item.key"
+            class="demo-control-toggle"
+          >
+            <HysCheckbox
+              v-model="config[item.key]"
+              :label="item.label"
+            /><small>{{ item.key }}</small>
+          </div>
+        </div>
+      </section>
+    </div>
+    <HysRating
+      v-model="score"
+      v-bind="config"
+      :texts="['较差', '一般', '良好', '满意', '非常满意']"
+      aria-label="配置评分"
+    /><output>{{ JSON.stringify({ score, ...config }, null, 2) }}</output>
+  </div>
+</template>
