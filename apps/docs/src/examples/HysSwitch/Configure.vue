@@ -1,13 +1,65 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysSwitch } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox } from 'hys-ui';
-const value = ref(true);
-const demoConfig = demoReactive<{
-    disabled: boolean;
-    loading: boolean;
-}>({ "disabled": false, "loading": false });
+import { ref, reactive, computed } from "vue";
+import { HysSwitch, HysCheckbox, HysSelect } from "hys-ui";
+const value = ref(false),
+  config = reactive({
+    size: "md" as "sm" | "md" | "lg",
+    disabled: false,
+    readonly: false,
+    loading: false,
+    inlinePrompt: false,
+    round: true,
+  }),
+  options = [
+    { label: "选项 A", value: "a" },
+    { label: "选项 B", value: "b" },
+    { label: "选项 C", value: "c", disabled: true },
+  ];
+const flags = [
+  { key: "disabled", label: "禁用交互" },
+  { key: "readonly", label: "只读模式" },
+  { key: "loading", label: "加载状态" },
+  { key: "inlinePrompt", label: "内容内置" },
+  { key: "round", label: "圆形外观" },
+] as const;
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div></div></section></div><div class="demo-content"><HysSwitch v-bind="demoConfig" v-model="value"/><output>开启：{{value}}</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div class="demo-content">
+    <div class="demo-controls">
+      <section class="demo-control-section">
+        <h3>控件尺寸</h3>
+        <div class="demo-control-fields">
+          <label class="demo-field"
+            ><span>尺寸</span
+            ><HysSelect
+              v-model="config.size"
+              :options="
+                ['sm', 'md', 'lg'].map((value) => ({ label: value, value }))
+              "
+          /></label>
+        </div>
+      </section>
+      <section class="demo-control-section">
+        <h3>状态与行为</h3>
+        <div class="demo-control-toggles">
+          <div
+            v-for="item in flags"
+            :key="item.key"
+            class="demo-control-toggle"
+          >
+            <HysCheckbox
+              v-model="config[item.key]"
+              :label="item.label"
+            /><small>{{ item.key }}</small>
+          </div>
+        </div>
+      </section>
+    </div>
+    <HysSwitch
+      v-model="value"
+      v-bind="config"
+      active-text="已开启"
+      inactive-text="已关闭"
+    /><output>{{ JSON.stringify(value) }}</output>
+  </div>
+</template>

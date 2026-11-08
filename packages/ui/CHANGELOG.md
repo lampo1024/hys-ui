@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Expand checkboxes with scalar/array values, mapped checked values, uncontrolled defaults, button/border variants and form reset behavior.
+- Add CheckboxGroup and standalone Radio; support mapped/typed options, composed children, selection limits and bulk actions, keyboard navigation and native form values.
+- Expand Switch with mapped values, sizes, inline text/icons, custom rails/thumbs and cancellation-aware async guards; retain change-only consumers and discard stale completions.
+- Add independent choice-control scenarios and verify existing tree, permission and transfer integrations.
+
 - Add Autocomplete with free text input, grouped/local/remote suggestions, mapped business fields, custom matching and cancellable debounced queries.
 - Support custom input/option/loading/header/footer/clear content, retryable errors, keyboard preview and selection policies, controlled state and form integration.
 - Add dedicated autocomplete scenarios, public TypeScript interfaces and input/async/accessibility guidance.

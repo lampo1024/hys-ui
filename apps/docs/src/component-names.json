@@ -68,5 +68,7 @@
   "HysTree",
   "HysTreeSelect",
   "HysUpload",
-  "HysVirtualTable"
+  "HysVirtualTable",
+  "HysCheckboxGroup",
+  "HysRadio"
 ]

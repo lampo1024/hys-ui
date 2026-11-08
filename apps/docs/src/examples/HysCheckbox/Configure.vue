@@ -1,18 +1,64 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysCheckbox } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysInput as DemoInput } from 'hys-ui';
-const checked = ref(false);
-const demoConfig = demoReactive<{
-    label: string;
-    disabled: boolean;
-    readonly: boolean;
-    required: boolean;
-    indeterminate: boolean;
-}>({ "label": "自定义label", "disabled": false, "readonly": false, "required": false, "indeterminate": false });
+import { ref, reactive, computed } from "vue";
+import { HysCheckbox, HysSelect } from "hys-ui";
+const value = ref(false),
+  config = reactive({
+    size: "md" as "sm" | "md" | "lg",
+    disabled: false,
+    readonly: false,
+    indeterminate: false,
+    border: false,
+    button: false,
+  }),
+  options = [
+    { label: "选项 A", value: "a" },
+    { label: "选项 B", value: "b" },
+    { label: "选项 C", value: "c", disabled: true },
+  ];
+const flags = [
+  { key: "disabled", label: "禁用交互" },
+  { key: "readonly", label: "只读模式" },
+  { key: "indeterminate", label: "部分选中" },
+  { key: "border", label: "边框外观" },
+  { key: "button", label: "按钮外观" },
+] as const;
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field">label<DemoInput v-model="demoConfig.label"/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.readonly" label="readonly"/><small>只读模式</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.required" label="required"/><small>必填</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.indeterminate" label="indeterminate"/></div></div></section></div><div class="demo-content"><HysCheckbox v-bind="demoConfig" v-model="checked" /><HysCheckbox :model-value="false" indeterminate label="部分选中"/><output>选中：{{checked}}</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div class="demo-content">
+    <div class="demo-controls">
+      <section class="demo-control-section">
+        <h3>控件尺寸</h3>
+        <div class="demo-control-fields">
+          <label class="demo-field"
+            ><span>尺寸</span
+            ><HysSelect
+              v-model="config.size"
+              :options="
+                ['sm', 'md', 'lg'].map((value) => ({ label: value, value }))
+              "
+          /></label>
+        </div>
+      </section>
+      <section class="demo-control-section">
+        <h3>状态与行为</h3>
+        <div class="demo-control-toggles">
+          <div
+            v-for="item in flags"
+            :key="item.key"
+            class="demo-control-toggle"
+          >
+            <HysCheckbox
+              v-model="config[item.key]"
+              :label="item.label"
+            /><small>{{ item.key }}</small>
+          </div>
+        </div>
+      </section>
+    </div>
+    <HysCheckbox
+      v-model="value"
+      v-bind="config"
+      label="接收更新通知"
+    /><output>{{ JSON.stringify(value) }}</output>
+  </div>
+</template>

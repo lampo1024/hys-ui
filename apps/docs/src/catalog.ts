@@ -244,6 +244,24 @@ export const catalog=[
     ]
   },
   {
+    "name": "HysCheckboxGroup",
+    "shortName": "CheckboxGroup",
+    "label": "复选框组",
+    "slug": "hys-checkbox-group",
+    "category": "表单输入",
+    "description": "管理多项选择，支持数量约束、全选、字段映射和自定义选项。",
+    "notes": ["值保留原始类型；不可编辑的选择与未加载的值由宿主维护。", "全选和清除遵守 min / max，不会自动改写外部传入的初值。"]
+  },
+  {
+    "name": "HysRadio",
+    "shortName": "Radio",
+    "label": "单选框",
+    "slug": "hys-radio",
+    "category": "表单输入",
+    "description": "在互斥选项中选择一个值，支持按钮外观、自定义内容和表单语义。",
+    "notes": ["多个独立单选框使用相同的模型和 name。", "使用 HysRadioGroup 获得分组配置和完整键盘导航。"]
+  },
+  {
     "name": "HysRadioGroup",
     "shortName": "RadioGroup",
     "label": "单选组",

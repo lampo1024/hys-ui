@@ -94,6 +94,13 @@ export function actualAutocomplete(actual:InstanceType<typeof HysAutocomplete>):
 export async function operateAutocomplete(api:HysAutocompleteInstance){api.focus();await api.open();api.highlight(0);await api.select(option);await api.getData();api.close();api.clear()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {autocompleteTypeChecks} from './autocomplete-types'\nvoid autocompleteTypeChecks\n")
+fs.writeFileSync(path.join(dir,'choice-types.ts'),`import {h,ref} from 'vue'
+import {HysCheckbox,HysCheckboxGroup,HysRadio,HysRadioGroup,HysSwitch,type HysChoiceValue,type HysChoiceDataOption,type HysChoiceFieldNames,type HysCheckboxInstance,type HysCheckboxGroupInstance,type HysRadioInstance,type HysRadioGroupInstance,type HysSwitchInstance,type HysSwitchGuardContext} from 'hys-ui'
+const options:HysChoiceDataOption[]=[0,'0',false,{label:'A',value:'a'}],fields:HysChoiceFieldNames={label:'title',value:'id'},value:HysChoiceValue=0
+export const choiceTypeChecks=[h(HysCheckbox<boolean>,{modelValue:false,onChange:(next:boolean)=>void next}),h(HysCheckboxGroup,{options,fieldNames:fields,modelValue:[value],ref:ref<HysCheckboxGroupInstance>()}),h(HysRadio,{value:0,modelValue:null,ref:ref<HysRadioInstance>()}),h(HysRadioGroup<string>,{modelValue:'a',options:['a','b'],onChange:(next:string)=>void next}),h(HysSwitch<string>,{modelValue:'off',activeValue:'on',inactiveValue:'off',beforeChange:async(next:string,current:string,{signal}:HysSwitchGuardContext)=>!signal.aborted&&next!==current,ref:ref<HysSwitchInstance>()})]
+export async function operateChoices(checkbox:HysCheckboxInstance,group:HysCheckboxGroupInstance,radio:HysRadioInstance,radios:HysRadioGroupInstance,switchControl:HysSwitchInstance){const accepted:boolean=await group.toggle(0);await group.checkAll();await group.clear();checkbox.focus();await checkbox.toggle();radio.focus();await radio.select();await radios.select('a');await switchControl.toggle();return accepted}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {choiceTypeChecks} from './choice-types'\nvoid choiceTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

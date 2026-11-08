@@ -2156,10 +2156,18 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "boolean",
-        "required": true,
-        "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "type": "T | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控值，使用 v-model；复选框可为映射单值或数组，分组保留选项原始类型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "非受控初始值，原生表单重置时恢复",
         "global": false
       },
       {
@@ -2191,7 +2199,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "只读，可聚焦与查看，禁止选择或切换",
         "global": false
       },
       {
@@ -2199,15 +2207,39 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生表单 ID，可用于外部表单",
         "global": false
       },
       {
         "name": "value",
-        "type": "string | undefined",
+        "type": "HysChoiceValue | undefined",
         "required": false,
-        "default": "",
-        "description": "显示或计算用数值",
+        "default": "undefined",
+        "description": "当前选项的原始值；数组复选框或分组中用于标识选项",
+        "global": false
+      },
+      {
+        "name": "trueValue",
+        "type": "HysChoiceValue | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "独立复选框选中时提交的值，默认 true",
+        "global": false
+      },
+      {
+        "name": "falseValue",
+        "type": "HysChoiceValue | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "独立复选框未选中时的值，默认 false",
         "global": false
       },
       {
@@ -2215,7 +2247,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "原生单项必填或分组必填语义；复选框组的校验请配置表单数组规则",
         "global": false
       },
       {
@@ -2223,7 +2255,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "展示部分选中状态，不代表已提交的第三种模型值",
         "global": false
       },
       {
@@ -2231,7 +2263,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "显式 Tab 顺序，focusable=false 优先",
         "global": false
       },
       {
@@ -2241,36 +2273,92 @@
         "default": "继承字段/表单配置或 md",
         "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
+      },
+      {
+        "name": "border",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示选项外框；单项显式值优先于分组",
+        "global": false
+      },
+      {
+        "name": "button",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "当前子项显示为按钮，未提供时继承分组",
+        "global": false
+      },
+      {
+        "name": "buttonStyle",
+        "type": "\"outline\" | \"solid\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "outline 描边或 solid 填充按钮",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
+        "global": false
+      },
+      {
+        "name": "focusable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许正常 Tab 与鼠标聚焦；false 仍可通过方法聚焦",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 error、warning、success 状态；实际字段错误优先",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联到控件的错误说明",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: boolean]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: boolean]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "控件或分组获得焦点的原生事件"
       },
       {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "焦点离开控件或整个分组"
       }
     ],
     "slots": [
@@ -2279,37 +2367,341 @@
         "type": "{ checked: boolean; indeterminate: boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "复选框 / 单选框图标，接收 checked，复选框还包含 indeterminate"
       },
       {
         "name": "default",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选项文本，或使用子组件组合分组"
       }
     ],
     "exposed": [
       {
         "name": "input",
         "type": "HTMLInputElement | undefined",
-        "required": false,
+        "required": true,
         "default": "",
-        "description": ""
+        "description": "原生 input 元素"
+      },
+      {
+        "name": "checked",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "实际模型对应的选中状态"
       },
       {
         "name": "focus",
-        "type": "() => void | undefined",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦控件或组内指定值，省略时选择当前可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开组件内部焦点"
+      },
+      {
+        "name": "toggle",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求切换；Promise<boolean> 表示宿主最终是否接受"
+      }
+    ]
+  },
+  "HysCheckboxGroup": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控值，使用 v-model；复选框可为映射单值或数组，分组保留选项原始类型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始值，原生表单重置时恢复",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "readonly HysChoiceDataOption<T>[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "字符串、数值、布尔值或选项对象数组；提供时优先于默认子项插槽",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "HysChoiceFieldNames | undefined",
+        "required": false,
+        "default": "",
+        "description": "映射选项的 value、label、disabled、indeterminate 业务字段",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "只读，可聚焦与查看，禁止选择或切换",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "复选框组最少保留数量，不自动修改初始数据",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "复选框组最多选中数量，不自动裁剪宿主数据",
+        "global": false
+      },
+      {
+        "name": "required",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "原生单项必填或分组必填语义；复选框组的校验请配置表单数组规则",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生表单 ID，可用于外部表单",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "vertical",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "纵向排列",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"button\" | \"checkbox\" | undefined",
+        "required": false,
+        "default": "\"checkbox\"",
+        "description": "普通选项或按钮外观",
+        "global": false
+      },
+      {
+        "name": "buttonStyle",
+        "type": "\"outline\" | \"solid\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "outline 描边或 solid 填充按钮",
+        "global": false
+      },
+      {
+        "name": "border",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示选项外框；单项显式值优先于分组",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联到控件的错误说明",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 error、warning、success 状态；实际字段错误优先",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无选项\"",
+        "description": "空数据提示",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: T[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "blur",
-        "type": "() => void | undefined",
+        "name": "change",
+        "type": "[value: T[], info: HysCheckboxChange]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
+      },
+      {
+        "name": "reject",
+        "type": "[info: HysCheckboxReject]",
+        "required": false,
+        "default": "",
+        "description": "复选框组数量限制阻止实例操作时触发，含 value、checked、reason"
+      }
+    ],
+    "slots": [
+      {
+        "name": "option",
+        "type": "{ option: HysChoiceOption<T>; checked: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "复选框组数据选项模板，接收 option、checked"
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "数据分组为空时的内容"
+      },
+      {
+        "name": "default",
+        "type": "{ values: HysChoiceValue[]; allChecked: boolean; indeterminate: boolean; checkAll: () => Promise<boolean>; clear: () => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "选项文本，或使用子组件组合分组"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "values",
+        "type": "HysChoiceValue[]",
+        "required": true,
+        "default": "",
+        "description": "复选框组规范化的选中值列表"
+      },
+      {
+        "name": "allChecked",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "所有可编辑项是否已选择，不包含禁用项"
+      },
+      {
+        "name": "indeterminate",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "可编辑项是否部分选中"
+      },
+      {
+        "name": "focus",
+        "type": "(value?: HysChoiceValue) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦控件或组内指定值，省略时选择当前可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开组件内部焦点"
+      },
+      {
+        "name": "checkAll",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "选中全部可用项至 max 上限，保留不可编辑或未加载的值"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "清除可编辑项至 min 下限，保留不可编辑或未加载的值"
+      },
+      {
+        "name": "toggle",
+        "type": "(value: HysChoiceValue, checked?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求切换；Promise<boolean> 表示宿主最终是否接受"
       }
     ]
   },
@@ -6104,30 +6496,38 @@
     ],
     "exposed": []
   },
-  "HysRadioGroup": {
+  "HysRadio": {
     "props": [
       {
         "name": "modelValue",
+        "type": "T | null | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控值，使用 v-model；复选框可为映射单值或数组，分组保留选项原始类型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | null | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "非受控初始值，原生表单重置时恢复",
+        "global": false
+      },
+      {
+        "name": "value",
         "type": "T | undefined",
         "required": false,
-        "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "default": "undefined",
+        "description": "当前选项的原始值；数组复选框或分组中用于标识选项",
         "global": false
       },
       {
-        "name": "options",
-        "type": "HysRadioOption<T>[]",
-        "required": true,
-        "default": "",
-        "description": "可选项数据，支持单项禁用",
-        "global": false
-      },
-      {
-        "name": "name",
+        "name": "label",
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "显示标签",
         "global": false
       },
       {
@@ -6143,7 +6543,55 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "只读，可聚焦与查看，禁止选择或切换",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "button",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "当前子项显示为按钮，未提供时继承分组",
+        "global": false
+      },
+      {
+        "name": "border",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示选项外框；单项显式值优先于分组",
+        "global": false
+      },
+      {
+        "name": "buttonStyle",
+        "type": "\"outline\" | \"solid\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "outline 描边或 solid 填充按钮",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生表单 ID，可用于外部表单",
         "global": false
       },
       {
@@ -6151,7 +6599,214 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "原生单项必填或分组必填语义；复选框组的校验请配置表单数组规则",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 Tab 顺序，focusable=false 优先",
+        "global": false
+      },
+      {
+        "name": "focusable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许正常 Tab 与鼠标聚焦；false 仍可通过方法聚焦",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联到控件的错误说明",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 error、warning、success 状态；实际字段错误优先",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "change",
+        "type": "[value: T]",
+        "required": false,
+        "default": "",
+        "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
+      }
+    ],
+    "slots": [
+      {
+        "name": "icon",
+        "type": "{ checked: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "复选框 / 单选框图标，接收 checked，复选框还包含 indeterminate"
+      },
+      {
+        "name": "default",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "选项文本，或使用子组件组合分组"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "原生 input 元素"
+      },
+      {
+        "name": "checked",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "实际模型对应的选中状态"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦控件或组内指定值，省略时选择当前可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开组件内部焦点"
+      },
+      {
+        "name": "select",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求选中；遵守禁用/只读与宿主控制"
+      }
+    ]
+  },
+  "HysRadioGroup": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "T | null | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控值，使用 v-model；复选框可为映射单值或数组，分组保留选项原始类型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | null | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "非受控初始值，原生表单重置时恢复",
+        "global": false
+      },
+      {
+        "name": "options",
+        "type": "readonly HysChoiceDataOption<T>[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "字符串、数值、布尔值或选项对象数组；提供时优先于默认子项插槽",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "HysChoiceFieldNames | undefined",
+        "required": false,
+        "default": "",
+        "description": "映射选项的 value、label、disabled、indeterminate 业务字段",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生表单 ID，可用于外部表单",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "只读，可聚焦与查看，禁止选择或切换",
+        "global": false
+      },
+      {
+        "name": "required",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "原生单项必填或分组必填语义；复选框组的校验请配置表单数组规则",
         "global": false
       },
       {
@@ -6159,7 +6814,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "纵向排列",
         "global": false
       },
       {
@@ -6177,6 +6832,78 @@
         "default": "",
         "description": "辅助技术使用的控件名称",
         "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"button\" | \"radio\" | undefined",
+        "required": false,
+        "default": "\"radio\"",
+        "description": "普通选项或按钮外观",
+        "global": false
+      },
+      {
+        "name": "buttonStyle",
+        "type": "\"outline\" | \"solid\" | undefined",
+        "required": false,
+        "default": "\"outline\"",
+        "description": "outline 描边或 solid 填充按钮",
+        "global": false
+      },
+      {
+        "name": "border",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示选项外框；单项显式值优先于分组",
+        "global": false
+      },
+      {
+        "name": "block",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "单选按钮均分剩余横向空间",
+        "global": false
+      },
+      {
+        "name": "loopNavigation",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "单选组的方向键在首尾循环，默认 true",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联到控件的错误说明",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 error、warning、success 状态；实际字段错误优先",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无选项\"",
+        "description": "空数据提示",
+        "global": false
       }
     ],
     "events": [
@@ -6192,33 +6919,76 @@
         "type": "[value: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "控件或分组获得焦点的原生事件"
       },
       {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "焦点离开控件或整个分组"
       }
     ],
     "slots": [
       {
         "name": "label",
-        "type": "{ option: HysRadioOption<T>; }",
+        "type": "{ option: HysChoiceOption<T>; checked: boolean; }",
         "required": false,
         "default": "",
-        "description": "显示标签"
+        "description": "单选组数据选项模板，接收 option、checked"
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "数据分组为空时的内容"
+      },
+      {
+        "name": "default",
+        "type": "{ value: HysChoiceValue | null; }",
+        "required": false,
+        "default": "",
+        "description": "选项文本，或使用子组件组合分组"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "value",
+        "type": "HysChoiceValue | null",
+        "required": true,
+        "default": "",
+        "description": "单选组实际值，未选择时为 null"
+      },
+      {
+        "name": "focus",
+        "type": "(value?: HysChoiceValue) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦控件或组内指定值，省略时选择当前可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开组件内部焦点"
+      },
+      {
+        "name": "select",
+        "type": "(value: HysChoiceValue) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求选中；遵守禁用/只读与宿主控制"
+      }
+    ]
   },
   "HysRating": {
     "props": [
@@ -7220,6 +7990,13 @@
         "description": "远程检查失败：error、query；已取消的请求不触发"
       },
       {
+        "name": "reject",
+        "type": "[value: HysSelectValue, reason: \"create\" | \"limit\"]",
+        "required": false,
+        "default": "",
+        "description": "批量输入超出上限或创建失败：value、limit/create"
+      },
+      {
         "name": "update:searchValue",
         "type": "[query: string]",
         "required": false,
@@ -7246,13 +8023,6 @@
         "required": false,
         "default": "",
         "description": "确认创建新选项时触发，参数为 option"
-      },
-      {
-        "name": "reject",
-        "type": "[value: HysSelectValue, reason: \"create\" | \"limit\"]",
-        "required": false,
-        "default": "",
-        "description": "批量输入超出上限或创建失败：value、limit/create"
       },
       {
         "name": "popupScroll",
@@ -8204,10 +8974,34 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "boolean",
-        "required": true,
-        "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "type": "T | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控值，使用 v-model；复选框可为映射单值或数组，分组保留选项原始类型",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "非受控初始值，原生表单重置时恢复",
+        "global": false
+      },
+      {
+        "name": "activeValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "开关开启时的值，默认 true",
+        "global": false
+      },
+      {
+        "name": "inactiveValue",
+        "type": "T | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "开关关闭时的值，默认 false",
         "global": false
       },
       {
@@ -8219,6 +9013,14 @@
         "global": false
       },
       {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "只读，可聚焦与查看，禁止选择或切换",
+        "global": false
+      },
+      {
         "name": "loading",
         "type": "boolean | undefined",
         "required": false,
@@ -8227,11 +9029,51 @@
         "global": false
       },
       {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "开关宽度，数值为 px，也支持 CSS 长度；小于当前尺寸最小宽度时保留最小值",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "开关使用圆形轨道与滑块，默认 true",
+        "global": false
+      },
+      {
+        "name": "activeColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "开关开启时的背景颜色",
+        "global": false
+      },
+      {
+        "name": "inactiveColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "开关关闭时的背景颜色",
+        "global": false
+      },
+      {
         "name": "activeText",
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "选中或开启状态的文字",
         "global": false
       },
       {
@@ -8239,7 +9081,47 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "关闭状态文字",
+        "global": false
+      },
+      {
+        "name": "inlinePrompt",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "文字或状态图标置于轨道内；默认预留较长文字的宽度",
+        "global": false
+      },
+      {
+        "name": "activeIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "开启状态提示图标组件",
+        "global": false
+      },
+      {
+        "name": "inactiveIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "关闭状态提示图标组件",
+        "global": false
+      },
+      {
+        "name": "activeActionIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "开启状态的滑块图标",
+        "global": false
+      },
+      {
+        "name": "inactiveActionIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "关闭状态的滑块图标",
         "global": false
       },
       {
@@ -8251,39 +9133,188 @@
         "global": false
       },
       {
-        "name": "beforeChange",
-        "type": "((next: boolean) => boolean | void | Promise<boolean | void>) | undefined",
+        "name": "name",
+        "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "原生表单提交名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生表单 ID，可用于外部表单",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 Tab 顺序，focusable=false 优先",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦可用控件",
+        "global": false
+      },
+      {
+        "name": "focusable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许正常 Tab 与鼠标聚焦；false 仍可通过方法聚焦",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联到控件的错误说明",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式 error、warning、success 状态；实际字段错误优先",
+        "global": false
+      },
+      {
+        "name": "beforeChange",
+        "type": "((next: T, current: T, context: HysSwitchGuardContext) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "开关守卫 (next,current,{signal})，返回 false 阻止，支持 Promise；离开页面等情况取消过期请求",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: boolean]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: boolean]",
+        "type": "[value: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
         "name": "error",
         "type": "[error: unknown]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "异步开关守卫抛错或拒绝时触发；取消或过期请求不触发"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
+      },
+      {
+        "name": "click",
+        "type": "[value: T, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击开关时返回当前值与原生事件；异步结果由 change 表示"
       }
     ],
-    "slots": [],
-    "exposed": []
+    "slots": [
+      {
+        "name": "active",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "开关开启内容；根据 inlinePrompt 放在内部或外部"
+      },
+      {
+        "name": "inactive",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "开关关闭内容"
+      },
+      {
+        "name": "thumb",
+        "type": "{ checked: boolean; loading: boolean; focused: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "开关滑块内容，接收 checked、loading、focused"
+      },
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "开关默认滑块中的加载图标"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLButtonElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "开关按钮元素"
+      },
+      {
+        "name": "checked",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "实际模型对应的选中状态"
+      },
+      {
+        "name": "pending",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "开关内部守卫是否等待完成"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦控件或组内指定值，省略时选择当前可用项"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开组件内部焦点"
+      },
+      {
+        "name": "toggle",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求切换；Promise<boolean> 表示宿主最终是否接受"
+      }
+    ]
   },
   "HysTable": {
     "props": [
@@ -8797,14 +9828,14 @@
         "description": ""
       },
       {
-        "name": "remove",
+        "name": "reject",
         "type": "[value: string]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "reject",
+        "name": "remove",
         "type": "[value: string]",
         "required": false,
         "default": "",
