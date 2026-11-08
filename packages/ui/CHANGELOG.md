@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Expand text inputs with custom clear/password icons, icon props, formatting/parsing, uncontrolled defaults, controlled password visibility and held-password cleanup.
+- Share Input textarea mode and standalone Textarea behavior, with bounded autosize, width/size remeasurement, native form values, composition-safe updates and public instance methods.
+- Add UTF-16, grapheme and custom length strategies, safe truncation, inside/outside counters, custom count output and independent examples for each input capability.
+- Prevent stale text from reappearing when an input clear and form reset occur in the same event.
+- Use descriptive documentation scenario titles, improve composed select/input styles and isolate transient password preview behavior from published controls.
+
 - Expand number inputs with nullable/uncontrolled values, clear policies, decimal-safe steps, bounded strict grids and exact string-mode values.
 - Add display formatting/parsing, decimal separators, input filtering, synchronous validation and configurable draft/live updates.
 - Add stacked right controls, affix/icon slots, loading states, keyboard policies, opt-in wheel adjustment and held-button stepping with cached-page cleanup.

@@ -54,6 +54,16 @@ export const genericNumber=h(HysNumberInput,{onChange:(value:HysNumberInputValue
 export function operateNumber(api:HysNumberInputInstance){api.focus({preventScroll:true});api.select();api.increase(2);api.decrease();api.clear();return api.commit()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {numberTypeChecks} from './number-types'\nvoid numberTypeChecks\n")
+fs.writeFileSync(path.join(dir,'text-types.ts'),`import {h,ref} from 'vue'
+import {HysInput,HysTextarea,type HysInputInstance,type HysTextareaInstance,type HysInputProps,type HysTextareaProps,type HysInputFormatInfo,type HysInputCountInfo,type HysInputCountStrategy} from 'hys-ui'
+const entry=ref<HysInputInstance>(),note=ref<HysTextareaInstance>(),counter:HysInputCountStrategy=true
+const inputProps:HysInputProps={defaultValue:'Text',countGraphemes:counter,maxlength:12,formatter:(value:string,_info:HysInputFormatInfo)=>value,parser:value=>value,showCount:{formatter:(info:HysInputCountInfo)=>String(info.count)},inputProps:{spellcheck:false,style:{fontFamily:'sans-serif'}},showPasswordOn:'mousedown'}
+const textProps:HysTextareaProps={autosize:{minRows:2,maxRows:5},clearable:true,countPosition:'outside',showWordLimit:true}
+export const textTypeChecks=[h(HysInput,{...inputProps,ref:entry}),h(HysTextarea,{...textProps,ref:note})]
+export function actualInput(actual:InstanceType<typeof HysInput>):HysInputInstance{return actual}
+export function actualTextarea(actual:InstanceType<typeof HysTextarea>):HysTextareaInstance{return actual}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {textTypeChecks} from './text-types'\nvoid textTypeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

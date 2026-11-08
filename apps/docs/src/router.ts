@@ -1,4 +1,5 @@
 import {createRouter,createWebHistory} from 'vue-router'
+import {clearExamplePasswords} from './examplePasswords'
 const positions=new Map<string,{top:number;left:number}>()
 export const router=createRouter({history:createWebHistory(import.meta.env.BASE_URL),routes:[{path:'/',name:'overview',component:()=>import('./Overview.vue'),meta:{title:'概览'}},{path:'/components/hys-accordion',name:'HysAccordion',component:()=>import('./pages/HysAccordionPage.vue'),meta:{title:'HysAccordion 折叠面板'}},
 {path:'/components/hys-alert',name:'HysAlert',component:()=>import('./pages/HysAlertPage.vue'),meta:{title:'HysAlert 消息提示'}},
@@ -69,5 +70,5 @@ export const router=createRouter({history:createWebHistory(import.meta.env.BASE_
 {path:'/components/hys-tree-select',name:'HysTreeSelect',component:()=>import('./pages/HysTreeSelectPage.vue'),meta:{title:'HysTreeSelect 树形选择'}},
 {path:'/components/hys-upload',name:'HysUpload',component:()=>import('./pages/HysUploadPage.vue'),meta:{title:'HysUpload 文件上传'}},
 {path:'/components/hys-virtual-table',name:'HysVirtualTable',component:()=>import('./pages/HysVirtualTablePage.vue'),meta:{title:'HysVirtualTable 虚拟表格'}},{path:'/:pathMatch(.*)*',redirect:'/'}],scrollBehavior(to,_from,saved){if(to.hash)return {el:to.hash,top:94,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'};return saved??positions.get(to.path)??{top:0,left:0}}})
-router.beforeEach((_to,from)=>{positions.set(from.path,{top:window.scrollY,left:window.scrollX})})
+router.beforeEach(async(_to,from)=>{positions.set(from.path,{top:window.scrollY,left:window.scrollX});await clearExamplePasswords()})
 router.afterEach(to=>document.title=String(to.meta.title)+' · HYS UI')

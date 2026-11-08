@@ -3236,10 +3236,18 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string | undefined",
+        "type": "string | number | null | undefined",
         "required": false,
-        "default": "\"\"",
-        "description": "受控值，配合 v-model 使用",
+        "default": "",
+        "description": "受控文本值；数字/null 初始值转换为显示文本",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "string | number | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "未传 modelValue 时使用的初始文本",
         "global": false
       },
       {
@@ -3255,7 +3263,15 @@
         "type": "string | undefined",
         "required": false,
         "default": "\"text\"",
-        "description": "",
+        "description": "原生输入类型；textarea 启用多行模式",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立标签，自动关联内部输入 ID",
         "global": false
       },
       {
@@ -3291,11 +3307,43 @@
         "global": false
       },
       {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式外观状态；字段错误优先",
+        "global": false
+      },
+      {
         "name": "clearable",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示可访问的清空按钮；禁用和只读时隐藏",
+        "global": false
+      },
+      {
+        "name": "clearIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空图标组件，clear-icon 插槽优先",
+        "global": false
+      },
+      {
+        "name": "prefixIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "前缀图标组件，prefix 插槽优先",
+        "global": false
+      },
+      {
+        "name": "suffixIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "后缀图标组件，suffix 插槽优先",
         "global": false
       },
       {
@@ -3303,31 +3351,111 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "密码模式下显示查看按钮",
+        "global": false
+      },
+      {
+        "name": "showPasswordOn",
+        "type": "\"click\" | \"mousedown\" | undefined",
+        "required": false,
+        "default": "\"click\"",
+        "description": "点击切换或按住查看；按住模式也支持键盘切换",
+        "global": false
+      },
+      {
+        "name": "passwordVisible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控密码可见状态，配合 v-model:passwordVisible",
+        "global": false
+      },
+      {
+        "name": "defaultPasswordVisible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控模式初始密码可见状态",
         "global": false
       },
       {
         "name": "showCount",
+        "type": "boolean | { formatter: (info: HysInputCountInfo) => string; } | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示计数，或配置 formatter({value,count,maxLength})",
+        "global": false
+      },
+      {
+        "name": "showWordLimit",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "showCount 的布尔别名",
+        "global": false
+      },
+      {
+        "name": "countPosition",
+        "type": "\"inside\" | \"outside\" | undefined",
+        "required": false,
+        "default": "\"inside\"",
+        "description": "计数位于控件内部或外部，默认 inside",
+        "global": false
+      },
+      {
+        "name": "wordLimitPosition",
+        "type": "\"inside\" | \"outside\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "计数位置别名；指定后优先于 countPosition",
+        "global": false
+      },
+      {
+        "name": "countGraphemes",
+        "type": "HysInputCountStrategy | undefined",
+        "required": false,
+        "default": "",
+        "description": "true 按可见字符计算，或使用自定义非负单调计数函数",
         "global": false
       },
       {
         "name": "maxlength",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "输入最大长度；格式化和自定义计数时由组件处理，0 表示不允许输入",
         "global": false
       },
       {
         "name": "minlength",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "最小长度；自定义计数时替代原生 minlength 校验",
+        "global": false
+      },
+      {
+        "name": "formatter",
+        "type": "((value: string, info: HysInputFormatInfo) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示格式 (value, {userTyping,input})，不改变原始模型",
+        "global": false
+      },
+      {
+        "name": "parser",
+        "type": "((value: string) => string | number) | undefined",
+        "required": false,
+        "default": "",
+        "description": "将显示文本解析为原始值；抛出错误会拒绝本次输入",
+        "global": false
+      },
+      {
+        "name": "allowInput",
+        "type": "((value: string) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "同步筛选解析后的文本，返回 false 拒绝输入",
         "global": false
       },
       {
@@ -3343,7 +3471,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "原生表单字段名；格式化输入提交原始文本",
         "global": false
       },
       {
@@ -3352,6 +3480,70 @@
         "required": false,
         "default": "继承字段/表单配置或 md",
         "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "rows",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2",
+        "description": "多行模式初始行数；Input 默认 2，Textarea 默认 4",
+        "global": false
+      },
+      {
+        "name": "autosize",
+        "type": "boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined",
+        "required": false,
+        "default": "",
+        "description": "多行模式自动高度，可配置 minRows / maxRows",
+        "global": false
+      },
+      {
+        "name": "resize",
+        "type": "\"horizontal\" | \"vertical\" | \"none\" | \"both\" | undefined",
+        "required": false,
+        "default": "\"vertical\"",
+        "description": "非自动高度时允许的原生拉伸方向",
+        "global": false
+      },
+      {
+        "name": "inputProps",
+        "type": "InputHTMLAttributes | TextareaHTMLAttributes | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部原生输入的属性与样式；组件管理的状态优先",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后自动聚焦；禁用时不聚焦",
+        "global": false
+      },
+      {
+        "name": "selectOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "聚焦时选择全部文本",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示边框",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "圆角外观",
         "global": false
       }
     ],
@@ -3368,14 +3560,14 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "原生确认或失焦后返回原始文本；同次提交不重复触发"
       },
       {
         "name": "clear",
         "type": "[]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "执行清空操作后触发"
       },
       {
         "name": "focus",
@@ -3396,14 +3588,49 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "接受本次输入后返回解析后的原始文本"
       },
       {
         "name": "pressEnter",
         "type": "[event: KeyboardEvent]",
         "required": false,
         "default": "",
+        "description": "非输入法组合状态下按 Enter 的原生事件"
+      },
+      {
+        "name": "compositionstart",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合开始"
+      },
+      {
+        "name": "compositionupdate",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合更新"
+      },
+      {
+        "name": "compositionend",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合结束；随后统一解析、裁剪与发布"
+      },
+      {
+        "name": "update:passwordVisible",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
         "description": ""
+      },
+      {
+        "name": "passwordVisibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "请求修改密码可见状态"
       }
     ],
     "slots": [
@@ -3412,41 +3639,76 @@
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "输入区域外的前置内容，可放选择器等控件"
       },
       {
         "name": "prefix",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "输入区域内的前缀，优先于 prefixIcon"
+      },
+      {
+        "name": "clear-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "自定义清空图标，保留按钮语义与键盘操作"
+      },
+      {
+        "name": "password-icon",
+        "type": "{ visible: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "自定义密码图标，接收 visible"
       },
       {
         "name": "suffix",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "输入区域内的后缀，优先于 suffixIcon"
+      },
+      {
+        "name": "count",
+        "type": "{ value: string; count: number; maxLength: number | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "自定义计数内容，接收 value、count、maxLength"
       },
       {
         "name": "append",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "输入区域外的后置内容，可放操作按钮"
       }
     ],
     "exposed": [
       {
         "name": "input",
-        "type": "HTMLInputElement | undefined",
+        "type": "HTMLInputElement | HTMLTextAreaElement | undefined",
         "required": false,
         "default": "",
         "description": ""
       },
       {
+        "name": "textarea",
+        "type": "HTMLTextAreaElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "isComposing",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": ""
+      },
+      {
         "name": "focus",
-        "type": "() => void | undefined",
+        "type": "(options?: FocusOptions | undefined) => void",
         "required": false,
         "default": "",
         "description": ""
@@ -3461,6 +3723,27 @@
       {
         "name": "select",
         "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "setSelectionRange",
+        "type": "(start: number, end: number, direction?: \"none\" | \"forward\" | \"backward\" | undefined) => void",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "scrollTo",
+        "type": "(options: ScrollToOptions) => void | undefined",
         "required": false,
         "default": "",
         "description": ""
@@ -7185,42 +7468,10 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string | undefined",
-        "required": false,
-        "default": "\"\"",
-        "description": "受控值，配合 v-model 使用",
-        "global": false
-      },
-      {
-        "name": "label",
-        "type": "string | undefined",
+        "type": "string | number | null | undefined",
         "required": false,
         "default": "",
-        "description": "显示标签",
-        "global": false
-      },
-      {
-        "name": "placeholder",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "空值占位提示",
-        "global": false
-      },
-      {
-        "name": "rows",
-        "type": "number | undefined",
-        "required": false,
-        "default": "4",
-        "description": "行数据，由使用方提供",
-        "global": false
-      },
-      {
-        "name": "maxlength",
-        "type": "number | undefined",
-        "required": false,
-        "default": "",
-        "description": "",
+        "description": "受控文本值；数字/null 初始值转换为显示文本",
         "global": false
       },
       {
@@ -7228,15 +7479,31 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "description": "禁止用户操作",
         "global": false
       },
       {
-        "name": "readonly",
+        "name": "bordered",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "true",
+        "description": "显示边框",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "",
         "description": "",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单字段名；格式化输入提交原始文本",
         "global": false
       },
       {
@@ -7248,10 +7515,194 @@
         "global": false
       },
       {
-        "name": "showCount",
+        "name": "round",
         "type": "boolean | undefined",
         "required": false,
-        "default": "true",
+        "default": "false",
+        "description": "圆角外观",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后自动聚焦；禁用时不聚焦",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示可访问的清空按钮；禁用和只读时隐藏",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空值占位提示",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立标签，自动关联内部输入 ID",
+        "global": false
+      },
+      {
+        "name": "rows",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "多行模式初始行数；Input 默认 2，Textarea 默认 4",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式外观状态；字段错误优先",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "string | number | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "未传 modelValue 时使用的初始文本",
+        "global": false
+      },
+      {
+        "name": "clearIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空图标组件，clear-icon 插槽优先",
+        "global": false
+      },
+      {
+        "name": "prefixIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "前缀图标组件，prefix 插槽优先",
+        "global": false
+      },
+      {
+        "name": "suffixIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "后缀图标组件，suffix 插槽优先",
+        "global": false
+      },
+      {
+        "name": "showCount",
+        "type": "boolean | { formatter: (info: HysInputCountInfo) => string; } | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示计数，或配置 formatter({value,count,maxLength})",
+        "global": false
+      },
+      {
+        "name": "showWordLimit",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "showCount 的布尔别名",
+        "global": false
+      },
+      {
+        "name": "countPosition",
+        "type": "\"inside\" | \"outside\" | undefined",
+        "required": false,
+        "default": "\"inside\"",
+        "description": "计数位于控件内部或外部，默认 inside",
+        "global": false
+      },
+      {
+        "name": "wordLimitPosition",
+        "type": "\"inside\" | \"outside\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "计数位置别名；指定后优先于 countPosition",
+        "global": false
+      },
+      {
+        "name": "countGraphemes",
+        "type": "HysInputCountStrategy | undefined",
+        "required": false,
+        "default": "",
+        "description": "true 按可见字符计算，或使用自定义非负单调计数函数",
+        "global": false
+      },
+      {
+        "name": "maxlength",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入最大长度；格式化和自定义计数时由组件处理，0 表示不允许输入",
+        "global": false
+      },
+      {
+        "name": "minlength",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "最小长度；自定义计数时替代原生 minlength 校验",
+        "global": false
+      },
+      {
+        "name": "formatter",
+        "type": "((value: string, info: HysInputFormatInfo) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示格式 (value, {userTyping,input})，不改变原始模型",
+        "global": false
+      },
+      {
+        "name": "parser",
+        "type": "((value: string) => string | number) | undefined",
+        "required": false,
+        "default": "",
+        "description": "将显示文本解析为原始值；抛出错误会拒绝本次输入",
+        "global": false
+      },
+      {
+        "name": "allowInput",
+        "type": "((value: string) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "同步筛选解析后的文本，返回 false 拒绝输入",
+        "global": false
+      },
+      {
+        "name": "autocomplete",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
         "description": "",
         "global": false
       },
@@ -7260,15 +7711,31 @@
         "type": "boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "多行模式自动高度，可配置 minRows / maxRows",
         "global": false
       },
       {
         "name": "resize",
-        "type": "\"horizontal\" | \"vertical\" | \"both\" | \"none\" | undefined",
+        "type": "\"horizontal\" | \"vertical\" | \"none\" | \"both\" | undefined",
         "required": false,
         "default": "\"vertical\"",
-        "description": "",
+        "description": "非自动高度时允许的原生拉伸方向",
+        "global": false
+      },
+      {
+        "name": "inputProps",
+        "type": "InputHTMLAttributes | TextareaHTMLAttributes | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部原生输入的属性与样式；组件管理的状态优先",
+        "global": false
+      },
+      {
+        "name": "selectOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "聚焦时选择全部文本",
         "global": false
       }
     ],
@@ -7285,7 +7752,14 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "原生确认或失焦后返回原始文本；同次提交不重复触发"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "执行清空操作后触发"
       },
       {
         "name": "focus",
@@ -7306,10 +7780,81 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "接受本次输入后返回解析后的原始文本"
+      },
+      {
+        "name": "pressEnter",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "非输入法组合状态下按 Enter 的原生事件"
+      },
+      {
+        "name": "compositionstart",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合开始"
+      },
+      {
+        "name": "compositionupdate",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合更新"
+      },
+      {
+        "name": "compositionend",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入法组合结束；随后统一解析、裁剪与发布"
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "prefix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区域内的前缀，优先于 prefixIcon"
+      },
+      {
+        "name": "suffix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区域内的后缀，优先于 suffixIcon"
+      },
+      {
+        "name": "prepend",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区域外的前置内容，可放选择器等控件"
+      },
+      {
+        "name": "append",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区域外的后置内容，可放操作按钮"
+      },
+      {
+        "name": "clear-icon",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "自定义清空图标，保留按钮语义与键盘操作"
+      },
+      {
+        "name": "count",
+        "type": "HysInputCountInfo",
+        "required": false,
+        "default": "",
+        "description": "自定义计数内容，接收 value、count、maxLength"
+      }
+    ],
     "exposed": [
       {
         "name": "input",
@@ -7319,8 +7864,22 @@
         "description": ""
       },
       {
+        "name": "textarea",
+        "type": "HTMLTextAreaElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "isComposing",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": ""
+      },
+      {
         "name": "focus",
-        "type": "() => void | undefined",
+        "type": "(options?: FocusOptions | undefined) => void | undefined",
         "required": false,
         "default": "",
         "description": ""
@@ -7335,6 +7894,27 @@
       {
         "name": "select",
         "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "clear",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "setSelectionRange",
+        "type": "(start: number, end: number, direction?: \"none\" | \"forward\" | \"backward\" | undefined) => void | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "scrollTo",
+        "type": "(options: ScrollToOptions) => void | undefined",
         "required": false,
         "default": "",
         "description": ""
