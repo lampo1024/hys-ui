@@ -11,6 +11,16 @@ for(const name of fs.readdirSync(dir).sort()){
  const meta=checker.getComponentMeta(path.join(dir,name,name+'.vue'))
  const item=p=>({name:p.name,type:p.type||'',required:!!p.required,default:p.default??(!p.required&&/^boolean(?: \| undefined)?$/.test(p.type||'')?'false':''),description:p.description||descriptions[p.name]||'',...('global' in p?{global:p.global}:{})})
  api[name]={props:meta.props.filter(p=>!p.global).map(item),events:meta.events.map(item),slots:meta.slots.map(item),exposed:meta.exposed.filter(p=>!p.name.startsWith('$')).map(item)}
+ if(fs.readFileSync(path.join(dir,name,name+'.vue'),'utf8').includes('useHysControlState'))for(const prop of api[name].props){if(prop.name==='size'){prop.default='继承字段/表单配置或 md';prop.description='控件尺寸；显式设置优先于字段与表单尺寸'}if(prop.name==='disabled')prop.description='禁止用户操作；同时继承所属字段或表单的禁用状态'}
+ if(['HysForm','HysFormItem'].includes(name)){
+  const common={rules:'规则或规则数组；支持字段专属规则与表单规则合并',size:'表单或字段的控件尺寸',labelPosition:'标签位于顶部，或左/右对齐的侧边',labelWidth:'侧边标签宽度，支持像素数值或 CSS 宽度',showLabel:'是否显示标签',showFeedback:'是否显示错误或警告区域；校验与输入语义不受影响',showRequiredMark:'是否显示必填标记',requiredMarkPosition:'必填标记在标签左侧或右侧',validateTrigger:'自动校验触发时机；手动校验始终应用全部规则'}
+  const text=name==='HysForm'?{model:'表单数据对象；路径支持嵌套对象与数组',initialValues:'重置使用的初始数据；未指定时记录挂载时的数据',validate:'兼容整表自定义检查，接收含 AbortSignal 的上下文',validateMessages:'自定义规则引擎的提示消息',validateOnRuleChange:'规则变更后是否重新校验',disabled:'禁用全部控件并关闭相关浮层，取消过期检查',loading:'显示忙碌语义并禁用表单控件',inline:'字段和操作区行内排列',scrollToError:'提交失败后滚动到首个错误字段；可传 ScrollIntoViewOptions',focusOnError:'提交失败后聚焦首个错误字段'}:{prop:'字段路径：点号/括号字符串或路径数组',dependencies:'依赖字段路径；变化后重新检查当前字段',error:'由调用方控制的错误提示，优先于规则结果',warning:'由调用方控制的警告提示，不阻止提交',status:'显式反馈状态；未指定时使用规则结果',required:'显示必填语义；校验仍由 required 规则决定',hint:'持续显示的辅助说明，可与错误/警告并存',for:'显式关联的控件 ID',disabled:'禁用当前字段内的控件',feedbackIcon:'显示检查中、成功、警告或错误图标',noStyle:'不输出字段布局和标签，保留规则与上下文'}
+  for(const prop of api[name].props)prop.description=text[prop.name]||common[prop.name]||prop.description
+  const events={submit:'有效且未过期的提交，参数为表单数据快照',invalid:'提交未通过，参数包含 valid、cancelled、values、errors 和 warnings',reset:'完成重置，参数为字段路径列表',validate:'字段检查完成：path、是否有效、错误消息',validation:'整表或局部检查完成，参数为详细结果；已取消的请求不触发'}
+  for(const event of api[name].events)event.description=events[event.name]||event.description
+  const methods={validate:'检查全部或指定路径并返回 Promise<boolean>',validateFields:'validate 的别名，可传路径列表',validateResult:'返回包含取消状态、数据和反馈信息的完整结果',validateField:'检查单个路径；可指定自动触发类型',clearValidate:'清除指定或全部反馈并取消相应检查',resetFields:'重置指定或全部字段，并清除反馈',captureInitialValues:'记录当前值作为后续重置基线，支持指定路径',scrollToField:'滚动到注册字段，可传滚动配置',focusField:'聚焦注册字段中的可用控件',getField:'读取一个注册字段的上下文与操作方法',getFields:'读取当前注册字段列表',focus:'聚焦当前字段控件',resetField:'重置当前字段'}
+  for(const exposed of api[name].exposed)exposed.description=methods[exposed.name]||exposed.description
+ }
  if(['HysTabs','HysAccordion','HysSteps','HysBreadcrumb'].includes(name)){
   const common={size:'组件尺寸',disabled:'禁止用户操作',items:'展示项；每项的字段见公开类型',ariaLabel:'辅助技术使用的组件名称'}
   const text={

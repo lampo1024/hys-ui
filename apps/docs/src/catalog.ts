@@ -173,10 +173,7 @@ export const catalog=[
     "slug": "hys-form",
     "category": "表单输入",
     "description": "表单的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "notes": ["字段路径支持点号、括号字符串与数组；表单规则和字段规则合并，手动校验应用全部规则。","异步 validator 接收数据快照与 AbortSignal；跨字段检查应声明 dependencies。resetFields 可局部重置，远程回填后可用 captureInitialValues 更新基线。"]
   },
   {
     "name": "HysFormItem",
@@ -185,10 +182,7 @@ export const catalog=[
     "slug": "hys-form-item",
     "category": "表单输入",
     "description": "表单项的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "notes": ["通过 prop 关联 HysForm 的 model；独立使用可由调用方传入 error、warning 和状态。","字段配置优先于表单默认设置，控件显式 size 优先于字段尺寸。隐藏反馈不影响校验和必填语义。"]
   },
   {
     "name": "HysInput",

@@ -33,6 +33,164 @@ test('Select filters, skips disabled options and closes single selection',async(
 test('Multiple Select toggles entries and stays open; clear emits empty array',async()=>{const select=await mount(ui.HysSelect,{modelValue:[],multiple:true,clearable:true,options:[{value:'a',label:'One'},{value:'b',label:'Two'}]});await fire(select.find('[role="combobox"]'),'click');await pause(20);await fire(document.querySelector('[role="option"]'),'click');assert.deepEqual([...select.props.modelValue],['a']);assert(document.querySelector('[role="listbox"]'));await fire(select.find('[aria-label="清空选择"]'),'click');assert.deepEqual([...select.props.modelValue],[])})
 test('Form supports required, async rules, reset and isolated field errors',async()=>{const model=reactive({name:''});const form=await mount(ui.HysForm,{model,rules:{name:[{required:true,message:'Name required'},{validator:async value=>value==='bad'?'Rejected':true}]}},{default:()=>h(ui.HysFormItem,{label:'Name',prop:'name'},()=>h(ui.HysInput,{modelValue:model.name}))});assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Name required');form.props.model.name='bad';assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Rejected');form.props.model.name='good';assert.equal(await form.vm.validate(),true);form.vm.resetFields();assert.equal(form.props.model.name,'');assert.deepEqual({...form.vm.errors},{})})
 test('Form stale async results do not replace newer errors',async()=>{let finish;const form=await mount(ui.HysForm,{model:{name:'old'},rules:{name:{validator:value=>value==='old'?new Promise(resolve=>finish=resolve):'New error'}}});const old=form.vm.validateField('name');form.props.model.name='new';await form.vm.validateField('name');finish('Old error');await old;assert.equal(form.vm.errors.name,'New error')})
+
+test('Form handles typed constraints, enum false, whitespace and non-mutating transforms',async()=>{
+ const form=await mount(ui.HysForm,{model:{email:'bad',age:17,count:[1],role:false,name:'   ',trimmed:' ok '},rules:{email:{type:'email'},age:{type:'integer',min:18},count:{type:'array',len:2},role:{type:'enum',enum:[false,true]},name:{whitespace:true},trimmed:{transform:value=>String(value).trim(),len:2}}})
+ assert.equal(await form.vm.validate(),false)
+ assert.deepEqual(Object.keys(form.vm.errors).sort(),['age','count','email','name'])
+ assert.equal(form.props.model.trimmed,' ok ')
+ Object.assign(form.props.model,{email:'user@example.com',age:21,count:[1,2],name:'Name'});assert.equal(await form.vm.validate(),true)
+})
+
+test('Form built-in constraints run before a combined custom validator',async()=>{
+ let calls=0
+ const form=await mount(ui.HysForm,{model:{name:''},rules:{name:{required:true,message:'Required',validator:value=>{calls++;return value==='allowed'||'Not allowed'}}}})
+ assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Required');assert.equal(calls,0)
+ form.props.model.name='other';assert.equal(await form.vm.validate(),false);assert.equal(form.vm.errors.name,'Not allowed')
+ form.props.model.name='allowed';assert.equal(await form.vm.validate(),true)
+})
+
+test('Form supports nested descriptor rules and dot, array and bracket field paths',async()=>{
+ const form=await mount(ui.HysForm,{model:{profile:{email:'invalid'},contacts:[{name:''}],roles:['one','bad']},rules:{'profile.email':{type:'email',message:'Email'},'contacts[0].name':{required:true,message:'Contact'},roles:{type:'array',defaultField:{type:'enum',enum:['one','two'],message:'Role'}}}})
+ assert.equal(await form.vm.validateField(['profile','email']),false);assert.equal(form.vm.errors['profile.email'],'Email')
+ assert.equal(await form.vm.validateField('contacts[0].name'),false);assert.equal(form.vm.errors['contacts.0.name'],'Contact')
+ assert.equal(await form.vm.validateField('roles'),false);assert.equal(form.vm.errors.roles,'Role')
+ form.props.rules={profile:{type:'object',fields:{email:{type:'email',message:'Nested email'}}}};await nextTick();assert.equal(await form.vm.validateField('profile'),false);assert.equal(form.vm.errors.profile,'Nested email')
+})
+
+test('Form warning rules inform without preventing submission',async()=>{
+ const form=await mount(ui.HysForm,{model:{name:'short'},rules:{name:{min:8,level:'warning',message:'Consider a longer name'}}},{default:()=>h(ui.HysFormItem,{prop:'name',label:'Name',feedbackIcon:true},()=>h(ui.HysInput,{modelValue:'short'}))})
+ await fire(form.find('form'),'submit');await pause(5)
+ assert.equal(form.events.submit.length,1);assert.equal(form.vm.warnings.name,'Consider a longer name');assert.equal(form.vm.states.name.status,'warning');assert(!form.vm.errors.name)
+ assert.equal(form.find('input').getAttribute('aria-invalid'),null);assert.equal(form.find('[role="status"]').textContent,'Consider a longer name')
+})
+
+test('Form trigger filtering preserves an existing blur-only error',async()=>{
+ const form=await mount(ui.HysForm,{model:{name:''},rules:{name:{required:true,trigger:'blur',message:'Required on blur'}}})
+ await form.vm.validateField('name','blur');assert.equal(form.vm.errors.name,'Required on blur')
+ form.props.model.name='fixed';await form.vm.validateField('name','change');assert.equal(form.vm.errors.name,'Required on blur')
+ await form.vm.validateField('name','blur');assert.equal(form.vm.errors.name,undefined)
+})
+
+test('FormItem merges local rules, supports dependent fields and exposes field methods',async()=>{
+ const model=reactive({password:'secret',confirm:'secret'}),form=await mount(ui.HysForm,{model,rules:{confirm:{min:4}}},{default:()=>[h(ui.HysFormItem,{prop:'password',label:'Password'},()=>h(ui.HysInput,{modelValue:model.password})),h(ui.HysFormItem,{prop:'confirm',label:'Confirm',dependencies:['password'],rules:{validator:(value,values)=>value===values.password||'Does not match'}},()=>h(ui.HysInput,{modelValue:model.confirm}))]})
+ assert.equal(await form.vm.validate(),true);assert.equal(form.vm.getFields().length,2)
+ model.password='changed';await nextTick();await pause(5);assert.equal(form.vm.errors.confirm,'Does not match')
+ const field=form.vm.getField('confirm');assert.equal(field.path.value,'confirm');field.focus();assert.equal(document.activeElement,form.all('input')[1])
+ field.clearValidate();assert.equal(form.vm.errors.confirm,undefined)
+})
+
+test('Form partial validation and reset preserve unrelated errors, null values and captured baselines',async()=>{
+ const model=reactive({user:{name:'Initial',email:''},optional:null}),form=await mount(ui.HysForm,{model,rules:{'user.name':{required:true},'user.email':{required:true,message:'Email required'}}},{default:()=>[h(ui.HysFormItem,{prop:['user','name'],label:'Name'},()=>h(ui.HysInput,{modelValue:model.user.name})),h(ui.HysFormItem,{prop:'optional'},()=>h(ui.HysInput,{modelValue:String(model.optional??'')}))]})
+ assert.equal(await form.vm.validate(),false);assert.equal(await form.vm.validateFields(['user.name']),true);assert.equal(form.vm.errors['user.email'],'Email required')
+ model.user.name='Changed';model.optional='changed';form.vm.resetFields(['optional']);assert.equal(model.optional,null);assert.equal(model.user.name,'Changed')
+ form.vm.captureInitialValues(['user.name']);model.user.name='Later';form.vm.resetFields(['user.name']);assert.equal(model.user.name,'Changed');assert.equal(form.vm.errors['user.email'],'Email required')
+ form.vm.clearValidate(['user']);assert.deepEqual({...form.vm.errors},{})
+})
+
+test('Form removed dynamic fields cancel pending checks and leave the remaining form usable',async()=>{
+ const visible=ref(true);let finish
+ const form=await mount(ui.HysForm,{model:{extra:''},rules:{extra:{validator:()=>new Promise(resolve=>finish=resolve)}}},{default:()=>visible.value?h(ui.HysFormItem,{prop:'extra',label:'Extra'},()=>h(ui.HysInput,{modelValue:''})):null})
+ const pending=form.vm.validateField('extra');visible.value=false;await nextTick();finish('Old error');assert.equal(await pending,false)
+ assert.equal(form.vm.errors.extra,undefined);assert.equal(form.vm.getFields().length,0);assert.equal(await form.vm.validate(),true)
+})
+
+test('Form concurrent validation keeps the latest run and pending state',async()=>{
+ const pending=[],form=await mount(ui.HysForm,{model:{name:'first'},rules:{name:{validator:()=>new Promise(resolve=>pending.push(resolve))}}})
+ const first=form.vm.validate();const second=form.vm.validate();assert.equal(form.vm.validating,true)
+ pending[0]('Old error');assert.equal(await first,false);assert.equal(form.vm.validating,true)
+ pending[1](true);assert.equal(await second,true);assert.equal(form.vm.validating,false);assert.equal(form.events.validation.length,1);assert.deepEqual({...form.vm.errors},{})
+})
+
+test('Form submit does not emit success or failure for edited, reset or disabled pending data',async()=>{
+ for(const action of ['edit','reset','disable']){
+  let finish
+  const form=await mount(ui.HysForm,{model:{name:'initial'},rules:{name:{validator:()=>new Promise(resolve=>finish=resolve)}}})
+  await fire(form.find('form'),'submit')
+  if(action==='edit')form.props.model.name='new';else if(action==='reset')form.vm.resetFields();else form.props.disabled=true
+  await nextTick();finish(true);await pause(5);assert(!form.events.submit,action);assert(!form.events.invalid,action);assert.equal(form.vm.validating,false);form.unmount()
+ }
+})
+
+test('Form cached-page deactivation suppresses obsolete submission and permits a fresh request',async()=>{
+ const visible=ref(true),pending=[],submitted=[],host=document.createElement('div');document.body.append(host)
+ const Cached=defineComponent({setup(){return()=>h(ui.HysForm,{model:{name:'value'},rules:{name:{validator:()=>new Promise(resolve=>pending.push(resolve))}},onSubmit:value=>submitted.push(value)},()=>h(ui.HysFormItem,{prop:'name'},()=>h(ui.HysInput,{modelValue:'value'})))}})
+ const app=createApp({setup(){ui.provideHysConfig({motion:'off'});return()=>h(KeepAlive,null,{default:()=>visible.value?h(Cached):h('p','Away')})}})
+ try{app.mount(host);await nextTick();await fire(host.querySelector('form'),'submit');visible.value=false;await nextTick();pending[0](true);await pause(5);assert.equal(submitted.length,0);visible.value=true;await nextTick();await fire(host.querySelector('form'),'submit');pending.at(-1)(true);await pause(5);assert.equal(submitted.length,1)}finally{app.unmount();host.remove()}
+})
+
+test('Disabled form state blocks native and custom handlers, including an already-open select',async()=>{
+ const changed=[],form=await mount(ui.HysForm,{disabled:false,model:{name:'fixed'}},{default:()=>[h(ui.HysInput,{modelValue:'fixed','onUpdate:modelValue':value=>changed.push(value)}),h(ui.HysNumberInput,{modelValue:1,'onUpdate:modelValue':value=>changed.push(value)}),h(ui.HysSwitch,{modelValue:false,'onUpdate:modelValue':value=>changed.push(value)}),h(ui.HysCheckbox,{modelValue:false,'onUpdate:modelValue':value=>changed.push(value)}),h(ui.HysSelect,{modelValue:'a',options:[{label:'A',value:'a'},{label:'B',value:'b'}],'onUpdate:modelValue':value=>changed.push(value)})]})
+ await fire(form.find('[role="combobox"]'),'click');await pause(10);const option=document.querySelectorAll('[role="option"]')[1];assert(option)
+ form.props.disabled=true;await nextTick();assert(!document.querySelector('[role="listbox"]'));assert(form.all('input,button').every(element=>element.disabled))
+ await fire(option,'click');form.find('input[type="text"]').value='changed';await fire(form.find('input[type="text"]'),'input');await fire(form.find('[aria-label="增加"]'),'click');await fire(form.find('[role="switch"]'),'click');await fire(form.find('input[type="checkbox"]'),'change');assert.deepEqual(changed,[])
+ form.props.disabled=false;await nextTick();await fire(form.find('[aria-label="增加"]'),'click');assert.deepEqual(changed,[2])
+})
+
+test('Disabling a form during a tree drag clears the target and prevents a stale drop',async()=>{
+ const drops=[],form=await mount(ui.HysForm,{disabled:false},{default:()=>h(ui.HysTree,{nodes:[{id:'a',label:'A'},{id:'b',label:'B'}],draggable:true,'onNode-drop':value=>drops.push(value)})})
+ const drag=async(element,type)=>{const event=new Event(type,{bubbles:true,cancelable:true});Object.defineProperties(event,{clientY:{value:40},dataTransfer:{value:{setData(){},effectAllowed:'move'}}});element.dispatchEvent(event);await nextTick()}
+ const rows=form.all('[role="treeitem"]');await drag(rows[0],'dragstart');await drag(rows[1],'dragover');assert(rows[1].hasAttribute('data-drop-position'))
+ form.props.disabled=true;await nextTick();assert(!rows[1].hasAttribute('data-drop-position'));await drag(rows[1],'drop');assert.deepEqual(drops,[])
+})
+
+test('Form size and disabled state inherit with field and explicit control overrides',async()=>{
+ const form=await mount(ui.HysForm,{size:'sm'},{default:()=>[h(ui.HysFormItem,{label:'Small'},()=>h(ui.HysInput,{modelValue:''})),h(ui.HysFormItem,{label:'Large',size:'lg',disabled:true},()=>h(ui.HysInput,{modelValue:'',disabled:false})),h(ui.HysFormItem,{label:'Explicit',size:'lg'},()=>h(ui.HysInput,{modelValue:'',size:'md'})),h(ui.HysButton,null,()=> 'Action')]})
+ assert(form.all('.hys-ui-input-wrap')[0].classList.contains('hys-ui-input-sm'));assert(form.all('.hys-ui-input-wrap')[1].classList.contains('hys-ui-input-lg'));assert(form.all('input')[1].disabled);assert(form.all('.hys-ui-input-wrap')[2].classList.contains('hys-ui-input-md'));assert(form.find('button').classList.contains('hys-ui-btn-sm'))
+})
+
+test('Select floating options keep the effective size when the open form changes size',async()=>{
+ const form=await mount(ui.HysForm,{size:'sm'},{default:()=>h(ui.HysSelect,{modelValue:'a',filterable:true,options:[{label:'A',value:'a'}]})})
+ await fire(form.find('[role="combobox"]'),'click');await pause(10)
+ const panel=document.querySelector('.hys-ui-select-options');assert(panel.classList.contains('hys-ui-select-popup-sm'));assert.equal(panel.dataset.size,'sm');assert.equal(panel.querySelector('[role="option"] svg').getAttribute('width'),'13')
+ form.props.size='lg';await nextTick();await nextTick();assert.equal(document.querySelector('.hys-ui-select-options'),panel);assert(panel.classList.contains('hys-ui-select-popup-lg'));assert.equal(panel.dataset.size,'lg');assert.equal(panel.querySelector('[role="option"] svg').getAttribute('width'),'17')
+})
+
+test('Composite form controls use the field label before their generic accessible label',async()=>{
+ const form=await mount(ui.HysForm,{}, {default:()=>[h(ui.HysFormItem,{label:'Age'},()=>h(ui.HysNumberInput,{modelValue:18})),h(ui.HysFormItem,{label:'Access'},()=>h(ui.HysRadioGroup,{modelValue:'a',options:[{label:'A',value:'a'}]})),h(ui.HysFormItem,{label:'Choice'},()=>h(ui.HysSelect,{modelValue:'a',options:[{label:'A',value:'a'}]}))]})
+ assert.equal(form.find('input[type="number"]').getAttribute('aria-label'),'Age');assert.equal(form.find('[role="radiogroup"]').getAttribute('aria-label'),'Access');assert.equal(form.find('[role="combobox"]').getAttribute('aria-label'),'Choice')
+})
+
+test('FormItem feedback slots retain valid ARIA references and custom labels',async()=>{
+ const form=await mount(ui.HysForm,{model:{name:''},rules:{name:{required:true,message:'Required'}}},{default:()=>h(ui.HysFormItem,{prop:'name',label:'Name',hint:'Hint',showRequiredMark:false},{label:()=>h('strong','Custom label'),default:()=>h(ui.HysInput,{modelValue:''}),feedback:({error})=>h('em',error)})})
+ await form.vm.validate();await nextTick();const input=form.find('input'),ids=input.getAttribute('aria-describedby').split(' ');assert.equal(ids.length,2);for(const id of ids)assert.equal(document.querySelectorAll('[id="'+id+'"]').length,1)
+ assert.equal(document.getElementById(ids[0]).textContent,'Required');assert.equal(form.find('label strong').textContent,'Custom label');assert.equal(form.find('label').htmlFor,input.id);assert(!form.find('.hys-ui-form-required'))
+})
+
+test('Form scroll and rule-change methods target registered fields without global selectors',async()=>{
+ const form=await mount(ui.HysForm,{model:{name:''},rules:{name:{required:true,message:'Old'}}},{default:()=>h(ui.HysFormItem,{prop:'name',label:'Name'},()=>h(ui.HysInput,{modelValue:''}))})
+ let options;form.find('[data-field-path="name"]').scrollIntoView=value=>options=value
+ form.vm.scrollToField('name',{block:'center'});assert.equal(options.block,'center')
+ await form.vm.validate();form.props.rules={name:{validator:()=>true}};await nextTick();await pause(5);assert.equal(form.vm.errors.name,undefined)
+})
+
+test('Form clears pending validation immediately and aborts the custom validator signal',{timeout:1500},async()=>{
+ let signal
+ const form=await mount(ui.HysForm,{model:{name:'value'},rules:{name:{validator:(_value,_model,context)=>{signal=context.signal;return new Promise(()=>{})}}}})
+ const pending=form.vm.validateField('name');assert.equal(signal.aborted,false);form.vm.clearValidate(['name'])
+ assert.equal(await pending,false);assert.equal(signal.aborted,true);assert.equal(form.vm.states.name.validating,false)
+})
+
+test('Form cancels legacy whole-form async validation during reset',{timeout:1500},async()=>{
+ let signal
+ const form=await mount(ui.HysForm,{model:{name:'value'},validate:context=>{signal=context.signal;return new Promise(()=>{})}})
+ const pending=form.vm.validate();await nextTick();assert(signal);form.vm.resetFields()
+ assert.equal(await pending,false);assert.equal(signal.aborted,true);assert.equal(form.vm.validating,false)
+})
+
+test('Equivalent rule objects from rerendering do not cancel an active check',async()=>{
+ let finish,signal
+ const validator=(_value,_model,context)=>{signal=context.signal;return new Promise(resolve=>finish=resolve)}
+ const form=await mount(ui.HysForm,{model:{name:'value'},rules:{name:{validator}}})
+ const pending=form.vm.validate();form.props.rules={name:{validator}};await nextTick();assert.equal(signal.aborted,false);finish(true);assert.equal(await pending,true)
+})
+
+test('Disabling rule-change validation applies to local field rules and preserves existing feedback',async()=>{
+ const rules=reactive({required:true,message:'Required'})
+ const form=await mount(ui.HysForm,{model:{name:''},validateOnRuleChange:false},{default:()=>h(ui.HysFormItem,{label:'Name',prop:'name',rules},()=>h(ui.HysInput,{modelValue:''}))})
+ await form.vm.validate();rules.required=false;await nextTick();await pause(5);assert.equal(form.vm.errors.name,'Required')
+ assert.equal(await form.vm.validate(),true);assert.equal(form.vm.errors.name,undefined)
+})
 test('Tabs keyboard skips disabled items',async()=>{const tabs=await mount(ui.HysTabs,{modelValue:'a',items:[{value:'a',label:'A'},{value:'b',label:'B',disabled:true},{value:'c',label:'C'}]});await fire(tabs.find('[role="tablist"]'),'keydown',{key:'ArrowRight'});assert.equal(tabs.props.modelValue,'c');assert.equal(tabs.all('[role="tab"]')[2].getAttribute('tabindex'),'0')})
 
 test('Tabs support uncontrolled numeric values and manual keyboard activation',async()=>{

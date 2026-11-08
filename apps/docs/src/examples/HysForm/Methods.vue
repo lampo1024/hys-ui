@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import {reactive,ref} from 'vue'
+import {HysForm,HysFormItem,HysInput,HysButton,type HysFormValidationResult} from 'hys-ui'
+const form=ref<InstanceType<typeof HysForm>>(),model=reactive({name:'初始名称',email:''}),message=ref('选择下方操作体验字段级方法')
+async function checkName(){message.value=await form.value?.validateFields(['name'])?'名称校验通过':'名称校验失败'}
+function results(result:HysFormValidationResult){message.value=result.valid?'全部通过':'存在错误：'+Object.keys(result.errors).join('、')}
+</script>
+<template><div class="demo-content"><HysForm ref="form" :model="model" :rules="{name:{required:true,message:'名称必填'},email:{required:true,type:'email',message:'邮箱格式不正确'}}" scroll-to-error @validation="results"><HysFormItem label="名称" prop="name"><HysInput v-model="model.name"/></HysFormItem><HysFormItem label="邮箱" prop="email"><HysInput v-model="model.email"/></HysFormItem></HysForm><div class="demo-row"><HysButton @click="checkName">只校验名称</HysButton><HysButton variant="secondary" @click="form?.validate()">校验全部</HysButton><HysButton variant="secondary" @click="form?.resetFields(['name'])">只重置名称</HysButton><HysButton variant="ghost" @click="form?.captureInitialValues(['name']);message='已把当前名称设为重置基线'">记录名称基线</HysButton><HysButton variant="ghost" @click="form?.focusField('email')">聚焦邮箱</HysButton><HysButton variant="ghost" @click="form?.clearValidate()">清除反馈</HysButton></div><output class="state-output" aria-live="polite">{{message}}</output><p class="scenario-note">validate / validateFields 返回布尔结果。validateResult 返回包含 valid、cancelled、values、errors 和 warnings 的结果。getField / getFields 可访问注册字段，scrollToField 可滚动定位。远程回填数据后可调用 captureInitialValues 记录新的重置基线。</p></div></template>

@@ -97,6 +97,6 @@ export {default as HysVirtualTable} from './components/HysVirtualTable/HysVirtua
 export {provideHysConfig} from './config'
 export type {HysConfig,HysTheme,HysMotion} from './config'
 export type {Placement} from './composables/useFloating'
-export type {HysFormRule} from './composables/formContext'
+export type {HysFormRule,HysFormRules,HysFormPath,HysFormPaths,HysFormTrigger,HysFormRuleType,HysFormStatus,HysFormMessages,HysFormField,HysFormFieldState,HysFormValidationResult,HysFormValidationContext} from './composables/formContext'
 export {useHysToast,createHysToast} from './composables/useHysToast'
 export type {HysToastApi,HysToastOptions,HysToastConfig,HysToastHandle,HysToastServiceConfig,HysToastService} from './composables/useHysToast'

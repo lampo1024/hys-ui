@@ -1,8 +1,10 @@
-import { ref, nextTick, onBeforeUnmount, onDeactivated, type Ref } from 'vue'
+import { ref, nextTick, onBeforeUnmount, onDeactivated, watch, type Ref } from 'vue'
+import {useHysControlState} from './formContext'
 import { registerOverlay } from './overlayManager'
 export type Placement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | 'right' | 'left'
 export interface FloatingAnchor {getBoundingClientRect():DOMRect;contains(node:Node|null):boolean;focus():void;readonly isConnected:boolean}
 export function useFloating(anchor: Readonly<Ref<FloatingAnchor | undefined>>, panel: Ref<HTMLElement | undefined>, options: { placement?: Placement; gap?: number; padding?: number; matchWidth?: boolean | 'min' | (()=>boolean|'min') } = {}) {
+  const {disabled}=useHysControlState({})
   const open = ref(false)
   const restoringFocus = ref(false)
   const style = ref<Record<string,string>>({position:'fixed',top:'0px',left:'0px',visibility:'hidden'})
@@ -42,8 +44,9 @@ export function useFloating(anchor: Readonly<Ref<FloatingAnchor | undefined>>, p
   function key(e:KeyboardEvent){if(!open.value||!isTop?.())return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close(true)}else if(e.key==='Tab'){const focused=document.activeElement;if(anchor.value?.contains(focused)){close();return}if(panel.value?.contains(focused)){const buttons=Array.from(panel.value.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),[tabindex]:not([tabindex="-1"])')).filter(element=>element.getClientRects().length&&!element.closest('[inert]'));if(!buttons.length||focused===(e.shiftKey?buttons[0]:buttons.at(-1)))close(true)}}}
   function detach(){document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',key,true);window.removeEventListener('resize',schedule);window.removeEventListener('scroll',schedule,true);window.visualViewport?.removeEventListener('resize',schedule);window.visualViewport?.removeEventListener('scroll',schedule);cancelAnimationFrame(raf);unregister?.();unregister=undefined;isTop=undefined}
   function close(restore=false){generation++;if(!open.value)return;open.value=false;detach();if(restore&&anchor.value?.isConnected){restoringFocus.value=true;try{anchor.value.focus()}finally{restoringFocus.value=false}}}
-  async function show(){if(open.value){schedule();return};const token=++generation;open.value=true;style.value={position:'fixed',top:'0px',left:'0px',visibility:'hidden'};await nextTick();if(token!==generation||!open.value)return;const entry=registerOverlay('floating',()=>close(true));unregister=entry.unregister;isTop=entry.isTop;update();document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',key,true);window.addEventListener('resize',schedule);window.addEventListener('scroll',schedule,true);window.visualViewport?.addEventListener('resize',schedule);window.visualViewport?.addEventListener('scroll',schedule)}
+  async function show(){if(disabled.value)return;if(open.value){schedule();return};const token=++generation;open.value=true;style.value={position:'fixed',top:'0px',left:'0px',visibility:'hidden'};await nextTick();if(token!==generation||!open.value)return;const entry=registerOverlay('floating',()=>close(true));unregister=entry.unregister;isTop=entry.isTop;update();document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',key,true);window.addEventListener('resize',schedule);window.addEventListener('scroll',schedule,true);window.visualViewport?.addEventListener('resize',schedule);window.visualViewport?.addEventListener('scroll',schedule)}
   function toggle(){return open.value?close():show()}
+  watch(disabled,value=>{if(value)close()},{flush:'sync'})
   onDeactivated(()=>close())
   onBeforeUnmount(()=>{generation++;detach()})
   return {open,style,placement,update,show,close,toggle,restoringFocus}

@@ -1,21 +1,25 @@
 <script setup lang="ts">
+import {useHysControlState} from '../../composables/formContext'
+
 import { ref, useAttrs } from 'vue'
 import { Check, Minus } from 'lucide-vue-next'
 import { useHysRootAttrs } from '../../config'
 defineOptions({ inheritAttrs: false })
-const props = withDefaults(defineProps<{ modelValue:boolean; label?:string; disabled?:boolean; ariaLabel?:string; readonly?:boolean; name?:string; value?:string; required?:boolean; indeterminate?:boolean; tabindex?:number; size?:'sm'|'md'|'lg' }>(),{size:'md'})
+const props = withDefaults(defineProps<{ modelValue:boolean; label?:string; disabled?:boolean; ariaLabel?:string; readonly?:boolean; name?:string; value?:string; required?:boolean; indeterminate?:boolean; tabindex?:number; size?:'sm'|'md'|'lg' }>(),{})
+const {disabled:controlDisabled,size:controlSize}=useHysControlState(props)
+
 const emit = defineEmits<{ 'update:modelValue':[value:boolean]; change:[value:boolean];focus:[event:FocusEvent];blur:[event:FocusEvent] }>()
 const hysRootAttrs=useHysRootAttrs(),input=ref<HTMLInputElement>(),attrs=useAttrs()
 const nativeKey=(key:string)=>key==='id'||key==='form'||key==='autofocus'||key.startsWith('aria-')
 const rootAttrs=()=>Object.fromEntries(Object.entries(attrs).filter(([key])=>!nativeKey(key)))
 const nativeAttrs=()=>Object.fromEntries(Object.entries(attrs).filter(([key])=>nativeKey(key)))
-function change(event:Event){const field=event.target as HTMLInputElement;if(props.disabled||props.readonly){field.checked=props.modelValue;field.indeterminate=!!props.indeterminate;return}const value=field.checked;emit('update:modelValue',value);emit('change',value)}
+function change(event:Event){const field=event.target as HTMLInputElement;if(controlDisabled.value||props.readonly){field.checked=props.modelValue;field.indeterminate=!!props.indeterminate;return}const value=field.checked;emit('update:modelValue',value);emit('change',value)}
 defineExpose({input,focus:()=>input.value?.focus(),blur:()=>input.value?.blur()})
 </script>
 <template>
-  <label v-bind="{...hysRootAttrs,...rootAttrs()}" class="hys-ui-check-label" :class="['hys-ui-checkbox-'+size,{'hys-ui-checkbox-disabled':disabled,'hys-ui-checkbox-readonly':readonly}]">
-    <input ref="input" v-bind="nativeAttrs()" class="hys-ui-checkbox-native" type="checkbox" :name="name" :value="value" :required="required" :aria-label="ariaLabel" :aria-readonly="readonly||undefined" :indeterminate="indeterminate" :aria-checked="indeterminate?'mixed':modelValue" :checked="modelValue" :disabled="disabled" :tabindex="tabindex" @click="readonly&&$event.preventDefault()" @change="change" @focus="emit('focus',$event)" @blur="emit('blur',$event)"/>
-    <span class="hys-ui-checkbox-box" :class="{'hys-ui-checkbox-checked':modelValue||indeterminate}" aria-hidden="true"><slot name="icon" :checked="modelValue" :indeterminate="indeterminate"><component :is="indeterminate?Minus:Check" v-if="modelValue||indeterminate" :size="size==='sm'?11:size==='lg'?15:13" :stroke-width="2.4"/></slot></span>
+  <label v-bind="{...hysRootAttrs,...rootAttrs()}" class="hys-ui-check-label" :class="['hys-ui-checkbox-'+controlSize,{'hys-ui-checkbox-disabled':controlDisabled,'hys-ui-checkbox-readonly':readonly}]">
+    <input ref="input" v-bind="nativeAttrs()" class="hys-ui-checkbox-native" type="checkbox" :name="name" :value="value" :required="required" :aria-label="ariaLabel" :aria-readonly="readonly||undefined" :indeterminate="indeterminate" :aria-checked="indeterminate?'mixed':modelValue" :checked="modelValue" :disabled="controlDisabled" :tabindex="tabindex" @click="readonly&&$event.preventDefault()" @change="change" @focus="emit('focus',$event)" @blur="emit('blur',$event)"/>
+    <span class="hys-ui-checkbox-box" :class="{'hys-ui-checkbox-checked':modelValue||indeterminate}" aria-hidden="true"><slot name="icon" :checked="modelValue" :indeterminate="indeterminate"><component :is="indeterminate?Minus:Check" v-if="modelValue||indeterminate" :size="controlSize==='sm'?11:controlSize==='lg'?15:13" :stroke-width="2.4"/></slot></span>
     <span v-if="label" class="hys-ui-checkbox-label">{{label}}</span><slot/>
   </label>
 </template>

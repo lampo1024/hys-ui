@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {useHysControlState} from '../../composables/formContext'
+
 import {useHysRootAttrs} from '../../config'
 const hysRootAttrs=useHysRootAttrs()
 
@@ -7,6 +9,8 @@ import {Check, ChevronDown} from 'lucide-vue-next'
 import {useFloating} from '../../composables/useFloating'
 
 const props = defineProps<{modelValue:string; disabled?:boolean; label?:string;presets?:string[];clearable?:boolean}>()
+const {disabled:controlDisabled}=useHysControlState(props)
+
 const emit = defineEmits<{'update:modelValue':[value:string]}>()
 const trigger = ref<HTMLElement>(), panel = ref<HTMLElement>()
 const {open, style, show, close} = useFloating(trigger, panel)
@@ -43,24 +47,24 @@ function publish() {
  emit('update:modelValue',color.value)
 }
 function commitHex() {
- if(props.disabled || !valid.value) return
+ if(controlDisabled.value || !valid.value) return
  if(!draft.value){if(props.clearable)emit('update:modelValue','');else draft.value=props.modelValue;return}
  read(draft.value)
  publish()
 }
 function preset(value:string) {
- if(props.disabled||!/^#[0-9a-f]{6}$/i.test(value))return
+ if(controlDisabled.value||!/^#[0-9a-f]{6}$/i.test(value))return
  read(value)
  publish()
 }
 async function expand() {
- if(props.disabled) return
+ if(controlDisabled.value) return
  if(open.value) {close(); return}
  await show()
  panel.value?.querySelector<HTMLElement>('[role="slider"]')?.focus()
 }
 function point(event:PointerEvent, control:'palette'|'hue') {
- if(props.disabled) return
+ if(controlDisabled.value) return
  const element=event.currentTarget as HTMLElement
  const rect=element.getBoundingClientRect()
  if(!rect.width||!rect.height)return
@@ -73,7 +77,7 @@ function point(event:PointerEvent, control:'palette'|'hue') {
  publish()
 }
 function start(event:PointerEvent, control:'palette'|'hue') {
- if(event.button!==0 || props.disabled) return
+ if(event.button!==0 || controlDisabled.value) return
  event.preventDefault()
  const element=event.currentTarget as HTMLElement
  element.focus()
@@ -88,7 +92,7 @@ function end(event:PointerEvent) {
  if(element.hasPointerCapture(event.pointerId)) element.releasePointerCapture(event.pointerId)
 }
 function keyboard(event:KeyboardEvent,control:'palette'|'hue') {
- if(props.disabled || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) return
+ if(controlDisabled.value || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) return
  event.preventDefault()
  const step=event.shiftKey?10:1
  if(control==='hue') {
@@ -104,16 +108,16 @@ function keyboard(event:KeyboardEvent,control:'palette'|'hue') {
  }
  publish()
 }
-watch(()=>props.disabled,value=>{if(value)close()})
+watch(()=>controlDisabled.value,value=>{if(value)close()})
 
 </script>
 <template>
  <div v-bind="hysRootAttrs" class="hys-ui-pf-color-picker">
   <div class="hys-ui-pf-color-control">
-   <button ref="trigger" type="button" class="hys-ui-pf-color-trigger" :aria-label="label||'选择颜色'" aria-haspopup="dialog" :aria-expanded="open" :disabled="disabled" @click="expand">
+   <button ref="trigger" type="button" class="hys-ui-pf-color-trigger" :aria-label="label||'选择颜色'" aria-haspopup="dialog" :aria-expanded="open" :disabled="controlDisabled" @click="expand">
     <span class="hys-ui-pf-color-chip" :style="{background:modelValue?color:'transparent'}"/><ChevronDown :size="14" aria-hidden="true"/>
    </button>
-   <input v-model="draft" class="hys-ui-pf-color-hex" aria-label="十六进制颜色" :aria-invalid="!valid" :disabled="disabled" maxlength="7" spellcheck="false" @change="commitHex" @keydown.enter="commitHex"/>
+   <input v-model="draft" class="hys-ui-pf-color-hex" aria-label="十六进制颜色" :aria-invalid="!valid" :disabled="controlDisabled" maxlength="7" spellcheck="false" @change="commitHex" @keydown.enter="commitHex"/>
   </div>
   <small v-if="!valid" class="hys-ui-pf-color-error" role="alert">请输入 #RRGGBB 格式</small>
   <Teleport to="body">
@@ -128,7 +132,7 @@ watch(()=>props.disabled,value=>{if(value)close()})
     <div class="hys-ui-pf-color-presets" role="group" aria-label="常用颜色">
      <button v-for="value in (props.presets||defaultPresets)" :key="value" type="button" :aria-label="value" :aria-pressed="color===value" :style="{background:value}" @click="preset(value)"><Check v-if="color===value" :size="13" :style="{color:value==='#ffffff'?'#172a4d':'white'}" aria-hidden="true"/></button>
     </div>
-    <button v-if="clearable&&!disabled&&modelValue" type="button" class="hys-ui-color-clear" @click="emit('update:modelValue','');close(true)">清空颜色</button><footer><span>方向键微调 · Shift 加速</span><button type="button" @click="close(true)">完成</button></footer>
+    <button v-if="clearable&&!controlDisabled&&modelValue" type="button" class="hys-ui-color-clear" @click="emit('update:modelValue','');close(true)">清空颜色</button><footer><span>方向键微调 · Shift 加速</span><button type="button" @click="close(true)">完成</button></footer>
    </div>
   </Teleport>
  </div>

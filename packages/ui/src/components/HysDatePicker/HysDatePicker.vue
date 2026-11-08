@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {useHysControlState} from '../../composables/formContext'
+
 import {useHysRootAttrs} from '../../config'
 const hysRootAttrs=useHysRootAttrs()
 
@@ -8,6 +10,8 @@ import HysCalendarNavigation from '../HysCalendarNavigation/HysCalendarNavigatio
 import { useFloating } from '../../composables/useFloating'
 
 const props = defineProps<{modelValue:string; disabled?:boolean; min?:string; max?:string; placeholder?:string; label?:string;clearable?:boolean;disabledDate?:(date:Date)=>boolean}>()
+const {disabled:controlDisabled}=useHysControlState(props)
+
 const emit = defineEmits<{'update:modelValue':[value:string]}>()
 const trigger = ref<HTMLElement>(), panel = ref<HTMLElement>()
 const { open, style, show, close } = useFloating(trigger, panel)
@@ -24,7 +28,7 @@ const days = computed(() => {
  })
 })
 async function expand() {
- if (props.disabled) return
+ if (controlDisabled.value) return
  if (open.value) {close(); return}
  let value = props.modelValue || todayKey
  if(props.min && value<props.min) value=props.min
@@ -36,7 +40,7 @@ async function expand() {
  ;(target || panel.value?.querySelector<HTMLButtonElement>('[data-date]:not(:disabled)'))?.focus()
 }
 function choose(value:string) {
- if(props.disabled || unavailable(value)) return
+ if(controlDisabled.value || unavailable(value)) return
  emit('update:modelValue',value)
  close(true)
 }
@@ -52,12 +56,12 @@ async function navigate(event:KeyboardEvent,value:string) {
  await nextTick()
  Array.from(panel.value?.querySelectorAll<HTMLButtonElement>('[data-date]')||[]).find(el=>el.dataset.date===next)?.focus()
 }
-watch(()=>props.disabled,value=>{if(value)close()})
+watch(()=>controlDisabled.value,value=>{if(value)close()})
 
 </script>
 <template>
  <div v-bind="hysRootAttrs" class="hys-ui-pf-date-picker">
-  <button ref="trigger" type="button" class="hys-ui-v4-control hys-ui-pf-select-trigger" :disabled="disabled" :aria-label="label||'选择日期'" aria-haspopup="dialog" :aria-expanded="open" @click="expand">
+  <button ref="trigger" type="button" class="hys-ui-v4-control hys-ui-pf-select-trigger" :disabled="controlDisabled" :aria-label="label||'选择日期'" aria-haspopup="dialog" :aria-expanded="open" @click="expand">
    <span :class="{'hys-ui-pf-placeholder':!modelValue}">{{modelValue||placeholder||'选择日期'}}</span><CalendarDays :size="16" class="hys-ui-pf-select-icon" aria-hidden="true"/>
   </button>
   <Teleport to="body">

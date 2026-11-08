@@ -1,0 +1,7 @@
+<script setup lang="ts">
+import {reactive,ref} from 'vue'
+import {HysForm,HysFormItem,HysInput,HysButton,type HysFormRule} from 'hys-ui'
+const form=ref<InstanceType<typeof HysForm>>(),model=reactive({name:''}),message=ref('输入 taken 可模拟名称已被占用')
+const rules:HysFormRule[]=[{required:true,message:'请输入名称'},{validator:(value,_model,{signal})=>new Promise(resolve=>{const cancel=()=>{clearTimeout(timer);resolve(true)};const timer=setTimeout(()=>{signal.removeEventListener('abort',cancel);resolve(value==='taken'?'名称已被占用':true)},700);signal.addEventListener('abort',cancel,{once:true})})}]
+</script>
+<template><div class="demo-content"><HysForm ref="form" :model="model" :rules="{name:rules}" @submit="message='名称可用，校验成功'"><HysFormItem label="名称" prop="name" feedback-icon><HysInput v-model="model.name" placeholder="输入名称后等待检查"/></HysFormItem><template #actions="{validating}"><HysButton type="submit" :loading="validating">检查并提交</HysButton></template></HysForm><div class="demo-row"><HysButton variant="secondary" @click="form?.clearValidate();message='已取消当前检查'">取消当前检查</HysButton><HysButton variant="ghost" @click="form?.resetFields();message='已重置'">重置数据</HysButton></div><output class="state-output" aria-live="polite">{{message}}</output><p class="scenario-note">validator 的第三个参数提供 signal，可直接传给 fetch。重新检查、重置、清除校验、禁用或离开页面时会取消旧检查；旧结果不会覆盖当前状态或触发过期提交。</p></div></template>

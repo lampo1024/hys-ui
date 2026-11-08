@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {useHysControlState} from '../../composables/formContext'
+
 import {computed,ref,type Component} from 'vue'
 import {LoaderCircle} from 'lucide-vue-next'
 import {useHysRootAttrs} from '../../config'
@@ -9,17 +11,19 @@ export interface HysButtonProps {
  icon?:Component;iconPosition?:'left'|'right';type?:'button'|'submit'|'reset';nativeType?:'button'|'submit'|'reset'
  href?:string;target?:string;rel?:string;autofocus?:boolean;focusable?:boolean;ariaLabel?:string
 }
-const props=withDefaults(defineProps<HysButtonProps>(),{variant:'primary',size:'md',iconPosition:'left',type:'button',focusable:true})
+const props=withDefaults(defineProps<HysButtonProps>(),{variant:'primary',iconPosition:'left',type:'button',focusable:true})
+const {disabled:controlDisabled,size:controlSize}=useHysControlState(props)
+
 const emit=defineEmits<{click:[event:MouseEvent]}>()
 const hysRootAttrs=useHysRootAttrs(),element=ref<HTMLButtonElement|HTMLAnchorElement>()
-const locked=computed(()=>props.disabled||props.loading)
+const locked=computed(()=>controlDisabled.value||props.loading)
 const colors:Record<string,string>={danger:'#ed4556',success:'#16a46e',warning:'#d9860c',info:'#697b97'}
 const tone=computed(()=>props.color||colors[props.variant]||'var(--hys-ui-primary,var(--hys-ui-theme-primary))')
 function click(event:MouseEvent){if(locked.value){event.preventDefault();event.stopImmediatePropagation();return}emit('click',event)}
 defineExpose({element,focus:()=>element.value?.focus(),blur:()=>element.value?.blur()})
 </script>
 <template>
- <component :is="href?'a':'button'" ref="element" v-bind="hysRootAttrs" class="hys-ui-btn" :class="['hys-ui-btn-'+size,'hys-ui-button-'+variant,{'hys-ui-button-plain':plain,'hys-ui-button-round':round,'hys-ui-button-circle':circle,'hys-ui-button-block':block,'hys-ui-button-dashed':dashed,'hys-ui-button-locked':locked}]" :style="{'--hys-ui-button-color':tone}" :type="href?undefined:(nativeType||type)" :href="locked?undefined:href" :role="href?'link':undefined" :target="href?target:undefined" :rel="href?(rel||(target==='_blank'?'noopener noreferrer':undefined)):undefined" :disabled="href?undefined:locked" :aria-disabled="locked||undefined" :aria-busy="loading||undefined" :aria-label="ariaLabel" :tabindex="locked||!focusable?-1:undefined" :autofocus="autofocus" @click="click">
+ <component :is="href?'a':'button'" ref="element" v-bind="hysRootAttrs" class="hys-ui-btn" :class="['hys-ui-btn-'+controlSize,'hys-ui-button-'+variant,{'hys-ui-button-plain':plain,'hys-ui-button-round':round,'hys-ui-button-circle':circle,'hys-ui-button-block':block,'hys-ui-button-dashed':dashed,'hys-ui-button-locked':locked}]" :style="{'--hys-ui-button-color':tone}" :type="href?undefined:(nativeType||type)" :href="locked?undefined:href" :role="href?'link':undefined" :target="href?target:undefined" :rel="href?(rel||(target==='_blank'?'noopener noreferrer':undefined)):undefined" :disabled="href?undefined:locked" :aria-disabled="locked||undefined" :aria-busy="loading||undefined" :aria-label="ariaLabel" :tabindex="locked||!focusable?-1:undefined" :autofocus="autofocus" @click="click">
   <span v-if="loading" class="hys-ui-button-icon"><slot name="loading"><LoaderCircle class="hys-ui-button-spinner" :size="16" aria-hidden="true"/></slot></span>
   <span v-else-if="(icon||$slots.icon)&&iconPosition==='left'" class="hys-ui-button-icon"><slot name="icon"><component :is="icon" :size="16" aria-hidden="true"/></slot></span>
   <slot/>

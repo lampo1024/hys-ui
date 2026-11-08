@@ -1,0 +1,7 @@
+<script setup lang="ts">
+import {reactive,ref} from 'vue'
+import {HysForm,HysFormItem,HysInput,HysNumberInput,HysSelect,HysButton,type HysFormRules} from 'hys-ui'
+const model=reactive({profile:{email:'',age:18},roles:['reader']}),message=ref('')
+const rules:HysFormRules={'profile.email':{required:true,type:'email',message:'请输入有效邮箱'},'profile.age':{type:'integer',min:18,message:'年龄不能小于 18'},roles:{type:'array',min:1,max:2,defaultField:{type:'enum',enum:['reader','editor','owner']},message:'请选择 1–2 项权限'}}
+</script>
+<template><div class="demo-content"><HysForm :model="model" :rules="rules" @submit="message='嵌套数据校验通过'"><HysFormItem label="联系邮箱" :prop="['profile','email']"><HysInput v-model="model.profile.email"/></HysFormItem><HysFormItem label="年龄" prop="profile.age"><HysNumberInput v-model="model.profile.age"/></HysFormItem><HysFormItem label="权限" prop="roles" hint="至少选择一项，最多选择两项。"><HysSelect v-model="model.roles" multiple :options="[{label:'阅读',value:'reader'},{label:'编辑',value:'editor'},{label:'管理',value:'owner'}]"/></HysFormItem><template #actions><HysButton type="submit">验证嵌套数据</HysButton></template></HysForm><output class="state-output">{{message||JSON.stringify(model)}}</output></div></template>

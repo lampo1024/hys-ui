@@ -1,14 +1,6 @@
 <script setup lang="ts">
-import { HysFormItem, HysInput } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysInput as DemoInput } from 'hys-ui';
-const demoConfig = demoReactive<{
-    label: string;
-    error: string;
-    required: boolean;
-    hint: string;
-}>({ "label": "自定义label", "error": "自定义error", "required": false, "hint": "自定义hint" });
+import {reactive} from 'vue'
+import {HysForm,HysFormItem,HysInput,HysCheckbox,HysSelect,HysButton} from 'hys-ui'
+const model=reactive({name:''}),config=reactive({labelPosition:'left' as 'top'|'left'|'right',size:'md' as 'sm'|'md'|'lg',showLabel:true,showFeedback:true,showRequiredMark:true,feedbackIcon:true,disabled:false})
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field">label<DemoInput v-model="demoConfig.label"/></label>
-<label class="demo-field">error<DemoInput v-model="demoConfig.error"/></label>
-<label class="demo-field">hint<DemoInput v-model="demoConfig.hint"/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.required" label="required"/><small>必填</small></div></div></section></div><div class="demo-content"><HysFormItem v-bind="demoConfig"   ><HysInput placeholder="负责人"/></HysFormItem><HysFormItem label="校验错误" error="此项不能为空"><HysInput/></HysFormItem></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template><div><div class="demo-controls"><section class="demo-control-section"><h3>字段外观</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label">标签布局 <code>labelPosition</code></span><HysSelect v-model="config.labelPosition" :options="['top','left','right'].map(value=>({label:value,value}))"/></label><label class="demo-field"><span class="demo-control-label">尺寸 <code>size</code></span><HysSelect v-model="config.size" :options="['sm','md','lg'].map(value=>({label:value,value}))"/></label></div></section><section class="demo-control-section"><h3>状态与反馈</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><HysCheckbox v-model="config.showLabel" label="显示标签"/></div><div class="demo-control-toggle"><HysCheckbox v-model="config.showFeedback" label="显示反馈"/></div><div class="demo-control-toggle"><HysCheckbox v-model="config.showRequiredMark" label="显示必填标记"/></div><div class="demo-control-toggle"><HysCheckbox v-model="config.feedbackIcon" label="反馈图标"/></div><div class="demo-control-toggle"><HysCheckbox v-model="config.disabled" label="禁用当前字段"/></div></div></section></div><div class="demo-content"><HysForm :model="model"><HysFormItem v-bind="config" label="名称" prop="name" :rules="{required:true,message:'请输入名称'}" hint="此处设置覆盖表单默认布局与尺寸。"><HysInput v-model="model.name"/></HysFormItem><template #actions><HysButton type="submit">验证字段</HysButton></template></HysForm></div></div></template>

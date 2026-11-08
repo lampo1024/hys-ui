@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add typed and nested form rules, warning-only feedback, field dependencies, partial validation/reset and structured results.
+- Add field lookup/focus/scroll methods, initial-value capture, rule-change checks, label/feedback slots and inherited layout settings.
+- Cancel stale form checks and submissions on reset, clear, disable and cached-page leave; provide AbortSignal to custom validators.
+- Propagate form and field disabled/size settings to inputs, selectors, buttons and related controls, including teleported panels.
+- Keep select option rows, search fields and icons aligned with the effective control size, including live changes while the popup is open.
+- Add practical form scenarios for dynamic rows, nested values, cross-field checks, asynchronous cancellation and field methods.
+
 - Expand tabs with placements, presentation styles, numeric values, dynamic actions, asynchronous guards, panel lifecycle options and overflow navigation.
 - Add stable accordion keys, keyboard navigation, configurable trigger areas, panel lifecycle options, guarded expansion and extra content slots.
 - Add per-step status, subtitles, custom content, compact/dot layouts and responsive keyboard navigation.

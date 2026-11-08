@@ -1,23 +1,27 @@
 <script setup lang="ts">
+import {useHysControlState} from '../../composables/formContext'
+
 import {computed,inject,ref,useAttrs,useId} from 'vue'
 import {X,Eye,EyeOff} from 'lucide-vue-next'
 import {useHysRootAttrs} from '../../config'
 import {fieldKey} from '../../composables/formContext'
 defineOptions({inheritAttrs:false})
-const props=withDefaults(defineProps<{modelValue?:string;placeholder?:string;type?:string;disabled?:boolean;readonly?:boolean;ariaLabel?:string;error?:string;clearable?:boolean;showPassword?:boolean;showCount?:boolean;maxlength?:number;minlength?:number;autocomplete?:string;name?:string;size?:'sm'|'md'|'lg'}>(),{modelValue:'',type:'text',size:'md'})
+const props=withDefaults(defineProps<{modelValue?:string;placeholder?:string;type?:string;disabled?:boolean;readonly?:boolean;ariaLabel?:string;error?:string;clearable?:boolean;showPassword?:boolean;showCount?:boolean;maxlength?:number;minlength?:number;autocomplete?:string;name?:string;size?:'sm'|'md'|'lg'}>(),{modelValue:'',type:'text'})
+const {disabled:controlDisabled,size:controlSize}=useHysControlState(props)
+
 const emit=defineEmits<{'update:modelValue':[value:string];input:[value:string];change:[value:string];clear:[];focus:[event:FocusEvent];blur:[event:FocusEvent];pressEnter:[event:KeyboardEvent]}>()
 const hysRootAttrs=useHysRootAttrs(),input=ref<HTMLInputElement>(),attrs=useAttrs(),errorId=useId(),revealed=ref(false),composing=ref(false)
 const field=inject(fieldKey,undefined),validationError=computed(()=>props.error||field?.error.value)
 function inputAttrs(){return Object.fromEntries(Object.entries(attrs).filter(([key])=>!['class','style'].includes(key)))}
-function update(event:Event){if(composing.value||props.disabled||props.readonly)return;const value=(event.target as HTMLInputElement).value;emit('update:modelValue',value);emit('input',value)}
-function clear(){if(props.disabled||props.readonly)return;emit('update:modelValue','');emit('input','');emit('clear');input.value?.focus()}
+function update(event:Event){if(composing.value||controlDisabled.value||props.readonly)return;const value=(event.target as HTMLInputElement).value;emit('update:modelValue',value);emit('input',value)}
+function clear(){if(controlDisabled.value||props.readonly)return;emit('update:modelValue','');emit('input','');emit('clear');input.value?.focus()}
 defineExpose({input,focus:()=>input.value?.focus(),blur:()=>input.value?.blur(),select:()=>input.value?.select()})
 </script>
 <template>
- <div v-bind="hysRootAttrs" class="hys-ui-input-wrap" :class="[$attrs.class,{'hys-ui-input-disabled':disabled},'hys-ui-input-'+size]" :style="$attrs.style as any">
+ <div v-bind="hysRootAttrs" class="hys-ui-input-wrap" :class="[$attrs.class,{'hys-ui-input-disabled':controlDisabled},'hys-ui-input-'+controlSize]" :style="$attrs.style as any">
   <div class="hys-ui-input-group"><span v-if="$slots.prepend" class="hys-ui-input-addon"><slot name="prepend"/></span><div class="hys-ui-input-shell" :class="{'hys-ui-input-shell-error':validationError}"><span v-if="$slots.prefix" class="hys-ui-input-affix"><slot name="prefix"/></span>
-   <input ref="input" v-bind="inputAttrs()" :id="($attrs.id as string)||field?.id.value" class="hys-ui-input" data-hys-ui-field-managed :aria-label="ariaLabel||($attrs['aria-label'] as string)||field?.label.value" :aria-invalid="!!validationError||undefined" :aria-required="field?.required.value||undefined" :aria-describedby="[error?errorId:field?.describedBy.value,($attrs['aria-describedby'] as string)].filter(Boolean).join(' ')||undefined" :value="modelValue" :placeholder="placeholder" :type="showPassword&&revealed?'text':type" :disabled="disabled" :readonly="readonly" :maxlength="maxlength" :minlength="minlength" :autocomplete="autocomplete" :name="name" @input="update" @compositionstart="composing=true" @compositionend="composing=false;update($event)" @change="emit('change',($event.target as HTMLInputElement).value)" @focus="emit('focus',$event)" @blur="emit('blur',$event)" @keydown.enter="!$event.isComposing&&emit('pressEnter',$event)"/>
-   <button v-if="clearable&&modelValue&&!disabled&&!readonly" type="button" class="hys-ui-input-action" aria-label="清空输入" @mousedown.prevent @click="clear"><X :size="14" aria-hidden="true"/></button><button v-if="showPassword&&type==='password'" type="button" class="hys-ui-input-action" :aria-label="revealed?'隐藏密码':'显示密码'" :aria-pressed="revealed" :disabled="disabled" @click="revealed=!revealed"><component :is="revealed?EyeOff:Eye" :size="16" aria-hidden="true"/></button><span v-if="$slots.suffix" class="hys-ui-input-affix"><slot name="suffix"/></span><small v-if="showCount" class="hys-ui-input-count">{{modelValue.length}}{{maxlength?' / '+maxlength:''}}</small>
+   <input ref="input" v-bind="inputAttrs()" :id="($attrs.id as string)||field?.id.value" class="hys-ui-input" data-hys-ui-field-managed :aria-label="ariaLabel||($attrs['aria-label'] as string)||field?.label.value" :aria-invalid="!!validationError||undefined" :aria-required="field?.required.value||undefined" :aria-describedby="[error?errorId:field?.describedBy.value,($attrs['aria-describedby'] as string)].filter(Boolean).join(' ')||undefined" :value="modelValue" :placeholder="placeholder" :type="showPassword&&revealed?'text':type" :disabled="controlDisabled" :readonly="readonly" :maxlength="maxlength" :minlength="minlength" :autocomplete="autocomplete" :name="name" @input="update" @compositionstart="composing=true" @compositionend="composing=false;update($event)" @change="emit('change',($event.target as HTMLInputElement).value)" @focus="emit('focus',$event)" @blur="emit('blur',$event)" @keydown.enter="!$event.isComposing&&emit('pressEnter',$event)"/>
+   <button v-if="clearable&&modelValue&&!controlDisabled&&!readonly" type="button" class="hys-ui-input-action" aria-label="清空输入" @mousedown.prevent @click="clear"><X :size="14" aria-hidden="true"/></button><button v-if="showPassword&&type==='password'" type="button" class="hys-ui-input-action" :aria-label="revealed?'隐藏密码':'显示密码'" :aria-pressed="revealed" :disabled="controlDisabled" @click="revealed=!revealed"><component :is="revealed?EyeOff:Eye" :size="16" aria-hidden="true"/></button><span v-if="$slots.suffix" class="hys-ui-input-affix"><slot name="suffix"/></span><small v-if="showCount" class="hys-ui-input-count">{{modelValue.length}}{{maxlength?' / '+maxlength:''}}</small>
   </div><span v-if="$slots.append" class="hys-ui-input-addon"><slot name="append"/></span></div><small v-if="error" :id="errorId" class="hys-ui-error-text" role="alert">{{error}}</small>
  </div>
 </template>

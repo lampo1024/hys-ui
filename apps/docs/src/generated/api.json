@@ -541,8 +541,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "\"md\"",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       },
       {
@@ -550,7 +550,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -992,7 +992,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -1132,7 +1132,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -1195,8 +1195,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "\"md\"",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       }
     ],
@@ -1285,7 +1285,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -1724,7 +1724,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -1803,7 +1803,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -2152,7 +2152,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -2204,23 +2204,55 @@
         "type": "Record<string, unknown> | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "表单数据对象；路径支持嵌套对象与数组",
         "global": false
       },
       {
         "name": "rules",
-        "type": "Record<string, HysFormRule | HysFormRule[]> | undefined",
+        "type": "HysFormRules | undefined",
         "required": false,
         "default": "{}",
-        "description": "",
+        "description": "规则或规则数组；支持字段专属规则与表单规则合并",
         "global": false
       },
       {
         "name": "validate",
-        "type": "(() => boolean | Promise<boolean>) | undefined",
+        "type": "((context: { signal: AbortSignal; }) => boolean | Promise<boolean>) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "兼容整表自定义检查，接收含 AbortSignal 的上下文",
+        "global": false
+      },
+      {
+        "name": "validateMessages",
+        "type": "Partial<ValidateMessages> | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义规则引擎的提示消息",
+        "global": false
+      },
+      {
+        "name": "validateOnRuleChange",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "规则变更后是否重新校验",
+        "global": false
+      },
+      {
+        "name": "validateTrigger",
+        "type": "HysFormTrigger | HysFormTrigger[] | undefined",
+        "required": false,
+        "default": "[\"change\", \"blur\"]",
+        "description": "自动校验触发时机；手动校验始终应用全部规则",
+        "global": false
+      },
+      {
+        "name": "initialValues",
+        "type": "Record<string, unknown> | undefined",
+        "required": false,
+        "default": "",
+        "description": "重置使用的初始数据；未指定时记录挂载时的数据",
         "global": false
       },
       {
@@ -2228,7 +2260,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "显示加载状态",
+        "description": "显示忙碌语义并禁用表单控件",
         "global": false
       },
       {
@@ -2236,7 +2268,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁用全部控件并关闭相关浮层，取消过期检查",
         "global": false
       },
       {
@@ -2244,7 +2276,15 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "字段和操作区行内排列",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "表单或字段的控件尺寸",
         "global": false
       },
       {
@@ -2252,52 +2292,114 @@
         "type": "\"right\" | \"left\" | \"top\" | undefined",
         "required": false,
         "default": "\"top\"",
-        "description": "",
+        "description": "标签位于顶部，或左/右对齐的侧边",
         "global": false
       },
       {
         "name": "labelWidth",
-        "type": "string | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "\"100px\"",
-        "description": "",
+        "description": "侧边标签宽度，支持像素数值或 CSS 宽度",
+        "global": false
+      },
+      {
+        "name": "showLabel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示标签",
+        "global": false
+      },
+      {
+        "name": "showFeedback",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示错误或警告区域；校验与输入语义不受影响",
+        "global": false
+      },
+      {
+        "name": "showRequiredMark",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示必填标记",
+        "global": false
+      },
+      {
+        "name": "requiredMarkPosition",
+        "type": "\"right\" | \"left\" | undefined",
+        "required": false,
+        "default": "\"right\"",
+        "description": "必填标记在标签左侧或右侧",
+        "global": false
+      },
+      {
+        "name": "scrollToError",
+        "type": "boolean | ScrollIntoViewOptions | undefined",
+        "required": false,
+        "default": "false",
+        "description": "提交失败后滚动到首个错误字段；可传 ScrollIntoViewOptions",
+        "global": false
+      },
+      {
+        "name": "focusOnError",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "提交失败后聚焦首个错误字段",
         "global": false
       }
     ],
     "events": [
       {
         "name": "submit",
-        "type": "[]",
+        "type": "[values: Record<string, unknown>]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "有效且未过期的提交，参数为表单数据快照"
       },
       {
         "name": "reset",
-        "type": "[]",
+        "type": "[names: string[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "完成重置，参数为字段路径列表"
+      },
+      {
+        "name": "validate",
+        "type": "[name: string, valid: boolean, message: string]",
+        "required": false,
+        "default": "",
+        "description": "字段检查完成：path、是否有效、错误消息"
       },
       {
         "name": "invalid",
-        "type": "[]",
+        "type": "[result: HysFormValidationResult]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "提交未通过，参数包含 valid、cancelled、values、errors 和 warnings"
+      },
+      {
+        "name": "validation",
+        "type": "[result: HysFormValidationResult]",
+        "required": false,
+        "default": "",
+        "description": "整表或局部检查完成，参数为详细结果；已取消的请求不触发"
       }
     ],
     "slots": [
       {
         "name": "default",
-        "type": "{}",
+        "type": "{ errors: Record<string, string>; warnings: Record<string, string>; validating: boolean; }",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "actions",
-        "type": "{ validating: boolean; reset: () => void; }",
+        "type": "{ validating: boolean; reset: (paths?: HysFormPaths | undefined) => void; errors: Record<string, string>; warnings: Record<string, string>; }",
         "required": false,
         "default": "",
         "description": ""
@@ -2305,29 +2407,92 @@
     ],
     "exposed": [
       {
-        "name": "validateField",
-        "type": "(name: string, trigger?: \"change\" | \"blur\" | undefined) => Promise<boolean>",
+        "name": "validateFields",
+        "type": "(paths?: HysFormPaths | undefined) => Promise<boolean>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "validate 的别名，可传路径列表"
+      },
+      {
+        "name": "validateResult",
+        "type": "(paths?: HysFormPaths | undefined) => Promise<HysFormValidationResult>",
+        "required": false,
+        "default": "",
+        "description": "返回包含取消状态、数据和反馈信息的完整结果"
+      },
+      {
+        "name": "validateField",
+        "type": "(path: HysFormPath, trigger?: HysFormTrigger | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "检查单个路径；可指定自动触发类型"
       },
       {
         "name": "clearValidate",
-        "type": "(names?: string | string[] | undefined) => void",
+        "type": "(paths?: HysFormPaths | undefined) => void",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "清除指定或全部反馈并取消相应检查"
       },
       {
         "name": "resetFields",
-        "type": "() => void",
+        "type": "(paths?: HysFormPaths | undefined) => void",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "重置指定或全部字段，并清除反馈"
+      },
+      {
+        "name": "captureInitialValues",
+        "type": "(paths?: HysFormPaths | undefined) => void",
+        "required": false,
+        "default": "",
+        "description": "记录当前值作为后续重置基线，支持指定路径"
+      },
+      {
+        "name": "scrollToField",
+        "type": "(path: HysFormPath, options?: ScrollIntoViewOptions) => void",
+        "required": false,
+        "default": "",
+        "description": "滚动到注册字段，可传滚动配置"
+      },
+      {
+        "name": "focusField",
+        "type": "(path: HysFormPath) => void",
+        "required": false,
+        "default": "",
+        "description": "聚焦注册字段中的可用控件"
+      },
+      {
+        "name": "getField",
+        "type": "(path: HysFormPath) => HysFormField | undefined",
+        "required": false,
+        "default": "",
+        "description": "读取一个注册字段的上下文与操作方法"
+      },
+      {
+        "name": "getFields",
+        "type": "() => HysFormField[]",
+        "required": false,
+        "default": "",
+        "description": "读取当前注册字段列表"
       },
       {
         "name": "errors",
         "type": "Record<string, string>",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "warnings",
+        "type": "Record<string, string>",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "states",
+        "type": "Record<string, HysFormFieldState>",
         "required": false,
         "default": "",
         "description": ""
@@ -2353,10 +2518,26 @@
       },
       {
         "name": "prop",
-        "type": "string | undefined",
+        "type": "HysFormPath | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "字段路径：点号/括号字符串或路径数组",
+        "global": false
+      },
+      {
+        "name": "rules",
+        "type": "HysFormRule | HysFormRule[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "规则或规则数组；支持字段专属规则与表单规则合并",
+        "global": false
+      },
+      {
+        "name": "dependencies",
+        "type": "HysFormPath[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "依赖字段路径；变化后重新检查当前字段",
         "global": false
       },
       {
@@ -2364,7 +2545,23 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "由调用方控制的错误提示，优先于规则结果",
+        "global": false
+      },
+      {
+        "name": "warning",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "由调用方控制的警告提示，不阻止提交",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "HysFormStatus | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式反馈状态；未指定时使用规则结果",
         "global": false
       },
       {
@@ -2372,7 +2569,23 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示必填语义；校验仍由 required 规则决定",
+        "global": false
+      },
+      {
+        "name": "showRequiredMark",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "是否显示必填标记",
+        "global": false
+      },
+      {
+        "name": "requiredMarkPosition",
+        "type": "\"right\" | \"left\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "必填标记在标签左侧或右侧",
         "global": false
       },
       {
@@ -2380,7 +2593,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "持续显示的辅助说明，可与错误/警告并存",
         "global": false
       },
       {
@@ -2388,21 +2601,171 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "显式关联的控件 ID",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用当前字段内的控件",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "表单或字段的控件尺寸",
+        "global": false
+      },
+      {
+        "name": "labelPosition",
+        "type": "\"right\" | \"left\" | \"top\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "标签位于顶部，或左/右对齐的侧边",
+        "global": false
+      },
+      {
+        "name": "labelWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "侧边标签宽度，支持像素数值或 CSS 宽度",
+        "global": false
+      },
+      {
+        "name": "showLabel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "是否显示标签",
+        "global": false
+      },
+      {
+        "name": "showFeedback",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "是否显示错误或警告区域；校验与输入语义不受影响",
+        "global": false
+      },
+      {
+        "name": "feedbackIcon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示检查中、成功、警告或错误图标",
+        "global": false
+      },
+      {
+        "name": "noStyle",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "不输出字段布局和标签，保留规则与上下文",
+        "global": false
+      },
+      {
+        "name": "validateTrigger",
+        "type": "HysFormTrigger | HysFormTrigger[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "自动校验触发时机；手动校验始终应用全部规则",
         "global": false
       }
     ],
     "events": [],
     "slots": [
       {
+        "name": "label",
+        "type": "{ required: boolean; status: HysFormStatus; }",
+        "required": false,
+        "default": "",
+        "description": "显示标签"
+      },
+      {
         "name": "default",
-        "type": "{ id: string; invalid: boolean; error: string | undefined; }",
+        "type": "{ id: string; invalid: boolean; error: string | undefined; warning: string | undefined; status: HysFormStatus; disabled: boolean; size: \"md\" | \"sm\" | \"lg\"; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "feedback",
+        "type": "{ error: string | undefined; warning: string | undefined; status: HysFormStatus; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "error",
+        "type": "{ error: string; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "warning",
+        "type": "{ warning: string; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "hint",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "extra",
+        "type": "{ status: HysFormStatus; }",
         "required": false,
         "default": "",
         "description": ""
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "validate",
+        "type": "(event?: HysFormTrigger | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "检查全部或指定路径并返回 Promise<boolean>"
+      },
+      {
+        "name": "clearValidate",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "清除指定或全部反馈并取消相应检查"
+      },
+      {
+        "name": "resetField",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "重置当前字段"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "聚焦当前字段控件"
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
   },
   "HysGantt": {
     "props": [
@@ -2541,7 +2904,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -2628,8 +2991,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "\"md\"",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       }
     ],
@@ -2822,7 +3185,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -3162,7 +3525,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -3201,8 +3564,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "\"md\"",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       }
     ],
@@ -3308,6 +3671,14 @@
         "required": false,
         "default": "",
         "description": "",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       }
     ],
@@ -3493,7 +3864,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -3750,7 +4121,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -3781,8 +4152,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "\"md\"",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       },
       {
@@ -3866,7 +4237,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -4013,7 +4384,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -4135,7 +4506,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -4249,7 +4620,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -4264,8 +4635,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       },
       {
@@ -4327,7 +4698,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -4414,8 +4785,8 @@
         "name": "size",
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "\"md\"",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
         "global": false
       }
     ],
@@ -4612,7 +4983,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -4960,7 +5331,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -5483,7 +5854,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -5614,7 +5985,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -6126,7 +6497,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -6243,7 +6614,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -6434,7 +6805,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {
@@ -6527,7 +6898,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作",
+        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
       },
       {

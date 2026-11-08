@@ -1,17 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysForm, HysFormItem, HysInput, HysButton } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysSelect as DemoSelect } from 'hys-ui';
-const name = ref('');
-const message = ref('');
-const demoConfig = demoReactive<{
-    loading: boolean;
-    disabled: boolean;
-    inline: boolean;
-    labelPosition: "left" | "right" | "top";
-}>({ "loading": false, "disabled": false, "inline": false, "labelPosition": "top" });
+import {reactive,ref} from 'vue'
+import {HysForm,HysFormItem,HysInput,HysSelect,HysCheckbox,HysButton} from 'hys-ui'
+const model=reactive({name:'',role:'member'}),message=ref('')
+const config=reactive({labelPosition:'top' as 'top'|'left'|'right',size:'md' as 'sm'|'md'|'lg',disabled:false,loading:false,inline:false,showLabel:true,showFeedback:true,showRequiredMark:true})
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>标签位置</span><code>labelPosition</code></span><DemoSelect :model-value="demoConfig.labelPosition" @update:model-value="demoConfig.labelPosition=$event as typeof demoConfig.labelPosition" :options='[{"label":"left","value":"left"},{"label":"right","value":"right"},{"label":"top","value":"top"}]'/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.inline" label="inline"/></div></div></section></div><div class="demo-content"><HysForm v-bind="demoConfig" :validate="()=>!!name.trim()" @submit="message='校验通过'" @invalid="message='请输入名称'"><HysFormItem label="名称" required :error="message==='请输入名称'?message:undefined"><HysInput v-model="name" placeholder="输入名称"/></HysFormItem><template #actions><HysButton type="submit">提交</HysButton></template></HysForm><output>{{message}}</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template><div><div class="demo-controls"><section class="demo-control-section"><h3>尺寸与标签</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label">标签布局 <code>labelPosition</code></span><HysSelect v-model="config.labelPosition" :options="['top','left','right'].map(value=>({label:value,value}))"/></label><label class="demo-field"><span class="demo-control-label">控件尺寸 <code>size</code></span><HysSelect v-model="config.size" :options="['sm','md','lg'].map(value=>({label:value,value}))"/></label></div></section><section class="demo-control-section"><h3>状态与显示</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><HysCheckbox v-model="config.disabled" label="禁用整表"/><small>disabled</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.loading" label="加载中"/><small>loading</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.inline" label="行内排列"/><small>inline</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.showLabel" label="显示标签"/><small>showLabel</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.showFeedback" label="显示反馈"/><small>showFeedback</small></div><div class="demo-control-toggle"><HysCheckbox v-model="config.showRequiredMark" label="显示必填标记"/><small>showRequiredMark</small></div></div></section></div><div class="demo-content"><HysForm v-bind="config" :model="model" :rules="{name:{required:true,message:'请输入名称'}}" @submit="message='配置示例校验成功'" @invalid="message='请填写名称'"><HysFormItem label="名称" prop="name"><HysInput v-model="model.name" placeholder="输入名称"/></HysFormItem><HysFormItem label="角色" prop="role"><HysSelect v-model="model.role" :options="[{label:'普通成员',value:'member'},{label:'管理员',value:'admin'}]"/></HysFormItem><template #actions="{validating}"><HysButton type="submit" :loading="validating">校验配置</HysButton></template></HysForm><output class="state-output">{{message||'输入框、选择器及其浮层选项和按钮继承表单尺寸。禁用时，已展开的浮层也会关闭。'}}</output></div></div></template>
