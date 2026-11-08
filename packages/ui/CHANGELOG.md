@@ -16,6 +16,11 @@
 - Prevent stale asynchronous switch, upload and dialog actions after cancellation or page changes.
 - Improve form validation for custom controls, field descriptions, readonly behavior and reset feedback.
 - Correct slider step alignment, calendar initial selection, numeric animation boundaries and resize cleanup.
+- Synchronize pagination models after page-size changes and validate typed jump targets immediately.
+- Preserve typed numeric precision and expose draft input events from number inputs.
+- Respect disabled notification actions; defer incomplete search composition and cancel stale queries.
+- Reset command highlights after filtering, normalize organization input and tour step bounds, and enable default tour Escape behavior.
+- Guard pending rich-text link commands and improve composite form focus and keyboard file selection.
 - Expand select examples and organize configuration panels into aligned parameter and behavior groups.
 - Add formatted, highlighted, lazy-loaded source panels with toolbar copy actions and responsive layout.
 - Simplify documentation to focus on component features, API and examples.

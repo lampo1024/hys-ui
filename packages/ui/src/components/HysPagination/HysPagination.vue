@@ -38,12 +38,13 @@ const items = computed<Item[]>(() => {
   nums.forEach((n,i) => {if(i && n-nums[i-1]>1){if(n-nums[i-1]===2) result.push(n-1);else result.push(i===1?'left-gap':'right-gap')}result.push(n)})
   return result
 })
-const jump = ref(current.value)
-const validJump = computed(() => Number.isInteger(jump.value) && jump.value>0 && jump.value!==current.value)
-watch(current, () => {jump.value=current.value})
+const jump = ref(current.value),jumpDraft=ref<number|null>(current.value)
+const validJump = computed(() => jumpDraft.value!==null&&Number.isInteger(jumpDraft.value) && jumpDraft.value>0 && jumpDraft.value!==current.value)
+watch(current, () => {jump.value=current.value;jumpDraft.value=current.value})
+watch(jump,value=>jumpDraft.value=value)
 function changePage(n:number) {if(busy.value || !Number.isFinite(n)) return;const next=Math.min(pages.value,Math.max(1,Math.floor(n)));if(next!==current.value){emit('update:page',next);emit('change',next)}}
-function changeSize(value:string) {if(busy.value)return;const next=Number(value);if(!Number.isInteger(next)||next<1||next===size.value)return;emit('update:pageSize',next);emit('pageSizeChange',next);const max=Math.max(1,Math.ceil(total.value/next));if(current.value>max)changePage(max)}
-function submitJump() {const n=Number(jump.value);if(validJump.value && Number.isInteger(n))changePage(n);jump.value=current.value}
+function changeSize(value:string) {if(busy.value)return;const next=Number(value);if(!Number.isInteger(next)||next<1||next===size.value)return;const previous=current.value,max=Math.max(1,Math.ceil(total.value/next));emit('update:pageSize',next);if(previous>max){emit('update:page',max);emit('change',max)}emit('pageSizeChange',next)}
+function submitJump() {const n=Number(jumpDraft.value);if(validJump.value && Number.isInteger(n))changePage(n);jump.value=current.value;jumpDraft.value=current.value}
 
 </script>
 <template>
@@ -63,7 +64,7 @@ function submitJump() {const n=Number(jump.value);if(validJump.value && Number.i
       <HysButton variant="secondary" size="sm" type="button" :disabled="busy||current===pages" :aria-label="t.last" :title="t.last" @click="changePage(pages)"><ChevronsRight :size="16" aria-hidden="true"/></HysButton>
     </div>
     <label v-if="showSizeChanger" class="hys-ui-pf-pagination-size">{{t.perPage}} <HysSelect :model-value="String(size)" :options="options.map(n=>({label:String(n),value:String(n)}))" :disabled="busy" :aria-label="t.perPage" @update:model-value="changeSize"/></label>
-    <form v-if="showQuickJumper&&!compact" class="hys-ui-pf-pagination-jump" @submit.prevent="submitJump"><span>{{t.jump}}</span><HysNumberInput v-model="jump" class="hys-ui-pf-pagination-jump-input" :min="1" :max="pages" :show-controls="false" select-on-focus :disabled="busy" :aria-label="t.jump"/><HysButton variant="secondary" size="sm" type="submit" :disabled="busy||!validJump">确定</HysButton></form>
+    <form v-if="showQuickJumper&&!compact" class="hys-ui-pf-pagination-jump" @submit.prevent="submitJump"><span>{{t.jump}}</span><HysNumberInput v-model="jump" @input="jumpDraft=$event" class="hys-ui-pf-pagination-jump-input" :min="1" :max="pages" :show-controls="false" select-on-focus :disabled="busy" :aria-label="t.jump"/><HysButton variant="secondary" size="sm" type="submit" :disabled="busy||!validJump">确定</HysButton></form>
     </div>
   </nav>
 </template>

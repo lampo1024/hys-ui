@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed,nextTick,provide,ref,toRaw,unref} from 'vue'
-import {formKey,type HysFormRule} from '../../composables/formContext'
+import {formKey,focusHysField,type HysFormRule} from '../../composables/formContext'
 import {useHysRootAttrs} from '../../config'
 const props=withDefaults(defineProps<{model?:Record<string,unknown>;rules?:Record<string,HysFormRule|HysFormRule[]>;validate?:()=>boolean|Promise<boolean>;loading?:boolean;disabled?:boolean;inline?:boolean;labelPosition?:'top'|'left'|'right';labelWidth?:string}>(),{rules:()=>({}),labelPosition:'top',labelWidth:'100px'})
 const emit=defineEmits<{submit:[];invalid:[];reset:[]}>(),hysRootAttrs=useHysRootAttrs(),errors=ref<Record<string,string>>({}),validating=ref(false),resetting=ref(false),root=ref<HTMLFormElement>()
@@ -29,7 +29,7 @@ async function validateField(name:string,trigger?:'blur'|'change'){
 function clearValidate(names?:string|string[]){const keys=names?[names].flat():[...new Set([...Object.keys(errors.value),...generation.keys()])];for(const name of keys){generation.set(name,(generation.get(name)||0)+1);delete errors.value[name]}}
 async function validate(){validating.value=true;try{const names=[...new Set([...Object.keys(props.rules),...fields.keys()])];const results=await Promise.all(names.map(name=>validateField(name)));return results.every(Boolean)&&(!props.validate||await props.validate())}catch{return false}finally{validating.value=false}}
 function resetFields(){resetting.value=true;if(props.model){for(const name of fields.size?fields.keys():Object.keys(props.model)){const parts=name.split('.'),last=parts.pop()!;let parent=props.model;for(const part of parts)parent=(parent[part]??={}) as Record<string,unknown>;parent[last]=snapshot(valueAt(initial,name))}}clearValidate();emit('reset');void nextTick(()=>{resetting.value=false})}
-async function submit(){if(props.loading||props.disabled||validating.value)return;if(await validate())emit('submit');else{emit('invalid');await nextTick();root.value?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()}}
+async function submit(){if(props.loading||props.disabled||validating.value)return;if(await validate())emit('submit');else{emit('invalid');await nextTick();focusHysField(root.value?.querySelector<HTMLElement>('[aria-invalid="true"]'))}}
 provide(formKey,{model:computed(()=>props.model),resetting,errors,rules:computed(()=>props.rules),validateField,register(name){fields.set(name,(fields.get(name)||0)+1);return()=>{const n=(fields.get(name)||1)-1;if(n)fields.set(name,n);else fields.delete(name)}}})
 defineExpose({validate,validateField,clearValidate,resetFields,errors,validating})
 </script>

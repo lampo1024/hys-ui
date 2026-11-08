@@ -2017,6 +2017,14 @@
   "HysFileManager": {
     "props": [
       {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "ManagedFile[] | undefined",
         "required": false,
@@ -3095,6 +3103,13 @@
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "input",
+        "type": "[value: number | null]",
+        "required": false,
+        "default": "",
+        "description": ""
       }
     ],
     "slots": [],
@@ -3144,7 +3159,7 @@
         "name": "searchable",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "true",
         "description": "显示搜索输入框",
         "global": false
       },
@@ -5629,7 +5644,7 @@
         "name": "closeOnEscape",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "true",
         "description": "",
         "global": false
       },
