@@ -2,7 +2,7 @@
 import {useHysRootAttrs} from '../../config'
 const hysRootAttrs=useHysRootAttrs()
 
-import { computed, nextTick, onDeactivated, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onDeactivated, onBeforeUnmount, ref, useId, watch } from 'vue'
 import {ChevronDown,ChevronRight,ChevronUp,Search,Settings2} from 'lucide-vue-next';
 import {useMotion} from '../../motion/useMotion'
 import HysSortableList from '../HysSortableList/HysSortableList.vue'
@@ -54,8 +54,18 @@ const visibleColumns=computed(()=>{
 })
 defineExpose({resetColumns})
 const orderedColumns=computed(()=>[...visibleColumns.value.filter(c=>c.pinned==='left'),...visibleColumns.value.filter(c=>!c.pinned),...visibleColumns.value.filter(c=>c.pinned==='right')])
-const filtersVisible=ref(false)
+const filtersVisible=ref(false), activeFilterColumn=ref<string>(), filterRowId=useId()
+async function closeColumnFilters(restoreFocus=true) {
+ filtersVisible.value=false
+ if(!restoreFocus)return
+ await nextTick()
+ const headers=Array.from(tableRef.value?.querySelectorAll<HTMLElement>('thead th[data-column-key]')||[])
+ const header=headers.find(cell=>cell.dataset.columnKey===activeFilterColumn.value)
+ ;(header?.querySelector<HTMLButtonElement>('.hys-ui-pf-grid-filter')||tableRef.value?.querySelector<HTMLButtonElement>('.hys-ui-pf-grid-filter'))?.focus({preventScroll:true})
+}
 async function showColumnFilters(column:GridColumn) {
+ if(filtersVisible.value&&activeFilterColumn.value===column.key){await closeColumnFilters(false);return}
+ activeFilterColumn.value=column.key
  filtersVisible.value=true
  await nextTick()
  const cell=Array.from(tableRef.value?.querySelectorAll<HTMLElement>('[data-filter-key]')||[]).find(element=>element.dataset.filterKey===column.key)
@@ -64,7 +74,7 @@ async function showColumnFilters(column:GridColumn) {
 const settingsItems=computed(()=>[...new Set([...order.value,...props.columns.map(column=>column.key)])].flatMap(key=>{const column=props.columns.find(column=>column.key===key);return column?[{id:key,label:column.label}]:[]}))
 const tableWidth=computed(()=>orderedColumns.value.reduce((total,column)=>total+(widths.value[column.key]||column.width||160),props.selectable?44:0))
 const stickyOffsets=computed(()=>{const offsets:Record<string,{left?:string;right?:string}>={};let left=props.selectable?44:0;for(const c of orderedColumns.value.filter(c=>c.pinned==='left')){offsets[c.key]={left:left+'px'};left+=widths.value[c.key]||c.width||160}let right=0;for(const c of [...orderedColumns.value].reverse().filter(c=>c.pinned==='right')){offsets[c.key]={right:right+'px'};right+=widths.value[c.key]||c.width||160}return offsets})
-const pinnedStyle=(c:GridColumn)=>c.pinned?{position:'sticky' as const,...stickyOffsets.value[c.key],zIndex:2,background:'var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff))'}:{}
+const pinnedStyle=(c:GridColumn,header=false)=>c.pinned?{position:'sticky' as const,...stickyOffsets.value[c.key],zIndex:header?5:2}:{}
 const safePageSize=computed(()=>Math.max(1,currentPageSize.value))
 watch(()=>props.pageSize,v=>currentPageSize.value=Math.max(1,v))
 watch(()=>props.page,v=>{if(v!=null)page.value=Math.max(1,v)})
@@ -265,23 +275,22 @@ onBeforeUnmount(()=>{endColumnDrag();stopColumnAnimations();stopResize();documen
 </script>
 <template>
 <section v-bind="hysRootAttrs" class="hys-ui-pf-grid" :class="'hys-ui-pf-grid--'+density" aria-label="数据表格" ref="tableRef">
-  <div class="hys-ui-pf-grid-toolbar"><label class="hys-ui-pf-grid-search"><span>搜索</span><HysInput v-model="search" type="search" placeholder="搜索全部列…" aria-label="搜索表格" clearable/></label><label v-if="groupable" class="hys-ui-pf-grid-group-label">分组 <HysSelect v-model="groupBy" aria-label="按列分组" :options="[{label:'不分组',value:''},...groupOptions.map(c=>({label:c.label,value:c.key}))]"/></label><div v-if="editable&&selected.length" class="hys-ui-pf-grid-batch"><HysSelect v-model="batchColumn" aria-label="批量编辑字段" :options="[{label:'选择编辑列',value:''},...columns.filter(c=>c.editable).map(c=>({label:c.label,value:c.key}))]"/><HysInput v-model="batchValue" aria-label="批量编辑值" placeholder="新值"/><HysButton variant="ghost" size="sm" type="button" :disabled="!batchColumn" @click="commitBatch">应用到 {{selected.length}} 行</HysButton></div><template v-if="filtersVisible">
+  <div class="hys-ui-pf-grid-toolbar"><label class="hys-ui-pf-grid-search"><span>搜索</span><HysInput size="sm" v-model="search" type="search" placeholder="搜索全部列…" aria-label="搜索表格" clearable/></label><label v-if="groupable" class="hys-ui-pf-grid-group-label">分组 <HysSelect size="sm" v-model="groupBy" aria-label="按列分组" :options="[{label:'不分组',value:''},...groupOptions.map(c=>({label:c.label,value:c.key}))]"/></label><div v-if="editable&&selected.length" class="hys-ui-pf-grid-batch"><HysSelect size="sm" v-model="batchColumn" aria-label="批量编辑字段" :options="[{label:'选择编辑列',value:''},...columns.filter(c=>c.editable).map(c=>({label:c.label,value:c.key}))]"/><HysInput size="sm" v-model="batchValue" aria-label="批量编辑值" placeholder="新值"/><HysButton variant="ghost" size="sm" type="button" :disabled="!batchColumn" @click="commitBatch">应用到 {{selected.length}} 行</HysButton></div><template v-if="filtersVisible">
  <HysButton variant="ghost" size="sm" type="button" @click="filters={}">清空筛选</HysButton>
- <HysButton variant="ghost" size="sm" type="button" @click="filtersVisible=false">收起筛选</HysButton>
 </template><span class="hys-ui-pf-grid-count">{{serverMode?(totalRows??rows.length):processed.length}} 条记录 · 已选 {{selected.length}}</span><div class="hys-ui-pf-grid-menu" ref="menuRef"><HysButton variant="ghost" size="sm" type="button" @click="settingsOpen=!settingsOpen" :aria-expanded="settingsOpen" aria-label="配置显示列"><Settings2 :size="16" aria-hidden="true"/> 列设置</HysButton><div v-if="settingsOpen" class="hys-ui-pf-grid-panel"><strong>显示列与排序</strong><HysSortableList class="hys-ui-pf-grid-settings-list" :model-value="settingsItems" @update:model-value="items=>order=items.map(item=>item.id)">
  <template #item="{item}"><HysCheckbox :model-value="!hidden.includes(item.id)" :label="item.label" :disabled="columns.find(column=>column.key===item.id)?.hideable===false||(!hidden.includes(item.id)&&visibleColumns.length===1)" @update:model-value="toggleColumn(columns.find(column=>column.key===item.id)!)"/></template>
 </HysSortableList><HysButton variant="ghost" size="sm" type="button" @click="resetColumns">恢复默认列</HysButton></div></div><HysButton variant="ghost" size="sm" type="button" @click="exportCsv">导出 CSV</HysButton></div>
-  <div class="hys-ui-pf-grid-scroll" @dragleave="leaveColumnDrag"><table :class="{'hys-ui-pf-grid-sticky-head':stickyHeader}" :style="{minWidth:tableWidth+'px'}"><colgroup><col v-if="selectable" style="width:44px"/><col v-for="c in orderedColumns" :key="c.key" :style="{width:(widths[c.key]||c.width||160)+'px'}"/></colgroup><thead><tr><th v-if="selectable" scope="col" class="hys-ui-pf-grid-select-col"><HysCheckbox aria-label="选择当前页全部行" :model-value="allPageSelected" :indeterminate="somePageSelected&&!allPageSelected" @update:model-value="selectPage"/></th><th v-for="c in orderedColumns" :key="c.key" scope="col" :data-column-key="c.key" :class="{'hys-ui-is-column-dragging':dragging===c.key}" :data-drop-position="columnDropTarget?.key===c.key?columnDropTarget.position:undefined" :draggable="c.reorderable!==false" @dragstart="startColumnDrag($event,c)" @dragend="endColumnDrag" @dragover="previewColumnDrop($event,c)" @drop="dropColumn($event,c)" :aria-sort="effectiveSorts.find(s=>s.key===c.key)?.direction==='asc'?'ascending':effectiveSorts.find(s=>s.key===c.key)?.direction==='desc'?'descending':'none'" :style="{...pinnedStyle(c),textAlign:c.align||'left'}"><div class="hys-ui-pf-grid-head"><div class="hys-ui-pf-grid-sort-group">
+  <div class="hys-ui-pf-grid-scroll" @dragleave="leaveColumnDrag"><table :class="{'hys-ui-pf-grid-sticky-head':stickyHeader}" :style="{minWidth:tableWidth+'px'}"><colgroup><col v-if="selectable" style="width:44px"/><col v-for="c in orderedColumns" :key="c.key" :style="{width:(widths[c.key]||c.width||160)+'px'}"/></colgroup><thead><tr><th v-if="selectable" scope="col" class="hys-ui-pf-grid-select-col"><HysCheckbox aria-label="选择当前页全部行" :model-value="allPageSelected" :indeterminate="somePageSelected&&!allPageSelected" @update:model-value="selectPage"/></th><th v-for="c in orderedColumns" :key="c.key" scope="col" :data-column-key="c.key" :class="{'hys-ui-is-column-dragging':dragging===c.key}" :data-drop-position="columnDropTarget?.key===c.key?columnDropTarget.position:undefined" :draggable="c.reorderable!==false" @dragstart="startColumnDrag($event,c)" @dragend="endColumnDrag" @dragover="previewColumnDrop($event,c)" @drop="dropColumn($event,c)" :aria-sort="effectiveSorts.find(s=>s.key===c.key)?.direction==='asc'?'ascending':effectiveSorts.find(s=>s.key===c.key)?.direction==='desc'?'descending':'none'" :style="{...pinnedStyle(c,true),textAlign:c.align||'left'}"><div class="hys-ui-pf-grid-head"><div class="hys-ui-pf-grid-sort-group">
  <HysButton variant="ghost" size="sm" type="button" class="hys-ui-pf-grid-sort" :class="{'hys-ui-is-sorted':effectiveSorts.some(item=>item.key===c.key)}" @click="toggleSort(c)"><span class="hys-ui-pf-grid-sort-label">{{c.label}}</span></HysButton>
  <span v-if="c.sortable!==false" class="hys-ui-pf-grid-sort-controls" role="group" :aria-label="c.label+'排序'">
   <HysButton type="button" variant="ghost" size="sm" class="hys-ui-pf-grid-sort-direction" :class="{'hys-ui-is-active':effectiveSorts.find(item=>item.key===c.key)?.direction==='asc'}" :aria-label="c.label+'升序'" :aria-pressed="effectiveSorts.find(item=>item.key===c.key)?.direction==='asc'" @click.stop="chooseSort(c,'asc')"><ChevronUp :size="11" aria-hidden="true"/></HysButton>
   <HysButton type="button" variant="ghost" size="sm" class="hys-ui-pf-grid-sort-direction" :class="{'hys-ui-is-active':effectiveSorts.find(item=>item.key===c.key)?.direction==='desc'}" :aria-label="c.label+'降序'" :aria-pressed="effectiveSorts.find(item=>item.key===c.key)?.direction==='desc'" @click.stop="chooseSort(c,'desc')"><ChevronDown :size="11" aria-hidden="true"/></HysButton>
  </span>
-</div><HysButton variant="ghost" size="sm" v-if="c.filterable!==false" type="button" class="hys-ui-pf-grid-filter" :aria-label="'筛选'+c.label" :class="{'hys-ui-is-filtered':!!filters[c.key]}" :aria-expanded="filtersVisible" @click="showColumnFilters(c)"><Search :size="13" aria-hidden="true"/></HysButton><span v-if="c.resizable!==false" class="hys-ui-pf-grid-resize" role="separator" tabindex="0" :aria-label="'调整'+c.label+'列宽'" @pointerdown="startResize($event,c)" @keydown.left.prevent="widths={...widths,[c.key]:Math.max(c.minWidth||80,(widths[c.key]||c.width||160)-10)}" @keydown.right.prevent="widths={...widths,[c.key]:Math.min(c.maxWidth||800,(widths[c.key]||c.width||160)+10)}" /></div></th></tr>
-<tr v-if="filtersVisible" class="hys-ui-pf-grid-filter-row" aria-label="列筛选" @keydown.esc.stop="filtersVisible=false">
+</div><HysButton variant="ghost" size="sm" v-if="c.filterable!==false" type="button" class="hys-ui-pf-grid-filter" :aria-label="'筛选'+c.label" :aria-expanded="filtersVisible" :aria-controls="filterRowId" :title="filtersVisible&&activeFilterColumn===c.key?'再次点击收起筛选（Esc）':'筛选'+c.label" :class="{'hys-ui-is-filtered':!!filters[c.key],'hys-ui-is-filtering':filtersVisible&&activeFilterColumn===c.key}" @click="showColumnFilters(c)"><Search :size="13" aria-hidden="true"/></HysButton><span v-if="c.resizable!==false" class="hys-ui-pf-grid-resize" role="separator" tabindex="0" :aria-label="'调整'+c.label+'列宽'" @pointerdown="startResize($event,c)" @keydown.left.prevent="widths={...widths,[c.key]:Math.max(c.minWidth||80,(widths[c.key]||c.width||160)-10)}" @keydown.right.prevent="widths={...widths,[c.key]:Math.min(c.maxWidth||800,(widths[c.key]||c.width||160)+10)}" /></div></th></tr>
+<tr v-if="filtersVisible" class="hys-ui-pf-grid-filter-row" :id="filterRowId" @keydown.esc.stop.prevent="closeColumnFilters()" aria-label="列筛选">
  <td v-if="selectable" class="hys-ui-pf-grid-select-col"></td>
- <td v-for="column in orderedColumns" :key="column.key" :data-filter-key="column.key" :data-column-key="column.key" :style="{...pinnedStyle(column),background:'var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt))'}">
-  <HysInput v-if="column.filterable!==false" v-model="filters[column.key]" :aria-label="'过滤'+column.label" placeholder="筛选…" clearable/>
+ <td v-for="column in orderedColumns" :key="column.key" :data-filter-key="column.key" :data-column-key="column.key" :style="pinnedStyle(column)">
+  <HysInput v-if="column.filterable!==false" v-model="filters[column.key]" @focus="activeFilterColumn=column.key" :aria-label="'过滤'+column.label" placeholder="筛选…" clearable/>
  </td>
 </tr></thead><tbody><tr v-if="loading"><td :colspan="visibleColumns.length+(selectable?1:0)" class="hys-ui-pf-grid-empty">正在加载…</td></tr><template v-else><template v-for="item in displayRows" :key="item.key"><tr v-if="item.kind==='group'" class="hys-ui-pf-grid-group-row"><td :colspan="visibleColumns.length+(selectable?1:0)"><HysButton variant="ghost" size="sm" type="button" :aria-expanded="!collapsedGroups.includes(item.key)" @click="toggleGroup(item.key)"><component :is="collapsedGroups.includes(item.key)?ChevronRight:ChevronDown" :size="15" aria-hidden="true"/> {{groupOptions.find(c=>c.key===groupBy)?.label}}：{{item.label}} <span>({{item.count}})</span></HysButton></td></tr><tr v-else-if="item.row" @click="emit('rowClick',item.row)"><td v-if="selectable" class="hys-ui-pf-grid-select-col"><HysCheckbox :aria-label="'选择第'+((item.index??0)+1)+'行'" :model-value="selected.includes(rowId(item.row,item.index??0))" @click.stop @update:model-value="selectRow(rowId(item.row!,item.index??0),$event)"/></td><td v-for="c in orderedColumns" :key="c.key" :data-column-key="c.key" :style="{...pinnedStyle(c),textAlign:c.align||'left'}" :title="cellValue(item.row,c.key)"><template v-if="editing?.id===rowId(item.row,item.index??0)&&editing?.key===c.key"><HysInput v-model="editValue" class="hys-ui-pf-grid-edit" :aria-label="'编辑'+c.label" @click.stop @keydown.enter.stop="commitEdit(item.row,c)" @keydown.esc.stop="editing=null" @focusout="commitEdit(item.row,c)"/></template><template v-else><HysButton variant="ghost" size="sm" v-if="treeMode&&c.key===orderedColumns[0]?.key&&item.row.__pfHasChildren" type="button" class="hys-ui-pf-grid-tree-toggle" :style="{marginLeft:Number(item.row.__pfDepth||0)*16+'px'}" :aria-expanded="expandedTree.includes(item.row[rowKey] as string|number)" @click.stop="toggleTree(item.row[rowKey] as string|number)"><component :is="expandedTree.includes(item.row[rowKey] as string|number)?ChevronDown:ChevronRight" :size="15" aria-hidden="true"/></HysButton><span v-else-if="treeMode&&c.key===orderedColumns[0]?.key" :style="{display:'inline-block',width:(Number(item.row.__pfDepth||0)*16+20)+'px'}"></span><span @dblclick.stop="beginEdit(item.row!,c)"><slot :name="c.key" :row="item.row" :value="item.row[c.key]">{{cellValue(item.row,c.key)}}</slot></span></template></td></tr></template><tr v-if="!pageRows.length"><td :colspan="visibleColumns.length+(selectable?1:0)" class="hys-ui-pf-grid-empty">{{emptyText}}</td></tr></template></tbody><tfoot v-if="showSummary&&!loading&&processed.length"><tr class="hys-ui-pf-grid-summary-row"><td v-if="selectable" class="hys-ui-pf-grid-select-col">合计</td><td v-for="(c,i) in orderedColumns" :key="c.key" :data-column-key="c.key" :style="{...pinnedStyle(c),textAlign:c.align||'left'}">{{c.summary?summaryValue(c):(!selectable&&i===0?'合计':'')}}</td></tr></tfoot></table></div>
   <footer class="hys-ui-pf-grid-footer"><HysPagination :page="page" :total="serverMode?(totalRows??rows.length):processed.length" :page-size="safePageSize" :show-size-changer="true" :show-quick-jumper="true" :disabled="loading" :page-size-options="[10,12,20,50,100]" @change="setPage" @page-size-change="onPageSizeChange" /></footer>
@@ -338,4 +347,23 @@ onBeforeUnmount(()=>{endColumnDrag();stopColumnAnimations();stopResize();documen
 .hys-ui-pf-grid-sort-controls{display:inline-grid;grid-template-rows:repeat(2,9px);flex-shrink:0}
 .hys-ui-pf-grid-head .hys-ui-pf-grid-sort-direction{display:grid;place-items:center;width:20px;min-width:20px;height:9px;min-height:9px;padding:0;border:0;border-radius:2px;background:transparent;color:var(--hys-ui-muted,var(--hys-ui-theme-muted));opacity:.55}
 .hys-ui-pf-grid-head .hys-ui-pf-grid-sort-direction:hover,.hys-ui-pf-grid-head .hys-ui-pf-grid-sort-direction:focus-visible,.hys-ui-pf-grid-head .hys-ui-pf-grid-sort-direction.hys-ui-is-active{color:var(--hys-ui-primary,var(--hys-ui-theme-primary));background:transparent;opacity:1}
+/* Opaque cell surfaces are determined by the row section, including sticky cells. */
+.hys-ui-pf-grid {
+ --hys-ui-grid-header-background:var(--hys-ui-surface-secondary,var(--hys-ui-theme-bg,#f4f7fc));
+ --hys-ui-grid-row-background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));
+ --hys-ui-grid-hover-background:var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt,#f8faff));
+}
+.hys-ui-pf-grid thead th { background:var(--hys-ui-grid-header-background); }
+.hys-ui-pf-grid tbody td { background:var(--hys-ui-grid-row-background); }
+.hys-ui-pf-grid tbody tr:hover { --hys-ui-grid-row-background:var(--hys-ui-grid-hover-background); background:var(--hys-ui-grid-hover-background); }
+.hys-ui-pf-grid tbody .hys-ui-pf-grid-group-row td,
+.hys-ui-pf-grid tfoot td { background:var(--hys-ui-grid-header-background); }
+.hys-ui-pf-grid thead .hys-ui-pf-grid-filter-row td { background:var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt,#f8faff)); }
+.hys-ui-pf-grid-toolbar :deep(.hys-ui-input-shell),
+.hys-ui-pf-grid-toolbar :deep(.hys-ui-select),
+.hys-ui-pf-grid-toolbar > .hys-ui-btn,
+.hys-ui-pf-grid-toolbar .hys-ui-pf-grid-menu > .hys-ui-btn,
+.hys-ui-pf-grid-toolbar .hys-ui-pf-grid-batch > .hys-ui-btn { height:32px;min-height:32px; }
+.hys-ui-pf-grid-toolbar :deep(.hys-ui-input-shell .hys-ui-input) { height:30px;min-height:0;padding-block:4px; }
+.hys-ui-pf-grid-head .hys-ui-pf-grid-filter.hys-ui-is-filtering { color:var(--hys-ui-primary,var(--hys-ui-theme-primary));opacity:1; }
 </style>

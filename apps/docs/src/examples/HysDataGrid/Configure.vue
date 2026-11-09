@@ -62,7 +62,7 @@ const demoConfig = demoReactive<{
  <div class="page">
 
   <div class="grid-demo-controls">
-   <span>表格密度</span><HysSelect v-model="density" aria-label="表格密度" :options="densityOptions"/>
+   <span>表格密度</span><HysSelect size="sm" v-model="density" aria-label="表格密度" :options="densityOptions"/>
    <HysButton variant="secondary" size="sm" @click="restoreColumns">恢复默认列</HysButton>
    <span class="grid-demo-message" role="status">{{message}}</span>
   </div>
@@ -71,7 +71,7 @@ const demoConfig = demoReactive<{
    <template #priority="{value}"><HysBadge :tone="value==='高'?'red':value==='中'?'orange':'gray'">{{value}}</HysBadge></template>
    <template #progress="{value}"><HysProgress :value="Number(value)" :color="Number(value)===100?'var(--green)':undefined"/></template>
   </HysDataGrid>
-  <p class="grid-demo-hint">拖动表头调整列顺序，拖动右侧边缘调整列宽。列设置会自动保存，点击“恢复默认列”可重新显示全部字段。</p>
+  <p class="grid-demo-hint">再次点击当前列的搜索图标或按 Esc 收起筛选，保留已填条件。拖动表头调整列顺序，拖动右侧边缘调整列宽。列设置会自动保存，点击“恢复默认列”可重新显示全部字段。</p>
  </div>
 </div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
 <style scoped>
@@ -79,4 +79,5 @@ const demoConfig = demoReactive<{
 .grid-demo-controls :deep(.hys-ui-select-wrap){width:118px;min-width:118px}
 .grid-demo-message,.grid-demo-hint{color:var(--hys-ui-muted,#7b879e);font-size:12px}
 .grid-demo-hint{margin-top:16px}
+.grid-demo-controls :deep(.hys-ui-select),.grid-demo-controls>.hys-ui-btn { height:32px;min-height:32px; }
 </style>

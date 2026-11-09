@@ -63,8 +63,8 @@ function submitJump() {const n=Number(jumpDraft.value);if(validJump.value && Num
       <HysButton variant="secondary" size="sm" type="button" :disabled="busy||current===pages" :aria-label="t.next" :title="t.next" @click="changePage(current+1)"><ChevronRight :size="16" aria-hidden="true"/></HysButton>
       <HysButton variant="secondary" size="sm" type="button" :disabled="busy||current===pages" :aria-label="t.last" :title="t.last" @click="changePage(pages)"><ChevronsRight :size="16" aria-hidden="true"/></HysButton>
     </div>
-    <label v-if="showSizeChanger" class="hys-ui-pf-pagination-size">{{t.perPage}} <HysSelect :model-value="String(size)" :options="options.map(n=>({label:String(n),value:String(n)}))" :disabled="busy" :aria-label="t.perPage" @update:model-value="changeSize"/></label>
-    <form v-if="showQuickJumper&&!compact" class="hys-ui-pf-pagination-jump" @submit.prevent="submitJump"><span>{{t.jump}}</span><HysNumberInput v-model="jump" @input="jumpDraft=$event" class="hys-ui-pf-pagination-jump-input" :min="1" :max="pages" :show-controls="false" select-on-focus :disabled="busy" :aria-label="t.jump"/><HysButton variant="secondary" size="sm" type="submit" :disabled="busy||!validJump">确定</HysButton></form>
+    <label v-if="showSizeChanger" class="hys-ui-pf-pagination-size">{{t.perPage}} <HysSelect size="sm" :model-value="String(size)" :options="options.map(n=>({label:String(n),value:String(n)}))" :disabled="busy" :aria-label="t.perPage" @update:model-value="changeSize"/></label>
+    <form v-if="showQuickJumper&&!compact" class="hys-ui-pf-pagination-jump" @submit.prevent="submitJump"><span>{{t.jump}}</span><HysNumberInput size="sm" v-model="jump" @input="jumpDraft=$event" class="hys-ui-pf-pagination-jump-input" :min="1" :max="pages" :show-controls="false" select-on-focus :disabled="busy" :aria-label="t.jump"/><HysButton variant="secondary" size="sm" type="submit" :disabled="busy||!validJump">确定</HysButton></form>
     </div>
   </nav>
 </template>
@@ -108,6 +108,9 @@ function submitJump() {const n=Number(jumpDraft.value);if(validJump.value && Num
 .hys-ui-pf-pagination-size :deep(.hys-ui-select-wrap) { width: 76px; min-width: 76px; }
 .hys-ui-pf-pagination-size :deep(.hys-ui-select) { height: 32px; min-height: 32px; padding: 5px 9px; gap: 8px; font-size: 12px; }
 .hys-ui-pf-pagination-jump-input { width: 60px; flex-shrink: 0; height: 32px; min-height: 32px; }
+.hys-ui-pf-pagination-jump-input :deep(.hys-ui-number-group),
+.hys-ui-pf-pagination-jump-input :deep(.hys-ui-ex-number) { height: 32px; min-height: 32px; }
+.hys-ui-pf-pagination-jump-input :deep(.hys-ui-number-main) { min-height: 0; }
 .hys-ui-pf-pagination-jump-input :deep(input) { height: 30px; min-height: 0; padding: 5px 6px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
 .hys-ui-pf-pagination-jump > button { min-height: 32px; height: 32px; padding: 5px 10px; font-size: 12px; font-weight: 500; }
 .hys-ui-pf-pagination-indicator, .hys-ui-pf-pagination-mobile-indicator { padding: 0 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
