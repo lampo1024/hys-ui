@@ -84,6 +84,19 @@ export function ganttDependencyPath(
       : `V ${to.y + ((to.y < from.y ? 1 : -1) * rowHeight) / 2} H ${tip - 16} V ${to.y} H ${tip}`;
   return `M ${x} ${from.y} H ${elbow} ${route} M ${tip - 5} ${to.y - 4} L ${tip} ${to.y} L ${tip - 5} ${to.y + 4}`;
 }
+export function ganttDependencyPickPath(
+  from: { x: number; y: number; w: number },
+  to: { x: number; y: number },
+  rowHeight = 46,
+) {
+  const elbow = from.x + from.w + 14,
+    tip = to.x - 4,
+    lane = to.y + ((to.y < from.y ? 1 : -1) * rowHeight) / 2;
+  return (
+    `M ${from.x + from.w} ${from.y} H ${elbow} V ${lane}` +
+    (tip >= elbow + 12 ? "" : ` H ${tip - 16}`)
+  );
+}
 export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
   const draft = shallowRef<Draft>(),
     selectedRef = shallowRef<HysGanttDependencyChange>(),
@@ -175,7 +188,11 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     message.value = info.type === "add" ? "前置依赖已建立" : "前置依赖已移除";
     if (info.type === "add") ctx.added(info, actual!);
     else {
-      selectedRef.value = undefined;
+      if (
+        selectedRef.value?.sourceId === info.sourceId &&
+        selectedRef.value?.targetId === info.targetId
+      )
+        selectedRef.value = undefined;
       ctx.removed(info, actual!);
     }
     return true;

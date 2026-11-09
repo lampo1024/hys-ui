@@ -5,6 +5,7 @@ const hysRootAttrs = useHysRootAttrs();
 import {
   computed,
   ref,
+  shallowRef,
   watch,
   nextTick,
   onMounted,
@@ -14,6 +15,7 @@ import {
 } from "vue";
 import HysSegmented from "../HysSegmented/HysSegmented.vue";
 import HysButton from "../HysButton/HysButton.vue";
+import HysInput from "../HysInput/HysInput.vue";
 import type {
   HysGanttScrollOptions,
   HysGanttDependencyChange,
@@ -23,9 +25,22 @@ import type {
 import {
   useGanttDependencies,
   ganttDependencyPath,
+  ganttDependencyPickPath,
 } from "../../composables/useGanttDependencies";
-import { Trash2, X } from "lucide-vue-next";
+import {
+  Trash2,
+  X,
+  Check,
+  GitBranch,
+  LocateFixed,
+  CornerDownRight,
+  Search,
+} from "lucide-vue-next";
 import { useGanttLabelResize } from "../../composables/useGanttLabelResize";
+import {
+  useFloating,
+  type FloatingAnchor,
+} from "../../composables/useFloating";
 export interface GanttItem {
   id: string | number;
   title: string;
@@ -289,7 +304,9 @@ function rememberScroll() {
   const el = scroller.value;
   if (!active || restoring || !el?.isConnected) return;
   const moved = scrollPosition.top !== el.scrollTop;
+  const movedHorizontally = scrollPosition.left !== el.scrollLeft;
   scrollPosition = { top: el.scrollTop, left: el.scrollLeft };
+  if (moved || movedHorizontally) picker.close();
   if (props.virtual && moved && scrollFrame === undefined)
     scrollFrame = requestAnimationFrame(syncVirtual);
 }
@@ -413,12 +430,16 @@ const allEdges = computed(() =>
         {
           id: JSON.stringify([id, t.id]),
           sourceId: id,
+          sourceTitle: normalized.value[from.index].title,
           targetId: t.id,
+          targetTitle: t.title,
           first: Math.min(from.index, to.index),
           last: Math.max(from.index, to.index),
           endpoint: { x: to.x - 9, y: to.y },
           editable: !t.disabled && !normalized.value[from.index]?.disabled,
+          removable: !t.disabled,
           path: ganttDependencyPath(from, to, rowSize.value),
+          pickPath: ganttDependencyPickPath(from, to, rowSize.value),
         },
       ];
     }),
@@ -432,6 +453,34 @@ const edges = computed(() =>
           edge.first < windowRange.value.end,
       )
     : allEdges.value,
+);
+const incomingGroups = computed(() => {
+  const groups = new Map<string | number, typeof allEdges.value>();
+  for (const edge of allEdges.value) {
+    const group = groups.get(edge.targetId);
+    if (group) group.push(edge);
+    else groups.set(edge.targetId, [edge]);
+  }
+  return groups;
+});
+const incomingEndpoints = computed(() =>
+  [...incomingGroups.value].flatMap(([id, group]) => {
+    const position = positions.value.get(id);
+    return group.length > 1 &&
+      position &&
+      position.index >= windowRange.value.start &&
+      position.index < windowRange.value.end
+      ? [
+          {
+            id,
+            title: group[0].targetTitle,
+            count: group.length,
+            x: position.x - 38,
+            y: position.y,
+          },
+        ]
+      : [];
+  }),
 );
 const dependencyEnabled = computed(
   () => props.dependencyEditable ?? props.editable,
@@ -457,6 +506,155 @@ const links = useGanttDependencies<GanttItem>({
     emit("dependencyMove", info, item, previousItem),
   invalid: (info) => emit("dependencyInvalid", info),
 });
+const activeEdge = computed(() => {
+  const current = links.selected.value;
+  return current
+    ? incomingGroups.value
+        .get(current.targetId)
+        ?.find((edge) => edge.sourceId === current.sourceId)
+    : undefined;
+});
+const pickerAnchor = shallowRef<FloatingAnchor>(),
+  pickerPanel = ref<HTMLElement>(),
+  pickerTarget = ref<string | number>(),
+  pickerQuery = ref(""),
+  pickerBusy = ref<string>(),
+  pickerNotice = ref("");
+const picker = useFloating(pickerAnchor, pickerPanel, {
+  placement: "bottom-start",
+  gap: 8,
+  width: () => 380,
+});
+const pickerEdges = computed(() =>
+  pickerTarget.value === undefined
+    ? []
+    : (incomingGroups.value.get(pickerTarget.value) ?? []),
+);
+const filteredPickerEdges = computed(() => {
+  const query = pickerQuery.value.trim().toLocaleLowerCase();
+  return query
+    ? pickerEdges.value.filter((edge) =>
+        (edge.sourceTitle + " " + edge.sourceId)
+          .toLocaleLowerCase()
+          .includes(query),
+      )
+    : pickerEdges.value;
+});
+async function openIncoming(event: Event, id: string | number) {
+  if (!active || !dependencyEnabled.value) return;
+  if (picker.open.value && pickerTarget.value === id) {
+    picker.close(true);
+    return;
+  }
+  links.cancel(!links.selected.value);
+  picker.close();
+  pickerTarget.value = id;
+  pickerQuery.value = "";
+  pickerNotice.value = "";
+  pickerAnchor.value = event.currentTarget as SVGElement & FloatingAnchor;
+  await picker.show();
+  if (active && picker.open.value)
+    (
+      pickerPanel.value?.querySelector<HTMLElement>(
+        '[data-pg-choice][aria-pressed="true"]',
+      ) ?? pickerPanel.value?.querySelector<HTMLElement>("[data-pg-choice]")
+    )?.focus();
+}
+async function chooseIncoming(
+  event: Event,
+  edge: (typeof allEdges.value)[number],
+) {
+  picker.close();
+  links.selectEdge(event, edge.sourceId, edge.targetId);
+  await nextTick();
+  if (!active) return;
+  const group = [
+    ...(root.value?.querySelectorAll<SVGGElement>(".hys-ui-pg-edge-group") ??
+      []),
+  ].find((el) => el.dataset.edgeKey === edge.id);
+  (
+    group?.querySelector<SVGElement>(".hys-ui-pg-edge-endpoint-hit") ??
+    group?.querySelector<SVGElement>(".hys-ui-pg-edge-hit")
+  )?.focus({ preventScroll: true });
+}
+async function locatePickerTask(
+  id: string | number,
+  event?: Event,
+  edge?: (typeof allEdges.value)[number],
+) {
+  picker.close();
+  if (event && edge) links.selectEdge(event, edge.sourceId, edge.targetId);
+  if (await scrollToTask(id)) {
+    selected.value = id;
+    emit("update:modelValue", id);
+    scroller.value?.focus({ preventScroll: true });
+  }
+}
+async function rewireFromPicker(edge: (typeof allEdges.value)[number]) {
+  picker.close();
+  await scrollToTask(edge.targetId, { block: "nearest" });
+  links.beginKeyboard(edge.sourceId, edge.targetId);
+}
+async function removeFromPicker(edge: (typeof allEdges.value)[number]) {
+  if (pickerBusy.value) return;
+  pickerBusy.value = edge.id;
+  pickerNotice.value = "";
+  try {
+    if (!(await links.remove(edge.sourceId, edge.targetId)))
+      pickerNotice.value = links.message.value;
+  } finally {
+    pickerBusy.value = undefined;
+  }
+  await nextTick();
+  if (active && picker.open.value)
+    pickerPanel.value?.querySelector<HTMLElement>("[data-pg-choice]")?.focus();
+  else if (active) scroller.value?.focus({ preventScroll: true });
+}
+function pickerKeys(event: KeyboardEvent) {
+  if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+  if (
+    event.target instanceof HTMLInputElement &&
+    ["Home", "End"].includes(event.key)
+  )
+    return;
+  event.preventDefault();
+  event.stopPropagation();
+  const buttons = [
+      ...(pickerPanel.value?.querySelectorAll<HTMLElement>(
+        "[data-pg-choice]",
+      ) ?? []),
+    ],
+    current = buttons.indexOf(document.activeElement as HTMLElement);
+  const index =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? buttons.length - 1
+        : current < 0
+          ? event.key === "ArrowUp"
+            ? buttons.length - 1
+            : 0
+          : (current + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) %
+            buttons.length;
+  buttons[index]?.focus();
+}
+watch(pickerEdges, () => {
+  if (picker.open.value) {
+    if (pickerEdges.value.length < 2) picker.close();
+    else nextTick(picker.update);
+  }
+});
+watch(
+  [dependencyEnabled, () => props.showDependencies, () => !!links.draft.value],
+  () => {
+    if (
+      !dependencyEnabled.value ||
+      !props.showDependencies ||
+      links.draft.value
+    )
+      picker.close();
+  },
+);
 watch(
   () => props.showDependencies,
   (value) => {
@@ -532,10 +730,25 @@ function select(t: GanttItem) {
     void links.submit(t.id);
     return;
   }
+  if (performance.now() < suppressTaskClickBefore) return;
   links.clearSelected();
   selected.value = t.id;
   emit("update:modelValue", t.id);
   emit("open", t);
+}
+function clearTaskSelection() {
+  if (selected.value === null) return;
+  selected.value = null;
+  emit("update:modelValue", null);
+}
+function chartKey(event: KeyboardEvent) {
+  links.key(event);
+  if (event.defaultPrevented || event.key !== "Escape") return;
+  if (!drag.value && selected.value === null) return;
+  if (drag.value) cancelDrag();
+  else clearTaskSelection();
+  event.preventDefault();
+  event.stopPropagation();
 }
 function clearEdgeOnSurface(event: Event) {
   // Pointer clicks were handled on press; the release click after a drag must
@@ -544,11 +757,24 @@ function clearEdgeOnSurface(event: Event) {
   if (
     event.target instanceof Element &&
     event.target.closest(
-      ".hys-ui-pg-edge-hit, .hys-ui-pg-edge-endpoint-hit, .hys-ui-pg-link-feedback button",
+      ".hys-ui-pg-edge-hit, .hys-ui-pg-edge-endpoint-hit, .hys-ui-pg-incoming-trigger, .hys-ui-pg-link-feedback button",
     )
   )
     return;
   links.clearSelected();
+  picker.close();
+  const target = event.target;
+  if (
+    !links.draft.value &&
+    !drag.value &&
+    target instanceof Element &&
+    !target.closest(
+      ".hys-ui-pg-bar, .hys-ui-pg-task-label, .hys-ui-pg-link-port",
+    ) &&
+    (target === scroller.value ||
+      target.closest(".hys-ui-pg-grid, .hys-ui-pg-task-list"))
+  )
+    clearTaskSelection();
 }
 function moveToToday() {
   if (!active) return;
@@ -570,6 +796,7 @@ const drag = ref<{
   unitWidth: number;
 } | null>(null);
 let captured: { element: HTMLElement; id: number } | undefined;
+let suppressTaskClickBefore = 0;
 function releasePointer() {
   const capture = captured;
   captured = undefined;
@@ -577,6 +804,7 @@ function releasePointer() {
     capture.element.releasePointerCapture(capture.id);
 }
 function cancelDrag() {
+  if (drag.value) suppressTaskClickBefore = performance.now() + 350;
   drag.value = null;
   releasePointer();
 }
@@ -590,6 +818,9 @@ function pointerDown(
   e.stopPropagation();
   (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   captured = { element: e.currentTarget as HTMLElement, id: e.pointerId };
+  (e.currentTarget as HTMLElement)
+    .closest<HTMLElement>(".hys-ui-pg-bar")
+    ?.focus({ preventScroll: true });
   drag.value = {
     id: t.id,
     type,
@@ -695,7 +926,7 @@ defineExpose({
     class="hys-ui-pg-gantt"
     :class="{ 'hys-ui-pg-resizing-label': labelResize.resizing.value }"
     aria-label="项目甘特图"
-    @keydown="links.key"
+    @keydown="chartKey"
     @pointerdown.capture="clearEdgeOnSurface"
     @click.capture="clearEdgeOnSurface"
   >
@@ -718,8 +949,8 @@ defineExpose({
         >定位今天</HysButton
       ><span class="hys-ui-pg-hint">{{
         editable
-          ? "拖动任务条调整排期 · Alt + 左/右方向键微调日期"
-          : "点击任务查看详情"
+          ? "拖动任务条调整排期 · Alt + 左/右方向键微调日期 · Esc / 点击空白取消选中"
+          : "点击任务查看详情 · Esc / 点击空白取消选中"
       }}</span>
     </div>
     <div
@@ -775,6 +1006,7 @@ defineExpose({
             v-for="entry in visibleRows"
             :key="entry.task.id"
             class="hys-ui-pg-task-label"
+            :aria-pressed="selected === entry.task.id"
             :data-row-index="entry.index"
             :class="{
               'hys-ui-selected': selected === entry.task.id,
@@ -880,6 +1112,7 @@ defineExpose({
                 }"
                 :style="barStyle(entry.task)"
                 role="button"
+                :aria-pressed="selected === entry.task.id"
                 tabindex="0"
                 :aria-label="`${entry.task.title}，${entry.task.start} 至 ${entry.task.end}，完成 ${entry.task.progress}%`"
                 :title="`${entry.task.title}
@@ -947,6 +1180,9 @@ ${entry.task.start} → ${entry.task.end}
             <svg
               v-if="(showDependencies && edges.length) || links.draft.value"
               class="hys-ui-pg-dependencies"
+              :class="{
+                'hys-ui-pg-has-edge-selection': !!links.selected.value,
+              }"
               :width="width"
               :height="normalized.length * rowSize"
               :aria-hidden="!dependencyEnabled || undefined"
@@ -956,7 +1192,10 @@ ${entry.task.start} → ${entry.task.end}
                   v-for="edge in edges"
                   :key="edge.id"
                   class="hys-ui-pg-edge-group"
+                  :data-edge-key="edge.id"
                   :class="{
+                    'hys-ui-pg-edge-shared':
+                      (incomingGroups.get(edge.targetId)?.length ?? 0) > 1,
                     'hys-ui-pg-edge-current':
                       links.selected.value?.sourceId === edge.sourceId &&
                       links.selected.value?.targetId === edge.targetId,
@@ -984,7 +1223,15 @@ ${entry.task.start} → ${entry.task.end}
                   <path
                     v-if="dependencyEnabled"
                     class="hys-ui-pg-edge-hit"
-                    :d="edge.path"
+                    :d="
+                      (incomingGroups.get(edge.targetId)?.length ?? 0) > 1 &&
+                      !(
+                        links.selected.value?.sourceId === edge.sourceId &&
+                        links.selected.value?.targetId === edge.targetId
+                      )
+                        ? edge.pickPath
+                        : edge.path
+                    "
                     fill="none"
                     stroke="transparent"
                     stroke-width="12"
@@ -1044,11 +1291,78 @@ ${entry.task.start} → ${entry.task.end}
                       "
                     >
                       <title>
-                        拖动修改连接终点，或按 Enter 后用上下键选择新任务
+                        {{ edge.sourceTitle }} →
+                        {{ edge.targetTitle }}：拖动修改连接终点，或按 Enter
+                        后用上下键选择新任务
                       </title>
                     </circle>
                   </template>
                 </g>
+                <template v-if="activeEdge">
+                  <path
+                    class="hys-ui-pg-active-edge-line"
+                    :d="activeEdge.path"
+                    fill="none"
+                    stroke-width="2.5"
+                  />
+                  <circle
+                    v-if="activeEdge.editable && dependencyEnabled"
+                    class="hys-ui-pg-active-endpoint"
+                    :cx="activeEdge.endpoint.x"
+                    :cy="activeEdge.endpoint.y"
+                    r="5"
+                  />
+                </template>
+                <template v-if="dependencyEnabled">
+                  <g
+                    v-for="endpoint in incomingEndpoints"
+                    :key="endpoint.id"
+                    class="hys-ui-pg-incoming-trigger"
+                    :transform="`translate(${endpoint.x} ${endpoint.y})`"
+                    role="button"
+                    tabindex="0"
+                    aria-haspopup="dialog"
+                    :aria-expanded="
+                      picker.open.value && pickerTarget === endpoint.id
+                    "
+                    :aria-label="
+                      '选择前置依赖：' +
+                      endpoint.title +
+                      '，' +
+                      endpoint.count +
+                      ' 条'
+                    "
+                    @pointerdown.stop
+                    @click.stop="openIncoming($event, endpoint.id)"
+                    @keydown.enter.stop.prevent="
+                      openIncoming($event, endpoint.id)
+                    "
+                    @keydown.space.stop.prevent="
+                      openIncoming($event, endpoint.id)
+                    "
+                  >
+                    <circle
+                      r="13"
+                      fill="transparent"
+                      class="hys-ui-pg-incoming-hit"
+                    />
+                    <circle
+                      v-if="links.selected.value?.targetId !== endpoint.id"
+                      cx="29"
+                      r="13"
+                      fill="transparent"
+                      class="hys-ui-pg-incoming-hit"
+                    />
+                    <circle r="9" class="hys-ui-pg-incoming-badge" />
+                    <text text-anchor="middle" dy=".35em">
+                      {{ endpoint.count > 99 ? "99+" : endpoint.count }}
+                    </text>
+                    <title>
+                      {{ endpoint.title }} 有
+                      {{ endpoint.count }} 条前置关系，点击选择要编辑的连线
+                    </title>
+                  </g>
+                </template>
               </template>
               <path
                 v-if="links.draft.value"
@@ -1097,6 +1411,135 @@ ${entry.task.start} → ${entry.task.end}
         >
       </div>
     </div>
+    <Teleport to="body">
+      <div
+        v-if="picker.open.value"
+        ref="pickerPanel"
+        v-bind="hysRootAttrs"
+        class="hys-ui-pg-dependency-picker hys-ui-floating-surface"
+        :style="picker.style.value"
+        role="dialog"
+        :aria-label="'选择前置依赖：' + (pickerEdges[0]?.targetTitle ?? '')"
+        @keydown="pickerKeys"
+      >
+        <div class="hys-ui-pg-picker-heading">
+          <strong>选择前置关系</strong
+          ><HysButton
+            variant="ghost"
+            size="sm"
+            class="hys-ui-pg-picker-close"
+            aria-label="关闭前置关系列表"
+            @click="picker.close(true)"
+            ><X :size="15"
+          /></HysButton>
+        </div>
+        <div class="hys-ui-pg-picker-target">
+          <div class="hys-ui-pg-picker-target-main">
+            <span>后置</span
+            ><strong :title="pickerEdges[0]?.targetTitle">{{
+              pickerEdges[0]?.targetTitle
+            }}</strong>
+          </div>
+          <HysButton
+            variant="ghost"
+            size="sm"
+            class="hys-ui-pg-picker-action"
+            aria-label="定位后置任务"
+            title="定位后置任务"
+            @click="
+              pickerTarget !== undefined && locatePickerTask(pickerTarget)
+            "
+            ><LocateFixed :size="15"
+          /></HysButton>
+        </div>
+        <HysInput
+          v-model="pickerQuery"
+          size="sm"
+          :prefix-icon="Search"
+          clearable
+          placeholder="搜索前置任务或编号"
+          aria-label="搜索前置关系"
+          class="hys-ui-pg-picker-search"
+        />
+        <div class="hys-ui-pg-picker-options">
+          <div
+            v-for="edge in filteredPickerEdges"
+            :key="edge.id"
+            class="hys-ui-pg-picker-option"
+            :data-current="
+              links.selected.value?.sourceId === edge.sourceId &&
+              links.selected.value?.targetId === edge.targetId
+            "
+          >
+            <HysButton
+              variant="ghost"
+              data-pg-choice
+              :aria-label="edge.sourceTitle + ' → ' + edge.targetTitle"
+              :aria-pressed="
+                links.selected.value?.sourceId === edge.sourceId &&
+                links.selected.value?.targetId === edge.targetId
+              "
+              @click="chooseIncoming($event, edge)"
+            >
+              <GitBranch :size="15" class="hys-ui-pg-picker-icon" /><span
+                class="hys-ui-pg-picker-names"
+                ><span :title="edge.sourceTitle">{{
+                  edge.sourceTitle
+                }}</span></span
+              ><span class="hys-ui-pg-picker-check"
+                ><Check
+                  v-if="
+                    links.selected.value?.sourceId === edge.sourceId &&
+                    links.selected.value?.targetId === edge.targetId
+                  "
+                  :size="14"
+              /></span>
+            </HysButton>
+            <div class="hys-ui-pg-picker-actions">
+              <HysButton
+                variant="ghost"
+                size="sm"
+                class="hys-ui-pg-picker-action"
+                :aria-label="'定位前置任务：' + edge.sourceTitle"
+                title="定位前置任务"
+                @click.stop="locatePickerTask(edge.sourceId, $event, edge)"
+                ><LocateFixed :size="14"
+              /></HysButton>
+              <HysButton
+                variant="ghost"
+                size="sm"
+                class="hys-ui-pg-picker-action"
+                :disabled="!edge.editable || !!pickerBusy"
+                :aria-label="
+                  '修改终点：' + edge.sourceTitle + ' → ' + edge.targetTitle
+                "
+                title="修改连接终点"
+                @click.stop="rewireFromPicker(edge)"
+                ><CornerDownRight :size="14"
+              /></HysButton>
+              <HysButton
+                variant="ghost"
+                size="sm"
+                class="hys-ui-pg-picker-action hys-ui-pg-picker-delete"
+                :disabled="!edge.removable || !!pickerBusy"
+                :aria-label="
+                  '删除依赖：' + edge.sourceTitle + ' → ' + edge.targetTitle
+                "
+                title="删除这条依赖"
+                @click.stop="removeFromPicker(edge)"
+                ><Trash2 :size="14"
+              /></HysButton>
+            </div>
+          </div>
+          <p v-if="!filteredPickerEdges.length" class="hys-ui-pg-picker-empty">
+            没有匹配的前置关系
+          </p>
+        </div>
+        <p v-if="pickerNotice" class="hys-ui-pg-picker-notice" role="status">
+          {{ pickerNotice }}
+        </p>
+      </div>
+    </Teleport>
   </section>
 </template>
 
@@ -1266,6 +1709,262 @@ ${entry.task.start} → ${entry.task.end}
 .hys-ui-pg-edge-rewiring .hys-ui-pg-edge-line {
   opacity: 0.2;
   stroke-dasharray: 3 3;
+}
+.hys-ui-pg-edge-shared:not(.hys-ui-pg-edge-current) .hys-ui-pg-edge-endpoint {
+  opacity: 0;
+}
+.hys-ui-pg-edge-shared:not(.hys-ui-pg-edge-current)
+  .hys-ui-pg-edge-endpoint-hit {
+  pointer-events: none;
+}
+.hys-ui-pg-has-edge-selection
+  .hys-ui-pg-edge-group:not(.hys-ui-pg-edge-current)
+  .hys-ui-pg-edge-line {
+  opacity: 0.18;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+  stroke-width: 1.5;
+}
+.hys-ui-pg-edge-current .hys-ui-pg-edge-line {
+  stroke-width: 2.5;
+}
+.hys-ui-pg-active-edge-line {
+  stroke: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.hys-ui-pg-active-endpoint {
+  fill: var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff));
+  stroke: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  stroke-width: 2;
+  pointer-events: none;
+}
+.hys-ui-pg-incoming-trigger {
+  pointer-events: all;
+  cursor: pointer;
+  outline: none;
+}
+.hys-ui-pg-incoming-badge {
+  fill: var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff));
+  stroke: var(--hys-ui-border, var(--hys-ui-theme-border, #d6deed));
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.hys-ui-pg-incoming-trigger text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+  pointer-events: none;
+}
+.hys-ui-pg-incoming-trigger:hover .hys-ui-pg-incoming-badge,
+.hys-ui-pg-incoming-trigger:focus-visible .hys-ui-pg-incoming-badge {
+  stroke: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  stroke-width: 2;
+}
+.hys-ui-pg-dependency-picker {
+  padding: 12px;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border, #e4e8ef));
+  border-radius: 14px;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff));
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff)) 75%,
+    transparent
+  );
+  backdrop-filter: blur(10px) saturate(110%);
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  color: var(--hys-ui-text, var(--hys-ui-theme-text, #243047));
+  box-shadow:
+    0 12px 36px #0b1b3d26,
+    0 2px 8px #0b1b3d08;
+}
+.hys-ui-pg-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.hys-ui-pg-picker-heading strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+.hys-ui-pg-picker-heading :deep(.hys-ui-pg-picker-close) {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+  border: 0;
+}
+.hys-ui-pg-picker-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  margin-bottom: 8px;
+  border-radius: 7px;
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt, #f7f9fc)) 60%,
+    transparent
+  );
+}
+.hys-ui-pg-picker-target-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.hys-ui-pg-picker-target-main > span {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+}
+.hys-ui-pg-picker-target-main > strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.hys-ui-pg-picker-search {
+  margin-bottom: 8px;
+}
+.hys-ui-pg-picker-options {
+  display: grid;
+  gap: 3px;
+}
+.hys-ui-pg-picker-option {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: 7px;
+}
+.hys-ui-pg-picker-option:hover {
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt, #f7f9fc)) 60%,
+    transparent
+  );
+}
+.hys-ui-pg-picker-option[data-current="true"] {
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-primary-soft, var(--hys-ui-theme-primary-soft)) 65%,
+    transparent
+  );
+}
+.hys-ui-pg-picker-options :deep(.hys-ui-btn[data-pg-choice]) {
+  flex: 1;
+  align-self: stretch;
+  justify-content: flex-start;
+  text-align: left;
+  margin: 0;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 8px;
+  gap: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+  font-weight: 450;
+  transform: none;
+  box-shadow: none;
+}
+.hys-ui-pg-picker-options
+  :deep(.hys-ui-btn[data-pg-choice]:not(.hys-ui-button-locked):hover) {
+  background: transparent;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+}
+.hys-ui-pg-picker-option[data-current="true"]
+  :deep(.hys-ui-btn[data-pg-choice]),
+.hys-ui-pg-picker-option[data-current="true"]
+  :deep(.hys-ui-btn[data-pg-choice]:hover) {
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+}
+.hys-ui-pg-picker-names {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+}
+.hys-ui-pg-picker-names > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.45;
+  font-size: 12px;
+}
+.hys-ui-pg-picker-icon {
+  flex: none;
+  opacity: 0.6;
+}
+.hys-ui-pg-picker-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex: none;
+}
+.hys-ui-pg-picker-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding-right: 4px;
+  flex: none;
+}
+.hys-ui-pg-dependency-picker :deep(.hys-ui-pg-picker-action) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  height: 24px;
+  width: 24px;
+  min-width: 24px;
+  padding: 0;
+  border: 0;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+.hys-ui-pg-dependency-picker
+  :deep(.hys-ui-pg-picker-action:not(.hys-ui-button-locked):hover) {
+  background: var(--hys-ui-primary-soft, var(--hys-ui-theme-primary-soft));
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+}
+.hys-ui-pg-dependency-picker
+  :deep(.hys-ui-pg-picker-delete:not(.hys-ui-button-locked):hover) {
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-danger, var(--hys-ui-theme-red, #ef4444)) 10%,
+    transparent
+  );
+  color: var(--hys-ui-danger, var(--hys-ui-theme-red, #ef4444));
+}
+.hys-ui-pg-picker-empty {
+  margin: 0;
+  padding: 16px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+}
+.hys-ui-pg-picker-notice {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--hys-ui-danger, var(--hys-ui-theme-red, #ef4444));
 }
 .hys-ui-pg-link-preview {
   color: var(--hys-ui-primary, var(--hys-ui-theme-primary));

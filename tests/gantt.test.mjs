@@ -47,6 +47,8 @@ HTMLElement.prototype.getBoundingClientRect = function () {
 HTMLElement.prototype.getClientRects = function () {
   return [this.getBoundingClientRect()];
 };
+SVGElement.prototype.getBoundingClientRect =
+  HTMLElement.prototype.getBoundingClientRect;
 HTMLElement.prototype.scrollIntoView = function () {};
 const observers = new Set(),
   blurListeners = new Set(),
@@ -143,6 +145,11 @@ const key = async (el, key, extra = {}) => {
 afterEach(async () => {
   for (const item of [...mounts]) item.unmount();
   await settle();
+  assert.equal(
+    document.querySelector(".hys-ui-pg-dependency-picker"),
+    null,
+    "Gantt dependency picker leaked",
+  );
   document.body.innerHTML = "";
   assert.equal(observers.size, 0, "Gantt geometry observers leaked");
   assert.equal(blurListeners.size, 0, "Gantt blur listeners leaked");
@@ -630,4 +637,241 @@ test("Chart surface clicks clear edge selection without interfering with removal
   remove.click();
   await settle();
   assert.deepEqual(a.props.items[1].dependencies, []);
+});
+
+test("Shared endpoints offer named choices and activate only the explicitly selected relation", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [
+      task("a"),
+      task("b"),
+      task("c"),
+      task("target", { dependencies: ["a", "b", "c"] }),
+    ],
+    editable: true,
+  });
+  const trigger = a.find(".hys-ui-pg-incoming-trigger");
+  assert(trigger);
+  assert.match(trigger.getAttribute("aria-label"), /3 条/);
+  trigger.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  await settle();
+  const panel = document.querySelector(".hys-ui-pg-dependency-picker");
+  assert(panel);
+  const choices = [...panel.querySelectorAll("[data-pg-choice]")];
+  assert.equal(choices.length, 3);
+  assert.match(choices[1].textContent, /Task b/);
+  choices[1].click();
+  await settle();
+  assert.equal(document.querySelector(".hys-ui-pg-dependency-picker"), null);
+  const chosen = a.find(".hys-ui-pg-edge-current");
+  assert.equal(chosen.dataset.edgeKey, JSON.stringify(["b", "target"]));
+  assert.equal(a.all(".hys-ui-pg-edge-current").length, 1);
+  assert.match(a.find('[role="status"]').textContent, /Task b → Task target/);
+  assert.deepEqual(a.props.items[3].dependencies, ["a", "b", "c"]);
+});
+
+test("Shared-endpoint choice panels support keyboard navigation and close when graphics are hidden", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a"), task("b"), task("target", { dependencies: ["a", "b"] })],
+    editable: true,
+  });
+  await key(a.find(".hys-ui-pg-incoming-trigger"), "Enter");
+  let panel = document.querySelector(".hys-ui-pg-dependency-picker");
+  assert(panel);
+  const choices = [...panel.querySelectorAll("[data-pg-choice]")];
+  assert.equal(document.activeElement, choices[0]);
+  await key(choices[0], "ArrowDown");
+  assert.equal(document.activeElement, choices[1]);
+  await key(choices[1], "Home");
+  assert.equal(document.activeElement, choices[0]);
+  a.props.showDependencies = false;
+  await settle();
+  assert.equal(document.querySelector(".hys-ui-pg-dependency-picker"), null);
+});
+
+test("Task selection clears through Escape, empty-chart clicks and null models without opening a task", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a"), task("b")],
+    modelValue: "a",
+    editable: true,
+  });
+  assert.equal(
+    a.find(".hys-ui-pg-task-label").getAttribute("aria-pressed"),
+    "true",
+  );
+  await key(a.find(".hys-ui-pg-bar"), "Escape");
+  assert.equal(a.props.modelValue, null);
+  assert.equal(a.events.open, undefined);
+  a.props.modelValue = "b";
+  await settle();
+  a.find(".hys-ui-pg-grid").dispatchEvent(
+    new MouseEvent("click", { bubbles: true }),
+  );
+  await settle();
+  assert.equal(a.props.modelValue, null);
+  assert.equal(a.events.open, undefined);
+  a.props.modelValue = "a";
+  await settle();
+  await key(a.find(".hys-ui-pg-link-port"), "Enter");
+  await key(a.vm.viewport, "Escape");
+  assert.equal(a.props.modelValue, "a");
+  await key(a.vm.viewport, "Escape");
+  assert.equal(a.props.modelValue, null);
+  a.props.modelValue = "b";
+  await settle();
+  assert.equal(a.all('.hys-ui-pg-task-label[aria-pressed="true"]').length, 1);
+  a.props.modelValue = null;
+  await settle();
+  assert.equal(a.all('.hys-ui-pg-task-label[aria-pressed="true"]').length, 0);
+});
+
+test("Cached Gantt pages dismiss shared-endpoint overlays and do not restore stale panels", async () => {
+  const visible = ref(true),
+    Page = {
+      setup: () => () =>
+        h(ui.HysGantt, {
+          items: [
+            task("a"),
+            task("b"),
+            task("c", { dependencies: ["a", "b"] }),
+          ],
+          editable: true,
+        }),
+    };
+  const a = await mount({
+    setup: () => () =>
+      h(KeepAlive, null, () => (visible.value ? h(Page) : null)),
+  });
+  a.find(".hys-ui-pg-incoming-trigger").dispatchEvent(
+    new MouseEvent("click", { bubbles: true }),
+  );
+  await settle();
+  assert(document.querySelector(".hys-ui-pg-dependency-picker"));
+  visible.value = false;
+  await settle();
+  assert.equal(document.querySelector(".hys-ui-pg-dependency-picker"), null);
+  visible.value = true;
+  await settle();
+  assert.equal(document.querySelector(".hys-ui-pg-dependency-picker"), null);
+});
+
+test("Dependency picker searches source names and identifiers without changing relationships", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [
+      task("alpha"),
+      task("beta"),
+      task("target", { dependencies: ["alpha", "beta"] }),
+    ],
+    editable: true,
+  });
+  a.find(".hys-ui-pg-incoming-trigger").dispatchEvent(
+    new MouseEvent("click", { bubbles: true }),
+  );
+  await settle();
+  const panel = document.querySelector(".hys-ui-pg-dependency-picker"),
+    input = panel.querySelector("input");
+  input.value = "BETA";
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  await settle();
+  assert.equal(panel.querySelectorAll("[data-pg-choice]").length, 1);
+  assert.match(
+    panel.querySelector("[data-pg-choice]").textContent,
+    /Task beta/,
+  );
+  input.value = "missing";
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  await settle();
+  assert.equal(panel.querySelectorAll("[data-pg-choice]").length, 0);
+  assert.match(panel.textContent, /没有匹配/);
+  assert.deepEqual(a.props.items[2].dependencies, ["alpha", "beta"]);
+  assert.equal(a.events["update:items"], undefined);
+  assert.equal(panel.querySelector("button button"), null);
+});
+
+test("Picker deletion is independent of selection and preserves other predecessors", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [
+      task("a", { disabled: true }),
+      task("b"),
+      task("c"),
+      task("target", { dependencies: ["a", "b", "c"] }),
+    ],
+    editable: true,
+  });
+  const open = async () => {
+    a.find(".hys-ui-pg-incoming-trigger").dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
+    await settle();
+  };
+  await open();
+  let panel = document.querySelector(".hys-ui-pg-dependency-picker");
+  [...panel.querySelectorAll("[data-pg-choice]")]
+    .find((el) => el.textContent.includes("Task b"))
+    .click();
+  await settle();
+  await open();
+  panel = document.querySelector(".hys-ui-pg-dependency-picker");
+  const buttons = [...panel.querySelectorAll("button")];
+  assert.equal(
+    buttons.find(
+      (el) =>
+        el.getAttribute("aria-label") === "修改终点：Task a → Task target",
+    ).disabled,
+    true,
+  );
+  buttons
+    .find(
+      (el) =>
+        el.getAttribute("aria-label") === "删除依赖：Task a → Task target",
+    )
+    .click();
+  await settle();
+  assert.deepEqual(a.props.items[3].dependencies, ["b", "c"]);
+  assert.equal(a.events.dependencyRemove[0][0].sourceId, "a");
+  assert.equal(
+    a.find(".hys-ui-pg-edge-current").dataset.edgeKey,
+    JSON.stringify(["b", "target"]),
+  );
+  assert.equal(a.events.open, undefined);
+});
+
+test("Picker task-location actions do not open details and retarget actions preserve the original until confirmed", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [
+      task("a"),
+      task("b"),
+      task("target", { dependencies: ["a", "b"] }),
+      task("next"),
+    ],
+    editable: true,
+  });
+  const open = async () => {
+    a.find(".hys-ui-pg-incoming-trigger").dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
+    await settle();
+  };
+  const action = (name) =>
+    [...document.querySelectorAll(".hys-ui-pg-dependency-picker button")].find(
+      (el) => el.getAttribute("aria-label") === name,
+    );
+  await open();
+  action("定位前置任务：Task b").click();
+  await settle();
+  assert.equal(a.props.modelValue, "b");
+  assert.equal(a.events.open, undefined);
+  await open();
+  action("定位后置任务").click();
+  await settle();
+  assert.equal(a.props.modelValue, "target");
+  assert.equal(a.events.open, undefined);
+  await open();
+  action("修改终点：Task b → Task target").click();
+  await settle();
+  assert(a.find(".hys-ui-pg-link-preview"));
+  assert.deepEqual(a.props.items[2].dependencies, ["a", "b"]);
+  await key(a.vm.viewport, "ArrowDown");
+  await key(a.vm.viewport, "Enter");
+  assert.deepEqual(a.props.items[2].dependencies, ["a"]);
+  assert.deepEqual(a.props.items[3].dependencies, ["b"]);
 });

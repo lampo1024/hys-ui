@@ -4576,7 +4576,7 @@
         "type": "string | number | null | undefined",
         "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "当前选中的任务 ID；绑定 null、点击时间轴空白处或按 Esc 可取消选中",
         "global": false
       },
       {

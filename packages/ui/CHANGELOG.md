@@ -10,6 +10,9 @@
 - Route backward Gantt dependencies through the row gap and keep a visible approach segment outside the target bar.
 - Allow dragging or keyboard retargeting existing dependency endpoints, with atomic moves, validation, cancellation and accepted-move events.
 - Clear Gantt edge selection when interacting with the surrounding chart, retaining endpoint editing and removal actions.
+- Disambiguate shared dependency endpoints with named relation choices, one active drag handle and focused edge highlighting.
+- Support clearing task selection through empty-chart clicks, Escape or a null model, with layered editing cancellation and accessible pressed states.
+- Add compact, translucent dependency choices with search, direct removal, predecessor/successor location and endpoint-edit actions.
 
 - Expand Rating with precise fractional display, custom level colors/icons, score/text templates, controlled hover previews, keyboard/RTL and form/reset integration.
 - Expand Segmented with typed/mapped options, custom content, vertical/block/rounded layouts, animated selection, keyboard navigation and cached-page observer cleanup.
