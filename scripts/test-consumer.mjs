@@ -133,6 +133,12 @@ export const tableChecks=[h(HysTable<Person>,{ref:ref<HysTableInstance<Person>>(
 export async function operateTable(api:HysTableInstance<Person>){await api.toggleRowSelection(1,true);api.setSort({key:'amount',direction:'desc'});api.setFilter('name',['A']);api.clearFilter();api.setPage(2);await api.setCurrentRow();api.resizeColumn('name',200);api.resetColumnWidths();await api.doLayout();return api.getSelectionRows()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {tableChecks} from './table-types'\nvoid tableChecks\n")
+fs.writeFileSync(path.join(dir,'surfaces-types.ts'),`import {h} from 'vue'
+import {HysBadge,HysCard,HysDivider,HysSkeleton,type HysCardTab,type HysSkeletonVariant} from 'hys-ui'
+const tabs:HysCardTab[]=[{label:'Overview',value:0},{label:'Activity',value:'activity',disabled:true}],variant:HysSkeletonVariant='image'
+export const surfacesChecks=[h(HysCard,{tabs,activeTab:0,headerStyle:{padding:16},bodyStyle:{padding:24},onTabChange:(value:string|number)=>void value}),h(HysBadge,{checkable:true,checked:true,offset:[2,'3px'],badgeStyle:{fontWeight:600},onChange:(checked:boolean,event:MouseEvent)=>void [checked,event]}),h(HysSkeleton,{variant,delay:100,minDuration:250,width:140,height:'100px',onVisibilityChange:(visible:boolean)=>void visible}),h(HysDivider,{orientation:'start',borderStyle:'double',orientationMargin:0})]
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {surfacesChecks} from './surfaces-types'\nvoid surfacesChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

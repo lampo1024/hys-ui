@@ -1421,15 +1421,15 @@
         "type": "\"blue\" | \"green\" | \"purple\" | \"orange\" | \"red\" | \"gray\" | undefined",
         "required": false,
         "default": "\"blue\"",
-        "description": "",
+        "description": "标签语义颜色，保留原有颜色名称",
         "global": false
       },
       {
         "name": "size",
-        "type": "\"md\" | \"sm\" | undefined",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
         "default": "\"md\"",
-        "description": "",
+        "description": "标签尺寸 sm / md / lg",
         "global": false
       },
       {
@@ -1445,7 +1445,23 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示关闭操作，调用方通过 close 事件维护数据",
+        "global": false
+      },
+      {
+        "name": "closeText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "使用文字替代关闭图标",
+        "global": false
+      },
+      {
+        "name": "closeLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"关闭标签\"",
+        "description": "关闭操作的辅助技术名称",
         "global": false
       },
       {
@@ -1461,7 +1477,7 @@
         "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "显示或计算用数值",
+        "description": "角标数字或文字；数值才受 max 限制",
         "global": false
       },
       {
@@ -1469,7 +1485,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "99",
-        "description": "允许的最大值或最晚日期",
+        "description": "数字角标上限，超过后显示上限加号",
         "global": false
       },
       {
@@ -1477,14 +1493,140 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示数值零，默认隐藏",
+        "global": false
+      },
+      {
+        "name": "hidden",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "隐藏计数角标，保留被标记内容",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义标签、计数角标或状态点颜色",
+        "global": false
+      },
+      {
+        "name": "offset",
+        "type": "readonly [string | number, string | number] | undefined",
+        "required": false,
+        "default": "",
+        "description": "角标从默认位置向右、向下的偏移 [x,y]，支持数值像素或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "\"top-right\" | \"top-left\" | \"bottom-right\" | \"bottom-left\" | undefined",
+        "required": false,
+        "default": "\"top-right\"",
+        "description": "角标的 top-right / top-left / bottom-right / bottom-left 位置",
+        "global": false
+      },
+      {
+        "name": "badgeStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "计数角标样式",
+        "global": false
+      },
+      {
+        "name": "badgeClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "计数角标类名",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"default\" | \"success\" | \"warning\" | \"error\" | \"processing\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "success / processing / default / error / warning 状态点模式",
+        "global": false
+      },
+      {
+        "name": "text",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "状态点旁的说明，默认插槽优先",
+        "global": false
+      },
+      {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "角标原生悬停标题，默认展示完整 value",
+        "global": false
+      },
+      {
+        "name": "effect",
+        "type": "\"dark\" | \"light\" | \"plain\" | undefined",
+        "required": false,
+        "default": "\"light\"",
+        "description": "light、dark 或 plain 标签外观",
+        "global": false
+      },
+      {
+        "name": "checkable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "将标签内容作为可按下的按钮",
+        "global": false
+      },
+      {
+        "name": "checked",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控选中状态，支持 v-model:checked",
+        "global": false
+      },
+      {
+        "name": "defaultChecked",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始选择状态",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止选择与关闭操作",
         "global": false
       }
     ],
     "events": [
       {
+        "name": "change",
+        "type": "[checked: boolean, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "已接受的选择变化：checked、MouseEvent"
+      },
+      {
         "name": "close",
         "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "请求关闭，由调用方维护标签数据"
+      },
+      {
+        "name": "update:checked",
+        "type": "[checked: boolean]",
         "required": false,
         "default": "",
         "description": ""
@@ -1496,7 +1638,21 @@
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "标签内容、被标记内容或状态说明"
+      },
+      {
+        "name": "close-icon",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "替代关闭图标或文字"
+      },
+      {
+        "name": "content",
+        "type": "{ value: string | number | undefined; displayValue: string | number | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "自定义角标，参数为原始 value 与截断后的 displayValue"
       }
     ],
     "exposed": []
@@ -2293,11 +2449,27 @@
         "global": false
       },
       {
+        "name": "footer",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认页脚文字，footer 插槽优先",
+        "global": false
+      },
+      {
         "name": "loading",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "显示加载状态",
+        "description": "显示 loading 插槽或骨架占位，暂停页签切换",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"加载中\"",
+        "description": "默认占位的辅助技术说明",
         "global": false
       },
       {
@@ -2313,15 +2485,55 @@
         "type": "\"hover\" | \"never\" | \"always\" | undefined",
         "required": false,
         "default": "\"never\"",
-        "description": "",
+        "description": "always / hover / never 阴影，默认 never",
         "global": false
       },
       {
         "name": "bodyStyle",
-        "type": "Record<string, string> | undefined",
+        "type": "CSSProperties | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "内容区域 CSSProperties 样式，保留原有使用方式",
+        "global": false
+      },
+      {
+        "name": "headerStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题区域样式",
+        "global": false
+      },
+      {
+        "name": "footerStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "页脚区域样式",
+        "global": false
+      },
+      {
+        "name": "bodyClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "内容区域类名",
+        "global": false
+      },
+      {
+        "name": "headerClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题区域类名",
+        "global": false
+      },
+      {
+        "name": "footerClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "页脚区域类名",
         "global": false
       },
       {
@@ -2331,40 +2543,153 @@
         "default": "\"md\"",
         "description": "",
         "global": false
+      },
+      {
+        "name": "hoverable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "悬停时显示阴影",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "\"default\" | \"inner\" | undefined",
+        "required": false,
+        "default": "\"default\"",
+        "description": "default 或 inner 内嵌外观",
+        "global": false
+      },
+      {
+        "name": "tabs",
+        "type": "readonly HysCardTab[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "页签列表：label、唯一字符串或数字 value、disabled",
+        "global": false
+      },
+      {
+        "name": "activeTab",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控页签值，支持 v-model:activeTab",
+        "global": false
+      },
+      {
+        "name": "defaultActiveTab",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始页签，默认首个可用项",
+        "global": false
+      },
+      {
+        "name": "tabsLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"卡片页签\"",
+        "description": "页签导航的辅助技术名称",
+        "global": false
       }
     ],
-    "events": [],
+    "events": [
+      {
+        "name": "update:activeTab",
+        "type": "[value: string | number]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "tabChange",
+        "type": "[value: string | number]",
+        "required": false,
+        "default": "",
+        "description": "调用方已接受的页签变化：value"
+      }
+    ],
     "slots": [
+      {
+        "name": "cover",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "卡片顶部封面"
+      },
       {
         "name": "header",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "完整标题区域"
+      },
+      {
+        "name": "title",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "标题内容"
       },
       {
         "name": "action",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "标题右侧操作"
       },
       {
-        "name": "default",
+        "name": "tab",
+        "type": "{ tab: HysCardTab; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "页签标题：tab、active"
+      },
+      {
+        "name": "tab-extra",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "页签导航右侧内容"
+      },
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "替换默认骨架占位"
+      },
+      {
+        "name": "default",
+        "type": "{ activeTab: string | number | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "正文，接收 activeTab"
+      },
+      {
+        "name": "actions",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "底部操作组"
       },
       {
         "name": "footer",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "页脚内容"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": ""
+      }
+    ]
   },
   "HysCascader": {
     "props": [
@@ -3694,7 +4019,7 @@
         "type": "\"horizontal\" | \"vertical\" | undefined",
         "required": false,
         "default": "\"horizontal\"",
-        "description": "",
+        "description": "horizontal 或 vertical；垂直模式不显示文字",
         "global": false
       },
       {
@@ -3702,15 +4027,47 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "兼容虚线开关；显式 borderStyle 优先",
         "global": false
       },
       {
         "name": "orientation",
-        "type": "\"right\" | \"left\" | \"center\" | undefined",
+        "type": "\"right\" | \"left\" | \"center\" | \"start\" | \"end\" | undefined",
         "required": false,
         "default": "\"center\"",
-        "description": "",
+        "description": "left / center / right，或跟随文字方向的 start / end",
+        "global": false
+      },
+      {
+        "name": "borderStyle",
+        "type": "\"none\" | \"dashed\" | \"solid\" | \"dotted\" | \"double\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "solid / dashed / dotted / double / none，优先于 dashed",
+        "global": false
+      },
+      {
+        "name": "orientationMargin",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "文字与对应起始边的距离，数值单位像素；允许 0",
+        "global": false
+      },
+      {
+        "name": "plain",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用普通正文样式展示分隔文字",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "sm / md / lg 分隔间距，垂直模式不受影响",
         "global": false
       }
     ],
@@ -3721,7 +4078,7 @@
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "水平分隔文字或自定义内容"
       }
     ],
     "exposed": []
@@ -9428,7 +9785,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "3",
-        "description": "",
+        "description": "段落占位行数，限制在 0–100",
         "global": false
       },
       {
@@ -9436,7 +9793,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "显示加载状态",
+        "description": "显示占位；false 时展示默认插槽",
         "global": false
       },
       {
@@ -9444,7 +9801,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "启用占位动画；全局关闭动效与减少动态效果优先",
         "global": false
       },
       {
@@ -9464,22 +9821,125 @@
         "global": false
       },
       {
+        "name": "avatarShape",
+        "type": "\"circle\" | \"square\" | undefined",
+        "required": false,
+        "default": "\"circle\"",
+        "description": "circle 或 square 头像占位",
+        "global": false
+      },
+      {
         "name": "title",
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
         "description": "标题",
         "global": false
+      },
+      {
+        "name": "titleWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "\"40%\"",
+        "description": "标题占位宽度，数值单位像素",
+        "global": false
+      },
+      {
+        "name": "widths",
+        "type": "readonly (string | number)[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "各段落行的宽度；未指定的行使用默认宽度",
+        "global": false
+      },
+      {
+        "name": "round",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用圆角端点",
+        "global": false
+      },
+      {
+        "name": "count",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "重复模板次数，限制在 0–100",
+        "global": false
+      },
+      {
+        "name": "variant",
+        "type": "HysSkeletonVariant | undefined",
+        "required": false,
+        "default": "\"paragraph\"",
+        "description": "paragraph / text / circle / rect / image / button / input 占位形状",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "非段落占位的宽度，数值单位像素",
+        "global": false
+      },
+      {
+        "name": "height",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "非段落占位的高度，数值单位像素",
+        "global": false
+      },
+      {
+        "name": "delay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "加载开始后的延迟显示时间，单位毫秒；短请求不会显示占位",
+        "global": false
+      },
+      {
+        "name": "minDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "占位首次显示后的最短保留时间，单位毫秒",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"加载中\"",
+        "description": "加载状态的辅助技术说明",
+        "global": false
       }
     ],
-    "events": [],
+    "events": [
+      {
+        "name": "visibilityChange",
+        "type": "[visible: boolean]",
+        "required": false,
+        "default": "",
+        "description": "占位的实际显示状态变化；delay 和 minDuration 生效后触发"
+      }
+    ],
     "slots": [
+      {
+        "name": "template",
+        "type": "{ index: number; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "自定义占位布局：从 0 开始的 index、当前动画开关 active"
+      },
       {
         "name": "default",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "加载完成时展示的内容"
       }
     ],
     "exposed": []

@@ -332,6 +332,28 @@
       "Methods": "实例方法与键盘操作",
       "States": "状态行、空数据与加载",
       "Locale": "内置文案与语言配置"
+    },
+    "HysBadge": {
+      "Counters": "计数、圆点与显示控制",
+      "Status": "状态点与文字",
+      "Placement": "角标位置与自定义内容",
+      "Appearance": "外观、颜色与关闭操作",
+      "Selectable": "可选标签与受控状态"
+    },
+    "HysCard": {
+      "Content": "封面、内容分区与操作",
+      "Tabs": "页签切换与键盘导航",
+      "Loading": "加载与自定义占位"
+    },
+    "HysDivider": {
+      "Styles": "线条样式与文字间距",
+      "Direction": "垂直分隔与文字方向"
+    },
+    "HysSkeleton": {
+      "Variants": "多种占位形状",
+      "Template": "自定义占位模板",
+      "Loading": "延迟显示与防闪烁",
+      "Repeated": "列表占位与段落宽度"
     }
   }
 }
