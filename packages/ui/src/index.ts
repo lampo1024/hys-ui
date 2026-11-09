@@ -18,7 +18,6 @@ export {default as HysCalendarNavigation} from './components/HysCalendarNavigati
 export {default as HysCard} from './components/HysCard/HysCard.vue'
 export type {HysCardTab} from './components/HysCard/HysCard.vue'
 export {default as HysCascader} from './components/HysCascader/HysCascader.vue'
-export type {HysCascaderNode} from './components/HysCascader/HysCascader.vue'
 export {default as HysChart} from './components/HysChart/HysChart.vue'
 export {default as HysCheckbox} from './components/HysCheckbox/HysCheckbox.vue'
 export {default as HysCheckboxGroup} from './components/HysCheckboxGroup/HysCheckboxGroup.vue'
@@ -118,3 +117,4 @@ export type {HysTableKey,HysTableDirection,HysTableFilterValue,HysTableFilters,H
 export type {HysTransferKey,HysTransferSide,HysTransferOption,HysTransferFieldNames,HysTransferPagination,HysTransferLocale,HysTransferHeaderInfo,HysTransferProps,HysTransferPanelContext,HysTransferInstance,HysTransferSlots} from './composables/transfer'
 export type {TreeNode,HysTreeKey,HysTreeValue,HysTreeNode,HysTreeFieldNames,HysTreeLoadContext,HysTreeLocale,HysTreeRecord,HysTreeCheckInfo,HysTreeSelectInfo,HysTreeDropPosition,HysTreeDropInfo,HysTreeNodeContext,HysTreeProps,HysTreeInstance} from './composables/tree'
 export type {HysTreeSelectNode,HysTreeSelectDataNode,HysTreeSelectLabelValue,HysTreeSelectValue,HysTreeSelectFieldNames,HysTreeSelectSimpleMode,HysTreeSelectStrategy,HysTreeSelectItem,HysTreeSelectChange,HysTreeSelectProps,HysTreeSelectInstance} from './composables/treeSelect'
+export type {HysCascaderKey,HysCascaderPath,HysCascaderValue,HysCascaderDataNode,HysCascaderNode,HysCascaderFieldNames,HysCascaderItem,HysCascaderOptionContext,HysCascaderLoadContext,HysCascaderChange,HysCascaderLocale,HysCascaderProps,HysCascaderInstance} from './composables/cascader'

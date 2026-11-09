@@ -2694,19 +2694,67 @@
   "HysCascader": {
     "props": [
       {
-        "name": "modelValue",
-        "type": "string[]",
+        "name": "options",
+        "type": "readonly N[]",
         "required": true,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "原始选项数组，不修改节点及 children；节点可在不同分支使用相同值",
         "global": false
       },
       {
-        "name": "options",
-        "type": "HysCascaderNode[]",
-        "required": true,
+        "name": "modelValue",
+        "type": "V | undefined",
+        "required": false,
         "default": "",
-        "description": "可选项数据，支持单项禁用",
+        "description": "受控路径或末级编号；多选时为相应数组，支持 v-model",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始值，默认空路径；emitPath=false 的单选默认 null",
+        "global": false
+      },
+      {
+        "name": "cacheData",
+        "type": "readonly N[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "仅用于回填标签的选项树，不加入可选列表",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "Partial<HysCascaderFieldNames> | undefined",
+        "required": false,
+        "default": "",
+        "description": "映射 value、label、children、disabled、leaf、hasChildren，支持点号路径",
+        "global": false
+      },
+      {
+        "name": "valueKey",
+        "type": "string | ((node: N) => HysTreeKey) | undefined",
+        "required": false,
+        "default": "",
+        "description": "用字段路径或函数读取每一级编号，保留字符串和有限数值类型",
+        "global": false
+      },
+      {
+        "name": "disabledMethod",
+        "type": "((node: N, path: readonly N[]) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按原始节点和原始路径决定是否禁用，禁用状态由父级继承",
+        "global": false
+      },
+      {
+        "name": "leafMethod",
+        "type": "((node: N, path: readonly N[]) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按原始节点和路径决定叶节点；false 可标记待加载分支",
         "global": false
       },
       {
@@ -2714,47 +2762,39 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "description": "继承表单禁用状态并暂停交互",
         "global": false
       },
       {
-        "name": "clearable",
+        "name": "readonly",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "保留值与焦点，暂停修改及弹层打开",
         "global": false
       },
       {
-        "name": "filterable",
+        "name": "loading",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "展示加载内容并暂停选择",
         "global": false
       },
       {
-        "name": "changeOnSelect",
-        "type": "boolean | undefined",
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "false",
-        "description": "",
+        "default": "继承字段/表单配置或 md",
+        "description": "sm / md / lg；未设置时继承表单，并同步前缀控件与选项行高",
         "global": false
       },
       {
-        "name": "showAllLevels",
-        "type": "boolean | undefined",
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
         "required": false,
-        "default": "true",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "separator",
-        "type": "string | undefined",
-        "required": false,
-        "default": "\" / \"",
-        "description": "",
+        "default": "",
+        "description": "error / warning / success，字段错误状态优先",
         "global": false
       },
       {
@@ -2764,41 +2804,878 @@
         "default": "\"选择分类\"",
         "description": "空值占位提示",
         "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "触发器或内嵌面板的可访问名称",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "为每个回填值生成隐藏表单值；路径使用 JSON 数组字符串",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "隐藏表单值关联的原生 form 编号",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦触发器",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用多选，输出路径数组或末级编号数组",
+        "global": false
+      },
+      {
+        "name": "emitPath",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认 true 输出完整路径；false 仅输出末级编号，此时编号须全局唯一",
+        "global": false
+      },
+      {
+        "name": "checkStrictly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "父子独立选择，可选择任意层级；单选显示前缀单选控件",
+        "global": false
+      },
+      {
+        "name": "changeOnSelect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "兼容原有单选逐级点击立即回填，不启用父子独立多选",
+        "global": false
+      },
+      {
+        "name": "showCheckedStrategy",
+        "type": "\"child\" | \"parent\" | \"all\" | undefined",
+        "required": false,
+        "default": "\"child\"",
+        "description": "child 末级、parent 合并完整父级、all 全部已选层级；默认 child",
+        "global": false
+      },
+      {
+        "name": "checkOnClickNode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击父级文字时也选择，展开图标始终只浏览",
+        "global": false
+      },
+      {
+        "name": "checkOnClickLeaf",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "点击末级文字时选择，默认 true；前缀控件始终可以选择",
+        "global": false
+      },
+      {
+        "name": "showPrefix",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示多选或严格单选的前缀控件；隐藏时文字仍可选择",
+        "global": false
+      },
+      {
+        "name": "showAllLevels",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认展示全部路径标签，false 只显示末级，不改变值",
+        "global": false
+      },
+      {
+        "name": "separator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\" / \"",
+        "description": "路径标签分隔符，默认带空格的斜杠",
+        "global": false
+      },
+      {
+        "name": "displayRender",
+        "type": "((item: HysCascaderItem<N>) => VNodeChild) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按完整选中项返回展示内容，接收 path、labels、nodes 等",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示输入区清空图标和面板清空操作",
+        "global": false
+      },
+      {
+        "name": "clearValue",
+        "type": "HysCascaderValue | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义空值；配置的值作为空值识别，不应用作可选分类编号",
+        "global": false
+      },
+      {
+        "name": "removable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示默认标签的移除图标",
+        "global": false
+      },
+      {
+        "name": "multipleLimit",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "限制回填值的数量；0 或未设置不限制，超限发出 limit",
+        "global": false
+      },
+      {
+        "name": "maxTagCount",
+        "type": "number | undefined",
+        "required": false,
+        "default": "3",
+        "description": "最多展示的默认标签数，默认 3；其余折叠为计数",
+        "global": false
+      },
+      {
+        "name": "maxTagTextLength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认标签文字的截断长度，不影响数据和浮层内容",
+        "global": false
+      },
+      {
+        "name": "filterable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用完整路径搜索和结果列表",
+        "global": false
+      },
+      {
+        "name": "searchValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控搜索文字，支持 v-model:searchValue",
+        "global": false
+      },
+      {
+        "name": "defaultSearchValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "初始搜索文字；首次打开保留，关闭后的保留由 retainSearch 控制",
+        "global": false
+      },
+      {
+        "name": "searchPlaceholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "搜索提示，默认 搜索分类",
+        "global": false
+      },
+      {
+        "name": "filterMethod",
+        "type": "((query: string, path: readonly N[]) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义搜索匹配 (query,原始路径节点数组)",
+        "global": false
+      },
+      {
+        "name": "searchSort",
+        "type": "((a: HysCascaderItem<N>, b: HysCascaderItem<N>, query: string) => number) | undefined",
+        "required": false,
+        "default": "",
+        "description": "对匹配结果排序 (itemA,itemB,query)",
+        "global": false
+      },
+      {
+        "name": "searchLimit",
+        "type": "number | false | undefined",
+        "required": false,
+        "default": "50",
+        "description": "结果数量上限，默认 50；false 不限制",
+        "global": false
+      },
+      {
+        "name": "debounce",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "搜索前校验的防抖时间，单位毫秒，默认 0",
+        "global": false
+      },
+      {
+        "name": "beforeFilter",
+        "type": "((query: string, context: { signal: AbortSignal; }) => boolean | Promise<boolean>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "搜索前校验，返回布尔值或 Promise，接收取消信号；旧返回不会替换新查询",
+        "global": false
+      },
+      {
+        "name": "retainSearch",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "关闭后保留搜索，默认 false",
+        "global": false
+      },
+      {
+        "name": "clearSearchAfterSelect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "选择被接受后清空搜索，默认 true；retainSearch 优先",
+        "global": false
+      },
+      {
+        "name": "expandTrigger",
+        "type": "\"click\" | \"hover\" | undefined",
+        "required": false,
+        "default": "\"click\"",
+        "description": "click 或 hover；悬停只展开，不选择",
+        "global": false
+      },
+      {
+        "name": "hoverDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "150",
+        "description": "悬停展开延迟，默认 150ms，离开与关闭会取消",
+        "global": false
+      },
+      {
+        "name": "expandedPath",
+        "type": "HysCascaderPath | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立受控的浏览路径，支持 v-model:expandedPath",
+        "global": false
+      },
+      {
+        "name": "defaultExpandedPath",
+        "type": "HysCascaderPath | undefined",
+        "required": false,
+        "default": "",
+        "description": "初始浏览路径，不改变已选值",
+        "global": false
+      },
+      {
+        "name": "loadChildren",
+        "type": "((node: N, context: HysCascaderLoadContext<N>) => Promise<readonly N[]>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按原始节点异步加载子级，接收 signal、path、nodes、level；支持取消与失败重试",
+        "global": false
+      },
+      {
+        "name": "loadRoot",
+        "type": "((context: { signal: AbortSignal; }) => Promise<readonly N[]>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "在根选项为空时按需加载；已接受结果保留，返回数组并接收 AbortSignal",
+        "global": false
+      },
+      {
+        "name": "inline",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "直接显示同一套级联面板，不创建浮层",
+        "global": false
+      },
+      {
+        "name": "showFooter",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示默认清空/关闭工具区，自定义 footer 插槽优先",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控弹层显隐；未设置时由组件管理",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "首次挂载打开弹层，默认 false",
+        "global": false
+      },
+      {
+        "name": "showOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "触发器得到焦点时打开，恢复焦点不会重新打开",
+        "global": false
+      },
+      {
+        "name": "popupMatchWidth",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认弹层与触发器等宽；false 按多列内容扩展并限制在视口内",
+        "global": false
+      },
+      {
+        "name": "popupWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式浮层宽度，优先于匹配宽度",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层样式，定位和视口约束由组件维护",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "body、CSS 选择器或元素；false 在原位置渲染",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "",
+        "description": "bottom-start / bottom-end / top-start / top-end，边缘自动调整",
+        "global": false
+      },
+      {
+        "name": "columnWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "180",
+        "description": "每列最小宽度，默认 180px；宽度不足时横向滚动",
+        "global": false
+      },
+      {
+        "name": "listHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "256",
+        "description": "每列滚动视口的最大高度，默认 256px",
+        "global": false
+      },
+      {
+        "name": "virtual",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "按列使用固定行高虚拟滚动，键盘可到达未渲染选项",
+        "global": false
+      },
+      {
+        "name": "itemHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义行高；未设置时根据 sm / md / lg 使用 30 / 36 / 42px",
+        "global": false
+      },
+      {
+        "name": "overscan",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "虚拟视口前后额外行数，默认 4",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "根或子级为空的提示",
+        "global": false
+      },
+      {
+        "name": "noMatchText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "没有搜索结果的提示",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "加载提示",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "Partial<HysCascaderLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖操作、状态与辅助技术文案，支持 {label} / {level} / {count}",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "有效选择与整个控件失焦后触发表单校验，默认 true",
+        "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string[]]",
+        "type": "[value: V]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "对应受控状态的更新请求，可配合 v-model"
       },
       {
         "name": "change",
-        "type": "[value: string[]]",
+        "type": "[value: V, info: HysCascaderChange<N>]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选择请求：兼容原有首个值参数，第二参数提供完整上下文"
+      },
+      {
+        "name": "search",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "搜索文字请求"
       },
       {
         "name": "clear",
         "type": "[]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "已接受清空选择"
+      },
+      {
+        "name": "update:open",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "对应受控状态的更新请求，可配合 v-model"
+      },
+      {
+        "name": "select",
+        "type": "[path: HysTreeKey[], nodes: N[], event?: Event | undefined]",
+        "required": false,
+        "default": "",
+        "description": "已接受单选：path、原始 nodes、事件"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个控件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个控件"
+      },
+      {
+        "name": "load",
+        "type": "[info: { node: N; path: HysTreeKey[]; children: N[]; }]",
+        "required": false,
+        "default": "",
+        "description": "已接受子级加载：原始 node、path、children"
+      },
+      {
+        "name": "scroll",
+        "type": "[info: { level: number; event: Event; }]",
+        "required": false,
+        "default": "",
+        "description": "某一列滚动：level 与原生 event"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysCascaderChange<N>]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受后的值及路径上下文"
+      },
+      {
+        "name": "visible-change",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际弹层可见性变化"
+      },
+      {
+        "name": "update:searchValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "对应受控状态的更新请求，可配合 v-model"
+      },
+      {
+        "name": "search-error",
+        "type": "[error: unknown, query: string]",
+        "required": false,
+        "default": "",
+        "description": "搜索前异步校验失败：error、query"
+      },
+      {
+        "name": "update:expandedPath",
+        "type": "[path: HysTreeKey[]]",
+        "required": false,
+        "default": "",
+        "description": "对应受控状态的更新请求，可配合 v-model"
+      },
+      {
+        "name": "expandChange",
+        "type": "[path: HysTreeKey[], nodes: N[]]",
+        "required": false,
+        "default": "",
+        "description": "浏览路径更新请求：path、原始 nodes"
+      },
+      {
+        "name": "node-expand",
+        "type": "[node: N, context: { path: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "节点展开：原始 node 与 path"
+      },
+      {
+        "name": "node-collapse",
+        "type": "[node: N, context: { path: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "节点折叠：原始 node 与 path"
+      },
+      {
+        "name": "load-error",
+        "type": "[info: { node: N; path: HysTreeKey[]; error: unknown; }]",
+        "required": false,
+        "default": "",
+        "description": "有效子级加载失败：原始 node、path、error"
+      },
+      {
+        "name": "children-loaded",
+        "type": "[info: { node: N; path: HysTreeKey[]; children: N[]; }]",
+        "required": false,
+        "default": "",
+        "description": "有效子级加载结果，同 load"
+      },
+      {
+        "name": "root-load",
+        "type": "[nodes: readonly N[]]",
+        "required": false,
+        "default": "",
+        "description": "已接受的根选项数组"
+      },
+      {
+        "name": "root-load-error",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "有效根加载失败"
+      },
+      {
+        "name": "remove-tag",
+        "type": "[path: HysTreeKey[], node?: N | undefined]",
+        "required": false,
+        "default": "",
+        "description": "已接受标签移除：path、原始节点"
+      },
+      {
+        "name": "limit",
+        "type": "[limit: number]",
+        "required": false,
+        "default": "",
+        "description": "选择请求超出 multipleLimit"
       }
     ],
     "slots": [
       {
         "name": "option",
-        "type": "{ node: HysCascaderNode; }",
+        "type": "HysCascaderOptionContext<N>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选项模板：原始 node、path、labels、nodes、level 与选中/展开/加载状态"
+      },
+      {
+        "name": "suggestion",
+        "type": "HysCascaderOptionContext<N>",
+        "required": false,
+        "default": "",
+        "description": "搜索结果模板，参数同 option"
+      },
+      {
+        "name": "display",
+        "type": "{ item: HysCascaderItem<N>; }",
+        "required": false,
+        "default": "",
+        "description": "单选展示内容：item"
+      },
+      {
+        "name": "tag",
+        "type": "{ item: HysCascaderItem<N>; remove: () => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "多选标签：item、remove"
+      },
+      {
+        "name": "max-tag-placeholder",
+        "type": "{ items: HysCascaderItem<N>[]; count: number; }",
+        "required": false,
+        "default": "",
+        "description": "折叠标签：items、count"
+      },
+      {
+        "name": "prefix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "触发器前缀"
+      },
+      {
+        "name": "suffix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "触发器后缀"
+      },
+      {
+        "name": "clear-icon",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "清空图标"
+      },
+      {
+        "name": "remove-icon",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "标签移除图标"
+      },
+      {
+        "name": "expand-icon",
+        "type": "HysCascaderOptionContext<N>",
+        "required": false,
+        "default": "",
+        "description": "选项展开图标，同 option 上下文"
+      },
+      {
+        "name": "header",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "面板顶部内容"
+      },
+      {
+        "name": "footer",
+        "type": "{ items: HysCascaderItem<N>[]; clear: () => Promise<boolean>; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "面板底部：items、clear、close"
+      },
+      {
+        "name": "empty",
+        "type": "{ query: string; level: number; }",
+        "required": false,
+        "default": "",
+        "description": "空内容：query、level"
+      },
+      {
+        "name": "loading",
+        "type": "{ level: number; }",
+        "required": false,
+        "default": "",
+        "description": "加载内容：level"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "触发器或内嵌面板根元素"
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前是否处于可见和活动状态"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦触发器"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移除焦点并关闭浮层"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "打开并聚焦，返回显隐请求是否被接受"
+      },
+      {
+        "name": "hide",
+        "type": "(restoreFocus?: boolean) => void",
+        "required": true,
+        "default": "",
+        "description": "关闭，可传 true 恢复触发器焦点"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求清空，保留禁用选择；返回宿主是否接受"
+      },
+      {
+        "name": "clearCheckedNodes",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "clear 的别名"
+      },
+      {
+        "name": "removeTag",
+        "type": "(path: HysCascaderPath | HysCascaderKey) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按完整路径或末级编号移除标签及关联选择"
+      },
+      {
+        "name": "setValue",
+        "type": "(value: HysCascaderValue) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求设置值，不修改宿主选项，返回宿主是否接受"
+      },
+      {
+        "name": "filter",
+        "type": "(query: string) => void",
+        "required": true,
+        "default": "",
+        "description": "更新搜索条件"
+      },
+      {
+        "name": "getSelectedItems",
+        "type": "() => HysCascaderItem<N>[]",
+        "required": true,
+        "default": "",
+        "description": "读取路径、标签、原始节点、禁用及缺失状态"
+      },
+      {
+        "name": "getCheckedNodes",
+        "type": "(leafOnly?: boolean) => N[]",
+        "required": true,
+        "default": "",
+        "description": "读取当前已加载的选中原始节点，可仅取末级"
+      },
+      {
+        "name": "getExpandedPath",
+        "type": "() => HysCascaderKey[]",
+        "required": true,
+        "default": "",
+        "description": "读取独立浏览路径"
+      },
+      {
+        "name": "setExpandedPath",
+        "type": "(path: HysCascaderPath) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "逐级浏览并加载路径，不改变选择；可由宿主拒绝"
+      },
+      {
+        "name": "reloadNode",
+        "type": "(path: HysCascaderPath) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "重新加载指定路径的子项"
+      },
+      {
+        "name": "reloadRoot",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "重新加载根数据，需处于活动状态"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(path: HysCascaderPath) => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "打开并定位指定路径，支持虚拟列"
+      }
+    ]
   },
   "HysChart": {
     "props": [
@@ -3498,15 +4375,15 @@
     ],
     "events": [
       {
-        "name": "send",
-        "type": "[text: string]",
+        "name": "remove",
+        "type": "[id: string]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "remove",
-        "type": "[id: string]",
+        "name": "send",
+        "type": "[text: string]",
         "required": false,
         "default": "",
         "description": ""
@@ -9548,13 +10425,6 @@
         "description": "远程检查失败：error、query；已取消的请求不触发"
       },
       {
-        "name": "reject",
-        "type": "[value: HysSelectValue, reason: \"create\" | \"limit\"]",
-        "required": false,
-        "default": "",
-        "description": "批量输入超出上限或创建失败：value、limit/create"
-      },
-      {
         "name": "update:searchValue",
         "type": "[query: string]",
         "required": false,
@@ -9562,18 +10432,25 @@
         "description": ""
       },
       {
-        "name": "deselect",
-        "type": "[value: HysSelectValue, option: HysSelectOption]",
-        "required": false,
-        "default": "",
-        "description": "取消选项：value、option"
-      },
-      {
         "name": "removeTag",
         "type": "[value: HysSelectValue, option: HysSelectOption]",
         "required": false,
         "default": "",
         "description": "通过标签移除选项：value、option"
+      },
+      {
+        "name": "reject",
+        "type": "[value: HysSelectValue, reason: \"limit\" | \"create\"]",
+        "required": false,
+        "default": "",
+        "description": "批量输入超出上限或创建失败：value、limit/create"
+      },
+      {
+        "name": "deselect",
+        "type": "[value: HysSelectValue, option: HysSelectOption]",
+        "required": false,
+        "default": "",
+        "description": "取消选项：value、option"
       },
       {
         "name": "create",
@@ -11601,6 +12478,13 @@
         "description": "用户滚动：{scrollLeft,scrollTop}、Event"
       },
       {
+        "name": "expandChange",
+        "type": "[row: T, expanded: boolean, keys: HysTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "接受展开变化：row、expanded、keys"
+      },
+      {
         "name": "rowClick",
         "type": "[row: T, index: number, event: MouseEvent]",
         "required": false,
@@ -11795,13 +12679,6 @@
         "required": false,
         "default": "",
         "description": "请求更新对应受控状态，可配合 v-model 使用"
-      },
-      {
-        "name": "expandChange",
-        "type": "[row: T, expanded: boolean, keys: HysTableKey[]]",
-        "required": false,
-        "default": "",
-        "description": "接受展开变化：row、expanded、keys"
       },
       {
         "name": "update:columnWidths",
@@ -12477,14 +13354,14 @@
         "description": ""
       },
       {
-        "name": "reject",
+        "name": "remove",
         "type": "[value: string]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "remove",
+        "name": "reject",
         "type": "[value: string]",
         "required": false,
         "default": "",
@@ -14490,15 +15367,50 @@
         "description": "原始滚动事件"
       },
       {
-        "name": "update:checkedKeys",
-        "type": "[keys: HysTreeKey[]]",
+        "name": "update:searchValue",
+        "type": "[query: string]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "update:searchValue",
-        "type": "[query: string]",
+        "name": "node-expand",
+        "type": "[node: N, info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "展开被接受：节点、展开信息"
+      },
+      {
+        "name": "node-collapse",
+        "type": "[node: N, info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "折叠被接受：节点、展开信息"
+      },
+      {
+        "name": "load-error",
+        "type": "[info: { node: N; error: unknown; }]",
+        "required": false,
+        "default": "",
+        "description": "加载失败节点和异常"
+      },
+      {
+        "name": "children-loaded",
+        "type": "[info: { node: N; children: readonly N[]; }]",
+        "required": false,
+        "default": "",
+        "description": "已接受的加载节点及子级"
+      },
+      {
+        "name": "check",
+        "type": "[keys: HysTreeKey[], info: HysTreeCheckInfo<N>]",
+        "required": false,
+        "default": "",
+        "description": "勾选请求：编号数组、勾选/半选信息，保留第一个参数"
+      },
+      {
+        "name": "update:checkedKeys",
+        "type": "[keys: HysTreeKey[]]",
         "required": false,
         "default": "",
         "description": ""
@@ -14525,13 +15437,6 @@
         "description": ""
       },
       {
-        "name": "check",
-        "type": "[keys: HysTreeKey[], info: HysTreeCheckInfo<N>]",
-        "required": false,
-        "default": "",
-        "description": "勾选请求：编号数组、勾选/半选信息，保留第一个参数"
-      },
-      {
         "name": "check-change",
         "type": "[info: HysTreeCheckInfo<N>]",
         "required": false,
@@ -14551,20 +15456,6 @@
         "required": false,
         "default": "",
         "description": "点击文字：原始节点、鼠标事件"
-      },
-      {
-        "name": "node-expand",
-        "type": "[node: N, info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[]; }]",
-        "required": false,
-        "default": "",
-        "description": "展开被接受：节点、展开信息"
-      },
-      {
-        "name": "node-collapse",
-        "type": "[node: N, info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[]; }]",
-        "required": false,
-        "default": "",
-        "description": "折叠被接受：节点、展开信息"
       },
       {
         "name": "node-drop",
@@ -14600,20 +15491,6 @@
         "required": false,
         "default": "",
         "description": "右键节点与原始坐标、事件"
-      },
-      {
-        "name": "load-error",
-        "type": "[info: { node: N; error: unknown; }]",
-        "required": false,
-        "default": "",
-        "description": "加载失败节点和异常"
-      },
-      {
-        "name": "children-loaded",
-        "type": "[info: { node: N; children: readonly N[]; }]",
-        "required": false,
-        "default": "",
-        "description": "已接受的加载节点及子级"
       },
       {
         "name": "data-change",
@@ -15521,6 +16398,20 @@
         "description": "选项视口的原始滚动事件"
       },
       {
+        "name": "value-change",
+        "type": "[value: V, info: HysTreeSelectChange<N>]",
+        "required": false,
+        "default": "",
+        "description": "有效更新被宿主接受后触发"
+      },
+      {
+        "name": "visible-change",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际弹层可见状态变化"
+      },
+      {
         "name": "update:searchValue",
         "type": "[value: string]",
         "required": false,
@@ -15528,39 +16419,11 @@
         "description": ""
       },
       {
-        "name": "deselect",
-        "type": "[key: HysTreeKey, node: N, info: unknown]",
+        "name": "search-error",
+        "type": "[error: unknown, query: string]",
         "required": false,
         "default": "",
-        "description": "接受取消行选择：编号、原始节点、选择信息"
-      },
-      {
-        "name": "limit",
-        "type": "[limit: number]",
-        "required": false,
-        "default": "",
-        "description": "新增选择超过上限，参数为限制数量"
-      },
-      {
-        "name": "update:expandedKeys",
-        "type": "[keys: HysTreeKey[]]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
-        "name": "update:loadedKeys",
-        "type": "[keys: HysTreeKey[]]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
-        "name": "check",
-        "type": "[info: HysTreeCheckInfo<N>]",
-        "required": false,
-        "default": "",
-        "description": "复选更新被接受后的完整勾选和半选信息"
+        "description": "当前远程请求失败：异常、搜索文字"
       },
       {
         "name": "node-expand",
@@ -15591,13 +16454,6 @@
         "description": "接受的节点子级"
       },
       {
-        "name": "value-change",
-        "type": "[value: V, info: HysTreeSelectChange<N>]",
-        "required": false,
-        "default": "",
-        "description": "有效更新被宿主接受后触发"
-      },
-      {
         "name": "remove-tag",
         "type": "[key: HysTreeKey, node: N | undefined]",
         "required": false,
@@ -15605,11 +16461,39 @@
         "description": "逐项移除被接受后触发，编号和原始节点"
       },
       {
-        "name": "search-error",
-        "type": "[error: unknown, query: string]",
+        "name": "limit",
+        "type": "[limit: number]",
         "required": false,
         "default": "",
-        "description": "当前远程请求失败：异常、搜索文字"
+        "description": "新增选择超过上限，参数为限制数量"
+      },
+      {
+        "name": "check",
+        "type": "[info: HysTreeCheckInfo<N>]",
+        "required": false,
+        "default": "",
+        "description": "复选更新被接受后的完整勾选和半选信息"
+      },
+      {
+        "name": "deselect",
+        "type": "[key: HysTreeKey, node: N, info: unknown]",
+        "required": false,
+        "default": "",
+        "description": "接受取消行选择：编号、原始节点、选择信息"
+      },
+      {
+        "name": "update:expandedKeys",
+        "type": "[keys: HysTreeKey[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:loadedKeys",
+        "type": "[keys: HysTreeKey[]]",
+        "required": false,
+        "default": "",
+        "description": ""
       },
       {
         "name": "search-complete",
@@ -15617,13 +16501,6 @@
         "required": false,
         "default": "",
         "description": "当前远程请求接受完成：搜索文字"
-      },
-      {
-        "name": "visible-change",
-        "type": "[value: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际弹层可见状态变化"
       }
     ],
     "slots": [

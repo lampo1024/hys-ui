@@ -168,6 +168,16 @@ export const props:HysTreeSelectProps<Team>={nodes,defaultValue:0,remote:true,re
 export async function useTreeSelect(instance:HysTreeSelectInstance<Team>){await instance.show();await instance.setValue(0);await instance.scrollTo({key:0});const selected=instance.getSelectedItems();await instance.removeTag(0);instance.hide(true);return selected}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {treeSelectChecks} from './tree-select-types'\nvoid treeSelectChecks\n")
+fs.writeFileSync(path.join(dir,'cascader-types.ts'),`import {h,ref} from 'vue'
+import {HysCascader,type HysCascaderNode,type HysCascaderDataNode,type HysCascaderPath,type HysCascaderValue,type HysCascaderProps,type HysCascaderInstance,type HysCascaderItem,type HysCascaderOptionContext,type HysCascaderChange} from 'hys-ui'
+interface Department {code:number;meta:{name:string};teams?:Department[];leaf?:boolean}
+const options:Department[]=[{code:0,meta:{name:'Head office'}}],api=ref<HysCascaderInstance<Department>>()
+export const cascaderChecks=[h(HysCascader<number|null,Department>,{ref:api,options,modelValue:0,emitPath:false,checkStrictly:true,fieldNames:{value:'code',label:'meta.name',children:'teams',leaf:'leaf'},loadChildren:async(node,ctx)=>ctx.signal.aborted?[]:[{code:node.code+1,meta:{name:'Team'},leaf:true}],onChange:(value:number|null,info:HysCascaderChange<Department>)=>void [value,info.items],displayRender:(item:HysCascaderItem<Department>)=>item.labels.join(' / ')}),h(HysCascader<string[],HysCascaderNode>,{options:[{value:'a',label:'A'}],modelValue:['a']}),h(HysCascader<readonly HysCascaderPath[],HysCascaderDataNode>,{options:[{value:0,label:'Zero'}],modelValue:[[0]],multiple:true,inline:true,virtual:true})]
+export const cascaderProps:HysCascaderProps<Department>={options,defaultValue:0,emitPath:false,beforeFilter:async(query,{signal})=>!signal.aborted&&query.length>1,loadRoot:async({signal})=>signal.aborted?[]:options}
+export async function operateCascader(instance:HysCascaderInstance<Department>){const value:HysCascaderValue=[0,1];await instance.setValue(value);await instance.setExpandedPath([0]);await instance.scrollTo([0,1]);await instance.reloadNode([0]);await instance.clearCheckedNodes();return instance.getCheckedNodes(true)}
+export function readOption(option:HysCascaderOptionContext<Department>){return [option.node.code,option.path,option.labels,option.level,option.checked]}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {cascaderChecks} from './cascader-types'\nvoid cascaderChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})
