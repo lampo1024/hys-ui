@@ -13892,34 +13892,74 @@
     "props": [
       {
         "name": "nodes",
-        "type": "TreeNode[]",
+        "type": "readonly N[]",
         "required": true,
         "default": "",
-        "description": "树节点数据",
+        "description": "原始业务节点数组，使用 v-model:nodes 接收实例编辑请求",
         "global": false
       },
       {
         "name": "modelValue",
-        "type": "T | undefined",
+        "type": "V | undefined",
         "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "行选择的编号或编号数组，独立于复选框勾选",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控选择初值，数组启用多选",
         "global": false
       },
       {
         "name": "checkedKeys",
-        "type": "string[] | undefined",
+        "type": "readonly HysTreeKey[] | undefined",
         "required": false,
-        "default": "[]",
-        "description": "",
+        "default": "",
+        "description": "复选框勾选编号，支持 v-model:checkedKeys",
+        "global": false
+      },
+      {
+        "name": "defaultCheckedKeys",
+        "type": "readonly HysTreeKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控勾选初值",
+        "global": false
+      },
+      {
+        "name": "halfCheckedKeys",
+        "type": "readonly HysTreeKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "严格模式指定半选编号",
         "global": false
       },
       {
         "name": "expandedKeys",
-        "type": "string[] | undefined",
+        "type": "readonly HysTreeKey[] | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "受控展开编号，支持 v-model:expandedKeys",
+        "global": false
+      },
+      {
+        "name": "defaultExpandedKeys",
+        "type": "readonly HysTreeKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控展开初值",
+        "global": false
+      },
+      {
+        "name": "loadedKeys",
+        "type": "readonly HysTreeKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控加载缓存标记，支持 v-model:loadedKeys",
         "global": false
       },
       {
@@ -13928,6 +13968,14 @@
         "required": false,
         "default": "false",
         "description": "允许多选",
+        "global": false
+      },
+      {
+        "name": "selectable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许行选择；不影响独立复选框",
         "global": false
       },
       {
@@ -13955,11 +14003,115 @@
         "global": false
       },
       {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
         "name": "defaultExpandAll",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "自动展开已有分支，受控 expandedKeys 优先",
+        "global": false
+      },
+      {
+        "name": "autoExpandParent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "为指定的展开节点补齐祖先路径",
+        "global": false
+      },
+      {
+        "name": "accordion",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "交互展开时仅保留同级一个分支",
+        "global": false
+      },
+      {
+        "name": "expandOnClickNode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击文字展开或折叠，默认保持箭头展开",
+        "global": false
+      },
+      {
+        "name": "expandOnDoubleClick",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "双击文字展开，expandOnClickNode 优先",
+        "global": false
+      },
+      {
+        "name": "checkOnClickNode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击文字切换复选框",
+        "global": false
+      },
+      {
+        "name": "checkOnClickLeaf",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击叶节点文字切换复选框",
+        "global": false
+      },
+      {
+        "name": "selectOnClickNode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "点击文字进行行选择，默认 true",
+        "global": false
+      },
+      {
+        "name": "allowDeselect",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "再次点击当前单选项或 Esc 清除选择",
+        "global": false
+      },
+      {
+        "name": "highlightCurrent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "高亮已选择的行，默认 true",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "Partial<HysTreeFieldNames> | undefined",
+        "required": false,
+        "default": "",
+        "description": "字段映射，默认 id / label / children，支持点号路径",
+        "global": false
+      },
+      {
+        "name": "nodeKey",
+        "type": "string | ((node: N) => HysTreeKey) | undefined",
+        "required": false,
+        "default": "",
+        "description": "编号字段路径或 (node) => string | number，允许数值 0",
         "global": false
       },
       {
@@ -13967,7 +14119,31 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "展示层级连接线",
+        "global": false
+      },
+      {
+        "name": "showIcon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "展示节点图标或 icon 插槽",
+        "global": false
+      },
+      {
+        "name": "indent",
+        "type": "number | undefined",
+        "required": false,
+        "default": "20",
+        "description": "每级缩进像素",
+        "global": false
+      },
+      {
+        "name": "blockNode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "内容占满一行；false 时标签宽度跟随内容",
         "global": false
       },
       {
@@ -13983,7 +14159,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "38",
-        "description": "每行高度",
+        "description": "虚拟固定行高，限制在 24–240px",
         "global": false
       },
       {
@@ -13991,7 +14167,15 @@
         "type": "number | undefined",
         "required": false,
         "default": "340",
-        "description": "虚拟视口高度",
+        "description": "列表最大高度，虚拟时固定视口高度，限制在 80–1600px",
+        "global": false
+      },
+      {
+        "name": "overscan",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "虚拟行上下缓冲数量，限制在 0–30",
         "global": false
       },
       {
@@ -14003,11 +14187,35 @@
         "global": false
       },
       {
+        "name": "dragExpandDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "700",
+        "description": "悬停目标自动展开的等待毫秒；负数关闭",
+        "global": false
+      },
+      {
+        "name": "allowDrag",
+        "type": "((node: N) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(node) => boolean 决定是否可拖动",
+        "global": false
+      },
+      {
+        "name": "allowDrop",
+        "type": "((drag: N, target: N, position: HysTreeDropPosition) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(dragNode,targetNode,position) => boolean 决定可放置位置",
+        "global": false
+      },
+      {
         "name": "contextMenu",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "启用右键节点菜单",
         "global": false
       },
       {
@@ -14015,101 +14223,576 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "父子独立勾选，不自动联动",
+        "global": false
+      },
+      {
+        "name": "searchValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控搜索文字，支持 v-model:searchValue",
+        "global": false
+      },
+      {
+        "name": "defaultSearchValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控搜索初值",
+        "global": false
+      },
+      {
+        "name": "searchPlaceholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "搜索提示文字，默认 locale.search",
         "global": false
       },
       {
         "name": "filterNode",
-        "type": "((query: string, node: TreeNode) => boolean) | undefined",
+        "type": "((query: string, node: N) => boolean) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "自定义匹配 (query,node)，接收原始搜索与业务对象",
+        "global": false
+      },
+      {
+        "name": "filterMode",
+        "type": "\"highlight\" | \"hide\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "hide 隐藏不匹配分支，highlight 保留当前结构并标记匹配",
+        "global": false
+      },
+      {
+        "name": "showMatchedChildren",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "隐藏筛选时显示匹配节点的全部子级",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空数据提示",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "Partial<HysTreeLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "搜索、空态、加载、菜单和操作辅助文字",
         "global": false
       },
       {
         "name": "loadChildren",
-        "type": "((node: TreeNode) => Promise<TreeNode[]>) | undefined",
+        "type": "((node: N, context: HysTreeLoadContext) => Promise<readonly N[]>) | undefined",
         "required": false,
         "default": "",
-        "description": "展开节点时异步加载子节点，抛出错误后支持重试",
+        "description": "(node,{key,signal}) => Promise<节点数组>；支持取消与重试",
+        "global": false
+      },
+      {
+        "name": "renderContent",
+        "type": "((context: HysTreeNodeContext<N>) => VNodeChild) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义节点内容函数，node / default 插槽优先",
+        "global": false
+      },
+      {
+        "name": "nodeClass",
+        "type": "string | ((node: N) => string | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "行类名或 (node) => class",
+        "global": false
+      },
+      {
+        "name": "nodeStyle",
+        "type": "CSSProperties | ((node: N) => CSSProperties | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "行样式或 (node) => CSSProperties",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "接受选择/勾选后 change 校验，整体失焦后 blur 校验",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: T]",
+        "type": "[value: V]",
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "search",
+        "type": "[query: string]",
+        "required": false,
+        "default": "",
+        "description": "搜索文字更新请求"
       },
       {
         "name": "select",
-        "type": "[node: TreeNode]",
+        "type": "[node: N, info: HysTreeSelectInfo<N>]",
+        "required": false,
+        "default": "",
+        "description": "行选择请求：原始节点、完整选择信息，保留第一个参数"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个树组件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个树组件"
+      },
+      {
+        "name": "load",
+        "type": "[info: { node: N; children: readonly N[]; loadedKeys: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "已接受的加载结果与 loadedKeys"
+      },
+      {
+        "name": "scroll",
+        "type": "[event: Event]",
+        "required": false,
+        "default": "",
+        "description": "原始滚动事件"
+      },
+      {
+        "name": "update:checkedKeys",
+        "type": "[keys: HysTreeKey[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "update:checkedKeys",
-        "type": "[value: string[]]",
+        "name": "update:searchValue",
+        "type": "[query: string]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "update:expandedKeys",
-        "type": "[value: string[]]",
+        "type": "[keys: HysTreeKey[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:loadedKeys",
+        "type": "[keys: HysTreeKey[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:nodes",
+        "type": "[nodes: readonly N[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "check",
-        "type": "[keys: string[]]",
+        "type": "[keys: HysTreeKey[], info: HysTreeCheckInfo<N>]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "勾选请求：编号数组、勾选/半选信息，保留第一个参数"
+      },
+      {
+        "name": "check-change",
+        "type": "[info: HysTreeCheckInfo<N>]",
+        "required": false,
+        "default": "",
+        "description": "勾选被宿主接受后触发，包含节点、键值、原始事件"
+      },
+      {
+        "name": "selection-change",
+        "type": "[info: HysTreeSelectInfo<N>]",
+        "required": false,
+        "default": "",
+        "description": "选择被宿主接受后触发"
+      },
+      {
+        "name": "node-click",
+        "type": "[node: N, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击文字：原始节点、鼠标事件"
+      },
+      {
+        "name": "node-expand",
+        "type": "[node: N, info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "展开被接受：节点、展开信息"
+      },
+      {
+        "name": "node-collapse",
+        "type": "[node: N, info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[]; }]",
+        "required": false,
+        "default": "",
+        "description": "折叠被接受：节点、展开信息"
       },
       {
         "name": "node-drop",
-        "type": "[payload: { dragId: string; targetId: string; position: \"inside\" | \"before\" | \"after\"; }]",
+        "type": "[info: HysTreeDropInfo<N, K>]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "拖放请求：原有 dragId / targetId / position 加原始对象与事件"
+      },
+      {
+        "name": "node-drag-start",
+        "type": "[info: { node: N; event: DragEvent; }]",
+        "required": false,
+        "default": "",
+        "description": "拖动起点与原始事件"
+      },
+      {
+        "name": "node-drag-over",
+        "type": "[info: HysTreeDropInfo<N, K>]",
+        "required": false,
+        "default": "",
+        "description": "有效目标和位置变化"
+      },
+      {
+        "name": "node-drag-end",
+        "type": "[info: { node: N; event?: Event | undefined; }]",
+        "required": false,
+        "default": "",
+        "description": "拖动释放、取消或清理"
       },
       {
         "name": "node-contextmenu",
-        "type": "[payload: { node: TreeNode; x: number; y: number; }]",
+        "type": "[info: { node: N; x: number; y: number; event: MouseEvent; }]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "右键节点与原始坐标、事件"
       },
       {
         "name": "load-error",
-        "type": "[payload: { node: TreeNode; error: unknown; }]",
+        "type": "[info: { node: N; error: unknown; }]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "加载失败节点和异常"
       },
       {
         "name": "children-loaded",
-        "type": "[payload: { node: TreeNode; children: TreeNode[]; }]",
+        "type": "[info: { node: N; children: readonly N[]; }]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "已接受的加载节点及子级"
+      },
+      {
+        "name": "data-change",
+        "type": "[info: { nodes: readonly N[]; action: string; key?: HysTreeKey | undefined; }]",
+        "required": false,
+        "default": "",
+        "description": "不可变编辑请求：nodes、action、key"
       }
     ],
     "slots": [
       {
         "name": "node",
-        "type": "{ node: TreeNode; depth: number; expanded: boolean; selected: boolean; }",
+        "type": "HysTreeNodeContext<N>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "原始 node、key、label、depth 和展开/选择/勾选/加载状态"
+      },
+      {
+        "name": "default",
+        "type": "HysTreeNodeContext<N>",
+        "required": false,
+        "default": "",
+        "description": "节点内容，node 插槽优先"
+      },
+      {
+        "name": "icon",
+        "type": "HysTreeNodeContext<N>",
+        "required": false,
+        "default": "",
+        "description": "节点图标，同节点上下文"
+      },
+      {
+        "name": "switcher",
+        "type": "HysTreeNodeContext<N>",
+        "required": false,
+        "default": "",
+        "description": "展开图标，同节点上下文；叶节点 leaf=true"
+      },
+      {
+        "name": "actions",
+        "type": "HysTreeNodeContext<N>",
+        "required": false,
+        "default": "",
+        "description": "行尾操作，同节点上下文；点击不触发行选择"
+      },
+      {
+        "name": "empty",
+        "type": "{ query: string; }",
+        "required": false,
+        "default": "",
+        "description": "空数据或无匹配，提供 query"
+      },
+      {
+        "name": "loading",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "整体加载内容"
+      },
+      {
+        "name": "contextmenu",
+        "type": "{ node: N; key: HysTreeKey; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "右键菜单：node、key、close"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "树根元素"
+      },
+      {
+        "name": "getNode",
+        "type": "(key: HysTreeKey | N) => N | undefined",
+        "required": true,
+        "default": "",
+        "description": "按编号或原始对象读取节点，兼容原有返回原始数据"
+      },
+      {
+        "name": "getNodeInfo",
+        "type": "(key: HysTreeKey | N) => HysTreeRecord<N> | undefined",
+        "required": true,
+        "default": "",
+        "description": "读取层级、父级、子级等索引信息"
+      },
+      {
+        "name": "getCheckedKeys",
+        "type": "(leafOnly?: boolean) => HysTreeKey[]",
+        "required": true,
+        "default": "",
+        "description": "读取勾选编号；leafOnly 仅叶子"
+      },
+      {
+        "name": "getCheckedNodes",
+        "type": "(leafOnly?: boolean, includeHalfChecked?: boolean) => N[]",
+        "required": true,
+        "default": "",
+        "description": "读取勾选原始对象；可含半选"
+      },
+      {
+        "name": "getHalfCheckedKeys",
+        "type": "() => HysTreeKey[]",
+        "required": true,
+        "default": "",
+        "description": "读取半选编号"
+      },
+      {
+        "name": "getHalfCheckedNodes",
+        "type": "() => N[]",
+        "required": true,
+        "default": "",
+        "description": "读取半选原始对象"
+      },
+      {
+        "name": "setCheckedKeys",
+        "type": "(\n    keys: readonly HysTreeKey[],\n    leafOnly?: boolean,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求替换勾选，保护禁用状态；返回是否接受"
+      },
+      {
+        "name": "setCheckedNodes",
+        "type": "(\n    nodes: readonly N[],\n    leafOnly?: boolean,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按对象请求替换勾选"
+      },
+      {
+        "name": "setChecked",
+        "type": "(\n    key: HysTreeKey | N,\n    checked: boolean,\n    deep?: boolean,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "设置单节点；deep 可显式作用于子孙"
+      },
+      {
+        "name": "getCurrentKey",
+        "type": "() => HysTreeKey | null",
+        "required": true,
+        "default": "",
+        "description": "读取首个选择编号，无选择返回 null"
+      },
+      {
+        "name": "getCurrentNode",
+        "type": "() => N | null",
+        "required": true,
+        "default": "",
+        "description": "读取首个选择对象，无选择返回 null"
+      },
+      {
+        "name": "getSelectedKeys",
+        "type": "() => HysTreeKey[]",
+        "required": true,
+        "default": "",
+        "description": "读取全部行选择编号"
+      },
+      {
+        "name": "setCurrentKey",
+        "type": "(\n    key: HysTreeKey | null,\n    expandParents?: boolean,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "设置单项行选择，null 清除，默认展开祖先"
+      },
+      {
+        "name": "setCurrentNode",
+        "type": "(node: N | null, expandParents?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按对象设置行选择"
+      },
+      {
+        "name": "setSelectedKeys",
+        "type": "(keys: readonly HysTreeKey[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "替换行选择编号，遵守单/多选配置"
+      },
+      {
+        "name": "getExpandedKeys",
+        "type": "() => HysTreeKey[]",
+        "required": true,
+        "default": "",
+        "description": "读取实际展开编号，包含自动展开的祖先"
+      },
+      {
+        "name": "setExpandedKeys",
+        "type": "(keys: readonly HysTreeKey[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求设置展开编号"
+      },
+      {
+        "name": "expandNode",
+        "type": "(key: HysTreeKey, expanded?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "展开或折叠指定节点"
+      },
+      {
+        "name": "expandAll",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "展开全部已有分支"
+      },
+      {
+        "name": "collapseAll",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "折叠全部"
+      },
+      {
+        "name": "filter",
+        "type": "(value: string) => void",
+        "required": true,
+        "default": "",
+        "description": "请求设置搜索条件"
+      },
+      {
+        "name": "reloadNode",
+        "type": "(key: HysTreeKey) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "取消旧请求并刷新指定节点子级"
+      },
+      {
+        "name": "updateKeyChildren",
+        "type": "(\n    key: HysTreeKey,\n    children: readonly N[],\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "通过 update:nodes 请求替换子级"
+      },
+      {
+        "name": "append",
+        "type": "(node: N, parent?: HysTreeKey | N) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "通过 update:nodes 请求追加节点"
+      },
+      {
+        "name": "insertBefore",
+        "type": "(node: N, reference: HysTreeKey | N) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求在参考节点前插入"
+      },
+      {
+        "name": "insertAfter",
+        "type": "(node: N, reference: HysTreeKey | N) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求在参考节点后插入"
+      },
+      {
+        "name": "remove",
+        "type": "(key: HysTreeKey | N) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求删除节点及子级"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(options: {\n    key?: HysTreeKey;\n    top?: number;\n    align?: \"top\" | \"bottom\" | \"auto\";\n    offset?: number;\n    behavior?: ScrollBehavior;\n  }) => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "按 key 或 top 定位列表；补齐祖先路径"
+      },
+      {
+        "name": "focus",
+        "type": "(key?: HysTreeKey) => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "聚焦指定或首个可用节点，虚拟模式先定位"
+      }
+    ]
   },
   "HysTreeSelect": {
     "props": [

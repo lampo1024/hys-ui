@@ -17,4 +17,5 @@ code+="export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyCha
 code+="export type {CalendarEvent,HysCalendarValue,HysCalendarMode,HysCalendarTransition,HysCalendarAction,HysCalendarCell,HysCalendarMonthCell,HysCalendarSelectInfo,HysCalendarInstance} from './composables/calendar'\n"
 code+="export type {HysTableKey,HysTableDirection,HysTableFilterValue,HysTableFilters,HysTableSort,HysTableFilter,HysTableCellContext,HysTableColumn,HysTablePagination,HysTableQuery,HysTableLoadContext,HysTableLocale,HysTableProps,HysTableInstance} from './composables/table'\n"
 code+="export type {HysTransferKey,HysTransferSide,HysTransferOption,HysTransferFieldNames,HysTransferPagination,HysTransferLocale,HysTransferHeaderInfo,HysTransferProps,HysTransferPanelContext,HysTransferInstance,HysTransferSlots} from './composables/transfer'\n"
+code+="export type {TreeNode,HysTreeKey,HysTreeValue,HysTreeNode,HysTreeFieldNames,HysTreeLoadContext,HysTreeLocale,HysTreeRecord,HysTreeCheckInfo,HysTreeSelectInfo,HysTreeDropPosition,HysTreeDropInfo,HysTreeNodeContext,HysTreeProps,HysTreeInstance} from './composables/tree'\n"
 fs.writeFileSync(root+'index.ts',code)

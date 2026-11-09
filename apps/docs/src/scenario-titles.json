@@ -370,6 +370,25 @@
       "Methods": "实例操作与焦点定位",
       "States": "空数据、加载与禁用状态",
       "Locale": "文案与本地化"
+    },
+    "HysTree": {
+      "Basic": "基础树形与独立状态",
+      "Configure": "交互配置",
+      "Defaults": "默认选择、勾选与展开",
+      "Checking": "父子联动与半选",
+      "Expansion": "手风琴与节点定位",
+      "Multiple": "多项行选择",
+      "Filtering": "筛选与匹配标记",
+      "Mapping": "业务字段与数值编号",
+      "Custom": "图标、内容与行尾操作",
+      "Async": "异步加载与重试",
+      "DragDrop": "拖拽重排与放置位置",
+      "Editing": "不可变节点编辑",
+      "Virtual": "大数据与虚拟滚动",
+      "Form": "表单关联与校验",
+      "Keyboard": "键盘导航与右键菜单",
+      "States": "加载、禁用与空数据",
+      "Locale": "本地化与辅助技术文字"
     }
   }
 }

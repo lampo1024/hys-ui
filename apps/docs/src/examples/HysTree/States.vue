@@ -1,9 +1,38 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysTree } from 'hys-ui';
-const treeSelected = ref('team-1');
-const treeChecked = ref<string[]>([]);
-const treeExpanded = ref<string[]>(['root']);
-const toast = ref('');
+import { ref } from "vue";
+import { HysTree, HysCheckbox, type TreeNode } from "hys-ui";
+const loading = ref(false),
+  disabled = ref(false),
+  empty = ref(false);
+const nodes: TreeNode[] = [
+  {
+    id: "root",
+    label: "项目资料",
+    children: [
+      { id: "guide", label: "使用指南" },
+      { id: "locked", label: "归档内容", disabled: true },
+    ],
+  },
+];
 </script>
-<template><div><p class="scenario-note">空数据场景：保留组件布局和可用操作。</p><div class="demo-content"><section class="ent-gallery-section"><p>任意层级、搜索、展开折叠、多选勾选、键盘导航</p><HysTree v-model="treeSelected" v-model:checked-keys="treeChecked" v-model:expanded-keys="treeExpanded" :nodes="[]" checkable show-line draggable context-menu virtual :viewport-height="280" @node-drop="payload=>toast=`拖动 ${payload.dragId} 到 ${payload.targetId} (${payload.position})`" @node-contextmenu="payload=>toast=`右键：${payload.node.label}`"/><small>当前节点：{{treeSelected}} · 已勾选：{{treeChecked.join(', ')}}</small></section><output v-if="toast" aria-live="polite">{{toast}}</output></div></div></template>
+<template>
+  <div class="demo-stack">
+    <div class="demo-actions">
+      <HysCheckbox v-model="loading" label="加载中" /><HysCheckbox
+        v-model="disabled"
+        label="禁用"
+      /><HysCheckbox v-model="empty" label="空数据" />
+    </div>
+    <HysTree
+      :nodes="empty ? [] : nodes"
+      :loading="loading"
+      :disabled="disabled"
+      checkable
+      default-expand-all
+      :viewport-height="180"
+      ><template #empty="{ query }">{{
+        query ? "没有符合条件的资料" : "暂无项目资料"
+      }}</template></HysTree
+    >
+  </div>
+</template>

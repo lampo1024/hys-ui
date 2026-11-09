@@ -148,6 +148,15 @@ export const panel:HysTransferSlots<Member,string>['panel']=(scope:HysTransferPa
 export async function operateTransfer(instance:HysTransferInstance<Member,string>){await instance.setCheckedKeys(['a']);await instance.checkAll('left',true,'filtered');await instance.invertSelection('right');instance.setSearch('left','A');instance.clearSearch();instance.setPageSize('left',5);instance.setPage('left',2);await instance.scrollTo('left',{key:'a'});instance.focus('right');return [await instance.move('right',['a']),instance.getTargetItems(),instance.getCheckedKeys()]}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {transferChecks} from './transfer-types'\nvoid transferChecks\n")
+fs.writeFileSync(path.join(dir,'tree-types.ts'),`import {h,ref} from 'vue'
+import {HysTree,type TreeNode,type HysTreeProps,type HysTreeInstance,type HysTreeKey,type HysTreeDropInfo,type HysTreeLoadContext} from 'hys-ui'
+interface Department {code:number;meta:{title:string};teams?:Department[]}
+const api=ref<HysTreeInstance<Department>>(),nodes:Department[]=[{code:0,meta:{title:'Root'}}]
+export const treeChecks=[h(HysTree<number|null,Department>,{ref:api,nodes,modelValue:0,nodeKey:'code',fieldNames:{label:'meta.title',children:'teams'},loadChildren:async(node:Department,ctx:HysTreeLoadContext)=>ctx.signal.aborted?[]:[{code:node.code+1,meta:{title:'Child'}}]}),h(HysTree<string,TreeNode>,{nodes:[{id:'a',label:'A'}],'onNode-drop':(info:HysTreeDropInfo<TreeNode,string>)=>void info.dragId})]
+export const props:HysTreeProps<Department>={nodes,defaultValue:0,defaultCheckedKeys:[0],virtual:true,filterNode:(query,item)=>item.meta.title.includes(query)}
+export async function editTree(instance:HysTreeInstance<Department>){await instance.setCheckedKeys([0]);await instance.setCurrentKey(0);await instance.scrollTo({key:0});await instance.focus(0);return [await instance.append({code:1,meta:{title:'Added'}},0),instance.getHalfCheckedNodes(),instance.getCurrentNode()]}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {treeChecks} from './tree-types'\nvoid treeChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

@@ -319,6 +319,9 @@ function getControl() {
   return (
     (props.for ? document.getElementById(props.for) : null) ||
     control.value?.querySelector<HTMLElement>(
+      '[data-hys-ui-field-managed][role="tree"]',
+    ) ||
+    control.value?.querySelector<HTMLElement>(
       'input:not([type="hidden"]):not([hidden]),textarea,select,[role="combobox"],button[role="switch"],[role="radiogroup"],[role="slider"],[role="button"],[role="group"],[contenteditable][role="textbox"]',
     )
   );
@@ -337,11 +340,14 @@ function sync() {
   if (!props.autoLink) return;
   const candidates = [
     ...(control.value?.querySelectorAll<HTMLElement>(
-      'input:not([type="hidden"]):not([hidden]),textarea,select,[role="combobox"],button[role="switch"],[role="radiogroup"],[role="slider"],[role="button"],[contenteditable][role="textbox"]',
+      'input:not([type="hidden"]):not([hidden]),textarea,select,[role="combobox"],button[role="switch"],[role="radiogroup"],[role="slider"],[role="button"],[data-hys-ui-field-managed][role="tree"],[contenteditable][role="textbox"]',
     ) ?? []),
   ].filter(
     (element) =>
       element.closest(".hys-ui-ent-field") === root.value &&
+      !element.closest("[data-hys-ui-form-internal]") &&
+      (!element.closest('[data-hys-ui-field-managed][role="tree"]') ||
+        element.matches('[data-hys-ui-field-managed][role="tree"]')) &&
       (!element.closest('[role="radiogroup"]') ||
         element.matches('[role="radiogroup"]')),
   );

@@ -1,85 +1,1244 @@
-<script setup lang="ts" generic="T extends string | string[] = string">
-import {useHysControlState} from '../../composables/formContext'
-
-import HysCheckbox from '../HysCheckbox/HysCheckbox.vue'
-import {useHysRootAttrs} from '../../config'
-
-
-import {ChevronDown,ChevronRight,LoaderCircle} from 'lucide-vue-next';
-
-import { computed, ref, watch, nextTick, onDeactivated } from 'vue'
-
-export interface TreeNode { id:string; label:string; children?:TreeNode[]; disabled?:boolean; selectable?:boolean; checkable?:boolean; icon?:string; hasChildren?:boolean; loading?:boolean }
-interface FlatNode { node:TreeNode; depth:number; parentId?:string; hasChildren:boolean }
-const hysRootAttrs=useHysRootAttrs()
-const props=withDefaults(defineProps<{nodes:TreeNode[];modelValue?:T;checkedKeys?:string[];expandedKeys?:string[];multiple?:boolean;checkable?:boolean;searchable?:boolean;disabled?:boolean;defaultExpandAll?:boolean;showLine?:boolean;virtual?:boolean;rowHeight?:number;viewportHeight?:number;draggable?:boolean;contextMenu?:boolean;checkStrictly?:boolean;filterNode?:(query:string,node:TreeNode)=>boolean;loadChildren?:(node:TreeNode)=>Promise<TreeNode[]>}>(),{checkedKeys:()=>[],searchable:true,rowHeight:38,viewportHeight:340})
-const {disabled:controlDisabled}=useHysControlState(props)
-
-const emit=defineEmits<{ 'update:modelValue':[value:T]; 'update:checkedKeys':[value:string[]]; 'update:expandedKeys':[value:string[]]; select:[node:TreeNode]; check:[keys:string[]]; 'node-drop':[payload:{dragId:string;targetId:string;position:'before'|'inside'|'after'}]; 'node-contextmenu':[payload:{node:TreeNode;x:number;y:number}]; 'load-error':[payload:{node:TreeNode;error:unknown}]; 'children-loaded':[payload:{node:TreeNode;children:TreeNode[]}] }>()
-const query=ref(''); const asyncChildren=ref<Record<string,TreeNode[]>>({});const loadingKeys=ref<string[]>([]);const loadFailures=ref<Record<string,string>>({}); const scrollTop=ref(0); const dragged=ref(''); const dropTarget=ref('');const dropPosition=ref<'before'|'inside'|'after'>('inside'); const menu=ref<{node:TreeNode;x:number;y:number}|null>(null);  const focused=ref('');const root=ref<HTMLElement|null>(null)
-const indexed=computed(()=>{const map=new Map<string,FlatNode>();const walk=(nodes:TreeNode[],depth=0,parentId?:string,ancestors=new Set<string>())=>{for(const node of nodes){if(map.has(node.id)||ancestors.has(node.id))continue;map.set(node.id,{node,depth,parentId,hasChildren:!!(node.children?.length||asyncChildren.value[node.id]?.length||node.hasChildren)});walk(asyncChildren.value[node.id]??node.children??[],depth+1,node.id,new Set([...ancestors,node.id]))}};walk(props.nodes);return map})
-const internalExpanded=ref<string[]>([])
-watch(()=>[props.nodes,props.defaultExpandAll] as const,()=>{if(props.defaultExpandAll && props.expandedKeys===undefined)internalExpanded.value=[...indexed.value.values()].filter(x=>x.hasChildren).map(x=>x.node.id)},{immediate:true,deep:true})
-watch(()=>props.nodes,()=>{asyncChildren.value={};loadFailures.value={};scrollTop.value=0},{deep:false})
-const expanded=computed(()=>props.expandedKeys??internalExpanded.value)
-const matched=computed(()=>{const result=new Set<string>();const q=query.value.trim().toLocaleLowerCase();if(!q)return result;for(const x of indexed.value.values()){if(!(props.filterNode?props.filterNode(q,x.node):x.node.label.toLocaleLowerCase().includes(q)))continue;let cur:FlatNode|undefined=x;while(cur){result.add(cur.node.id);cur=cur.parentId?indexed.value.get(cur.parentId):undefined}}return result})
-const visible=computed(()=>{const q=query.value.trim();return [...indexed.value.values()].filter(x=>{if(q)return matched.value.has(x.node.id);let p=x.parentId;while(p){if(!expanded.value.includes(p))return false;p=indexed.value.get(p)?.parentId}return true})})
-const checked=computed(()=>new Set(props.checkedKeys));const indeterminate=computed(()=>{const result=new Set<string>();for(const x of indexed.value.values()){if(!checked.value.has(x.node.id))continue;let p=x.parentId;while(p){if(!checked.value.has(p))result.add(p);p=indexed.value.get(p)?.parentId}}return result})
-async function expand(id:string){
- const x=indexed.value.get(id);if(!x)return;
- if(!expanded.value.includes(id)&&x.node.hasChildren&&!x.node.children?.length&&!Object.prototype.hasOwnProperty.call(asyncChildren.value,id)&&props.loadChildren&&!loadingKeys.value.includes(id)){
-  loadingKeys.value=[...loadingKeys.value,id];delete loadFailures.value[id];
-  try{const children=await props.loadChildren(x.node);asyncChildren.value={...asyncChildren.value,[id]:children};emit('children-loaded',{node:x.node,children})}
-  catch(error){loadFailures.value={...loadFailures.value,[id]:'加载失败，点击重试'};emit('load-error',{node:x.node,error});return}
-  finally{loadingKeys.value=loadingKeys.value.filter(k=>k!==id)}
- }
-const next=expanded.value.includes(id)?expanded.value.filter(x=>x!==id):[...expanded.value,id];if(props.expandedKeys===undefined)internalExpanded.value=next;emit('update:expandedKeys',next)}
-const selection=computed(()=>new Set<string>((Array.isArray(props.modelValue)?props.modelValue:[props.modelValue]).filter((value):value is string=>typeof value==='string')))
-function select(x:FlatNode){if(controlDisabled.value||x.node.disabled||x.node.selectable===false)return;emit('update:modelValue',(props.multiple||Array.isArray(props.modelValue)?selection.value.has(x.node.id)?[...selection.value].filter(id=>id!==x.node.id):[...selection.value,x.node.id]:x.node.id) as T);emit('select',x.node);focused.value=x.node.id}
-function descendants(id:string){const ids:string[]=[];const walk=(id:string)=>{const x=indexed.value.get(id);if(!x)return;if(!x.node.disabled&&x.node.checkable!==false)ids.push(id);for(const child of (asyncChildren.value[id]??x.node.children??[]))walk(child.id)};walk(id);return ids}
-function toggleCheck(x:FlatNode){if(controlDisabled.value||x.node.disabled||x.node.checkable===false)return;const ids=props.checkStrictly?[x.node.id]:descendants(x.node.id),next=new Set(props.checkedKeys);const turnOn=!ids.every(id=>next.has(id));for(const id of ids){if(turnOn)next.add(id);else next.delete(id)}for(const item of (props.checkStrictly?[]:[...indexed.value.values()].reverse())){if(!item.hasChildren||item.node.disabled||item.node.checkable===false)continue;const childIds=(asyncChildren.value[item.node.id]??item.node.children??[]).filter(c=>!c.disabled&&c.checkable!==false).map(c=>c.id);if(childIds.length&&childIds.every(id=>next.has(id)))next.add(item.node.id);else next.delete(item.node.id)}const result=[...next];emit('update:checkedKeys',result);emit('check',result)}
-function focusAt(index:number){const list=visible.value;if(!list.length)return;const x=list[Math.max(0,Math.min(index,list.length-1))];focused.value=x.node.id;if(props.virtual&&root.value){const top=index*effectiveHeight.value;const bottom=top+effectiveHeight.value;if(top<root.value.scrollTop)root.value.scrollTop=top;else if(bottom>root.value.scrollTop+viewport.value)root.value.scrollTop=bottom-viewport.value;scrollTop.value=root.value.scrollTop}nextTick(()=>{const element=[...root.value?.querySelectorAll<HTMLElement>('[data-tree-id]')||[]].find(el=>el.dataset.treeId===x.node.id);element?.focus()})}
-function keydown(e:KeyboardEvent,x:FlatNode){const index=visible.value.findIndex(i=>i.node.id===x.node.id);if(e.key==='ArrowDown'){e.preventDefault();focusAt(index+1)}else if(e.key==='ArrowUp'){e.preventDefault();focusAt(index-1)}else if(e.key==='Home'){e.preventDefault();focusAt(0)}else if(e.key==='End'){e.preventDefault();focusAt(visible.value.length-1)}else if(e.key==='ArrowRight'){e.preventDefault();if(x.hasChildren&&!expanded.value.includes(x.node.id))expand(x.node.id);else if(x.hasChildren)focusAt(index+1)}else if(e.key==='ArrowLeft'){e.preventDefault();if(x.hasChildren&&expanded.value.includes(x.node.id))expand(x.node.id);else if(x.parentId){const i=visible.value.findIndex(n=>n.node.id===x.parentId);focusAt(i)}}else if(e.key==='Enter'){e.preventDefault();select(x)}else if(e.key===' '){e.preventDefault();props.checkable?toggleCheck(x):select(x)}}
-
-const effectiveHeight=computed(()=>Math.max(24,props.rowHeight));
-const viewport=computed(()=>Math.max(120,props.viewportHeight));
-const virtualStart=computed(()=>props.virtual?Math.max(0,Math.floor(scrollTop.value/effectiveHeight.value)-5):0);
-const virtualEnd=computed(()=>props.virtual?Math.min(visible.value.length,Math.ceil((scrollTop.value+viewport.value)/effectiveHeight.value)+5):visible.value.length);
-const rendered=computed(()=>visible.value.slice(virtualStart.value,virtualEnd.value));
-const topSpacer=computed(()=>virtualStart.value*effectiveHeight.value);
-const bottomSpacer=computed(()=>Math.max(0,(visible.value.length-virtualEnd.value)*effectiveHeight.value));
-watch([query,expanded],()=>{scrollTop.value=0;if(root.value)root.value.scrollTop=0});
-function onScroll(e:Event){scrollTop.value=(e.target as HTMLElement).scrollTop}
-function onDragStart(e:DragEvent,x:FlatNode){if(!props.draggable||controlDisabled.value||x.node.disabled){e.preventDefault();return}dragged.value=x.node.id;e.dataTransfer?.setData('text/plain',x.node.id);if(e.dataTransfer)e.dataTransfer.effectAllowed='move'}
-function onDragOver(e:DragEvent,x:FlatNode){if(controlDisabled.value||x.node.disabled||!props.draggable||!dragged.value||dragged.value===x.node.id)return;const drag=indexed.value.get(dragged.value);let p:FlatNode|undefined=x;while(p){if(p.node.id===drag?.node.id)return;p=p.parentId?indexed.value.get(p.parentId):undefined}e.preventDefault();const r=(e.currentTarget as HTMLElement).getBoundingClientRect();const fraction=(e.clientY-r.top)/r.height;dropPosition.value=fraction<.25?'before':fraction>.75?'after':'inside';dropTarget.value=x.node.id}
-function onDrop(e:DragEvent,x:FlatNode){if(controlDisabled.value||x.node.disabled||!props.draggable||dropTarget.value!==x.node.id||!dragged.value){onDragEnd();return}e.preventDefault();emit('node-drop',{dragId:dragged.value,targetId:x.node.id,position:dropPosition.value});onDragEnd()}
-function onDragEnd(){dragged.value='';dropTarget.value=''}
-function openMenu(e:MouseEvent,x:FlatNode){if(!props.contextMenu)return;e.preventDefault();menu.value={node:x.node,x:Math.max(0,Math.min(e.clientX,window.innerWidth-190)),y:Math.max(0,Math.min(e.clientY,window.innerHeight-130))};emit('node-contextmenu',{node:x.node,x:e.clientX,y:e.clientY})}
-function menuAction(action:'select'|'expand'){const m=menu.value;if(!m)return;if(action==='select'){const x=indexed.value.get(m.node.id);if(x)select(x)}else expand(m.node.id);menu.value=null}
-onDeactivated(()=>{menu.value=null;onDragEnd()})
-watch(controlDisabled,value=>{if(value){menu.value=null;onDragEnd()}},{flush:'sync'})
-
-defineExpose({getNode:(id:string)=>indexed.value.get(id)?.node,getCheckedKeys:()=>[...props.checkedKeys],setCheckedKeys:(keys:string[])=>{emit('update:checkedKeys',keys);emit('check',keys)},filter:(value:string)=>query.value=value,expandAll:()=>{const keys=[...indexed.value.values()].filter(x=>x.hasChildren).map(x=>x.node.id);internalExpanded.value=keys;emit('update:expandedKeys',keys)},collapseAll:()=>{internalExpanded.value=[];emit('update:expandedKeys',[])}})
+<script
+  setup
+  lang="ts"
+  generic="
+    V extends HysTreeValue = string,
+    N extends object = TreeNode,
+    K extends HysTreeKey = N extends { id: infer I extends HysTreeKey }
+      ? I
+      : HysTreeKey
+  "
+>
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  provide,
+  ref,
+  shallowRef,
+  useId,
+  watch,
+  type InjectionKey,
+} from "vue";
+import {
+  ChevronRight,
+  ChevronDown,
+  LoaderCircle,
+  Search,
+  GripVertical,
+} from "lucide-vue-next";
+import HysInput from "../HysInput/HysInput.vue";
+import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
+import HysButton from "../HysButton/HysButton.vue";
+import { useHysRootAttrs } from "../../config";
+import {
+  useHysControlState,
+  useHysFormItemContext,
+  fieldKey,
+  type HysFieldContext,
+} from "../../composables/formContext";
+import { useTree } from "../../composables/useTree";
+import {
+  type HysTreeProps,
+  type HysTreeKey,
+  type HysTreeValue,
+  type TreeNode,
+  type HysTreeRecord,
+  type HysTreeCheckInfo,
+  type HysTreeSelectInfo,
+  type HysTreeDropInfo,
+  type HysTreeDropPosition,
+  type HysTreeNodeContext,
+} from "../../composables/tree";
+export type { TreeNode } from "../../composables/tree";
+const props = withDefaults(defineProps<HysTreeProps<N, V>>(), {
+  searchable: true,
+  rowHeight: 38,
+  viewportHeight: 340,
+  overscan: 4,
+  selectable: true,
+  selectOnClickNode: true,
+  highlightCurrent: true,
+  showIcon: true,
+  indent: 20,
+  blockNode: true,
+  dragExpandDelay: 700,
+  validateEvent: true,
+});
+defineSlots<{
+  node?: (context: HysTreeNodeContext<N>) => any;
+  default?: (context: HysTreeNodeContext<N>) => any;
+  icon?: (context: HysTreeNodeContext<N>) => any;
+  switcher?: (context: HysTreeNodeContext<N>) => any;
+  actions?: (context: HysTreeNodeContext<N>) => any;
+  empty?: (context: { query: string }) => any;
+  loading?: () => any;
+  contextmenu?: (context: {
+    node: N;
+    key: HysTreeKey;
+    close: () => void;
+  }) => any;
+}>();
+const emit = defineEmits<{
+  "update:modelValue": [value: V];
+  "update:checkedKeys": [keys: HysTreeKey[]];
+  "update:expandedKeys": [keys: HysTreeKey[]];
+  "update:loadedKeys": [keys: HysTreeKey[]];
+  "update:searchValue": [query: string];
+  "update:nodes": [nodes: readonly N[]];
+  select: [node: N, info: HysTreeSelectInfo<N>];
+  check: [keys: HysTreeKey[], info: HysTreeCheckInfo<N>];
+  "check-change": [info: HysTreeCheckInfo<N>];
+  "selection-change": [info: HysTreeSelectInfo<N>];
+  "node-click": [node: N, event: MouseEvent];
+  "node-expand": [
+    node: N,
+    info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[] },
+  ];
+  "node-collapse": [
+    node: N,
+    info: { key: HysTreeKey; expanded: boolean; expandedKeys: HysTreeKey[] },
+  ];
+  "node-drop": [info: HysTreeDropInfo<N, K>];
+  "node-drag-start": [info: { node: N; event: DragEvent }];
+  "node-drag-over": [info: HysTreeDropInfo<N, K>];
+  "node-drag-end": [info: { node: N; event?: Event }];
+  "node-contextmenu": [
+    info: { node: N; x: number; y: number; event: MouseEvent },
+  ];
+  "load-error": [info: { node: N; error: unknown }];
+  "children-loaded": [info: { node: N; children: readonly N[] }];
+  load: [info: { node: N; children: readonly N[]; loadedKeys: HysTreeKey[] }];
+  "data-change": [
+    info: { nodes: readonly N[]; action: string; key?: HysTreeKey },
+  ];
+  search: [query: string];
+  scroll: [event: Event];
+  focus: [event: FocusEvent];
+  blur: [event: FocusEvent];
+}>();
+const attrs = useHysRootAttrs(),
+  control = useHysControlState(props),
+  field = useHysFormItemContext(),
+  id = useId(),
+  element = ref<HTMLElement>(),
+  root = ref<HTMLElement>(),
+  search = ref<InstanceType<typeof HysInput>>();
+provide(fieldKey as InjectionKey<HysFieldContext | undefined>, undefined);
+const store = useTree(
+  props,
+  control.disabled,
+  (name, ...args) =>
+    (emit as (n: string, ...args: any[]) => void)(name, ...args),
+  () => {
+    if (props.validateEvent) void field.validate("change");
+  },
+);
+const {
+  index,
+  visible,
+  words,
+  busy,
+  live,
+  query,
+  expanded,
+  selection,
+  selected,
+  multiple,
+  checked,
+  halfChecked,
+  loadingKeys,
+  failures,
+  matches,
+  expandNode,
+  setChecked,
+  selectNode,
+  filter,
+} = store;
+const height = computed(() =>
+    Number.isFinite(props.rowHeight)
+      ? Math.min(240, Math.max(24, props.rowHeight))
+      : 38,
+  ),
+  viewport = computed(() =>
+    Number.isFinite(props.viewportHeight)
+      ? Math.min(1600, Math.max(80, props.viewportHeight))
+      : 340,
+  ),
+  overscan = computed(() =>
+    Number.isFinite(props.overscan)
+      ? Math.min(30, Math.max(0, Math.floor(props.overscan)))
+      : 4,
+  ),
+  indent = computed(() =>
+    Number.isFinite(props.indent)
+      ? Math.min(80, Math.max(0, props.indent))
+      : 20,
+  ),
+  scrollTop = ref(0),
+  actualHeight = ref(0),
+  focused = ref<HysTreeKey | null>(null),
+  start = computed(() =>
+    props.virtual
+      ? Math.max(0, Math.floor(scrollTop.value / height.value) - overscan.value)
+      : 0,
+  ),
+  end = computed(() =>
+    props.virtual
+      ? Math.min(
+          visible.value.length,
+          Math.ceil(
+            (scrollTop.value + (actualHeight.value || viewport.value)) /
+              height.value,
+          ) + overscan.value,
+        )
+      : visible.value.length,
+  ),
+  rendered = computed(() => visible.value.slice(start.value, end.value)),
+  enabled = computed(() => visible.value.filter((r) => !r.disabled)),
+  tabKey = computed(() =>
+    focused.value !== null &&
+    visible.value.some((r) => r.key === focused.value && !r.disabled)
+      ? focused.value
+      : enabled.value[0]?.key,
+  );
+let frame = 0,
+  savedTop = 0,
+  observer: ResizeObserver | undefined,
+  viewTicket = 0;
+function observe() {
+  observer?.disconnect();
+  if (props.virtual && root.value && typeof ResizeObserver !== "undefined") {
+    observer = new ResizeObserver((entries) => {
+      actualHeight.value = entries[0]?.contentRect.height || 0;
+    });
+    observer.observe(root.value);
+  }
+}
+function stopView() {
+  viewTicket++;
+  cancelAnimationFrame(frame);
+  frame = 0;
+  observer?.disconnect();
+  observer = undefined;
+}
+async function restoreView() {
+  const ticket = ++viewTicket;
+  await nextTick();
+  if (!live.value || ticket !== viewTicket || !root.value) return;
+  root.value.scrollTop = savedTop;
+  scrollTop.value = root.value.scrollTop;
+  observe();
+}
+onActivated(restoreView);
+watch([root, () => props.virtual], restoreView);
+function onScroll(e: Event) {
+  if (!live.value || !root.value?.isConnected) return;
+  savedTop = root.value.scrollTop;
+  if (props.virtual && !frame)
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      scrollTop.value = savedTop;
+    });
+  emit("scroll", e);
+}
+function resetScroll() {
+  savedTop = 0;
+  scrollTop.value = 0;
+  if (root.value) root.value.scrollTop = 0;
+}
+watch(query, resetScroll);
+watch(
+  () => visible.value.length,
+  () => {
+    if (root.value) {
+      const max = Math.max(
+        0,
+        visible.value.length * height.value -
+          (actualHeight.value || viewport.value),
+      );
+      if (props.virtual && savedTop > max) {
+        savedTop = max;
+        scrollTop.value = max;
+        root.value.scrollTop = max;
+      }
+    }
+  },
+);
+const rowElements = new Map<HysTreeKey, HTMLElement>();
+function bindRow(key: HysTreeKey, value: unknown) {
+  if (value instanceof HTMLElement) rowElements.set(key, value);
+  else rowElements.delete(key);
+}
+async function scrollTo(options: {
+  key?: HysTreeKey;
+  top?: number;
+  align?: "top" | "bottom" | "auto";
+  offset?: number;
+  behavior?: ScrollBehavior;
+}) {
+  if (busy.value) return;
+  if (options.key !== undefined) {
+    await store.setExpandedKeys([
+      ...new Set([...store.rawExpanded.value, ...store.ancestors(options.key)]),
+    ]);
+    await nextTick();
+  }
+  const port = root.value;
+  if (!port) return;
+  let top = options.top ?? port.scrollTop;
+  if (options.key !== undefined) {
+    const at = visible.value.findIndex((r) => r.key === options.key);
+    if (at < 0) return;
+    if (props.virtual) {
+      const y = at * height.value,
+        bottom = y + height.value,
+        h = actualHeight.value || viewport.value;
+      top =
+        options.align === "top"
+          ? y
+          : options.align === "bottom"
+            ? bottom - h
+            : y < port.scrollTop
+              ? y
+              : bottom > port.scrollTop + h
+                ? bottom - h
+                : port.scrollTop;
+    } else {
+      const row = rowElements.get(options.key);
+      if (row) {
+        const y =
+            row.getBoundingClientRect().top -
+            port.getBoundingClientRect().top +
+            port.scrollTop,
+          bottom = y + row.offsetHeight;
+        top =
+          options.align === "top"
+            ? y
+            : options.align === "bottom"
+              ? bottom - port.clientHeight
+              : y < port.scrollTop
+                ? y
+                : bottom > port.scrollTop + port.clientHeight
+                  ? bottom - port.clientHeight
+                  : port.scrollTop;
+      }
+    }
+  }
+  top = Math.max(0, Number.isFinite(top) ? top + (options.offset ?? 0) : 0);
+  savedTop = top;
+  scrollTop.value = top;
+  if (options.behavior === "smooth" && port.scrollTo)
+    port.scrollTo({ top, behavior: "smooth" });
+  else port.scrollTop = top;
+  await nextTick();
+}
+async function focus(key?: HysTreeKey) {
+  if (busy.value) return;
+  const chosen =
+    key ??
+    (focused.value !== null ? focused.value : undefined) ??
+    enabled.value[0]?.key;
+  if (chosen === undefined) {
+    search.value?.focus();
+    return;
+  }
+  const row = index.value.map.get(chosen);
+  if (!row || row.disabled) return;
+  await scrollTo({ key: chosen });
+  if (!live.value || !visible.value.some((r) => r.key === chosen)) return;
+  focused.value = chosen;
+  await nextTick();
+  rowElements.get(chosen)?.focus({ preventScroll: !!props.virtual });
+}
+function context(row: HysTreeRecord<N>): HysTreeNodeContext<N> {
+  return {
+    node: row.node,
+    key: row.key,
+    label: row.label,
+    depth: row.depth,
+    expanded:
+      expanded.value.has(row.key) ||
+      (!!query.value.trim() && props.filterMode !== "highlight"),
+    selected: selection.value.has(row.key),
+    checked: checked.value.has(row.key),
+    indeterminate: halfChecked.value.has(row.key),
+    disabled: busy.value || row.disabled,
+    loading: loadingKeys.value.has(row.key),
+    leaf: !row.hasChildren,
+  };
+}
+const nativeInteractive = (
+  target: EventTarget | null,
+  row: HTMLElement | null,
+) =>
+  target instanceof Element &&
+  !!target.closest(
+    'button,input,textarea,select,a,[contenteditable="true"],[role="button"]',
+  ) &&
+  target !== row;
+function click(e: MouseEvent, row: HysTreeRecord<N>) {
+  if (
+    nativeInteractive(e.target, e.currentTarget as HTMLElement) ||
+    busy.value ||
+    row.disabled
+  )
+    return;
+  focused.value = row.key;
+  emit("node-click", row.node, e);
+  if (props.selectOnClickNode) void selectNode(row, e);
+  if (
+    props.checkable &&
+    (props.checkOnClickNode || (props.checkOnClickLeaf && !row.hasChildren))
+  )
+    void setChecked(
+      row.key,
+      !checked.value.has(row.key),
+      !props.checkStrictly,
+      e,
+    );
+  if (props.expandOnClickNode && row.hasChildren)
+    void expandNode(row.key, !expanded.value.has(row.key));
+}
+function dblclick(e: MouseEvent, row: HysTreeRecord<N>) {
+  if (
+    props.expandOnDoubleClick &&
+    !props.expandOnClickNode &&
+    !nativeInteractive(e.target, e.currentTarget as HTMLElement) &&
+    row.hasChildren
+  )
+    void expandNode(row.key, !expanded.value.has(row.key));
+}
+function keydown(e: KeyboardEvent, row: HysTreeRecord<N>) {
+  if (
+    e.isComposing ||
+    e.keyCode === 229 ||
+    nativeInteractive(e.target, e.currentTarget as HTMLElement) ||
+    busy.value
+  )
+    return;
+  const at = enabled.value.findIndex((r) => r.key === row.key);
+  if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+    e.preventDefault();
+    const n =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? enabled.value.length - 1
+          : Math.max(
+              0,
+              Math.min(
+                enabled.value.length - 1,
+                at + (e.key === "ArrowDown" ? 1 : -1),
+              ),
+            );
+    void focus(enabled.value[n]?.key);
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    if (row.hasChildren && !expanded.value.has(row.key))
+      void expandNode(row.key);
+    else if (row.hasChildren) void focus(enabled.value[at + 1]?.key);
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    if (row.hasChildren && expanded.value.has(row.key))
+      void expandNode(row.key, false);
+    else if (row.parent !== undefined) void focus(row.parent);
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    void selectNode(row, e);
+  } else if (e.key === " ") {
+    e.preventDefault();
+    props.checkable
+      ? void setChecked(
+          row.key,
+          !checked.value.has(row.key),
+          !props.checkStrictly,
+          e,
+        )
+      : void selectNode(row, e);
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    if (menu.value) closeMenu();
+    else if (dragged.value !== null) endDrag(e);
+    else if (props.allowDeselect) void store.setSelectedKeys([]);
+  }
+}
+function searchKeys(e: KeyboardEvent) {
+  if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229)
+    e.preventDefault();
+  else if (e.key === "ArrowDown" && !e.isComposing) {
+    e.preventDefault();
+    void focus(enabled.value[0]?.key);
+  }
+}
+const dragged = ref<HysTreeKey | null>(null),
+  dropTarget = ref<HysTreeKey | null>(null),
+  dropPosition = ref<HysTreeDropPosition>("inside");
+let dragNode: N | undefined,
+  hoverTimer: ReturnType<typeof setTimeout> | undefined,
+  hoverKey: HysTreeKey | null = null;
+function clearHover() {
+  clearTimeout(hoverTimer);
+  hoverTimer = undefined;
+  hoverKey = null;
+}
+function globalCancel(e: Event) {
+  if (e.type === "blur" || (e instanceof KeyboardEvent && e.key === "Escape"))
+    endDrag(e);
+}
+function endDrag(e?: Event) {
+  const node = dragNode;
+  dragged.value = null;
+  dropTarget.value = null;
+  dragNode = undefined;
+  clearHover();
+  window.removeEventListener("blur", globalCancel);
+  window.removeEventListener("keydown", globalCancel, true);
+  if (node) emit("node-drag-end", { node, event: e });
+}
+function dragstart(e: DragEvent, row: HysTreeRecord<N>) {
+  if (
+    busy.value ||
+    !props.draggable ||
+    row.disabled ||
+    props.allowDrag?.(row.node) === false ||
+    nativeInteractive(e.target, e.currentTarget as HTMLElement)
+  ) {
+    e.preventDefault();
+    return;
+  }
+  endDrag();
+  dragged.value = row.key;
+  dragNode = row.node;
+  e.dataTransfer?.setData("text/plain", String(row.key));
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+  window.addEventListener("blur", globalCancel);
+  window.addEventListener("keydown", globalCancel, true);
+  emit("node-drag-start", { node: row.node, event: e });
+}
+function canDrop(row: HysTreeRecord<N>, position: HysTreeDropPosition) {
+  const from = dragged.value;
+  if (
+    from === null ||
+    from === row.key ||
+    busy.value ||
+    !props.draggable ||
+    row.disabled ||
+    !dragNode ||
+    index.value.map.get(from)?.node !== dragNode
+  )
+    return false;
+  if (
+    store.ancestors(row.key).includes(from) ||
+    (position === "inside" && row.leaf)
+  )
+    return false;
+  return props.allowDrop?.(dragNode, row.node, position) !== false;
+}
+function dragover(e: DragEvent, row: HysTreeRecord<N>) {
+  const box = (e.currentTarget as HTMLElement).getBoundingClientRect(),
+    fraction = (e.clientY - box.top) / (box.height || 1),
+    position =
+      fraction < 0.25 ? "before" : fraction > 0.75 ? "after" : "inside";
+  if (!canDrop(row, position)) {
+    dropTarget.value = null;
+    clearHover();
+    return;
+  }
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+  dropTarget.value = row.key;
+  dropPosition.value = position;
+  emit("node-drag-over", {
+    dragId: dragged.value! as K,
+    targetId: row.key as K,
+    dragNode: dragNode!,
+    targetNode: row.node,
+    position,
+    event: e,
+  });
+  if (
+    position === "inside" &&
+    row.hasChildren &&
+    !expanded.value.has(row.key) &&
+    hoverKey !== row.key
+  ) {
+    clearHover();
+    hoverKey = row.key;
+    if (Number.isFinite(props.dragExpandDelay) && props.dragExpandDelay >= 0)
+      hoverTimer = setTimeout(() => {
+        hoverTimer = undefined;
+        if (dropTarget.value === row.key && canDrop(row, "inside"))
+          void expandNode(row.key);
+      }, props.dragExpandDelay);
+  } else if (position !== "inside") clearHover();
+}
+function dragleave(e: DragEvent, row: HysTreeRecord<N>) {
+  if (
+    !(e.relatedTarget instanceof Node) ||
+    !(e.currentTarget as HTMLElement).contains(e.relatedTarget)
+  ) {
+    if (dropTarget.value === row.key) dropTarget.value = null;
+    clearHover();
+  }
+}
+function drop(e: DragEvent, row: HysTreeRecord<N>) {
+  if (dropTarget.value === row.key && canDrop(row, dropPosition.value)) {
+    e.preventDefault();
+    emit("node-drop", {
+      dragId: dragged.value! as K,
+      targetId: row.key as K,
+      position: dropPosition.value,
+      dragNode: dragNode!,
+      targetNode: row.node,
+      event: e,
+    });
+  }
+  endDrag(e);
+}
+watch(
+  () => [busy.value, props.draggable, props.nodes] as const,
+  () => {
+    if (
+      busy.value ||
+      !props.draggable ||
+      (dragged.value !== null &&
+        index.value.map.get(dragged.value)?.node !== dragNode)
+    )
+      endDrag();
+  },
+  { flush: "sync" },
+);
+const menu = shallowRef<{ node: N; key: HysTreeKey; x: number; y: number }>(),
+  menuPanel = ref<HTMLElement>(),
+  menuReturn = ref<HysTreeKey>();
+function closeMenu(restore = true) {
+  menu.value = undefined;
+  if (restore && menuReturn.value !== undefined) void focus(menuReturn.value);
+}
+async function openMenu(e: MouseEvent, row: HysTreeRecord<N>) {
+  if (!props.contextMenu || busy.value || row.disabled) return;
+  e.preventDefault();
+  menuReturn.value = row.key;
+  menu.value = {
+    node: row.node,
+    key: row.key,
+    x: Math.max(8, Math.min(e.clientX, window.innerWidth - 230)),
+    y: Math.max(8, Math.min(e.clientY, window.innerHeight - 155)),
+  };
+  emit("node-contextmenu", {
+    node: row.node,
+    x: e.clientX,
+    y: e.clientY,
+    event: e,
+  });
+  await nextTick();
+  menuPanel.value?.querySelector<HTMLElement>('button,[tabindex="0"]')?.focus();
+}
+function menuKeys(e: KeyboardEvent) {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeMenu();
+  } else if (e.key === "Tab") closeMenu(false);
+  else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+    e.preventDefault();
+    const items = [
+        ...(menuPanel.value?.querySelectorAll<HTMLElement>(
+          "[role=menuitem]:not(:disabled)",
+        ) ?? []),
+      ],
+      at = items.indexOf(document.activeElement as HTMLElement),
+      n =
+        e.key === "Home"
+          ? 0
+          : e.key === "End"
+            ? items.length - 1
+            : (at + (e.key === "ArrowDown" ? 1 : -1) + items.length) %
+              items.length;
+    items[n]?.focus();
+  }
+}
+function focusIn(e: FocusEvent) {
+  if (
+    !(e.relatedTarget instanceof Node) ||
+    !element.value?.contains(e.relatedTarget)
+  )
+    emit("focus", e);
+}
+function blur(e: FocusEvent) {
+  if (
+    e.relatedTarget instanceof Node &&
+    (element.value?.contains(e.relatedTarget) ||
+      menuPanel.value?.contains(e.relatedTarget))
+  )
+    return;
+  emit("blur", e);
+  if (props.validateEvent) void field.validate("blur");
+}
+function cleanup() {
+  endDrag();
+  closeMenu(false);
+  stopView();
+}
+watch(busy, (v) => {
+  if (v) closeMenu(false);
+});
+onDeactivated(cleanup);
+onBeforeUnmount(cleanup);
+defineExpose({
+  element,
+  getNode: store.getNode,
+  getNodeInfo: store.getNodeInfo,
+  getCheckedKeys: store.getCheckedKeys,
+  getCheckedNodes: store.getCheckedNodes,
+  getHalfCheckedKeys: store.getHalfCheckedKeys,
+  getHalfCheckedNodes: () => store.checkInfo().halfCheckedNodes,
+  setCheckedKeys: store.setCheckedKeys,
+  setCheckedNodes: (nodes: readonly N[], leafOnly = false) =>
+    store.setCheckedKeys(
+      nodes.flatMap((node) => store.getNodeInfo(node)?.key ?? []),
+      leafOnly,
+    ),
+  setChecked: store.setChecked,
+  getCurrentKey: store.getCurrentKey,
+  getCurrentNode: store.getCurrentNode,
+  getSelectedKeys: () => [...selected.value],
+  setCurrentKey: store.setCurrentKey,
+  setCurrentNode: (node: N | null, expandParents = true) =>
+    store.setCurrentKey(
+      node === null ? null : (store.getNodeInfo(node)?.key ?? null),
+      expandParents,
+    ),
+  setSelectedKeys: store.setSelectedKeys,
+  getExpandedKeys: () => [...expanded.value],
+  setExpandedKeys: store.setExpandedKeys,
+  expandNode,
+  expandAll: () =>
+    store.setExpandedKeys(
+      index.value.rows.filter((r) => r.hasChildren).map((r) => r.key),
+    ),
+  collapseAll: () => store.setExpandedKeys([]),
+  filter,
+  reloadNode: store.reloadNode,
+  updateKeyChildren: store.updateKeyChildren,
+  append: store.append,
+  insertBefore: store.insertBefore,
+  insertAfter: store.insertAfter,
+  remove: store.remove,
+  scrollTo,
+  focus,
+});
 </script>
 <template>
-<div v-bind="hysRootAttrs" class="hys-ui-pf-tree" :class="{'hys-ui-pf-tree-disabled':controlDisabled}">
-  <input v-if="searchable" v-model="query" class="hys-ui-pf-tree-search" type="search" placeholder="搜索节点…" aria-label="搜索树节点" :disabled="controlDisabled"/>
-  <div ref="root" role="tree" :aria-multiselectable="multiple||checkable||Array.isArray(modelValue)" aria-label="树形列表" class="hys-ui-pf-tree-list" :style="{maxHeight:viewport+'px'}" @scroll="onScroll">
-    <div v-if="virtual" :style="{height:topSpacer+'px'}" aria-hidden="true"></div>
-    <div v-for="(x,i) in rendered" :key="x.node.id" class="hys-ui-pf-tree-row" :class="{'hys-ui-pf-tree-selected':selection.has(x.node.id),'hys-ui-pf-tree-line':showLine,'hys-ui-pf-tree-drop':dropTarget===x.node.id}" role="treeitem" :aria-level="x.depth+1" :aria-expanded="x.hasChildren?(query.trim()?true:expanded.includes(x.node.id)):undefined" :aria-selected="modelValue===x.node.id" :aria-disabled="controlDisabled||x.node.disabled" :aria-checked="checkable?(checked.has(x.node.id)?'true':indeterminate.has(x.node.id)?'mixed':'false'):undefined" :tabindex="focused===x.node.id||(!focused&&i===0&&virtualStart===0)?0:-1" :draggable="draggable&&!controlDisabled&&!x.node.disabled" :data-tree-id="x.node.id" @focus="focused=x.node.id" @keydown="keydown($event,x)" @click="select(x)" @dragstart="onDragStart($event,x)" @dragover="onDragOver($event,x)" @drop="onDrop($event,x)" @dragend="onDragEnd" @contextmenu="openMenu($event,x)" :data-drop-position="dropTarget===x.node.id?dropPosition:undefined" :style="{'--hys-ui-tree-depth':x.depth,minHeight:virtual?effectiveHeight+'px':undefined,height:virtual?effectiveHeight+'px':undefined}">
-      <button v-if="x.hasChildren" class="hys-ui-pf-tree-expander" type="button" :aria-label="expanded.includes(x.node.id)?'折叠':'展开'" :disabled="controlDisabled||x.node.disabled||loadingKeys.includes(x.node.id)" @click.stop="expand(x.node.id)"><LoaderCircle :size="15" aria-hidden="true" v-if="loadingKeys.includes(x.node.id)" class="hys-ui-icon-spin"/><component v-else :is="query.trim()||expanded.includes(x.node.id)?ChevronDown:ChevronRight" :size="15" aria-hidden="true"/></button><span v-else class="hys-ui-pf-tree-spacer" aria-hidden="true"></span>
-      <HysCheckbox v-if="checkable" :tabindex="-1" :model-value="checked.has(x.node.id)" :disabled="controlDisabled||x.node.disabled||x.node.checkable===false" :aria-label="`勾选${x.node.label}`" :indeterminate="indeterminate.has(x.node.id)" @click.stop @change="toggleCheck(x)"/>
-      <span v-if="x.node.icon" aria-hidden="true">{{x.node.icon}}</span><slot name="node" :node="x.node" :depth="x.depth" :expanded="expanded.includes(x.node.id)" :selected="modelValue===x.node.id"><span class="hys-ui-pf-tree-label">{{x.node.label}}</span></slot><span v-if="loadFailures[x.node.id]" class="hys-ui-pf-tree-error" role="alert">{{loadFailures[x.node.id]}}</span>
+  <div
+    ref="element"
+    v-bind="attrs"
+    class="hys-ui-pf-tree"
+    :class="{
+      'hys-ui-pf-tree-disabled': control.disabled.value,
+      'hys-ui-tree-inline': !blockNode,
+    }"
+    :data-size="control.size.value"
+    @focusin="focusIn"
+    @focusout="blur"
+  >
+    <HysInput
+      v-if="searchable"
+      ref="search"
+      class="hys-ui-tree-search"
+      data-hys-ui-form-internal
+      :model-value="query"
+      :placeholder="searchPlaceholder || words.search"
+      :aria-label="words.search"
+      :disabled="busy"
+      :size="control.size.value"
+      clearable
+      @update:model-value="filter"
+      @keydown="searchKeys"
+      ><template #prefix><Search :size="15" aria-hidden="true" /></template
+    ></HysInput>
+    <div
+      ref="root"
+      :id="field.id.value || id"
+      role="tree"
+      data-hys-ui-field-managed
+      :tabindex="busy ? -1 : 0"
+      @focus.self="focus()"
+      :aria-label="ariaLabel || field.label.value || words.tree"
+      :aria-multiselectable="multiple || checkable || undefined"
+      :aria-disabled="busy || undefined"
+      :aria-busy="loading || loadingKeys.size > 0 || undefined"
+      :aria-invalid="field.invalid.value || undefined"
+      :aria-describedby="field.describedBy.value"
+      class="hys-ui-pf-tree-list"
+      :class="{ 'hys-ui-tree-virtual': virtual }"
+      :style="{
+        maxHeight: viewport + 'px',
+        height: virtual ? viewport + 'px' : undefined,
+        '--hys-ui-tree-indent': indent + 'px',
+        '--hys-ui-tree-row-height': height + 'px',
+      }"
+      @scroll="onScroll"
+    >
+      <div v-if="loading" class="hys-ui-tree-loading" role="status">
+        <slot name="loading"
+          ><LoaderCircle
+            :size="18"
+            class="hys-ui-icon-spin"
+            aria-hidden="true"
+          />{{ words.loading }}</slot
+        >
+      </div>
+      <div
+        class="hys-ui-tree-space"
+        :style="
+          virtual ? { height: visible.length * height + 'px' } : undefined
+        "
+      >
+        <div
+          class="hys-ui-tree-rows"
+          :style="
+            virtual
+              ? {
+                  position: 'absolute',
+                  top: start * height + 'px',
+                  insetInline: '0',
+                }
+              : undefined
+          "
+        >
+          <div
+            v-for="row in rendered"
+            :key="typeof row.key + ':' + row.key"
+            :ref="(v) => bindRow(row.key, v)"
+            class="hys-ui-pf-tree-row"
+            :class="[
+              typeof nodeClass === 'function' ? nodeClass(row.node) : nodeClass,
+              {
+                'hys-ui-pf-tree-selected':
+                  highlightCurrent && selection.has(row.key),
+                'hys-ui-pf-tree-line': showLine,
+                'hys-ui-pf-tree-drop': dropTarget === row.key,
+                'hys-ui-tree-matched': query.trim() && matches.has(row.key),
+                'hys-ui-tree-row-disabled': row.disabled,
+                'hys-ui-tree-row-dragging': dragged === row.key,
+              },
+            ]"
+            :style="[
+              { '--hys-ui-tree-depth': row.depth },
+              typeof nodeStyle === 'function' ? nodeStyle(row.node) : nodeStyle,
+            ]"
+            role="treeitem"
+            :aria-level="row.depth + 1"
+            :aria-posinset="row.pos"
+            :aria-setsize="row.size"
+            :aria-expanded="row.hasChildren ? context(row).expanded : undefined"
+            :aria-selected="
+              selectable && row.selectable ? selection.has(row.key) : undefined
+            "
+            :aria-disabled="busy || row.disabled || undefined"
+            :aria-checked="
+              checkable && row.checkable
+                ? halfChecked.has(row.key)
+                  ? 'mixed'
+                  : checked.has(row.key)
+                : undefined
+            "
+            :tabindex="!busy && tabKey === row.key ? 0 : -1"
+            :draggable="
+              draggable &&
+              !busy &&
+              !row.disabled &&
+              allowDrag?.(row.node) !== false
+            "
+            :data-tree-id="row.key"
+            :data-tree-key="typeof row.key + ':' + row.key"
+            :data-drop-position="
+              dropTarget === row.key ? dropPosition : undefined
+            "
+            @focus="focused = row.key"
+            @keydown="keydown($event, row)"
+            @click="click($event, row)"
+            @dblclick="dblclick($event, row)"
+            @dragstart="dragstart($event, row)"
+            @dragover="dragover($event, row)"
+            @dragleave="dragleave($event, row)"
+            @drop="drop($event, row)"
+            @dragend="endDrag"
+            @contextmenu="openMenu($event, row)"
+          >
+            <button
+              v-if="row.hasChildren"
+              type="button"
+              class="hys-ui-pf-tree-expander"
+              :aria-label="
+                (context(row).expanded ? words.collapse : words.expand) +
+                ' ' +
+                row.label
+              "
+              :disabled="busy || row.disabled"
+              tabindex="-1"
+              @click.stop="expandNode(row.key, !expanded.has(row.key))"
+            >
+              <slot name="switcher" v-bind="context(row)"
+                ><LoaderCircle
+                  v-if="loadingKeys.has(row.key)"
+                  :size="15"
+                  class="hys-ui-icon-spin"
+                  aria-hidden="true" /><component
+                  v-else
+                  :is="context(row).expanded ? ChevronDown : ChevronRight"
+                  :size="15"
+                  aria-hidden="true"
+              /></slot></button
+            ><span v-else class="hys-ui-pf-tree-spacer"
+              ><slot name="switcher" v-bind="context(row)"
+            /></span>
+            <HysCheckbox
+              v-if="checkable && row.checkable"
+              :tabindex="-1"
+              :model-value="checked.has(row.key)"
+              :indeterminate="halfChecked.has(row.key)"
+              :disabled="busy || row.checkboxDisabled"
+              :aria-label="words.check + ' ' + row.label"
+              @click.stop
+              @update:model-value="
+                (on) => setChecked(row.key, on, !checkStrictly)
+              "
+            />
+            <span
+              v-if="showIcon && (row.icon || $slots.icon)"
+              class="hys-ui-tree-icon"
+              aria-hidden="true"
+              ><slot name="icon" v-bind="context(row)">{{
+                row.icon
+              }}</slot></span
+            >
+            <span class="hys-ui-pf-tree-label"
+              ><slot name="node" v-bind="context(row)"
+                ><slot v-bind="context(row)"
+                  ><component
+                    :is="() => renderContent!(context(row))"
+                    v-if="renderContent"
+                  /><template v-else>{{ row.label }}</template></slot
+                ></slot
+              ></span
+            >
+            <button
+              v-if="failures.has(row.key)"
+              type="button"
+              class="hys-ui-tree-retry"
+              :disabled="busy || row.disabled"
+              @click.stop="store.reloadNode(row.key)"
+            >
+              {{ words.loadError }} · {{ words.retry }}
+            </button>
+            <span v-if="$slots.actions" class="hys-ui-tree-actions" @click.stop
+              ><slot name="actions" v-bind="context(row)" /></span
+            ><GripVertical
+              v-if="draggable"
+              class="hys-ui-tree-grip"
+              :size="13"
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+      </div>
+      <div v-if="!visible.length && !loading" class="hys-ui-pf-tree-empty">
+        <slot name="empty" :query="query">{{
+          query.trim() ? words.noMatch : emptyText || words.empty
+        }}</slot>
+      </div>
     </div>
-    <div v-if="virtual" :style="{height:bottomSpacer+'px'}" aria-hidden="true"></div>
-    <div v-if="!visible.length" class="hys-ui-pf-tree-empty">{{query?'无匹配节点':'暂无数据'}}</div>
+    <Teleport to="body"
+      ><template v-if="menu"
+        ><div
+          v-bind="attrs"
+          class="hys-ui-tree-menu-backdrop"
+          @click="closeMenu()"
+          @contextmenu.prevent="closeMenu()"
+        />
+        <div
+          ref="menuPanel"
+          v-bind="attrs"
+          class="hys-ui-tree-context"
+          :style="{ left: menu.x + 'px', top: menu.y + 'px' }"
+          role="menu"
+          @keydown="menuKeys"
+        >
+          <slot
+            name="contextmenu"
+            :node="menu.node"
+            :key="menu.key"
+            :close="closeMenu"
+            ><HysButton
+              role="menuitem"
+              variant="ghost"
+              :disabled="busy"
+              @click="
+                store.setCurrentKey(menu.key);
+                closeMenu();
+              "
+              >{{ words.select }}</HysButton
+            ><HysButton
+              role="menuitem"
+              variant="ghost"
+              :disabled="busy || !index.map.get(menu.key)?.hasChildren"
+              @click="
+                expandNode(menu.key, !expanded.has(menu.key));
+                closeMenu();
+              "
+              >{{
+                expanded.has(menu.key) ? words.collapse : words.expand
+              }}</HysButton
+            ><HysButton role="menuitem" variant="ghost" @click="closeMenu()">{{
+              words.close
+            }}</HysButton></slot
+          >
+        </div></template
+      ></Teleport
+    >
   </div>
-  <Teleport to="body"><div v-bind="hysRootAttrs" v-if="menu" class="hys-ui-pf-tree-context" :style="{left:menu.x+'px',top:menu.y+'px'}" role="menu" @keydown.esc="menu=null"><button type="button" role="menuitem" @click="menuAction('select')">选择节点</button><button type="button" role="menuitem" @click="menuAction('expand')">展开 / 折叠</button><button type="button" role="menuitem" @click="menu=null">关闭</button></div><div v-bind="hysRootAttrs" v-if="menu" class="hys-ui-pf-tree-context-backdrop" @click="menu=null" @contextmenu.prevent="menu=null"></div></Teleport>
-</div>
 </template>
 <style scoped>
-.hys-ui-pf-tree{font-size:13px;color:var(--hys-ui-text-primary,var(--hys-ui-theme-text-primary,var(--hys-ui-text,var(--hys-ui-theme-text,#26344a))));min-width:0}.hys-ui-pf-tree-search{width:100%;box-sizing:border-box;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#d7deea));border-radius:8px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:inherit;padding:9px 11px;margin-bottom:8px}.hys-ui-pf-tree-list{max-height:340px;overflow:auto}.hys-ui-pf-tree-row{display:flex;align-items:center;gap:7px;padding:7px 10px 7px calc(8px + var(--hys-ui-tree-depth)*20px);min-height:32px;cursor:pointer;border-radius:7px;outline-offset:-2px}.hys-ui-pf-tree-row:hover{background:var(--hys-ui-surface-hover,#eef3fc)}.hys-ui-pf-tree-row:focus-visible{outline:2px solid var(--hys-ui-primary,var(--hys-ui-theme-primary,#3674e9))}.hys-ui-pf-tree-selected{background:var(--hys-ui-surface-hover,#e6efff);color:var(--hys-ui-primary,var(--hys-ui-theme-primary,#3674e9));font-weight:600}.hys-ui-pf-tree-expander{width:22px;height:22px;flex-shrink:0;border:0;background:transparent;color:inherit;cursor:pointer}.hys-ui-pf-tree-spacer{width:22px;flex-shrink:0}.hys-ui-pf-tree-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hys-ui-pf-tree-disabled{opacity:.6}.hys-ui-pf-tree-empty{padding:18px;color:var(--hys-ui-text-secondary,#778)}.hys-ui-pf-tree-line{border-left:1px dotted var(--hys-ui-border,var(--hys-ui-theme-border,#ddd))}@media(prefers-reduced-motion:no-preference){.hys-ui-pf-tree-row{transition:background .15s ease}}
-</style>
-<style scoped>
-.hys-ui-pf-tree-drop[data-drop-position="inside"]{outline:2px dashed var(--hys-ui-primary,var(--hys-ui-theme-primary,#3674e9));outline-offset:-2px}.hys-ui-pf-tree-drop[data-drop-position="before"]{box-shadow:inset 0 3px var(--hys-ui-primary,var(--hys-ui-theme-primary,#3674e9))}.hys-ui-pf-tree-drop[data-drop-position="after"]{box-shadow:inset 0 -3px var(--hys-ui-primary,var(--hys-ui-theme-primary,#3674e9))}.hys-ui-pf-tree-error{font-size:11px;color:#c2410c}.hys-ui-pf-tree-context{position:fixed;z-index:10001;width:170px;padding:5px;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#ddd));border-radius:9px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));box-shadow:0 12px 32px #0002;display:grid}.hys-ui-pf-tree-context button{padding:8px;text-align:left;border:0;background:transparent;color:inherit;cursor:pointer}.hys-ui-pf-tree-context button:hover{background:var(--hys-ui-surface-hover,#eee)}.hys-ui-pf-tree-context-backdrop{position:fixed;inset:0;z-index:10000;background:transparent}
+.hys-ui-pf-tree {
+  font-size: 13px;
+  min-width: 0;
+  color: var(--hys-ui-text-primary, var(--hys-ui-theme-text-primary, #26344a));
+}
+.hys-ui-tree-search {
+  margin-bottom: 10px;
+}
+.hys-ui-pf-tree-list {
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  position: relative;
+  isolation: isolate;
+}
+.hys-ui-tree-space,
+.hys-ui-tree-rows {
+  position: relative;
+  min-width: 0;
+}
+.hys-ui-pf-tree-row {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--hys-ui-tree-row-height);
+  padding: 6px 10px 6px
+    calc(8px + var(--hys-ui-tree-depth) * var(--hys-ui-tree-indent));
+  border-radius: 7px;
+  margin-block: 3px;
+  cursor: pointer;
+  outline-offset: -2px;
+}
+.hys-ui-pf-tree-row:hover {
+  background: var(
+    --hys-ui-surface-hover,
+    var(--hys-ui-theme-surface-hover, #f3f6fb)
+  );
+}
+.hys-ui-pf-tree-row:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary, #3674e9));
+}
+.hys-ui-pf-tree-selected {
+  background: var(
+    --hys-ui-primary-soft,
+    var(--hys-ui-theme-primary-soft, #eaf0ff)
+  );
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary, #3674e9));
+  font-weight: 600;
+}
+.hys-ui-pf-tree-selected:hover {
+  background: var(
+    --hys-ui-primary-soft,
+    var(--hys-ui-theme-primary-soft, #eaf0ff)
+  );
+}
+.hys-ui-tree-matched .hys-ui-pf-tree-label {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  text-underline-offset: 4px;
+}
+.hys-ui-pf-tree-expander,
+.hys-ui-pf-tree-spacer {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hys-ui-pf-tree-expander {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.hys-ui-pf-tree-expander:hover {
+  background: var(
+    --hys-ui-surface-hover,
+    var(--hys-ui-theme-surface-hover, #eef3fc)
+  );
+}
+.hys-ui-pf-tree-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hys-ui-tree-row-disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+.hys-ui-pf-tree-disabled .hys-ui-pf-tree-row {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.hys-ui-tree-icon,
+.hys-ui-tree-grip {
+  display: inline-flex;
+  flex: none;
+  color: var(
+    --hys-ui-text-secondary,
+    var(--hys-ui-theme-text-secondary, #8a96ab)
+  );
+}
+.hys-ui-tree-grip {
+  opacity: 0;
+}
+.hys-ui-pf-tree-row:hover .hys-ui-tree-grip,
+.hys-ui-pf-tree-row:focus-visible .hys-ui-tree-grip {
+  opacity: 1;
+}
+.hys-ui-tree-row-dragging {
+  opacity: 0.45;
+}
+.hys-ui-pf-tree-drop[data-drop-position="inside"] {
+  outline: 2px dashed var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+}
+.hys-ui-pf-tree-drop[data-drop-position="before"]:before,
+.hys-ui-pf-tree-drop[data-drop-position="after"]:after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  z-index: 2;
+}
+.hys-ui-pf-tree-drop[data-drop-position="before"]:before {
+  top: 0;
+}
+.hys-ui-pf-tree-drop[data-drop-position="after"]:after {
+  bottom: 0;
+}
+.hys-ui-pf-tree-line:before {
+  content: "";
+  position: absolute;
+  left: calc(19px + (var(--hys-ui-tree-depth) - 1) * var(--hys-ui-tree-indent));
+  height: 100%;
+  border-left: 1px dashed
+    var(--hys-ui-border, var(--hys-ui-theme-border, #d7deea));
+  opacity: 0.8;
+}
+.hys-ui-pf-tree-line[aria-level="1"]:before {
+  display: none;
+}
+.hys-ui-tree-virtual {
+  overflow-anchor: none;
+}
+.hys-ui-tree-virtual .hys-ui-pf-tree-row {
+  height: var(--hys-ui-tree-row-height);
+  min-height: var(--hys-ui-tree-row-height);
+  margin: 0;
+  padding-block: 0;
+}
+.hys-ui-pf-tree-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--hys-ui-text-secondary, var(--hys-ui-theme-text-secondary, #778));
+}
+.hys-ui-tree-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: absolute;
+  inset: 0;
+  min-height: 80px;
+  z-index: 5;
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff)) 85%,
+    transparent
+  );
+}
+.hys-ui-tree-retry {
+  border: 0;
+  background: transparent;
+  color: var(--hys-ui-danger, var(--hys-ui-theme-danger, #d24a50));
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hys-ui-tree-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.hys-ui-tree-inline .hys-ui-pf-tree-label {
+  flex: none;
+}
+.hys-ui-pf-tree[data-size="sm"] {
+  font-size: 12px;
+}
+.hys-ui-pf-tree[data-size="lg"] {
+  font-size: 14px;
+}
+.hys-ui-tree-context {
+  position: fixed;
+  z-index: 10001;
+  min-width: 200px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border, #d7deea));
+  border-radius: 10px;
+  box-shadow: 0 12px 32px #0002;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff));
+  color: var(--hys-ui-text-primary, var(--hys-ui-theme-text-primary, #26344a));
+}
+.hys-ui-tree-context :deep(button) {
+  justify-content: flex-start;
+  text-align: left;
+}
+.hys-ui-tree-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: transparent;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hys-ui-pf-tree-row {
+    transition:
+      background 0.12s ease,
+      opacity 0.12s ease;
+  }
+}
+[data-hys-motion="off"] .hys-ui-pf-tree-row {
+  transition: none;
+}
 </style>
