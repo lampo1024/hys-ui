@@ -109,6 +109,14 @@ export async function operateRatingAndSegmented(rating:HysRatingInstance,segment
 export function actualRating(actual:InstanceType<typeof HysRating>):HysRatingInstance{return actual}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {ratingSegmentedChecks} from './rating-segmented-types'\nvoid ratingSegmentedChecks\n")
+fs.writeFileSync(path.join(dir,'gantt-types.ts'),`import {h} from 'vue'
+import {HysGantt,type GanttItem,type HysGanttInstance,type HysGanttDependencyChange,type HysGanttDependencyInvalid} from 'hys-ui'
+const items:GanttItem[]=[{id:1,title:'Task',start:'2026-11-01',end:'2026-11-03'}]
+export const ganttChecks=[h(HysGantt,{items,height:420,maxHeight:'70vh',rowHeight:48,labelWidth:220,labelResizable:true,minLabelWidth:120,maxLabelWidth:480,onLabelResize:(width:number)=>void width,virtual:true,overscan:8}),h(HysGantt,{items,maxHeight:false}),h(HysGantt,{items,height:'calc(100vh - 220px)',dependencyEditable:true,showDependencies:true,onChange:(item:GanttItem)=>void item.end,onDependencyAdd:(info:HysGanttDependencyChange,item:GanttItem)=>void [info,item],onDependencyInvalid:(info:HysGanttDependencyInvalid)=>void info.reason})]
+export async function operateGantt(api:HysGanttInstance){await api.scrollToTask(1,{block:'center',horizontal:true});api.scrollToTop();await api.addDependency(1,2);await api.removeDependency(1,2);api.cancelDependency()}
+export function actualGantt(actual:InstanceType<typeof HysGantt>):HysGanttInstance{return actual}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {ganttChecks} from './gantt-types'\nvoid ganttChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

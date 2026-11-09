@@ -276,6 +276,11 @@
       "Methods": "焦点与实例方法",
       "Form": "表单校验与重置",
       "States": "禁用、只读与空数据"
+    },
+    "HysGantt": {
+      "Scrolling": "多任务与双向滚动",
+      "LargeData": "大数据与虚拟滚动",
+      "Dependencies": "前置依赖与交互连接"
     }
   }
 }

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Use one shared Gantt scroll viewport for task names and timelines, with pinned date headers and task labels; prevent clipped rows and blank space after vertical scrolling.
+- Add Gantt viewport height controls and multi-task scrolling examples; preserve horizontal fitting and center bars within configurable row heights.
+- Add optional Gantt virtual rows and task-location methods, with bounded rendering, cached-page scroll restoration and independent large-data examples.
+- Add pointer and keyboard dependency editing, edge selection/removal, cycle and permission checks, edge auto-scrolling and accepted-change events.
+- Add resizable Gantt task columns with controlled widths, bounds, responsive timeline space, keyboard adjustments, cancellation and reset.
+
 - Expand Rating with precise fractional display, custom level colors/icons, score/text templates, controlled hover previews, keyboard/RTL and form/reset integration.
 - Expand Segmented with typed/mapped options, custom content, vertical/block/rounded layouts, animated selection, keyboard navigation and cached-page observer cleanup.
 - Remove obsolete Gantt scale-button styles and keep segmented labels readable on their selected surfaces across themes.
