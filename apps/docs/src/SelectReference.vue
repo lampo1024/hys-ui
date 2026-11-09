@@ -38,6 +38,7 @@ const rows = [
 ];
 </script>
 <template>
+  <section class="notes"><h2>多选项与浮层高度</h2><p>列表默认最高 240px，可通过 listHeight 调整（有效范围 80–800px）；同时限制在视口高度的 45% 内。整个浮层最高占视口的 60%，搜索、头部和底部保持固定，选项在列表内滚动。短列表按实际内容收缩，不预留空白。方向键和实例 scrollTo 可定位后面的选项，大数据默认启用虚拟渲染。</p></section>
   <section class="notes">
     <h2>值类型与实例</h2>
     <p>

@@ -117,6 +117,14 @@ export async function operateGantt(api:HysGanttInstance){await api.scrollToTask(
 export function actualGantt(actual:InstanceType<typeof HysGantt>):HysGanttInstance{return actual}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {ganttChecks} from './gantt-types'\nvoid ganttChecks\n")
+fs.writeFileSync(path.join(dir,'calendar-types.ts'),`import {h} from 'vue'
+import {HysCalendar,type CalendarEvent,type HysCalendarInstance,type HysCalendarSelectInfo,type HysCalendarCell,type HysCalendarMode} from 'hys-ui'
+const events:CalendarEvent[]=[{id:'meeting',date:'2026-11-09',end:'2026-11-11',title:'Meeting',time:'10:00',color:'purple'}]
+export const calendarChecks=[h(HysCalendar<string>,{modelValue:'2026-11-09',events,mode:'month',controllerType:'select',firstDayOfWeek:1,validRange:['2026-11-01','2026-12-31'],onSelect:(date:string,info:HysCalendarSelectInfo)=>void [date,info.source],onEvent:(id:string,event:CalendarEvent,date:string)=>void [id,event,date]}),h(HysCalendar<Date>,{modelValue:new Date(),valueType:'date',onChange:(date:Date)=>void date.getFullYear()})]
+export async function operateCalendar(calendar:HysCalendarInstance<string>){const accepted:boolean=await calendar.pickDay('2026-11-10');calendar.selectDate('next-year');calendar.showMonth('2028-02-29');calendar.setMode('year');await calendar.focus();const mode:HysCalendarMode=calendar.currentMode;void [calendar.visibleRange,calendar.selectedDay,mode];return accepted}
+export function readCell(cell:HysCalendarCell){return [cell.date.getDate(),cell.day,cell.type,cell.events]}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {calendarChecks} from './calendar-types'\nvoid calendarChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

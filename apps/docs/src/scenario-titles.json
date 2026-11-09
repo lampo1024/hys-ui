@@ -287,6 +287,25 @@
       "History": "撤销与重做",
       "Conflicts": "排期冲突与数据检查",
       "ConflictPreview": "拖动中的冲突预览"
+    },
+    "HysCalendar": {
+      "Basic": "基础日历与日程",
+      "Configure": "外观与交互配置",
+      "Selection": "绑定日期与日期类型",
+      "Year": "年视图与月份内容",
+      "Card": "紧凑卡片日历",
+      "Events": "跨日日程与溢出列表",
+      "Custom": "日期内容与独立操作",
+      "Header": "自定义头部",
+      "Range": "固定展示区间",
+      "Limits": "可选范围与禁用日期",
+      "Locale": "语言与周起始日",
+      "Methods": "实例方法与键盘操作",
+      "States": "只读、禁用与加载",
+      "Motion": "月份切换动画"
+    },
+    "HysSelect": {
+      "ManyOptions": "多选项与内部滚动"
     }
   }
 }

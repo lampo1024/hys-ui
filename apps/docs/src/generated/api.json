@@ -1800,18 +1800,146 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string | undefined",
+        "type": "T | undefined",
         "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "选中日期，默认 ISO 字符串，也支持 Date；提供时受控",
         "global": false
       },
       {
-        "name": "events",
-        "type": "CalendarEvent[] | undefined",
+        "name": "defaultValue",
+        "type": "T | undefined",
         "required": false,
         "default": "",
-        "description": "日历事件数据",
+        "description": "非受控初值，默认今天",
+        "global": false
+      },
+      {
+        "name": "valueType",
+        "type": "\"string\" | \"date\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "明确输出 string 或 date；未指定时根据传入值推断，空 Date 模型须显式指定",
+        "global": false
+      },
+      {
+        "name": "valueFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"YYYY-MM-DD\"",
+        "description": "字符串格式，支持各出现一次的 YYYY、MM、DD，默认 YYYY-MM-DD",
+        "global": false
+      },
+      {
+        "name": "mode",
+        "type": "HysCalendarMode | undefined",
+        "required": false,
+        "default": "",
+        "description": "month / year 视图，支持 v-model:mode；固定 range 使用月视图",
+        "global": false
+      },
+      {
+        "name": "defaultMode",
+        "type": "HysCalendarMode | undefined",
+        "required": false,
+        "default": "\"month\"",
+        "description": "非受控初始视图",
+        "global": false
+      },
+      {
+        "name": "fullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "使用完整尺寸；false 为紧凑卡片，不是浏览器全屏",
+        "global": false
+      },
+      {
+        "name": "transition",
+        "type": "HysCalendarTransition | undefined",
+        "required": false,
+        "default": "\"slide\"",
+        "description": "none / fade / slide / slide-up / zoom，默认 slide；减少动态效果与全局动效关闭优先",
+        "global": false
+      },
+      {
+        "name": "transitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "180",
+        "description": "月份切换时长，单位毫秒，0–800，默认 180；0 关闭动画",
+        "global": false
+      },
+      {
+        "name": "controllerType",
+        "type": "\"select\" | \"button\" | undefined",
+        "required": false,
+        "default": "\"button\"",
+        "description": "button 按钮导航或 select 年月下拉定位",
+        "global": false
+      },
+      {
+        "name": "formatter",
+        "type": "((value: number, type: \"month\" | \"year\") => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "年月下拉标签格式化函数 (value, year | month)",
+        "global": false
+      },
+      {
+        "name": "showModeSwitch",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示月 / 年视图切换",
+        "global": false
+      },
+      {
+        "name": "showHeader",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示头部及导航",
+        "global": false
+      },
+      {
+        "name": "showToday",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示今天定位按钮",
+        "global": false
+      },
+      {
+        "name": "firstDayOfWeek",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "每周第一天，0–6，默认 1（星期一）",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"zh-CN\"",
+        "description": "Intl 日期与月份语言，默认 zh-CN",
+        "global": false
+      },
+      {
+        "name": "range",
+        "type": "readonly [HysCalendarValue, HysCalendarValue] | undefined",
+        "required": false,
+        "default": "",
+        "description": "固定展示同月或相邻两个月内的区间，补齐整周并禁用补齐日期",
+        "global": false
+      },
+      {
+        "name": "validRange",
+        "type": "readonly [HysCalendarValue, HysCalendarValue] | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许选择的日期范围，包含两端；无效范围禁用选择",
         "global": false
       },
       {
@@ -1827,7 +1955,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "不允许修改选择；可浏览和查看日程",
         "global": false
       },
       {
@@ -1835,43 +1963,269 @@
         "type": "((date: string) => boolean) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "禁用日期函数，参数始终为 YYYY-MM-DD 字符串",
+        "global": false
+      },
+      {
+        "name": "showAdjacentDays",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示相邻月份的日期",
+        "global": false
+      },
+      {
+        "name": "fixedWeeks",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "月视图固定六周；range 模式按固定区间展示",
+        "global": false
+      },
+      {
+        "name": "showWeekNumbers",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示 ISO 周次",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用网格方向键、Home / End、PageUp / PageDown、Enter / Space",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态并停止内置操作",
+        "global": false
+      },
+      {
+        "name": "events",
+        "type": "readonly CalendarEvent[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "日程数据：id / date / title，可带 end / time / color / description / disabled；date 与 end 使用 ISO 字符串",
+        "global": false
+      },
+      {
+        "name": "maxEvents",
+        "type": "number | undefined",
+        "required": false,
+        "default": "3",
+        "description": "单个日期内展示的日程条数，多余内容在浮层查看",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[date: string]",
+        "type": "[date: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选择日期时请求更新绑定值"
+      },
+      {
+        "name": "change",
+        "type": "[date: T]",
+        "required": false,
+        "default": "",
+        "description": "选中日期发生变化的请求，日期类型与模型一致"
       },
       {
         "name": "select",
-        "type": "[date: string]",
+        "type": "[date: T, info: HysCalendarSelectInfo]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "每次有效选择：(日期, {source: date | month | keyboard | customize})"
+      },
+      {
+        "name": "update:mode",
+        "type": "[mode: HysCalendarMode]",
+        "required": false,
+        "default": "",
+        "description": "请求切换月 / 年视图"
+      },
+      {
+        "name": "panelChange",
+        "type": "[date: T, mode: HysCalendarMode]",
+        "required": false,
+        "default": "",
+        "description": "浏览月份、年份或切换视图：(面板日期, mode)，不自动改变选择"
       },
       {
         "name": "event",
-        "type": "[id: string]",
+        "type": "[id: string, event: CalendarEvent, date: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "点击日程：(id, 事件对象, ISO 点击日期)，不选择日期"
+      },
+      {
+        "name": "more",
+        "type": "[date: string, events: CalendarEvent[]]",
+        "required": false,
+        "default": "",
+        "description": "打开更多日程：(ISO 日期, 该日全部事件)"
       }
     ],
     "slots": [
       {
-        "name": "date",
-        "type": "{ date: string; day: any; }",
+        "name": "header",
+        "type": "{ date: string; value: T; mode: HysCalendarMode; selectDate: (action: HysCalendarAction) => boolean; showMonth: (value: HysCalendarValue) => boolean; setMode: (mode: HysCalendarMode) => boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义头部：date 标签、value 面板值、mode、selectDate、showMonth、setMode"
+      },
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "自定义加载内容"
+      },
+      {
+        "name": "date-full-cell",
+        "type": "{ date: Date; data: HysCalendarCell; }",
+        "required": false,
+        "default": "",
+        "description": "完全替换日期单元格内容，参数与 date-cell 相同"
+      },
+      {
+        "name": "date",
+        "type": "{ date: string; day: number; }",
+        "required": false,
+        "default": "",
+        "description": "兼容原日期数字插槽：date 为 ISO 字符串，day 为日号"
+      },
+      {
+        "name": "date-cell",
+        "type": "{ date: Date; data: HysCalendarCell; }",
+        "required": false,
+        "default": "",
+        "description": "追加日期内容：date 为原生 Date，data 含 day / type / isSelected / isToday / disabled / events"
+      },
+      {
+        "name": "event",
+        "type": "{ event: CalendarEvent; date: string; }",
+        "required": false,
+        "default": "",
+        "description": "自定义日程内容：event、date（ISO）"
+      },
+      {
+        "name": "more",
+        "type": "{ date: string; count: number; }",
+        "required": false,
+        "default": "",
+        "description": "更多日程按钮：date、count（溢出数量）"
+      },
+      {
+        "name": "month-full-cell",
+        "type": "{ date: Date; data: HysCalendarMonthCell; }",
+        "required": false,
+        "default": "",
+        "description": "完全替换月份单元格，参数与 month-cell 相同"
+      },
+      {
+        "name": "month-cell",
+        "type": "{ date: Date; data: HysCalendarMonthCell; }",
+        "required": false,
+        "default": "",
+        "description": "年视图追加月份内容：date、data 含 month / day / isSelected / isToday / disabled / events"
+      },
+      {
+        "name": "footer",
+        "type": "{ selected: T | undefined; value: T; mode: HysCalendarMode; visibleRange: readonly [string, string]; }",
+        "required": false,
+        "default": "",
+        "description": "底部：selected、value、mode、visibleRange（ISO 两端）"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "根元素"
+      },
+      {
+        "name": "selectedDay",
+        "type": "T | undefined",
+        "required": true,
+        "default": "",
+        "description": "当前选中日期，无效受控值为 undefined"
+      },
+      {
+        "name": "panelValue",
+        "type": "T",
+        "required": true,
+        "default": "",
+        "description": "当前面板日期"
+      },
+      {
+        "name": "currentMode",
+        "type": "HysCalendarMode",
+        "required": true,
+        "default": "",
+        "description": "当前 month / year 视图"
+      },
+      {
+        "name": "visibleRange",
+        "type": "readonly [string, string]",
+        "required": true,
+        "default": "",
+        "description": "实际展示区间，ISO 日期两端"
+      },
+      {
+        "name": "pickDay",
+        "type": "(value: HysCalendarValue) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求选择日期，返回 Promise<boolean>，遵守只读与禁用规则"
+      },
+      {
+        "name": "selectDate",
+        "type": "(action: HysCalendarAction) => boolean",
+        "required": true,
+        "default": "",
+        "description": "浏览 prev-month / next-month / prev-year / next-year / today，返回是否允许"
+      },
+      {
+        "name": "showMonth",
+        "type": "(value: HysCalendarValue) => boolean",
+        "required": true,
+        "default": "",
+        "description": "浏览指定日期所在面板，不改变选择"
+      },
+      {
+        "name": "setMode",
+        "type": "(mode: HysCalendarMode) => boolean",
+        "required": true,
+        "default": "",
+        "description": "请求改变视图，受控时通过 update:mode 更新"
+      },
+      {
+        "name": "focus",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "聚焦当前网格的可用日期或月份"
+      }
+    ]
   },
   "HysCalendarNavigation": {
     "props": [
@@ -8656,8 +9010,8 @@
         "name": "listHeight",
         "type": "number | undefined",
         "required": false,
-        "default": "256",
-        "description": "选项滚动区域的最大高度，默认 256px",
+        "default": "240",
+        "description": "选项滚动区域最大高度，默认 240px，范围 80–800px，且不超过视口高度 45%；浮层整体不超过视口 60%",
         "global": false
       },
       {

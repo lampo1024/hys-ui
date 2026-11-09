@@ -14,4 +14,5 @@ code+="export type {HysAutocompleteProps,HysAutocompleteRow,HysAutocompleteOptio
 code+="export type {HysChoiceValue,HysChoiceFieldNames,HysChoiceOption,HysChoiceDataOption,HysCheckboxChange,HysCheckboxReject,HysCheckboxInstance,HysCheckboxGroupInstance,HysRadioInstance,HysRadioGroupInstance,HysSwitchGuardContext,HysSwitchInstance} from './composables/choice'\n"
 code+="export type {HysRatingIcon,HysRatingLevels,HysRatingInstance} from './composables/rating'\nexport type {HysSegmentedOption,HysSegmentedInstance} from './composables/segmented'\n"
 code+="export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyChange,HysGanttDependencyMove,HysGanttDependencyInvalid,HysGanttDependencyReason,HysGanttHistoryType,HysGanttHistoryEntry,HysGanttHistoryState,HysGanttHistoryInvalid,HysGanttConflictType,HysGanttConflict} from './composables/gantt'\n"
+code+="export type {CalendarEvent,HysCalendarValue,HysCalendarMode,HysCalendarTransition,HysCalendarAction,HysCalendarCell,HysCalendarMonthCell,HysCalendarSelectInfo,HysCalendarInstance} from './composables/calendar'\n"
 fs.writeFileSync(root+'index.ts',code)

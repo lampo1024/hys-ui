@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Calendar 新增可配置月份切换动画、年视图、卡片模式、年月定位、范围限制、日期与月份插槽、跨日日程与溢出列表、本地化、键盘导航及实例方法，保留现有日期与事件接口。
+- Select 选项浮层限制垂直占用，选项独立滚动，搜索区与底部内容保持可见；新增多选项示例。
+
 - Add bounded Gantt undo/redo for accepted scheduling and dependency edits, with atomic replay, scoped shortcuts and external-update safety.
 - Add dependency-order and invalid-data diagnostics, cycle detection, paged conflict inspection and incident-only drag previews.
 

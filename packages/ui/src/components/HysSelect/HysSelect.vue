@@ -115,7 +115,7 @@ const props = withDefaults(
     keyboard: true,
     placement: "bottom-start",
     appendTo: "body",
-    listHeight: 256,
+    listHeight: 240,
     virtual: true,
     overscan: 4,
     emptyText: "暂无选项",
@@ -355,7 +355,12 @@ const optionCount = computed(
   effectiveVirtual = computed(
     () => props.virtual && filteredRows.value.length > 100,
   );
-const safeHeight = computed(() => Math.max(80, props.listHeight)),
+const safeHeight = computed(() =>
+    Math.min(
+      800,
+      Math.max(80, Number.isFinite(props.listHeight) ? props.listHeight : 240),
+    ),
+  ),
   safeOverscan = computed(() => Math.max(1, Math.min(30, props.overscan)));
 const start = computed(() =>
   effectiveVirtual.value
@@ -438,6 +443,7 @@ const {
 const panelStyle = computed<CSSProperties>(() => ({
   ...props.popupStyle,
   ...style.value,
+  maxHeight: "min(60dvh, calc(100dvh - 20px))",
   overflowY: "hidden",
   "--hys-ui-select-stride": rowStride.value + "px",
   "--hys-ui-select-list-height": safeHeight.value + "px",
@@ -1181,7 +1187,7 @@ defineExpose({
           :aria-busy="busy || undefined"
           class="hys-ui-select-list"
           :style="{
-            maxHeight: 'min(' + safeHeight + 'px,calc(100vh - 160px))',
+            maxHeight: 'min(' + safeHeight + 'px, 45dvh)',
           }"
           @scroll="scrolled"
         >
@@ -1608,9 +1614,20 @@ defineExpose({
   --hys-ui-select-option-gap: 8px;
 }
 .hys-ui-select-list {
+  flex: 0 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-width: 0;
+}
+.hys-ui-select-options {
+  display: flex;
+  flex-direction: column;
+}
+.hys-ui-select-header,
+.hys-ui-select-footer,
+.hys-ui-select-search {
+  flex-shrink: 0;
 }
 .hys-ui-select-option {
   box-sizing: border-box;
