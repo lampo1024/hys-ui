@@ -52,8 +52,11 @@ const style = computed(() => ({
 <style scoped>
 .hys-ui-ex-divider {
   min-width: 0;
-  gap: 12px;
+  gap: 0;
   font-weight: 500;
+}
+.hys-ui-ex-divider:has(.hys-ui-divider-text) {
+  gap: 12px;
 }
 .hys-ui-ex-divider:before,
 .hys-ui-ex-divider:after {

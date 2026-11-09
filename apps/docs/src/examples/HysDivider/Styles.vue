@@ -3,6 +3,8 @@ import { HysDivider, HysBadge } from "hys-ui";
 </script>
 <template>
   <div class="demo-stack">
+    <p>不带文字的分隔线</p>
+    <HysDivider />
     <HysDivider label="实线" /><HysDivider
       border-style="dashed"
       label="虚线"

@@ -141,13 +141,19 @@ async (page) => {
   await scene("styles").waitFor();
   const separators = scene("styles").getByRole("separator");
   check(
+    "An unlabeled divider has a continuous line",
+    (await separators
+      .first()
+      .evaluate((e) => getComputedStyle(e).columnGap)) === "0px",
+  );
+  check(
     "Divider supports actual dotted and double line rendering",
     (await separators
-      .nth(2)
+      .nth(3)
       .evaluate((e) => getComputedStyle(e, "::before").borderTopStyle)) ===
       "dotted" &&
       (await separators
-        .nth(3)
+        .nth(4)
         .evaluate((e) => getComputedStyle(e, "::before").borderTopStyle)) ===
         "double",
   );
