@@ -1,4 +1,4 @@
-import type { CSSProperties, VNodeChild } from "vue";
+import type { CSSProperties, HTMLAttributes, VNodeChild } from "vue";
 export type HysTableKey = string | number;
 export type HysTableDirection = "asc" | "desc";
 export type HysTableFilterValue = string | number | boolean;
@@ -11,7 +11,16 @@ export interface HysTableFilter {
   label: string;
   value: HysTableFilterValue;
   disabled?: boolean;
+  children?: readonly HysTableFilter[];
 }
+export type HysTableElementAttrs = HTMLAttributes & Record<string, unknown>;
+export type HysTablePaginationPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 export interface HysTableCellContext<
   T extends object = Record<string, unknown>,
 > {
@@ -37,9 +46,14 @@ export interface HysTableColumn<T extends object = any> {
   sorter?: (a: T, b: T) => number;
   sortBy?: string | ((row: T) => unknown);
   sortOrders?: readonly (HysTableDirection | null)[];
+  sortPriority?: number;
   filters?: readonly HysTableFilter[];
   filterable?: boolean;
   filterMultiple?: boolean;
+  filterMode?: "menu" | "tree";
+  filterSearch?: boolean | ((query: string, option: HysTableFilter) => boolean);
+  defaultFilterValue?: readonly HysTableFilterValue[];
+  filterResetToDefault?: boolean;
   filterMethod?: (
     value: HysTableFilterValue,
     row: T,
@@ -63,8 +77,15 @@ export interface HysTableColumn<T extends object = any> {
   hidden?: boolean;
   responsive?: readonly ("xs" | "sm" | "md" | "lg" | "xl" | "xxl")[];
   resizable?: boolean;
+  rowScope?: "row" | "rowgroup";
+  customCell?: (context: HysTableCellContext<T>) => HysTableElementAttrs;
+  customHeaderCell?: (
+    column: HysTableColumn<T>,
+    index: number,
+  ) => HysTableElementAttrs;
 }
 export interface HysTablePagination {
+  position?: readonly HysTablePaginationPosition[];
   page?: number;
   pageSize?: number;
   total?: number;
@@ -107,6 +128,11 @@ export interface HysTableLocale {
   resizeColumn: string;
   sortAsc: string;
   sortDesc: string;
+  filterSearch?: string;
+  noFilterMatch?: string;
+  invertSelection?: string;
+  clearSelection?: string;
+  selected?: string;
   paginationLabels?: Partial<{
     total: string;
     perPage: string;
@@ -145,6 +171,16 @@ export interface HysTableProps<T extends object> {
   headerCellStyle?:
     | CSSProperties
     | ((column: HysTableColumn<T>, index: number) => CSSProperties);
+  customRow?: (row: T, index: number) => HysTableElementAttrs;
+  customHeaderRow?: (
+    columns: readonly HysTableColumn<T>[],
+    index: number,
+  ) => HysTableElementAttrs;
+  customCell?: (context: HysTableCellContext<T>) => HysTableElementAttrs;
+  customHeaderCell?: (
+    column: HysTableColumn<T>,
+    index: number,
+  ) => HysTableElementAttrs;
   selectable?: boolean | ((row: T, index: number) => boolean);
   selectionType?: "checkbox" | "radio";
   selectedRowKeys?: readonly HysTableKey[];
@@ -152,6 +188,9 @@ export interface HysTableProps<T extends object> {
   reserveSelection?: boolean;
   checkStrictly?: boolean;
   selectOnIndeterminate?: boolean;
+  selectionActions?: boolean;
+  rangeSelection?: boolean;
+  hideSelectAll?: boolean;
   highlightCurrentRow?: boolean;
   currentRowKey?: HysTableKey | null;
   defaultCurrentRowKey?: HysTableKey;
@@ -168,6 +207,7 @@ export interface HysTableProps<T extends object> {
   pageSize?: number;
   total?: number;
   serverMode?: boolean;
+  scrollToFirstRowOnChange?: boolean;
   expandable?: boolean;
   expandedRowKeys?: readonly HysTableKey[];
   defaultExpandedRowKeys?: readonly HysTableKey[];
@@ -213,8 +253,10 @@ export interface HysTableInstance<T extends object = Record<string, unknown>> {
   toggleRowSelection: (
     row: T | HysTableKey,
     selected?: boolean,
+    range?: boolean,
   ) => Promise<boolean>;
   toggleAllSelection: (selected?: boolean) => Promise<boolean>;
+  invertSelection: () => Promise<boolean>;
   setCurrentRow: (row?: T | HysTableKey | null) => Promise<boolean>;
   toggleRowExpansion: (
     row: T | HysTableKey,
@@ -409,19 +451,63 @@ export function tableMatches<T extends object>(
   filters: HysTableFilters,
   columns: readonly HysTableColumn<T>[],
 ) {
-  return columns.every((column) => {
-    const values = filters[column.key];
-    if (!values?.length) return true;
-    return values.some((value) =>
-      column.filterMethod
-        ? column.filterMethod(value, row, column)
-        : column.filters
-          ? Object.is(tableValue(row, column.dataIndex ?? column.key), value)
+  return tableFilterPredicate(filters, columns)(row);
+}
+export function tableFilterPredicate<T extends object>(
+  filters: HysTableFilters,
+  columns: readonly HysTableColumn<T>[],
+) {
+  const allowed = new Map<string, Set<HysTableFilterValue>>();
+  for (const column of columns) {
+    const selected = filters[column.key];
+    if (!selected?.length || !column.filters || column.filterMethod) continue;
+    const values = new Set(selected),
+      options = tableFilterOptions(column.filters),
+      byValue = new Map(options.map((option) => [option.value, option]));
+    for (const value of selected) {
+      const children = byValue.get(value)?.children;
+      if (children)
+        for (const child of tableFilterOptions(children))
+          values.add(child.value);
+    }
+    allowed.set(column.key, values);
+  }
+  return (row: T) => {
+    return columns.every((column) => {
+      const values = filters[column.key];
+      if (!values?.length) return true;
+      if (allowed.has(column.key))
+        return allowed
+          .get(column.key)!
+          .has(
+            tableValue(
+              row,
+              column.dataIndex ?? column.key,
+            ) as HysTableFilterValue,
+          );
+      return values.some((value) =>
+        column.filterMethod
+          ? column.filterMethod(value, row, column)
           : String(tableValue(row, column.dataIndex ?? column.key) ?? "")
               .toLocaleLowerCase()
               .includes(String(value).toLocaleLowerCase()),
-    );
-  });
+      );
+    });
+  };
+}
+/** Iterative traversal also tolerates accidentally cyclic filter definitions. */
+export function tableFilterOptions(filters: readonly HysTableFilter[]) {
+  const result: HysTableFilter[] = [],
+    seen = new Set<HysTableFilter>(),
+    stack = [...filters].reverse();
+  while (stack.length) {
+    const option = stack.pop()!;
+    if (seen.has(option)) continue;
+    seen.add(option);
+    result.push(option);
+    if (option.children) stack.push(...[...option.children].reverse());
+  }
+  return result;
 }
 export function tableSummary<T extends object>(
   rows: readonly T[],

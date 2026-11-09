@@ -126,11 +126,13 @@ export function readCell(cell:HysCalendarCell){return [cell.date.getDate(),cell.
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {calendarChecks} from './calendar-types'\nvoid calendarChecks\n")
 fs.writeFileSync(path.join(dir,'table-types.ts'),`import {h,ref} from 'vue'
-import {HysTable,type HysTableColumn,type HysTableInstance,type HysTableCellContext,type HysTableQuery,type HysTableLoadContext,type HysTableKey} from 'hys-ui'
+import {HysTable,type HysTableColumn,type HysTableInstance,type HysTableCellContext,type HysTableQuery,type HysTableLoadContext,type HysTableKey,type HysTableElementAttrs,type HysTablePaginationPosition} from 'hys-ui'
 interface Person {id:number;name:string;amount:number;children?:Person[];hasChildren?:boolean}
 const rows:Person[]=[{id:1,name:'A',amount:20}],columns:HysTableColumn<Person>[]=[{key:'name',label:'Name',fixed:'left',width:150,filterable:true},{key:'amount',label:'Amount',sortable:true,summary:'sum',sorter:(a,b)=>a.amount-b.amount,formatter:(row,col,value)=>String(value),tooltipFormatter:(ctx:HysTableCellContext<Person>)=>ctx.row.name}]
 export const tableChecks=[h(HysTable<Person>,{ref:ref<HysTableInstance<Person>>(),rows,columns,selectable:(row,index)=>row.id!==0,pagination:{pageSize:5},treeMode:true,loadChildren:async(row:Person,ctx:HysTableLoadContext)=>{void ctx.signal;return []},onQueryChange:(query:HysTableQuery<Person>)=>void query.filters,onSelectionChange:(rows:Person[],keys:HysTableKey[])=>void [rows,keys],onRowClick:(row:Person)=>void row.name,resizable:true})]
-export async function operateTable(api:HysTableInstance<Person>){await api.toggleRowSelection(1,true);api.setSort({key:'amount',direction:'desc'});api.setFilter('name',['A']);api.clearFilter();api.setPage(2);await api.setCurrentRow();api.resizeColumn('name',200);api.resetColumnWidths();await api.doLayout();return api.getSelectionRows()}
+const position:HysTablePaginationPosition='top-right';const attrs:HysTableElementAttrs={'data-example':'member','aria-label':'Member'}
+export const enhancedTable=h(HysTable<Person>,{rows,columns:[{...columns[0],rowScope:'row',filterMode:'tree',filterSearch:(query,option)=>option.label.includes(query),filters:[{label:'Group',value:'group',children:[{label:'A',value:'A'}]}],sortPriority:2,customCell:context=>({...attrs,onClick:()=>void context.row.name})}],rangeSelection:true,selectionActions:true,customRow:row=>({'data-row':row.id}),pagination:{position:[position,'bottom-center']},onSelectRange:(rows:Person[],range:Person[],checked:boolean)=>void [rows,range,checked]})
+export async function operateTable(api:HysTableInstance<Person>){await api.toggleRowSelection(1,true,true);await api.invertSelection();api.setSort({key:'amount',direction:'desc'});api.setFilter('name',['A']);api.clearFilter();api.setPage(2);await api.setCurrentRow();api.resizeColumn('name',200);api.resetColumnWidths();await api.doLayout();return api.getSelectionRows()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {tableChecks} from './table-types'\nvoid tableChecks\n")
 fs.writeFileSync(path.join(dir,'surfaces-types.ts'),`import {h} from 'vue'
@@ -157,6 +159,15 @@ export const props:HysTreeProps<Department>={nodes,defaultValue:0,defaultChecked
 export async function editTree(instance:HysTreeInstance<Department>){await instance.setCheckedKeys([0]);await instance.setCurrentKey(0);await instance.scrollTo({key:0});await instance.focus(0);return [await instance.append({code:1,meta:{title:'Added'}},0),instance.getHalfCheckedNodes(),instance.getCurrentNode()]}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {treeChecks} from './tree-types'\nvoid treeChecks\n")
+fs.writeFileSync(path.join(dir,'tree-select-types.ts'),`import {h,ref} from 'vue'
+import {HysTreeSelect,type HysTreeSelectNode,type HysTreeSelectInstance,type HysTreeSelectLabelValue,type HysTreeSelectChange,type HysTreeSelectProps} from 'hys-ui'
+interface Team {code:number;meta:{name:string};members?:Team[]}
+const api=ref<HysTreeSelectInstance<Team>>(),nodes:Team[]=[{code:0,meta:{name:'Main'}}]
+export const treeSelectChecks=[h(HysTreeSelect<number|null,Team>,{ref:api,nodes,modelValue:0,fieldNames:{value:'code',label:'meta.name',children:'members'},virtual:true,popupMatchWidth:false,onChange:(value:number|null,info:HysTreeSelectChange<Team>)=>void [value,info.items],loadChildren:async(node,ctx)=>ctx.signal.aborted?[]:[{code:node.code+1,meta:{name:'Child'}}]}),h(HysTreeSelect<string,HysTreeSelectNode>,{nodes:[{value:'a',label:'A'}],modelValue:'a'}),h(HysTreeSelect<HysTreeSelectLabelValue|null,Team>,{nodes,labelInValue:true,modelValue:{value:0,label:'Main'}})]
+export const props:HysTreeSelectProps<Team>={nodes,defaultValue:0,remote:true,remoteMethod:async(query,{signal})=>signal.aborted?[]:nodes.filter(node=>node.meta.name.includes(query))}
+export async function useTreeSelect(instance:HysTreeSelectInstance<Team>){await instance.show();await instance.setValue(0);await instance.scrollTo({key:0});const selected=instance.getSelectedItems();await instance.removeTag(0);instance.hide(true);return selected}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {treeSelectChecks} from './tree-select-types'\nvoid treeSelectChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

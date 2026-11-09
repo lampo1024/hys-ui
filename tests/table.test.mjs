@@ -164,6 +164,312 @@ const settle = async () => {
   await pause(0);
   await nextTick();
 };
+
+test("Table searchable option filters keep hidden drafts and single-choice semantics", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [
+      {
+        key: "team",
+        label: "团队",
+        filterSearch: true,
+        filterMultiple: false,
+        filters: [
+          { label: "设计", value: "design" },
+          { label: "开发", value: "dev" },
+          { label: "归档", value: "old", disabled: true },
+        ],
+      },
+    ],
+  });
+  await fire(a.find('[aria-label="筛选团队"]'), "click");
+  const panel = () => document.querySelector(".hys-ui-table-filter-panel");
+  const search = panel().querySelector("input[type=text]");
+  search.value = "开发";
+  await fire(search, "input");
+  assert.equal(panel().querySelectorAll("input[type=radio]").length, 1);
+  await fire(panel().querySelector("input[type=radio]"), "click");
+  search.value = "不存在";
+  await fire(search, "input");
+  assert.match(panel().textContent, /暂无匹配/);
+  const apply = [...panel().querySelectorAll("button")].find(
+    (e) => e.textContent === "应用",
+  );
+  await fire(apply, "click");
+  assert.deepEqual(keys(a), ["2"]);
+  assert.deepEqual(a.props.filters.team, ["dev"]);
+});
+
+test("Table hierarchical filters support parent matching, custom search and typed values", async () => {
+  const option = {
+    key: "team",
+    label: "团队",
+    filterMode: "tree",
+    filterSearch: (q, option) => option.value === "dev" && q === "backend",
+    filters: [
+      {
+        label: "产品研发",
+        value: "tech",
+        children: [
+          { label: "设计", value: "design" },
+          { label: "开发", value: "dev" },
+        ],
+      },
+    ],
+  };
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [option],
+    defaultFilters: { team: ["tech"] },
+  });
+  assert.equal(keys(a).length, 3);
+  await fire(a.find('[aria-label="筛选团队"]'), "click");
+  const panel = document.querySelector(".hys-ui-table-filter-panel"),
+    search = panel.querySelector("input[type=text]");
+  assert(panel.querySelector("[role=tree]"));
+  search.value = "backend";
+  await fire(search, "input");
+  await settle();
+  assert.match(panel.querySelector("[role=tree]").textContent, /开发/);
+  assert(!panel.querySelector("[role=tree]").textContent.includes("设计"));
+  await fire(panel, "keydown", { key: "Escape" });
+  a.vm.setFilter("team", ["dev"]);
+  await settle();
+  assert.deepEqual(keys(a), ["2"]);
+  a.props.columns = [
+    {
+      key: "active",
+      label: "状态",
+      filters: [
+        { label: "启用", value: true },
+        { label: "停用", value: false },
+      ],
+    },
+  ];
+  a.props.rows = [
+    { id: 0, active: false },
+    { id: 1, active: true },
+  ];
+  await settle();
+  a.vm.setFilter("active", [false]);
+  await settle();
+  assert.deepEqual(keys(a), ["0"]);
+});
+
+test("Table reset may restore a column default while API clearFilter remains explicit", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [
+      {
+        ...columns[2],
+        defaultFilterValue: ["design"],
+        filterResetToDefault: true,
+      },
+    ],
+  });
+  assert.deepEqual(keys(a), ["1", "3"]);
+  a.vm.setFilter("team", ["dev"]);
+  await settle();
+  await fire(a.find('[aria-label="筛选团队"]'), "click");
+  const panel = document.querySelector(".hys-ui-table-filter-panel");
+  await fire(
+    [...panel.querySelectorAll("button")].find((e) => e.textContent === "重置"),
+    "click",
+  );
+  assert.deepEqual(keys(a), ["1", "3"]);
+  a.vm.clearFilter();
+  await settle();
+  assert.equal(keys(a).length, 3);
+});
+
+test("Table shift range follows visible ordering and skips disabled rows", async () => {
+  const data = Array.from({ length: 6 }, (_, i) => ({
+    id: i,
+    name: "Member " + i,
+  }));
+  const a = await mount(ui.HysTable, {
+    rows: data,
+    columns: [columns[0]],
+    selectable: (row) => row.id !== 2,
+    rangeSelection: true,
+  });
+  assert.equal(await a.vm.toggleRowSelection(0, true), true);
+  assert.equal(await a.vm.toggleRowSelection(4, true, true), true);
+  assert.deepEqual(a.vm.selectedKeys, [0, 1, 3, 4]);
+  assert.equal(a.events.selectRange.length, 1);
+  assert.deepEqual(
+    a.events.selectRange[0][1].map((r) => r.id),
+    [0, 1, 3, 4],
+  );
+  assert.equal(await a.vm.toggleRowSelection(1, false, true), true);
+  assert.deepEqual(a.vm.selectedKeys, [0]);
+});
+
+test("Table invertSelection is scoped to filtered current page and retains unseen selections", async () => {
+  const a = await mount(ui.HysTable, {
+    rows: Array.from({ length: 8 }, (_, i) => ({
+      id: i,
+      name: String(i),
+      team: i < 4 ? "design" : "dev",
+    })),
+    columns,
+    selectable: (row) => row.id !== 2,
+    reserveSelection: true,
+    defaultSelectedRowKeys: [7, 0],
+    pagination: { pageSize: 3 },
+    defaultFilters: { team: ["design"] },
+  });
+  assert.equal(await a.vm.invertSelection(), true);
+  assert.deepEqual(a.vm.selectedKeys, [7, 1]);
+  assert.equal(a.events.selectInvert.length, 1);
+  a.vm.clearFilter();
+  await settle();
+  assert.equal(a.vm.selectedKeys.includes(7), true);
+});
+
+test("Table filtered tree select-all does not select excluded descendants", async () => {
+  const a = await mount(ui.HysTable, {
+    rows: [
+      {
+        id: "p",
+        name: "parent",
+        children: [
+          { id: "a", name: "Alice" },
+          { id: "b", name: "Bob" },
+        ],
+      },
+    ],
+    columns: [columns[0]],
+    selectable: true,
+    treeMode: true,
+    checkStrictly: true,
+    defaultFilters: { name: ["Alice"] },
+  });
+  await a.vm.toggleAllSelection(true);
+  assert.deepEqual(a.vm.selectedKeys, ["p", "a"]);
+  await a.vm.invertSelection();
+  assert.deepEqual(a.vm.selectedKeys, []);
+});
+
+test("Table selection tools and hideSelectAll retain row controls", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    selectable: true,
+    selectionActions: true,
+    hideSelectAll: true,
+  });
+  assert.equal(a.all("thead input[type=checkbox]").length, 0);
+  assert.equal(a.all("tbody input[type=checkbox]").length, 3);
+  await fire(
+    [
+      ...a.find(".hys-ui-table-selection-actions").querySelectorAll("button"),
+    ].find((b) => b.textContent === "反选当前页"),
+    "click",
+  );
+  await settle();
+  assert.equal(a.vm.selectedKeys.length, 3);
+});
+
+test("Table multi-sort column priorities override interaction order and preserve ties", async () => {
+  const a = await mount(ui.HysTable, {
+    rows: [
+      { id: 1, name: "Z", age: 10 },
+      { id: 2, name: "A", age: 30 },
+      { id: 3, name: "A", age: 20 },
+    ],
+    columns: [{ ...columns[0], sortPriority: 10 }, columns[1]],
+    multiSort: true,
+    defaultSort: [
+      { key: "age", direction: "asc" },
+      { key: "name", direction: "asc" },
+    ],
+  });
+  assert.deepEqual(keys(a), ["3", "2", "1"]);
+  assert.deepEqual(
+    a.vm.query.sorts.map((s) => s.key),
+    ["name", "age"],
+  );
+});
+
+test("Table custom element hooks merge events and preserve managed content and row semantics", async () => {
+  let cellClicks = 0,
+    tableClicks = 0;
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [
+      {
+        ...columns[0],
+        rowScope: "row",
+        customCell: (ctx) => ({
+          "data-value": ctx.value,
+          onClick: () => cellClicks++,
+        }),
+      },
+    ],
+    customRow: (row) => ({
+      "data-team": row.team,
+      onClick: () => tableClicks++,
+      innerHTML: "unsafe",
+      "data-row-key": "wrong",
+    }),
+    customHeaderRow: (_cols, index) => ({ "data-level": index }),
+    customHeaderCell: () => ({ title: "Header" }),
+    customCell: () => ({ class: "custom-cell", "aria-label": "Member" }),
+  });
+  const cell = a.find("tbody th");
+  assert.equal(cell.getAttribute("scope"), "row");
+  assert.equal(cell.dataset.value, "Alice");
+  assert.equal(cell.getAttribute("aria-label"), "Member");
+  assert(cell.classList.contains("custom-cell"));
+  assert.equal(a.find("thead tr").dataset.level, "0");
+  assert.equal(a.find("thead th").title, "Header");
+  assert.equal(a.find("tbody tr").dataset.rowKey, "1");
+  assert(!a.host.textContent.includes("unsafe"));
+  await fire(cell, "click");
+  assert.equal(cellClicks, 1);
+  assert.equal(tableClicks, 1);
+  assert.equal(a.events.rowClick.length, 1);
+});
+
+test("Table pagination positions share state and an empty position array only hides navigation", async () => {
+  const a = await mount(ui.HysTable, {
+    rows: [...rows, { id: 4, name: "Dan" }],
+    columns,
+    pagination: {
+      pageSize: 2,
+      position: ["top-left", "bottom-center", "top-left"],
+      showSizeChanger: false,
+    },
+  });
+  assert.equal(a.all(".hys-ui-table-pagination").length, 2);
+  assert.equal(a.find(".hys-ui-table-pagination").dataset.position, "top-left");
+  a.vm.setPage(2);
+  await settle();
+  assert.deepEqual(keys(a), ["3", "4"]);
+  assert(
+    a.all(".hys-ui-is-current").every((button) => button.textContent === "2"),
+  );
+  a.props.pagination = { ...a.props.pagination, position: [] };
+  await settle();
+  assert.equal(a.all(".hys-ui-table-pagination").length, 0);
+  assert.deepEqual(keys(a), ["3", "4"]);
+});
+
+test("Table query scroll restoration preserves horizontal scroll and stays opt-in", async () => {
+  const a = await mount(ui.HysTable, { rows, columns });
+  const viewport = a.find(".hys-ui-table-scroll");
+  viewport.scrollTop = 80;
+  viewport.scrollLeft = 40;
+  a.vm.setSort({ key: "age", direction: "desc" });
+  await settle();
+  assert.equal(viewport.scrollTop, 80);
+  a.props.scrollToFirstRowOnChange = true;
+  a.vm.setFilter("name", ["A"]);
+  await settle();
+  assert.equal(viewport.scrollTop, 0);
+  assert.equal(viewport.scrollLeft, 40);
+});
 test("Table locale customizes empty/loading states and accessible action labels", async () => {
   const a = await mount(ui.HysTable, {
     columns,
@@ -725,6 +1031,7 @@ test("Controlled row selections and expansion can reject requests without emitti
   app.mount(host);
   try {
     assert.equal(await instance.value.toggleRowSelection(1, true), false);
+    assert.equal(await instance.value.invertSelection(),false);
     assert.equal(await instance.value.toggleRowExpansion(1, true), false);
     assert.deepEqual(accepted, []);
   } finally {

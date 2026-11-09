@@ -25,11 +25,14 @@ import {
 } from "./tree";
 const equal = (a: readonly unknown[], b: readonly unknown[]) =>
   a.length === b.length && a.every((v, i) => v === b[i]);
+const sameKeys = (a: Set<HysTreeKey>, b: readonly HysTreeKey[]) =>
+  a.size === b.length && b.every((k) => a.has(k));
 export function useTree<N extends object>(
   props: HysTreeProps<N>,
   disabled: ComputedRef<boolean>,
   emit: (name: string, ...args: any[]) => void,
   validate: () => void,
+  options: { loadActive?: ComputedRef<boolean> } = {},
 ) {
   const live = ref(true),
     ownValue = shallowRef<HysTreeValue>(props.defaultValue ?? null),
@@ -247,7 +250,7 @@ export function useTree<N extends object>(
       keys = [...normalized.full],
       ticket = ++checkTicket,
       epoch = lifetime;
-    if (equal(keys, [...checked.value])) return false;
+    if (sameKeys(checked.value, keys)) return false;
     if (props.checkedKeys === undefined) ownChecked.value = keys;
     emit("update:checkedKeys", keys);
     emit("check", keys, {
@@ -266,7 +269,7 @@ export function useTree<N extends object>(
       !live.value ||
       lifetime !== epoch ||
       ticket !== checkTicket ||
-      !equal([...checked.value], keys)
+      !sameKeys(checked.value, keys)
     )
       return false;
     emit("check-change", checkInfo(node, on, event));
@@ -379,7 +382,13 @@ export function useTree<N extends object>(
   }
   function load(key: HysTreeKey, force = false): Promise<boolean> {
     const row = index.value.map.get(key);
-    if (!row || busy.value || !props.loadChildren || row.leaf)
+    if (
+      !row ||
+      busy.value ||
+      options.loadActive?.value === false ||
+      !props.loadChildren ||
+      row.leaf
+    )
       return Promise.resolve(false);
     if (!force && (loaded.value.has(key) || row.children.length))
       return Promise.resolve(true);
@@ -632,9 +641,16 @@ export function useTree<N extends object>(
     { immediate: true },
   );
   watch(
-    () => [...expanded.value, live.value, busy.value, index.value] as const,
+    () =>
+      [
+        ...expanded.value,
+        live.value,
+        busy.value,
+        index.value,
+        options.loadActive?.value,
+      ] as const,
     () => {
-      if (!busy.value)
+      if (!busy.value && options.loadActive?.value !== false)
         for (const key of expanded.value) {
           const row = index.value.map.get(key);
           if (
@@ -664,6 +680,14 @@ export function useTree<N extends object>(
     lifetime++;
     cancelLoads();
   }
+  if (options.loadActive)
+    watch(
+      options.loadActive,
+      (value) => {
+        if (!value) cancelLoads();
+      },
+      { flush: "sync" },
+    );
   watch(
     busy,
     (v) => {

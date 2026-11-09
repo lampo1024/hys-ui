@@ -259,6 +259,6 @@
 
 :where([data-hys-ui][data-hys-motion="full"]){--hys-ui-motion-fast:160ms;--hys-ui-motion-base:300ms;--hys-ui-motion-slow:480ms;--hys-ui-motion-shift:14px}
 :where([data-hys-ui][data-hys-motion="off"]){--hys-ui-motion-fast:0ms;--hys-ui-motion-base:0ms;--hys-ui-motion-slow:0ms;--hys-ui-motion-shift:0px}
-:where([data-hys-ui][data-hys-motion="off"],[data-hys-ui][data-hys-motion="off"] *){animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
-@media(prefers-reduced-motion:reduce){:where([data-hys-ui],[data-hys-ui] *){animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+:where([data-hys-ui][data-hys-motion="off"],[data-hys-ui][data-hys-motion="off"] *){animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:0s!important;transition-delay:0s!important}
+@media(prefers-reduced-motion:reduce){:where([data-hys-ui],[data-hys-ui] *){animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:0s!important;transition-delay:0s!important}}
 :where([data-hys-ui] .lucide){flex-shrink:0;vertical-align:middle;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}

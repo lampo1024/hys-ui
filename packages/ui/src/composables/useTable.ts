@@ -11,7 +11,7 @@ import {
 import {
   tableToken,
   tableValue,
-  tableMatches,
+  tableFilterPredicate,
   tableCompare,
   type HysTableProps,
   type HysTableKey,
@@ -37,7 +37,14 @@ export function useTable<T extends object>(
         ? [props.defaultSort as HysTableSort]
         : [],
   );
-  const localFilters = ref<HysTableFilters>({ ...props.defaultFilters }),
+  const localFilters = ref<HysTableFilters>({
+      ...Object.fromEntries(
+        columns()
+          .filter((c) => c.defaultFilterValue)
+          .map((c) => [c.key, [...c.defaultFilterValue!]]),
+      ),
+      ...props.defaultFilters,
+    }),
     localPage = ref(1),
     localSize = ref(10);
   const ownSelected = ref<HysTableKey[]>([
@@ -183,7 +190,12 @@ export function useTable<T extends object>(
           !seen.has(item.key) &&
           (seen.add(item.key), true),
       )
-      .slice(0, props.multiSort ? undefined : 1);
+      .slice(0, props.multiSort ? undefined : 1)
+      .sort(
+        (a, b) =>
+          (columns().find((c) => c.key === b.key)?.sortPriority ?? 0) -
+          (columns().find((c) => c.key === a.key)?.sortPriority ?? 0),
+      );
   });
   const filters = computed<HysTableFilters>(
     () => props.filters ?? localFilters.value,
@@ -191,14 +203,12 @@ export function useTable<T extends object>(
   const processed = computed(() => {
     const g = graph.value,
       keep = new Set<string>(),
-      children = new Map<string, TableNode<T>[]>();
+      children = new Map<string, TableNode<T>[]>(),
+      matches = tableFilterPredicate(filters.value, columns());
     if (!props.serverMode)
       for (let i = g.all.length - 1; i >= 0; i--) {
         const node = g.all[i];
-        if (
-          tableMatches(node.row, filters.value, columns()) ||
-          node.children.some((c) => keep.has(c.token))
-        )
+        if (matches(node.row) || node.children.some((c) => keep.has(c.token)))
           keep.add(node.token);
       }
     const compare = tableCompare(sorts.value, columns());
@@ -305,10 +315,15 @@ export function useTable<T extends object>(
     );
   }
   const selectionPage = computed(() => {
-    const roots = new Set(pageRoots.value.map((n) => n.token));
-    return graph.value.all.filter((n) => {
-      return roots.has(n.rootToken) && eligible(n);
-    });
+    const result: TableNode<T>[] = [],
+      stack = [...pageRoots.value].reverse();
+    while (stack.length) {
+      const node = stack.pop()!;
+      if (eligible(node)) result.push(node);
+      const children = processed.value.children.get(node.token) ?? [];
+      for (let i = children.length - 1; i >= 0; i--) stack.push(children[i]);
+    }
+    return result;
   });
   const allSelected = computed(
     () =>
@@ -368,6 +383,12 @@ export function useTable<T extends object>(
         ["asc", "desc"].includes(s.direction),
     );
     localSort.value = props.multiSort ? next : next.slice(0, 1);
+    if (props.multiSort)
+      localSort.value.sort(
+        (a, b) =>
+          (columns().find((c) => c.key === b.key)?.sortPriority ?? 0) -
+          (columns().find((c) => c.key === a.key)?.sortPriority ?? 0),
+      );
     localPage.value = 1;
     emit("update:sort", localSort.value[0] ?? null);
     emit("update:sorts", localSort.value);
@@ -455,7 +476,12 @@ export function useTable<T extends object>(
       else set.delete(n.token);
     }
   }
-  async function toggleRowSelection(value: T | HysTableKey, checked?: boolean) {
+  let selectionAnchor: string | undefined;
+  async function toggleRowSelection(
+    value: T | HysTableKey,
+    checked?: boolean,
+    range = false,
+  ) {
     const node = find(value);
     if (!node || !eligible(node) || busy.value) return false;
     const yes = checked ?? !selectedSet.value.has(node.token);
@@ -464,10 +490,22 @@ export function useTable<T extends object>(
       if (accepted) emit("select", getSelectionRows(), node.row, yes);
       return accepted;
     }
-    const next = new Set(selectedSet.value),
-      stack = [node];
+    const start =
+        range && props.rangeSelection
+          ? display.value.findIndex((n) => n.token === selectionAnchor)
+          : -1,
+      end = display.value.findIndex((n) => n.token === node.token),
+      rangeNodes =
+        start >= 0 && end >= 0
+          ? display.value.slice(Math.min(start, end), Math.max(start, end) + 1)
+          : [node],
+      next = new Set(selectedSet.value),
+      stack = [...rangeNodes],
+      visited = new Set<string>();
     while (stack.length) {
       const item = stack.pop()!;
+      if (visited.has(item.token)) continue;
+      visited.add(item.token);
       if (eligible(item)) yes ? next.add(item.token) : next.delete(item.token);
       if (props.checkStrictly === false) stack.push(...item.children);
     }
@@ -483,7 +521,17 @@ export function useTable<T extends object>(
       ]).values(),
     ];
     const accepted = await requestSelection(keys);
-    if (accepted) emit("select", getSelectionRows(), node.row, yes);
+    if (accepted) {
+      selectionAnchor = node.token;
+      emit("select", getSelectionRows(), node.row, yes);
+      if (rangeNodes.length > 1)
+        emit(
+          "selectRange",
+          getSelectionRows(),
+          rangeNodes.filter(eligible).map((n) => n.row),
+          yes,
+        );
+    }
     return accepted;
   }
   async function toggleAllSelection(checked?: boolean) {
@@ -509,6 +557,29 @@ export function useTable<T extends object>(
     ];
     const accepted = await requestSelection(keys);
     if (accepted) emit("selectAll", getSelectionRows(), yes);
+    return accepted;
+  }
+  async function invertSelection() {
+    if (props.selectionType === "radio" || busy.value || !live.value)
+      return false;
+    const next = new Set(selectedSet.value);
+    // Toggle leaves in linked trees, then derive parent state once.
+    for (const node of selectionPage.value)
+      if (props.checkStrictly !== false || !node.children.some(eligible))
+        next.has(node.token) ? next.delete(node.token) : next.add(node.token);
+    cascade(next);
+    const keys = [
+      ...new Map([
+        ...selectedKeys.value
+          .filter((k) => next.has(tableToken(k)))
+          .map((k) => [tableToken(k), k] as const),
+        ...graph.value.all
+          .filter((n) => next.has(n.token))
+          .map((n) => [n.token, n.key] as const),
+      ]).values(),
+    ];
+    const accepted = await requestSelection(keys);
+    if (accepted) emit("selectInvert", getSelectionRows(), selectedKeys.value);
     return accepted;
   }
   async function setCurrentRow(value?: T | HysTableKey | null) {
@@ -696,6 +767,7 @@ export function useTable<T extends object>(
     changeSize,
     toggleRowSelection,
     toggleAllSelection,
+    invertSelection,
     clearSelection: () => requestSelection([]),
     getSelectionRows,
     getHalfSelectionRows: () =>

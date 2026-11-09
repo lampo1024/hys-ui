@@ -141,6 +141,14 @@
   <section class="notes">
     <h2>选择与树形数据</h2>
     <p>
+      selectionActions 显示当前页全选、反选与全局清空工具；selection
+      插槽可以替换工具区，接收
+      rows、keys、selectAll、invert、clear。rangeSelection 启用 Shift
+      区间选择，以当前可见顺序为准，跳过不可选行。invertSelection()
+      仅反选当前筛选页，selectInvert 与 selectRange
+      在宿主接受变化后发出。hideSelectAll 隐藏表头全选。
+    </p>
+    <p>
       selectable 可传布尔值或行可选判断函数。selectionType='radio' 单选，默认
       checkbox
       多选；全选只影响当前根行页及其已加载后代，忽略禁用行。selectOnIndeterminate=false
@@ -159,6 +167,27 @@
   </section>
   <section class="notes">
     <h2>布局、汇总与插槽</h2>
+    <p>
+      pagination.position
+      接受位置数组：top-left、top-center、top-right、bottom-left、bottom-center、bottom-right，默认
+      bottom-right；空数组隐藏导航，仍保留数据分页。scrollToFirstRowOnChange
+      在查询状态改变后将表格纵向滚动归零，不改变横向滚动。
+    </p>
+    <p>
+      列 filterSearch 可为 true 或 (query, option) 匹配函数；filterMode='tree'
+      展示可展开的树形筛选，filters.children
+      提供层级。父选项默认匹配自身及后代，filterMethod
+      可替换匹配规则。defaultFilterValue 提供列初值，表格 defaultFilters
+      优先；filterResetToDefault 让面板重置恢复初值，clearFilter()
+      仍用于显式清空。多列排序可用 sortPriority
+      指定优先级，数值越大越优先，同优先级保留排序数组次序。
+    </p>
+    <p>
+      customRow、customHeaderRow、customCell、customHeaderCell 返回 Vue
+      元素属性，合并类名、样式与事件；列级 customCell / customHeaderCell
+      与表格级配置叠加。rowScope='row' 或 'rowgroup'
+      将数据单元格渲染为行标题。数据内容、合并范围、固定定位及内部标识不能通过属性回调覆盖。
+    </p>
     <p>
       height 固定滚动区域高度，maxHeight
       限制最大高度；提供高度时自动固定表头，可用 stickyHeader

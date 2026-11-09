@@ -124,6 +124,7 @@ export interface HysTreeProps<
   checkable?: boolean;
   searchable?: boolean;
   disabled?: boolean;
+  inheritDisabled?: boolean;
   loading?: boolean;
   size?: "sm" | "md" | "lg";
   defaultExpandAll?: boolean;
@@ -329,7 +330,9 @@ export function treeIndex<N extends object>(
       const rawChildren =
           asyncChildren.get(key) ?? treeField(node, fields.children),
         children = Array.isArray(rawChildren) ? rawChildren : [],
-        disabled = !!treeField(node, fields.disabled),
+        disabled =
+          !!treeField(node, fields.disabled) ||
+          !!(props.inheritDisabled && group.parent?.disabled),
         leaf = treeField(node, fields.isLeaf) === true;
       const record: HysTreeRecord<N> = {
         key,

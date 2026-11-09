@@ -25,7 +25,7 @@ export function useFloating(
     padding?: number;
     matchWidth?: boolean | "min" | (() => boolean | "min");
     width?: () => number | string | undefined;
-    requestOpen?: (open: boolean) => boolean | void;
+    requestOpen?: (open: boolean, restoreFocus?: boolean) => boolean | void;
     closeOnTab?: boolean;
   } = {},
 ) {
@@ -178,7 +178,8 @@ export function useFloating(
     isTop = undefined;
   }
   function close(restore = false, force = false) {
-    if (!force && open.value && options.requestOpen?.(false) === false) return;
+    if (!force && open.value && options.requestOpen?.(false, restore) === false)
+      return;
     generation++;
     if (!open.value) return;
     open.value = false;

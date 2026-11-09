@@ -12,6 +12,7 @@ import {
   onUpdated,
   ref,
   shallowRef,
+  mergeProps,
   useId,
   useSlots,
   watch,
@@ -32,6 +33,7 @@ import HysRadio from "../HysRadio/HysRadio.vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysInput from "../HysInput/HysInput.vue";
 import HysPagination from "../HysPagination/HysPagination.vue";
+import HysTableFilterOptions from "./HysTableFilterOptions.vue";
 import { useHysRootAttrs } from "../../config";
 import { useFloating } from "../../composables/useFloating";
 import { useTable } from "../../composables/useTable";
@@ -48,6 +50,7 @@ import {
   type HysTableFilters,
   type HysTableFilterValue,
   type HysTableQuery,
+  type HysTableElementAttrs,
   type HysTableCellContext,
   type TableNode,
   type TableHeader,
@@ -89,6 +92,8 @@ const emit = defineEmits<{
   selectionChange: [rows: T[], keys: HysTableKey[]];
   select: [rows: T[], row: T, checked: boolean];
   selectAll: [rows: T[], checked: boolean];
+  selectInvert: [rows: T[], keys: HysTableKey[]];
+  selectRange: [rows: T[], rangeRows: T[], checked: boolean];
   "update:currentRowKey": [key: HysTableKey | null];
   currentChange: [row: T | undefined, previous: T | undefined];
   "update:expandedRowKeys": [keys: HysTableKey[]];
@@ -134,6 +139,11 @@ const words = computed(() => ({
   resizeColumn: "调整{label}列宽",
   sortAsc: "{label}升序",
   sortDesc: "{label}降序",
+  filterSearch: "搜索筛选项",
+  noFilterMatch: "暂无匹配的筛选项",
+  invertSelection: "反选当前页",
+  clearSelection: "清空选择",
+  selected: "已选 {count} 项",
   ...props.locale,
 }));
 const labelText = (template: string, value: number | string) =>
@@ -239,6 +249,81 @@ const firstData = computed(
 const explicitExpand = computed(() =>
   layout.value.leaves.some((c) => c.type === "expand"),
 );
+const paginationPositions = computed(() => {
+  if (
+    !props.pagination ||
+    (model.pagination.value.hideOnSinglePage && total.value <= pageSize.value)
+  )
+    return [];
+  const valid = [
+    "top-left",
+    "top-center",
+    "top-right",
+    "bottom-left",
+    "bottom-center",
+    "bottom-right",
+  ];
+  return [
+    ...new Set(model.pagination.value.position ?? ["bottom-right"]),
+  ].filter((p) => valid.includes(p));
+});
+const paginationProps = computed(() => ({
+  page: page.value,
+  pageSize: pageSize.value,
+  total: total.value,
+  showSizeChanger: model.pagination.value.showSizeChanger ?? true,
+  showQuickJumper: model.pagination.value.showQuickJumper ?? false,
+  showTotal: model.pagination.value.showTotal ?? true,
+  compact: model.pagination.value.compact,
+  labels: words.value.paginationLabels,
+  pageSizeOptions: model.pagination.value.pageSizeOptions,
+  disabled: busy.value,
+}));
+const emptyElementAttrs = Object.freeze({});
+function customAttrs(value: HysTableElementAttrs | undefined) {
+  if (!value) return emptyElementAttrs;
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      ([key]) =>
+        ![
+          "key",
+          "ref",
+          "innerHTML",
+          "textContent",
+          "is",
+          "colspan",
+          "rowspan",
+          "scope",
+          "data-column-key",
+          "data-row-key",
+          "aria-selected",
+          "aria-sort",
+        ].includes(key),
+    ),
+  );
+}
+function customHeader(header: TableHeader<T>) {
+  if (!props.customHeaderCell && !header.column.customHeaderCell)
+    return emptyElementAttrs;
+  const index = layout.value.leaves.indexOf(header.leaves[0]);
+  return mergeProps(
+    customAttrs(props.customHeaderCell?.(header.column, index)),
+    customAttrs(header.column.customHeaderCell?.(header.column, index)),
+  );
+}
+function customCellAttrs(ctx: HysTableCellContext<T>) {
+  if (!props.customCell && !ctx.column.customCell) return emptyElementAttrs;
+  return mergeProps(
+    customAttrs(props.customCell?.(ctx)),
+    customAttrs(ctx.column.customCell?.(ctx)),
+  );
+}
+let selectionShift = false;
+function selectRow(node: TableNode<T>, checked: boolean) {
+  const range = selectionShift;
+  selectionShift = false;
+  void model.toggleRowSelection(node.key, checked, range);
+}
 const sticky = computed(
   () =>
     props.stickyHeader ??
@@ -499,23 +584,20 @@ async function openFilter(column: HysTableColumn<T>, event: MouseEvent) {
 function setFilterDraft(values: readonly HysTableFilterValue[]) {
   filterDraft.value = [...values];
 }
-function optionFilter(value: HysTableFilterValue, checked: boolean) {
-  filterDraft.value =
-    filterColumn.value?.filterMultiple === false
-      ? checked
-        ? [value]
-        : []
-      : checked
-        ? [...filterDraft.value.filter((v) => !Object.is(v, value)), value]
-        : filterDraft.value.filter((v) => !Object.is(v, value));
-}
 function confirmFilter() {
   if (filterColumn.value)
     model.setFilter(filterColumn.value.key, filterDraft.value);
   floatingFilter.close(true);
 }
 function clearActiveFilter() {
-  filterDraft.value = [];
+  const column = filterColumn.value;
+  filterDraft.value = column?.filterResetToDefault
+    ? [
+        ...(props.defaultFilters?.[column.key] ??
+          column.defaultFilterValue ??
+          []),
+      ]
+    : [];
   confirmFilter();
 }
 const tipAnchor = ref<HTMLElement>(),
@@ -582,7 +664,9 @@ function measure() {
       cell =
         header ??
         Array.from(
-          row?.querySelectorAll<HTMLElement>("td[data-column-key]") ?? [],
+          row?.querySelectorAll<HTMLElement>(
+            "td[data-column-key],th[data-column-key]",
+          ) ?? [],
         ).find((e) => e.dataset.columnKey === c.key);
     if (cell) next[c.key] = cell.getBoundingClientRect().width;
   }
@@ -785,6 +869,14 @@ onActivated(observe);
 onUpdated(scheduleMeasure);
 onDeactivated(cleanup);
 onBeforeUnmount(cleanup);
+watch(
+  [sorts, filters, page, pageSize],
+  () => {
+    if (props.scrollToFirstRowOnChange && viewport.value)
+      viewport.value.scrollTop = 0;
+  },
+  { flush: "post" },
+);
 defineExpose({
   element,
   viewport,
@@ -797,6 +889,7 @@ defineExpose({
   getHalfSelectionRows: model.getHalfSelectionRows,
   toggleRowSelection: model.toggleRowSelection,
   toggleAllSelection: model.toggleAllSelection,
+  invertSelection: model.invertSelection,
   setCurrentRow: model.setCurrentRow,
   toggleRowExpansion: model.toggleRowExpansion,
   loadRow: model.loadRow,
@@ -829,6 +922,60 @@ defineExpose({
   >
     <div v-if="$slots.title" class="hys-ui-table-title">
       <slot name="title" :rows="model.filteredRows.value" :query="query" />
+    </div>
+    <div
+      v-if="selectionActions || $slots.selection"
+      class="hys-ui-table-selection-actions"
+    >
+      <slot
+        name="selection"
+        :rows="model.getSelectionRows()"
+        :keys="selectedKeys"
+        :select-all="() => model.toggleAllSelection(true)"
+        :invert="model.invertSelection"
+        :clear="model.clearSelection"
+      >
+        <span aria-live="polite">{{
+          words.selected.replace("{count}", String(selectedKeys.length))
+        }}</span>
+        <HysButton
+          v-if="selectionType !== 'radio'"
+          size="sm"
+          variant="secondary"
+          :disabled="busy"
+          @click="model.toggleAllSelection(true)"
+          >{{ words.selectAll }}</HysButton
+        >
+        <HysButton
+          v-if="selectionType !== 'radio'"
+          size="sm"
+          variant="secondary"
+          :disabled="busy"
+          @click="model.invertSelection"
+          >{{ words.invertSelection }}</HysButton
+        >
+        <HysButton
+          size="sm"
+          variant="ghost"
+          :disabled="busy || !selectedKeys.length"
+          @click="model.clearSelection"
+          >{{ words.clearSelection }}</HysButton
+        >
+      </slot>
+    </div>
+    <div
+      v-for="position in paginationPositions.filter((p) =>
+        p.startsWith('top-'),
+      )"
+      :key="position"
+      class="hys-ui-table-pagination"
+      :data-position="position"
+    >
+      <HysPagination
+        v-bind="paginationProps"
+        @change="model.requestPage($event)"
+        @page-size-change="model.changeSize"
+      />
     </div>
     <div
       ref="viewport"
@@ -865,10 +1012,22 @@ defineExpose({
           />
         </colgroup>
         <thead v-if="showHeader">
-          <tr v-for="(headers, level) in layout.headers" :key="level">
+          <tr
+            v-for="(headers, level) in layout.headers"
+            :key="level"
+            v-bind="
+              customAttrs(
+                customHeaderRow?.(
+                  headers.map((h) => h.column),
+                  level,
+                ),
+              )
+            "
+          >
             <th
               v-for="header in headers"
               :key="header.key"
+              v-bind="customHeader(header)"
               :data-column-key="header.column.key"
               :data-leaf="header.column.children ? undefined : ''"
               :colspan="header.colspan"
@@ -901,7 +1060,8 @@ defineExpose({
               <HysCheckbox
                 v-if="
                   header.column.type === 'selection' &&
-                  selectionType !== 'radio'
+                  selectionType !== 'radio' &&
+                  !hideSelectAll
                 "
                 :model-value="allSelected"
                 :indeterminate="someSelected"
@@ -1056,6 +1216,7 @@ defineExpose({
           <template v-else
             ><template v-for="(node, index) in display" :key="node.token">
               <tr
+                v-bind="customAttrs(customRow?.(node.row, index))"
                 :data-row-key="String(node.key)"
                 :aria-selected="
                   highlightCurrentRow ? currentKey === node.key : undefined
@@ -1084,11 +1245,18 @@ defineExpose({
                 <template
                   v-for="(column, columnIndex) in layout.leaves"
                   :key="column.key"
-                  ><td
+                  ><component
+                    :is="column.rowScope ? 'th' : 'td'"
                     v-if="
                       span(index, columnIndex).rowspan &&
                       span(index, columnIndex).colspan
                     "
+                    v-bind="
+                      customCellAttrs(
+                        context(node.row, column, index, columnIndex),
+                      )
+                    "
+                    :scope="column.rowScope"
                     :data-column-key="column.key"
                     :rowspan="span(index, columnIndex).rowspan"
                     :colspan="span(index, columnIndex).colspan"
@@ -1153,10 +1321,8 @@ defineExpose({
                         :indeterminate="halfSet.has(node.token)"
                         :disabled="busy || !model.eligible(node)"
                         :aria-label="labelText(words.selectRow, index + 1)"
-                        @click.stop
-                        @update:model-value="
-                          model.toggleRowSelection(node.key, $event === true)
-                        "
+                        @click.stop="selectionShift = $event.shiftKey"
+                        @update:model-value="selectRow(node, $event === true)"
                     /></template>
                     <RenderContent
                       v-else-if="column.type === 'index'"
@@ -1340,7 +1506,7 @@ defineExpose({
                         >
                       </div></template
                     >
-                  </td></template
+                  </component></template
                 >
               </tr>
               <tr
@@ -1395,23 +1561,15 @@ defineExpose({
       <slot name="footer" :rows="model.filteredRows.value" :query="query" />
     </div>
     <div
-      v-if="
-        pagination &&
-        (!model.pagination.value.hideOnSinglePage || total > pageSize)
-      "
+      v-for="position in paginationPositions.filter((p) =>
+        p.startsWith('bottom-'),
+      )"
+      :key="position"
       class="hys-ui-table-pagination"
+      :data-position="position"
     >
       <HysPagination
-        :page="page"
-        :page-size="pageSize"
-        :total="total"
-        :show-size-changer="model.pagination.value.showSizeChanger ?? true"
-        :show-quick-jumper="model.pagination.value.showQuickJumper ?? false"
-        :show-total="model.pagination.value.showTotal ?? true"
-        :compact="model.pagination.value.compact"
-        :labels="words.paginationLabels"
-        :page-size-options="model.pagination.value.pageSizeOptions"
-        :disabled="busy"
+        v-bind="paginationProps"
         @change="model.requestPage($event)"
         @page-size-change="model.changeSize"
       />
@@ -1436,16 +1594,18 @@ defineExpose({
           :clear="clearActiveFilter"
           :close="() => floatingFilter.close(true)"
           ><strong>{{ filterColumn.label }}</strong>
-          <div v-if="filterColumn.filters" class="hys-ui-table-filter-options">
-            <HysCheckbox
-              v-for="(option, index) in filterColumn.filters"
-              :key="index"
-              :model-value="filterDraft.some((v) => Object.is(v, option.value))"
-              :disabled="option.disabled || busy"
-              @update:model-value="optionFilter(option.value, $event === true)"
-              >{{ option.label }}</HysCheckbox
-            >
-          </div>
+          <HysTableFilterOptions
+            v-if="filterColumn.filters"
+            :key="filterColumn.key"
+            v-model:values="filterDraft"
+            :options="filterColumn.filters"
+            :mode="filterColumn.filterMode"
+            :search="filterColumn.filterSearch"
+            :multiple="filterColumn.filterMultiple !== false"
+            :disabled="busy"
+            :search-label="words.filterSearch"
+            :empty-text="words.noFilterMatch"
+          />
           <HysInput
             v-else
             :model-value="String(filterDraft[0] ?? '')"
@@ -1546,6 +1706,12 @@ defineExpose({
 .hys-ui-data-table td {
   background: inherit;
 }
+.hys-ui-data-table tbody th {
+  position: static;
+  z-index: auto;
+  background: inherit;
+  font-weight: inherit;
+}
 .hys-ui-data-table tbody tr {
   cursor: default;
   background: var(--hys-ui-table-row-bg);
@@ -1567,7 +1733,7 @@ defineExpose({
     var(--hys-ui-theme-primary-soft)
   );
 }
-.hys-ui-data-table tbody tr:last-child td {
+.hys-ui-data-table tbody tr:last-child :is(td, th) {
   border-bottom: 0;
 }
 .hys-ui-data-table tfoot td {
@@ -1583,6 +1749,11 @@ defineExpose({
 }
 .hys-ui-table-bordered th + th,
 .hys-ui-table-bordered td + td {
+  border-inline-start: 1px solid
+    var(--hys-ui-border, var(--hys-ui-theme-border));
+}
+.hys-ui-table-bordered tbody th + td,
+.hys-ui-table-bordered tbody td + th {
   border-inline-start: 1px solid
     var(--hys-ui-border, var(--hys-ui-theme-border));
 }
@@ -1614,6 +1785,48 @@ defineExpose({
 }
 .hys-ui-table-pagination {
   padding: 12px 16px;
+  display: flex;
+}
+.hys-ui-table-pagination > :deep(nav) {
+  max-width: 100%;
+}
+.hys-ui-table-pagination[data-position$="left"] {
+  justify-content: flex-start;
+}
+.hys-ui-table-pagination[data-position$="center"] {
+  justify-content: center;
+}
+.hys-ui-table-pagination[data-position$="right"] {
+  justify-content: flex-end;
+}
+.hys-ui-table-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+}
+.hys-ui-table-selection-actions > span {
+  margin-inline-end: auto;
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+  font-size: 12px;
+}
+.hys-ui-table-pagination > :deep(.hys-ui-pf-pagination) {
+  width: 100%;
+  min-width: 0;
+}
+.hys-ui-table-pagination[data-position$="left"] > :deep(nav) {
+  justify-content: flex-start;
+}
+.hys-ui-table-pagination[data-position$="center"] > :deep(nav) {
+  justify-content: center;
+}
+.hys-ui-table-pagination[data-position$="right"] > :deep(nav) {
+  justify-content: flex-end;
+}
+.hys-ui-table-pagination :deep(.hys-ui-pf-pagination-actions) {
+  margin-left: 0;
 }
 .hys-ui-table-heading,
 .hys-ui-table-label {

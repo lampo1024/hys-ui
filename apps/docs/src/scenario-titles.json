@@ -314,8 +314,12 @@
       "Grouped": "多级分组表头",
       "Sort": "默认、多列与受控排序",
       "Filters": "选项与文本筛选",
+      "FilterSearch": "可搜索选项与树形筛选",
       "CustomFilter": "自定义筛选面板",
       "Selection": "多选与禁用行",
+      "SelectionActions": "批量反选与区间选择",
+      "Pagination": "分页位置与滚动恢复",
+      "Attributes": "行属性与语义化单元格",
       "Current": "单选与当前行高亮",
       "Reserve": "跨页保留选择",
       "Expand": "展开详情与状态保留",
@@ -389,6 +393,26 @@
       "Keyboard": "键盘导航与右键菜单",
       "States": "加载、禁用与空数据",
       "Locale": "本地化与辅助技术文字"
+    },
+    "HysTreeSelect": {
+      "Basic": "基础选择与层级",
+      "Configure": "交互配置",
+      "Expansion": "展开状态与手风琴",
+      "Multiple": "多选与叶子限制",
+      "Checking": "复选联动与回填策略",
+      "Tags": "标签折叠与移除",
+      "Mapping": "业务字段与数值编号",
+      "Simple": "扁平列表与父子关系",
+      "Labels": "标签对象与未加载值",
+      "Remote": "远程搜索与请求取消",
+      "Lazy": "懒加载、缓存标签与重试",
+      "Custom": "自定义节点与头尾内容",
+      "Popup": "浮层宽度与长名称",
+      "Virtual": "大数据与虚拟导航",
+      "Form": "表单、尺寸与校验",
+      "Keyboard": "键盘选择与焦点",
+      "Methods": "实例方法与状态",
+      "States": "禁用、只读与加载"
     }
   }
 }
