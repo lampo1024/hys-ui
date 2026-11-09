@@ -4731,7 +4731,7 @@
         "type": "HysDatePickerType | undefined",
         "required": false,
         "default": "date",
-        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / months / quarters / years",
+        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / weeks / months / quarters / years",
         "global": false
       },
       {
@@ -4892,6 +4892,38 @@
         "required": false,
         "default": "1",
         "description": "每周第一天，0 周日到 6 周六；默认 1",
+        "global": false
+      },
+      {
+        "name": "firstWeekContainsDate",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "一月该日所在周为第一周，1–7，默认 4；与 firstDayOfWeek=1 组成 ISO 周规则",
+        "global": false
+      },
+      {
+        "name": "weekNumberFormatter",
+        "type": "((week: HysDatePickerWeek) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义周编号文字，接收 {year,week,start,end,dates}",
+        "global": false
+      },
+      {
+        "name": "disabledWeek",
+        "type": "((week: HysDatePickerWeek) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按周元数据禁止整个周，不影响已有绑定值",
+        "global": false
+      },
+      {
+        "name": "weekValidation",
+        "type": "\"full\" | \"any\" | undefined",
+        "required": false,
+        "default": "any",
+        "description": "any 至少一天可选（默认）；full 要求整周七天均通过日期边界和禁用规则",
         "global": false
       },
       {
@@ -5252,7 +5284,7 @@
         "type": "[value: V, info: HysDatePickerChange]",
         "required": false,
         "default": "",
-        "description": "一次选择或编辑请求：(value,{source,dates,formatted})，宿主可拒绝"
+        "description": "选择请求：(value,{source,dates,formatted,weeks?})；周模式附带每个端点的周起止日期"
       },
       {
         "name": "clear",
@@ -5340,6 +5372,13 @@
       }
     ],
     "slots": [
+      {
+        "name": "week-number",
+        "type": "HysDatePickerWeek & { selected: boolean; disabled: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "周编号内容：year、week、start、end、dates、selected、disabled；周模式点击编号选择整周"
+      },
       {
         "name": "default",
         "type": "HysDatePickerCell",
@@ -5578,7 +5617,7 @@
         "type": "HysDatePickerType | undefined",
         "required": false,
         "default": "date",
-        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / months / quarters / years",
+        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / weeks / months / quarters / years",
         "global": false
       },
       {
@@ -5739,6 +5778,38 @@
         "required": false,
         "default": "1",
         "description": "每周第一天，0 周日到 6 周六；默认 1",
+        "global": false
+      },
+      {
+        "name": "firstWeekContainsDate",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "一月该日所在周为第一周，1–7，默认 4；与 firstDayOfWeek=1 组成 ISO 周规则",
+        "global": false
+      },
+      {
+        "name": "weekNumberFormatter",
+        "type": "((week: HysDatePickerWeek) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义周编号文字，接收 {year,week,start,end,dates}",
+        "global": false
+      },
+      {
+        "name": "disabledWeek",
+        "type": "((week: HysDatePickerWeek) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按周元数据禁止整个周，不影响已有绑定值",
+        "global": false
+      },
+      {
+        "name": "weekValidation",
+        "type": "\"full\" | \"any\" | undefined",
+        "required": false,
+        "default": "any",
+        "description": "any 至少一天可选（默认）；full 要求整周七天均通过日期边界和禁用规则",
         "global": false
       },
       {
@@ -6099,7 +6170,7 @@
         "type": "[value: V, info: HysDatePickerChange]",
         "required": false,
         "default": "",
-        "description": "一次选择或编辑请求：(value,{source,dates,formatted})，宿主可拒绝"
+        "description": "选择请求：(value,{source,dates,formatted,weeks?})；周模式附带每个端点的周起止日期"
       },
       {
         "name": "clear",
@@ -6187,6 +6258,13 @@
       }
     ],
     "slots": [
+      {
+        "name": "week-number",
+        "type": "HysDatePickerWeek & { selected: boolean; disabled: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "周编号内容：year、week、start、end、dates、selected、disabled；周模式点击编号选择整周"
+      },
       {
         "name": "default",
         "type": "HysDatePickerCell",
@@ -13473,6 +13551,14 @@
         "global": false
       },
       {
+        "name": "tableLayout",
+        "type": "\"fixed\" | \"auto\" | undefined",
+        "required": false,
+        "default": "\"fixed\"",
+        "description": "",
+        "global": false
+      },
+      {
         "name": "caption",
         "type": "string | undefined",
         "required": false,
@@ -13518,6 +13604,38 @@
         "required": false,
         "default": "true",
         "description": "未交互调整列宽时填满容器；false 按列宽布局",
+        "global": false
+      },
+      {
+        "name": "scrollbarAlwaysOn",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "scrollbarTabindex",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "headerRowClassName",
+        "type": "string | ((columns: readonly HysTableColumn<T>[], level: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "headerRowStyle",
+        "type": "CSSProperties | ((columns: readonly HysTableColumn<T>[], level: number) => CSSProperties) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
         "global": false
       },
       {
@@ -13681,6 +13799,22 @@
         "global": false
       },
       {
+        "name": "selectionColumn",
+        "type": "HysTableSelectionColumn | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "getSelectionProps",
+        "type": "((row: T, index: number) => HysTableSelectionProps) | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
         "name": "highlightCurrentRow",
         "type": "boolean | undefined",
         "required": false,
@@ -13753,6 +13887,14 @@
         "global": false
       },
       {
+        "name": "sortOrders",
+        "type": "readonly (HysTableDirection | null)[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
         "name": "filters",
         "type": "HysTableFilters | undefined",
         "required": false,
@@ -13766,6 +13908,30 @@
         "required": false,
         "default": "",
         "description": "非受控初始筛选条件",
+        "global": false
+      },
+      {
+        "name": "filterColumnKey",
+        "type": "string | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "filterPlacement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "appendFilterTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
         "global": false
       },
       {
@@ -13862,6 +14028,30 @@
         "required": false,
         "default": "false",
         "description": "点击非交互内容时切换展开",
+        "global": false
+      },
+      {
+        "name": "showExpandColumn",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "expandColumnTitle",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
+        "global": false
+      },
+      {
+        "name": "expandFixed",
+        "type": "boolean | \"right\" | \"left\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "",
         "global": false
       },
       {
@@ -13974,6 +14164,14 @@
         "required": false,
         "default": "",
         "description": "受控像素列宽快照，支持 v-model:columnWidths",
+        "global": false
+      },
+      {
+        "name": "allowDragLastColumn",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "",
         "global": false
       }
     ],
@@ -14217,6 +14415,27 @@
         "description": "请求更新对应受控状态，可配合 v-model 使用"
       },
       {
+        "name": "childrenChange",
+        "type": "[row: T, children: readonly T[]]",
+        "required": false,
+        "default": "",
+        "description": "手动子行更新生效：row、children"
+      },
+      {
+        "name": "update:filterColumnKey",
+        "type": "[key: string | null]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "filterOpenChange",
+        "type": "[key: string | null]",
+        "required": false,
+        "default": "",
+        "description": "实际打开的筛选列 key，null 表示关闭"
+      },
+      {
         "name": "update:columnWidths",
         "type": "[widths: Record<string, number>]",
         "required": false,
@@ -14247,6 +14466,13 @@
         "description": "选择工具区：rows、keys、selectAll、invert、clear"
       },
       {
+        "name": "selection-header",
+        "type": "{ column: HysTableColumn<T>; checked: boolean; indeterminate: boolean; disabled: boolean; toggle: (checked?: boolean | undefined) => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "选择列表头：column、checked、indeterminate、disabled、toggle"
+      },
+      {
         "name": "header-cell",
         "type": "{ column: HysTableColumn<T>; sorts: HysTableSort[]; }",
         "required": false,
@@ -14254,11 +14480,32 @@
         "description": "默认表头内容：column、sorts"
       },
       {
+        "name": "filter-icon",
+        "type": "{ column: HysTableColumn<T>; filtered: boolean; open: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "筛选图标：column、filtered、open"
+      },
+      {
         "name": "loading",
         "type": "{}",
         "required": false,
         "default": "",
         "description": "加载行内容"
+      },
+      {
+        "name": "selection-cell",
+        "type": "{ row: T; index: number; column: HysTableColumn<T>; checked: boolean; indeterminate: boolean; disabled: boolean; toggle: (selected?: boolean | undefined) => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "行选择内容：row、index、column、checked、indeterminate、disabled、toggle"
+      },
+      {
+        "name": "expand-icon",
+        "type": "{ row: T; index: number; expanded: boolean; loading: boolean; depth: number; }",
+        "required": false,
+        "default": "",
+        "description": "展开图标内容：row、index、expanded、loading、depth；保留内置按钮语义"
       },
       {
         "name": "body-cell",
@@ -14304,10 +14551,10 @@
       },
       {
         "name": "filter-dropdown",
-        "type": "{ column: HysTableColumn<T>; values: HysTableFilterValue[]; setValues: (values: readonly HysTableFilterValue[]) => void; confirm: () => void; clear: () => void; close: () => void; }",
+        "type": "{ column: HysTableColumn<T>; open: true; values: HysTableFilterValue[]; setValues: (values: readonly HysTableFilterValue[]) => void; confirm: (options?: Event | HysTableFilterConfirmOptions | undefined) => void; clear: (options?: Event | HysTableFilterResetOptions | undefined) => void; close: () => void; }",
         "required": false,
         "default": "",
-        "description": "自定义筛选：column、values、setValues、confirm、clear、close"
+        "description": "筛选：column、open、values、setValues、confirm({closeDropdown?})、clear({confirm?,closeDropdown?})、close"
       },
       {
         "name": "tooltip",
@@ -14375,6 +14622,13 @@
         "description": "当前已应用的排序、过滤、分页和数据"
       },
       {
+        "name": "columns",
+        "type": "HysTableColumn<T>[]",
+        "required": true,
+        "default": "",
+        "description": "当前显示的规范化叶列"
+      },
+      {
         "name": "clearSelection",
         "type": "() => Promise<boolean>",
         "required": true,
@@ -14438,6 +14692,13 @@
         "description": "加载指定懒节点，force=true 重新加载，返回是否成功"
       },
       {
+        "name": "updateKeyChildren",
+        "type": "(\n    row: T | HysTableKey,\n    children: readonly T[],\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "替换指定行子项，不修改原始 rows，取消旧请求；返回 Promise<boolean>"
+      },
+      {
         "name": "clearSort",
         "type": "() => void",
         "required": true,
@@ -14464,6 +14725,20 @@
         "required": true,
         "default": "",
         "description": "请求设置列筛选值数组"
+      },
+      {
+        "name": "showFilter",
+        "type": "(key: string) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按列 key 打开筛选，返回受控请求是否接受"
+      },
+      {
+        "name": "hideFilter",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求关闭筛选，返回是否接受"
       },
       {
         "name": "setPage",
@@ -14499,6 +14774,27 @@
         "required": true,
         "default": "",
         "description": "按 ScrollToOptions 滚动，不改变选择"
+      },
+      {
+        "name": "setScrollTop",
+        "type": "(top: number) => void",
+        "required": true,
+        "default": "",
+        "description": "设置表格纵向滚动位置"
+      },
+      {
+        "name": "setScrollLeft",
+        "type": "(left: number) => void",
+        "required": true,
+        "default": "",
+        "description": "设置表格横向滚动位置"
+      },
+      {
+        "name": "scrollToRow",
+        "type": "(\n    row: T | HysTableKey,\n    options?: HysTableScrollRowOptions,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "定位当前可见行，支持 block 与 behavior，不改变分页、展开或选择"
       }
     ]
   },

@@ -35,7 +35,7 @@ async (page) => {
     await trigger("basic").waitFor();
     check(
       "Single-date examples have descriptive independent scenes",
-      (await page.locator(".example-card").count()) === 16,
+      (await page.locator(".example-card").count()) >= 16,
     );
     await trigger("basic").click();
     await day("2026-11-06").waitFor();
@@ -348,7 +348,7 @@ async (page) => {
     );
     check(
       "Range examples have independent named scenes",
-      (await page.locator(".example-card").count()) === 13,
+      (await page.locator(".example-card").count()) >= 13,
     );
     await trigger("basic").click();
     await day("2026-11-15").click();

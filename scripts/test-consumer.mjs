@@ -126,13 +126,15 @@ export function readCell(cell:HysCalendarCell){return [cell.date.getDate(),cell.
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {calendarChecks} from './calendar-types'\nvoid calendarChecks\n")
 fs.writeFileSync(path.join(dir,'table-types.ts'),`import {h,ref} from 'vue'
-import {HysTable,type HysTableColumn,type HysTableInstance,type HysTableCellContext,type HysTableQuery,type HysTableLoadContext,type HysTableKey,type HysTableElementAttrs,type HysTablePaginationPosition} from 'hys-ui'
+import {HysTable,type HysTableColumn,type HysTableInstance,type HysTableCellContext,type HysTableQuery,type HysTableLoadContext,type HysTableSelectionProps,type HysTableFilterConfirmOptions,type HysTableKey,type HysTableElementAttrs,type HysTablePaginationPosition} from 'hys-ui'
 interface Person {id:number;name:string;amount:number;children?:Person[];hasChildren?:boolean}
 const rows:Person[]=[{id:1,name:'A',amount:20}],columns:HysTableColumn<Person>[]=[{key:'name',label:'Name',fixed:'left',width:150,filterable:true},{key:'amount',label:'Amount',sortable:true,summary:'sum',sorter:(a,b)=>a.amount-b.amount,formatter:(row,col,value)=>String(value),tooltipFormatter:(ctx:HysTableCellContext<Person>)=>ctx.row.name}]
 export const tableChecks=[h(HysTable<Person>,{ref:ref<HysTableInstance<Person>>(),rows,columns,selectable:(row,index)=>row.id!==0,pagination:{pageSize:5},treeMode:true,loadChildren:async(row:Person,ctx:HysTableLoadContext)=>{void ctx.signal;return []},onQueryChange:(query:HysTableQuery<Person>)=>void query.filters,onSelectionChange:(rows:Person[],keys:HysTableKey[])=>void [rows,keys],onRowClick:(row:Person)=>void row.name,resizable:true})]
+const customSelection:HysTableSelectionProps={disabled:false,label:'Pick'};const confirmOptions:HysTableFilterConfirmOptions={closeDropdown:false};void confirmOptions;
+export const tableExtras=h(HysTable<Person>,{rows,columns:[{...columns[0],sortBy:['name',row=>row.id],defaultSortOrder:'asc'}],tableLayout:'auto',selectionColumn:{fixed:'right',width:90},getSelectionProps:()=>customSelection,headerRowStyle:(_columns,level)=>({opacity:level?0.9:1}),filterColumnKey:null,showExpandColumn:false,allowDragLastColumn:false,onFilterOpenChange:key=>void key});
 const position:HysTablePaginationPosition='top-right';const attrs:HysTableElementAttrs={'data-example':'member','aria-label':'Member'}
 export const enhancedTable=h(HysTable<Person>,{rows,columns:[{...columns[0],rowScope:'row',filterMode:'tree',filterSearch:(query,option)=>option.label.includes(query),filters:[{label:'Group',value:'group',children:[{label:'A',value:'A'}]}],sortPriority:2,customCell:context=>({...attrs,onClick:()=>void context.row.name})}],rangeSelection:true,selectionActions:true,customRow:row=>({'data-row':row.id}),pagination:{position:[position,'bottom-center']},onSelectRange:(rows:Person[],range:Person[],checked:boolean)=>void [rows,range,checked]})
-export async function operateTable(api:HysTableInstance<Person>){await api.toggleRowSelection(1,true,true);await api.invertSelection();api.setSort({key:'amount',direction:'desc'});api.setFilter('name',['A']);api.clearFilter();api.setPage(2);await api.setCurrentRow();api.resizeColumn('name',200);api.resetColumnWidths();await api.doLayout();return api.getSelectionRows()}
+export async function operateTable(api:HysTableInstance<Person>){await api.toggleRowSelection(1,true,true);await api.invertSelection();api.setSort({key:'amount',direction:'desc'});api.setFilter('name',['A']);api.clearFilter();api.setPage(2);await api.setCurrentRow();api.resizeColumn('name',200);api.resetColumnWidths();await api.updateKeyChildren(1,[]);await api.showFilter('name');await api.hideFilter();api.setScrollLeft(10);api.setScrollTop(20);await api.scrollToRow(1,{block:'center'});void api.columns;await api.doLayout();return api.getSelectionRows()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {tableChecks} from './table-types'\nvoid tableChecks\n")
 fs.writeFileSync(path.join(dir,'surfaces-types.ts'),`import {h} from 'vue'
@@ -179,13 +181,14 @@ export function readOption(option:HysCascaderOptionContext<Department>){return [
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {cascaderChecks} from './cascader-types'\nvoid cascaderChecks\n")
 fs.writeFileSync(path.join(dir,'date-picker-types.ts'),`import {h,ref} from 'vue'
-import {HysDatePicker,HysDateRangePicker,type HysDatePickerProps,type HysDateRangePickerProps,type HysDatePickerInstance,type HysDateRangePickerInstance,type HysDatePickerChange,type HysDatePickerCell,type HysDateShortcut} from 'hys-ui'
+import {HysDatePicker,HysDateRangePicker,type HysDatePickerWeek,type HysDatePickerProps,type HysDateRangePickerProps,type HysDatePickerInstance,type HysDateRangePickerInstance,type HysDatePickerChange,type HysDatePickerCell,type HysDateShortcut} from 'hys-ui'
 const date=ref<HysDatePickerInstance<Date|null>>(),range=ref<HysDateRangePickerInstance<readonly [number|null,number|null]|null>>()
 export const dateChecks=[h(HysDatePicker<Date|null>,{ref:date,defaultValue:null,valueType:'date',disabledTime:(date,context)=>({hours:context.range==='start'?[0,1]:[],minutes:hour=>hour===9?[0]:[]}),onChange:(value:Date|null,info:HysDatePickerChange)=>void [value,info.formatted]}),h(HysDateRangePicker<readonly [number|null,number|null]|null>,{ref:range,modelValue:[0,null],valueType:'timestamp',allowEmpty:[false,true],disabled:[true,false],singlePanel:false}),h(HysDatePicker<readonly string[]>,{defaultValue:['2026-11-03'],type:'dates',maxDates:3})]
 export const scalarProps:HysDatePickerProps<Date|null>={defaultValue:new Date(),valueType:'date',cellClassName:cell=>cell.inRange?'in-range':''}
 export const rangeProps:HysDateRangePickerProps={modelValue:['2026-11-03',null],showTime:true,allowEmpty:[false,true],shortcuts:[{label:'Now',value:()=>[new Date(),new Date()]}]}
 export const shortcut:HysDateShortcut={label:'Today',value:()=>new Date()}
 export function readCell(cell:HysDatePickerCell){return [cell.date.getUTCDate(),cell.iso,cell.type,cell.selected]}
+export const weeklyDate=h(HysDatePicker<readonly string[]>,{type:'weeks',modelValue:['2026-11-02'],firstWeekContainsDate:4,weekValidation:'full',disabledWeek:(week:HysDatePickerWeek)=>week.week===1,onChange:(_value,info)=>void info.weeks});
 export async function operateDate(api:HysDatePickerInstance<Date|null>){await api.setValue(new Date());await api.showMonth('2026-11-01');api.setMode('month');await api.confirm();api.cancel();return api.draft}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {dateChecks} from './date-picker-types'\nvoid dateChecks\n")

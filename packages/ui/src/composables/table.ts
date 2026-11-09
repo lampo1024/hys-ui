@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, VNodeChild } from "vue";
+import type { Placement } from "./useFloating";
 export type HysTableKey = string | number;
 export type HysTableDirection = "asc" | "desc";
 export type HysTableFilterValue = string | number | boolean;
@@ -6,6 +7,27 @@ export type HysTableFilters = Record<string, readonly HysTableFilterValue[]>;
 export interface HysTableSort {
   key: string;
   direction: HysTableDirection;
+}
+export interface HysTableSelectionProps {
+  disabled?: boolean;
+  label?: string;
+  title?: string;
+}
+export interface HysTableSelectionColumn {
+  label?: string;
+  width?: number;
+  fixed?: boolean | "left" | "right";
+  align?: "left" | "center" | "right";
+}
+export interface HysTableFilterConfirmOptions {
+  closeDropdown?: boolean;
+}
+export interface HysTableFilterResetOptions extends HysTableFilterConfirmOptions {
+  confirm?: boolean;
+}
+export interface HysTableScrollRowOptions {
+  behavior?: ScrollBehavior;
+  block?: "start" | "center" | "end" | "nearest";
 }
 export interface HysTableFilter {
   label: string;
@@ -44,8 +66,12 @@ export interface HysTableColumn<T extends object = any> {
   headerAlign?: "left" | "center" | "right";
   sortable?: boolean | "custom";
   sorter?: (a: T, b: T) => number;
-  sortBy?: string | ((row: T) => unknown);
+  sortBy?:
+    | string
+    | ((row: T) => unknown)
+    | readonly (string | ((row: T) => unknown))[];
   sortOrders?: readonly (HysTableDirection | null)[];
+  defaultSortOrder?: HysTableDirection;
   sortPriority?: number;
   filters?: readonly HysTableFilter[];
   filterable?: boolean;
@@ -155,12 +181,20 @@ export interface HysTableProps<T extends object> {
   striped?: boolean;
   bordered?: boolean;
   size?: "sm" | "md" | "lg";
+  tableLayout?: "auto" | "fixed";
   caption?: string;
   height?: number | string;
   maxHeight?: number | string;
   stickyHeader?: boolean;
   showHeader?: boolean;
   fit?: boolean;
+  scrollbarAlwaysOn?: boolean;
+  scrollbarTabindex?: number | string;
+  headerRowClassName?:
+    string | ((columns: readonly HysTableColumn<T>[], level: number) => string);
+  headerRowStyle?:
+    | CSSProperties
+    | ((columns: readonly HysTableColumn<T>[], level: number) => CSSProperties);
   rowClassName?: string | ((row: T, index: number) => string);
   rowStyle?: CSSProperties | ((row: T, index: number) => CSSProperties);
   cellClassName?: string | ((context: HysTableCellContext<T>) => string);
@@ -191,6 +225,8 @@ export interface HysTableProps<T extends object> {
   selectionActions?: boolean;
   rangeSelection?: boolean;
   hideSelectAll?: boolean;
+  selectionColumn?: HysTableSelectionColumn;
+  getSelectionProps?: (row: T, index: number) => HysTableSelectionProps;
   highlightCurrentRow?: boolean;
   currentRowKey?: HysTableKey | null;
   defaultCurrentRowKey?: HysTableKey;
@@ -200,8 +236,12 @@ export interface HysTableProps<T extends object> {
   sorts?: readonly HysTableSort[];
   defaultSort?: HysTableSort | readonly HysTableSort[] | null;
   multiSort?: boolean;
+  sortOrders?: readonly (HysTableDirection | null)[];
   filters?: HysTableFilters;
   defaultFilters?: HysTableFilters;
+  filterColumnKey?: string | null;
+  filterPlacement?: Placement;
+  appendFilterTo?: string | HTMLElement | false;
   pagination?: boolean | HysTablePagination;
   page?: number;
   pageSize?: number;
@@ -214,6 +254,9 @@ export interface HysTableProps<T extends object> {
   defaultExpandAll?: boolean;
   rowExpandable?: (row: T) => boolean;
   expandOnClickRow?: boolean;
+  showExpandColumn?: boolean;
+  expandColumnTitle?: string;
+  expandFixed?: boolean | "left" | "right";
   preserveExpandedContent?: boolean;
   treeMode?: boolean;
   childrenKey?: string;
@@ -239,6 +282,7 @@ export interface HysTableProps<T extends object> {
   tooltipFormatter?: (context: HysTableCellContext<T>) => VNodeChild;
   resizable?: boolean;
   columnWidths?: Readonly<Record<string, number>>;
+  allowDragLastColumn?: boolean;
 }
 export interface HysTableInstance<T extends object = Record<string, unknown>> {
   readonly element: HTMLElement | undefined;
@@ -247,6 +291,7 @@ export interface HysTableInstance<T extends object = Record<string, unknown>> {
   readonly currentRow: T | undefined;
   readonly expandedKeys: HysTableKey[];
   readonly query: HysTableQuery<T>;
+  readonly columns: HysTableColumn<T>[];
   clearSelection: () => Promise<boolean>;
   getSelectionRows: () => T[];
   getHalfSelectionRows: () => T[];
@@ -263,15 +308,27 @@ export interface HysTableInstance<T extends object = Record<string, unknown>> {
     expanded?: boolean,
   ) => Promise<boolean>;
   loadRow: (row: T | HysTableKey, force?: boolean) => Promise<boolean>;
+  updateKeyChildren: (
+    row: T | HysTableKey,
+    children: readonly T[],
+  ) => Promise<boolean>;
   clearSort: () => void;
   setSort: (sort: HysTableSort | readonly HysTableSort[] | null) => void;
   clearFilter: (keys?: readonly string[]) => void;
   setFilter: (key: string, values: readonly HysTableFilterValue[]) => void;
+  showFilter: (key: string) => Promise<boolean>;
+  hideFilter: () => Promise<boolean>;
   setPage: (page: number) => void;
   resizeColumn: (key: string, width: number) => void;
   resetColumnWidths: () => void;
   doLayout: () => Promise<void>;
   scrollTo: (options: ScrollToOptions) => void;
+  setScrollTop: (top: number) => void;
+  setScrollLeft: (left: number) => void;
+  scrollToRow: (
+    row: T | HysTableKey,
+    options?: HysTableScrollRowOptions,
+  ) => Promise<boolean>;
 }
 export interface TableNode<T extends object> {
   row: T;
@@ -320,6 +377,7 @@ export const tableBreakpoint = (width: number) =>
 export function tableColumns<T extends object>(
   input: readonly HysTableColumn<T>[],
   breakpoint: ReturnType<typeof tableBreakpoint>,
+  showExpandColumn = true,
 ) {
   const seen = new Set<string>();
   function normalize(
@@ -333,6 +391,7 @@ export function tableColumns<T extends object>(
       if (
         path.has(source) ||
         source.hidden ||
+        (!showExpandColumn && source.type === "expand") ||
         (source.responsive && !source.responsive.includes(breakpoint)) ||
         seen.has(source.key)
       )
@@ -417,31 +476,41 @@ export function tableCompare<T extends object>(
   });
   return (a: T, b: T) => {
     for (const { direction, column } of rules) {
-      const av =
-          typeof column.sortBy === "function"
-            ? column.sortBy(a)
-            : tableValue(a, column.sortBy ?? column.dataIndex ?? column.key),
-        bv =
-          typeof column.sortBy === "function"
-            ? column.sortBy(b)
-            : tableValue(b, column.sortBy ?? column.dataIndex ?? column.key);
-      if (av == null || bv == null) {
-        if (av == null && bv == null) continue;
-        return av == null ? 1 : -1;
+      if (column.sorter) {
+        const result = column.sorter(a, b);
+        if (Number.isFinite(result) && result !== 0)
+          return (direction === "asc" ? 1 : -1) * result;
+        continue;
       }
-      const result = column.sorter
-        ? column.sorter(a, b)
-        : typeof av === "number" && typeof bv === "number"
-          ? Number.isNaN(av)
-            ? Number.isNaN(bv)
-              ? 0
-              : 1
-            : Number.isNaN(bv)
-              ? -1
-              : av - bv
-          : collator.compare(String(av), String(bv));
-      if (Number.isFinite(result) && result !== 0)
-        return (direction === "asc" ? 1 : -1) * result;
+      const fields = Array.isArray(column.sortBy)
+        ? column.sortBy
+        : [column.sortBy ?? column.dataIndex ?? column.key];
+      for (const field of fields) {
+        const av =
+            typeof field === "function"
+              ? field(a)
+              : tableValue(a, field as string | readonly (string | number)[]),
+          bv =
+            typeof field === "function"
+              ? field(b)
+              : tableValue(b, field as string | readonly (string | number)[]);
+        if (av == null || bv == null) {
+          if (av == null && bv == null) continue;
+          return av == null ? 1 : -1;
+        }
+        const result =
+          typeof av === "number" && typeof bv === "number"
+            ? Number.isNaN(av)
+              ? Number.isNaN(bv)
+                ? 0
+                : 1
+              : Number.isNaN(bv)
+                ? -1
+                : av - bv
+            : collator.compare(String(av), String(bv));
+        if (Number.isFinite(result) && result !== 0)
+          return (direction === "asc" ? 1 : -1) * result;
+      }
     }
     return 0;
   };

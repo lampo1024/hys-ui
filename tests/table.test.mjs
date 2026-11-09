@@ -1031,7 +1031,7 @@ test("Controlled row selections and expansion can reject requests without emitti
   app.mount(host);
   try {
     assert.equal(await instance.value.toggleRowSelection(1, true), false);
-    assert.equal(await instance.value.invertSelection(),false);
+    assert.equal(await instance.value.invertSelection(), false);
     assert.equal(await instance.value.toggleRowExpansion(1, true), false);
     assert.deepEqual(accepted, []);
   } finally {
@@ -1087,4 +1087,282 @@ test("Table column widths can be changed and reset without mutating column defin
   a.vm.resetColumnWidths();
   await settle();
   assert.equal(a.find("col").style.width, "120px");
+});
+
+test("Table supports layout, header-row styles, scrollbar options and visible columns", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    tableLayout: "auto",
+    headerRowClassName: (_columns, level) => "level-" + level,
+    headerRowStyle: { color: "rgb(22, 44, 66)" },
+    scrollbarAlwaysOn: true,
+    scrollbarTabindex: -1,
+  });
+  assert.equal(a.find("table").style.tableLayout, "auto");
+  assert(a.find("thead tr").classList.contains("level-0"));
+  assert.equal(a.find("thead tr").style.color, "rgb(22, 44, 66)");
+  assert.equal(a.find(".hys-ui-table-scroll").tabIndex, -1);
+  assert.equal(a.find(".hys-ui-table-scroll").style.overflowY, "scroll");
+  assert.deepEqual(
+    a.vm.columns.map((c) => c.key),
+    ["name", "age", "team"],
+  );
+  a.props.columns = [{ ...columns[0], hidden: true }, columns[1]];
+  await settle();
+  assert.deepEqual(
+    a.vm.columns.map((c) => c.key),
+    ["age"],
+  );
+});
+test("Table multi-field sorting uses every field, defaults, cycle and comparator for missing values", async () => {
+  const a = await mount(ui.HysTable, {
+    rows: [
+      { id: 1, team: "B", rank: 2 },
+      { id: 2, team: "A", rank: 2 },
+      { id: 3, team: "A", rank: 1 },
+    ],
+    columns: [
+      {
+        key: "computed",
+        label: "Order",
+        sortable: true,
+        sortBy: ["team", (r) => r.rank],
+        defaultSortOrder: "asc",
+      },
+    ],
+    sortOrders: ["desc", "asc"],
+  });
+  assert.deepEqual(keys(a), ["3", "2", "1"]);
+  await fire(a.find(".hys-ui-table-sort"), "click");
+  assert.deepEqual(keys(a), ["1", "2", "3"]);
+  a.props.columns = [
+    {
+      key: "missing",
+      label: "Computed",
+      sortable: true,
+      sorter: (a, b) => a.rank - b.rank,
+    },
+  ];
+  await settle();
+  a.vm.setSort({ key: "missing", direction: "asc" });
+  await settle();
+  assert.deepEqual(keys(a), ["3", "1", "2"]);
+});
+test("Selection props enforce disabled rules for row, bulk and instance operations", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    selectable: true,
+    selectionColumn: {
+      width: 96,
+      fixed: "right",
+      align: "right",
+      label: "Members",
+    },
+    getSelectionProps: (row) => ({
+      disabled: row.id === 2,
+      label: "Pick " + row.name,
+      title: "Member " + row.id,
+    }),
+  });
+  assert.equal(a.vm.columns.at(-1).type, "selection");
+  assert.equal(a.vm.columns.at(-1).width, 96);
+  assert.equal(a.find('[data-row-key="2"] input').disabled, true);
+  assert.equal(
+    a.find('[data-row-key="1"] input').getAttribute("aria-label"),
+    "Pick Alice",
+  );
+  assert.equal(await a.vm.toggleRowSelection(2, true), false);
+  await a.vm.toggleAllSelection(true);
+  assert.deepEqual(a.vm.selectedKeys, [1, 3]);
+});
+test("Table selection and icon slots preserve built-in selection and expansion state", async () => {
+  const a = await mount(
+    ui.HysTable,
+    {
+      rows,
+      columns,
+      selectable: true,
+      expandable: true,
+      expandFixed: "right",
+      expandColumnTitle: "Details",
+    },
+    {
+      "selection-cell": (s) =>
+        h(
+          ui.HysButton,
+          { disabled: s.disabled, onClick: () => s.toggle(!s.checked) },
+          () => (s.checked ? "Picked" : "Pick"),
+        ),
+      "expand-icon": (s) =>
+        h(
+          "span",
+          { "data-expanded": String(s.expanded) },
+          s.expanded ? "Less" : "More",
+        ),
+      expand: (s) => h("p", s.row.name),
+    },
+  );
+  await fire(a.find('[data-row-key="1"] button'), "click");
+  assert.deepEqual(a.vm.selectedKeys, [1]);
+  await fire(a.find('[data-row-key="1"] .hys-ui-table-expand'), "click");
+  await settle();
+  assert(a.find('[data-expanded="true"]'));
+  assert.equal(a.vm.columns.at(-1).label, "Details");
+  a.props.showExpandColumn = false;
+  await settle();
+  assert(!a.find(".hys-ui-table-expand"));
+  assert(a.find(".hys-ui-table-detail"));
+});
+test("Filter panel can be controlled, switched, mounted locally and kept open on apply", async () => {
+  let api;
+  const a = await mount(
+    ui.HysTable,
+    { rows, columns, filterColumnKey: null, appendFilterTo: false },
+    {
+      "filter-dropdown": (s) => {
+        api = s;
+        return h(
+          "button",
+          { onClick: () => s.confirm({ closeDropdown: false }) },
+          "Apply without close",
+        );
+      },
+      "filter-icon": (s) =>
+        h("span", { "data-filtered": String(s.filtered) }, "Filter"),
+    },
+  );
+  assert.equal(await a.vm.showFilter("name"), true);
+  await settle();
+  assert(a.find(".hys-ui-table-filter-panel"));
+  api.setValues(["Alice"]);
+  api.confirm({ closeDropdown: false });
+  await settle();
+  assert.deepEqual(keys(a), ["1"]);
+  assert(a.find(".hys-ui-table-filter-panel"));
+  api.clear({ confirm: false });
+  await settle();
+  assert.deepEqual(keys(a), ["1"]);
+  api.confirm({ closeDropdown: false });
+  await settle();
+  assert.equal(keys(a).length, 3);
+  assert.equal(await a.vm.showFilter("team"), true);
+  assert.equal(a.events.filterOpenChange.at(-1)[0], "team");
+  assert.equal(await a.vm.hideFilter(), true);
+  assert(!a.find(".hys-ui-table-filter-panel"));
+  assert.equal(await a.vm.showFilter("missing"), false);
+});
+test("Controlled filter visibility honors host rejection of open and close requests", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const table = ref(),
+    key = ref(null);
+  const app = createApp({
+    setup: () => () =>
+      h(ui.HysTable, { rows, columns, ref: table, filterColumnKey: key.value }),
+  });
+  app.mount(host);
+  await settle();
+  try {
+    assert.equal(await table.value.showFilter("name"), false);
+    assert(!document.querySelector(".hys-ui-table-filter-panel"));
+    key.value = "name";
+    await settle();
+    assert(document.querySelector(".hys-ui-table-filter-panel"));
+    assert.equal(await table.value.hideFilter(), false);
+    assert(document.querySelector(".hys-ui-table-filter-panel"));
+    key.value = null;
+    await settle();
+    assert(!document.querySelector(".hys-ui-table-filter-panel"));
+  } finally {
+    app.unmount();
+    host.remove();
+  }
+});
+test("Tree children can be replaced without data mutation and pending results cannot overwrite them", async () => {
+  let finish, signal;
+  const root = { id: 0, name: "Root", hasChildren: true };
+  const a = await mount(ui.HysTable, {
+    rows: [root],
+    columns: [columns[0]],
+    treeMode: true,
+    loadChildren: (_row, ctx) => {
+      signal = ctx.signal;
+      return new Promise((resolve) => (finish = resolve));
+    },
+  });
+  await a.vm.toggleRowExpansion(0, true);
+  await settle();
+  assert.equal(
+    await a.vm.updateKeyChildren(0, [{ id: 1, name: "Manual" }]),
+    true,
+  );
+  assert.equal(signal.aborted, true);
+  finish([{ id: 2, name: "Old" }]);
+  await settle();
+  assert.deepEqual(keys(a), ["0", "1"]);
+  assert.equal(root.children, undefined);
+  assert.equal(await a.vm.updateKeyChildren(0, []), true);
+  await settle();
+  assert.deepEqual(keys(a), ["0"]);
+  assert(!a.find(".hys-ui-table-expand"));
+  assert.equal(a.events.childrenChange.length, 2);
+});
+test("Updating static tree children replaces only the component view and rejects missing rows", async () => {
+  const original = [{ id: 2, name: "Original" }],
+    root = { id: 1, name: "Root", children: original };
+  const a = await mount(ui.HysTable, {
+    rows: [root],
+    columns,
+    treeMode: true,
+    defaultExpandAll: true,
+  });
+  assert.equal(
+    await a.vm.updateKeyChildren(1, [{ id: 3, name: "Replacement" }]),
+    true,
+  );
+  await settle();
+  assert.deepEqual(keys(a), ["1", "3"]);
+  assert.equal(root.children, original);
+  assert.equal(await a.vm.updateKeyChildren(99, []), false);
+  a.props.rows = [{ id: 1, name: "New object", children: original }];
+  await settle();
+  assert.deepEqual(keys(a), ["1", "2"]);
+});
+test("Scrolling methods address only the local viewport and visible rows without changing selection", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    selectable: true,
+    height: 200,
+  });
+  const calls = [];
+  a.vm.viewport.scrollTo = (options) => calls.push(options);
+  a.vm.setScrollTop(100);
+  a.vm.setScrollLeft(90);
+  a.vm.setScrollTop(NaN);
+  assert.deepEqual(calls, [{ top: 100 }, { left: 90 }]);
+  assert.equal(
+    await a.vm.scrollToRow(2, { block: "center", behavior: "smooth" }),
+    true,
+  );
+  assert.equal(calls.at(-1).behavior, "smooth");
+  assert.deepEqual(a.vm.selectedKeys, []);
+  assert.equal(await a.vm.scrollToRow(99), false);
+  a.props.pagination = { pageSize: 1 };
+  await settle();
+  assert.equal(await a.vm.scrollToRow(2), false);
+});
+test("Last-column resize can be disabled independently of other column handles", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    resizable: true,
+    allowDragLastColumn: false,
+  });
+  assert.equal(a.all(".hys-ui-table-resize").length, 2);
+  a.props.allowDragLastColumn = true;
+  await settle();
+  assert.equal(a.all(".hys-ui-table-resize").length, 3);
 });

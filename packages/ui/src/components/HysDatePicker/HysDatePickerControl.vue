@@ -788,6 +788,8 @@ defineExpose({
             :range="range"
             :preview="rangePreview"
             :first="store.first.value"
+            :week-contains="store.weekContains.value"
+            :week-number-formatter="weekNumberFormatter"
             :locale="locale"
             :words="words"
             :week-numbers="!!showWeekNumbers || store.unit.value === 'week'"
@@ -806,6 +808,8 @@ defineExpose({
             @mode="store.setMode($event, index - 1)"
             @pick="pick"
             @preview="store.preview.value = $event"
+            ><template v-if="$slots['week-number']" #week-number="scope"
+              ><slot name="week-number" v-bind="scope" /></template
             ><template #cell="cell"
               ><slot name="cell" v-bind="cell"
                 ><slot v-bind="cell">{{ cell.text }}</slot></slot

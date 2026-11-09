@@ -11,7 +11,6 @@ import {
   calendarISO,
   calendarParts,
   calendarShift,
-  calendarWeek,
   civilDay,
 } from "../../composables/calendar";
 import {
@@ -19,12 +18,14 @@ import {
   DATE_MAX,
   dateLocale,
   datePeriod,
+  dateWeek,
   dateShift,
   type HysDatePoint,
   type HysDatePickerCell,
   type HysDatePickerView,
   type HysDatePickerUnit,
   type HysDatePickerLocale,
+  type HysDatePickerWeek,
 } from "../../composables/datePicker";
 const props = defineProps<{
   month: number;
@@ -34,6 +35,8 @@ const props = defineProps<{
   range: boolean;
   preview?: number;
   first: number;
+  weekContains: number;
+  weekNumberFormatter?: (week: HysDatePickerWeek) => string;
   locale: string;
   words: HysDatePickerLocale;
   weekNumbers: boolean;
@@ -51,6 +54,7 @@ const emit = defineEmits<{
 }>();
 const root = ref<HTMLElement>(),
   focused = ref<number>(),
+  hovered = ref<number>(),
   year = computed(() => calendarParts(props.month).year),
   month = computed(() => calendarParts(props.month).month),
   pageYear = computed(() => Math.floor((year.value - 1) / 12) * 12 + 1),
@@ -116,12 +120,16 @@ const cells = computed<HysDatePickerCell[]>(() => {
             : props.view === "quarter"
               ? "Q" + (Math.floor(parts.month / 3) + 1)
               : String(parts.year),
+      info = dateWeek(day, props.first, props.weekContains),
       disabled =
         props.disabled ||
         day < DATE_MIN ||
         day > DATE_MAX ||
         (props.view === "date"
-          ? !props.available(day) || (!props.adjacent && outside)
+          ? (props.unit === "week"
+              ? !props.periodAvailable(period[0], period[1])
+              : !props.available(day)) ||
+            (!props.adjacent && outside)
           : !props.periodAvailable(period[0], period[1]));
     return {
       date: new Date(day * 86400000),
@@ -137,7 +145,10 @@ const cells = computed<HysDatePickerCell[]>(() => {
       ),
       inRange: !!range && day >= range[0] && day <= range[1],
       today: calendarISO(day) === today(),
-      week: calendarWeek(day),
+      week: info.week,
+      weekYear: info.year,
+      weekStart: info.start,
+      weekEnd: info.end,
     };
   });
 });
@@ -384,20 +395,60 @@ defineExpose({ focus, element: root });
             ? words.year
             : words.month
       "
-      @mouseleave="emit('preview', undefined)"
+      @mouseleave="
+        hovered = undefined;
+        emit('preview', undefined);
+      "
     >
       <div
         v-for="row in rows"
         :key="row[0].value"
         role="row"
         class="hys-ui-date-grid-row"
+        :class="{
+          'hys-ui-date-week-hover':
+            unit === 'week' &&
+            view === 'date' &&
+            hovered !== undefined &&
+            row.some((c) => c.value === hovered),
+        }"
       >
         <template v-for="(cell, index) in row" :key="cell.value"
           ><span
             v-if="view === 'date' && weekNumbers && index % 7 === 0"
             class="hys-ui-date-week-number"
             role="rowheader"
-            >{{ cell.week }}</span
+            ><button
+              v-if="unit === 'week'"
+              type="button"
+              tabindex="-1"
+              :disabled="row.every((c) => c.disabled)"
+              :aria-label="`${cell.weekYear} ${words.week} ${cell.week}: ${cell.weekStart} – ${cell.weekEnd}`"
+              @click="pick(row.find((c) => !c.disabled)!)"
+            >
+              <slot
+                name="week-number"
+                v-bind="dateWeek(cell.value, first, weekContains)"
+                :selected="cell.selected"
+                :disabled="row.every((c) => c.disabled)"
+                >{{
+                  weekNumberFormatter?.(
+                    dateWeek(cell.value, first, weekContains),
+                  ) ?? cell.week
+                }}</slot
+              ></button
+            ><slot
+              v-else
+              name="week-number"
+              v-bind="dateWeek(cell.value, first, weekContains)"
+              :selected="cell.selected"
+              :disabled="cell.disabled"
+              >{{
+                weekNumberFormatter?.(
+                  dateWeek(cell.value, first, weekContains),
+                ) ?? cell.week
+              }}</slot
+            ></span
           ><button
             type="button"
             role="gridcell"
@@ -422,7 +473,10 @@ defineExpose({ focus, element: root });
               focused = cell.value;
               emit('preview', cell.value);
             "
-            @pointerenter="!cell.disabled && emit('preview', cell.value)"
+            @pointerenter="
+              !cell.disabled &&
+              ((hovered = cell.value), emit('preview', cell.value))
+            "
             @click="pick(cell)"
             @keydown="keyboard($event, cell)"
           >
@@ -556,5 +610,15 @@ defineExpose({ focus, element: root });
   align-self: center;
   color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
   font-size: 10px;
+}
+.hys-ui-date-week-number button {
+  width: 100%;
+  font-size: 10px;
+  padding: 0;
+  color: inherit;
+}
+.hys-ui-date-week-hover button:not(.hys-ui-is-selected):not(:disabled) {
+  background: var(--hys-ui-primary-soft, var(--hys-ui-theme-primary-soft));
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
 }
 </style>

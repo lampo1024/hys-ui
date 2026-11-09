@@ -35,7 +35,11 @@ export function useTable<T extends object>(
       ? [...props.defaultSort]
       : props.defaultSort
         ? [props.defaultSort as HysTableSort]
-        : [],
+        : props.defaultSort === undefined
+          ? columns()
+              .filter((c) => c.defaultSortOrder)
+              .map((c) => ({ key: c.key, direction: c.defaultSortOrder! }))
+          : [],
   );
   const localFilters = ref<HysTableFilters>({
       ...Object.fromEntries(
@@ -54,7 +58,9 @@ export function useTable<T extends object>(
   const ownCurrent = ref<HysTableKey | null>(
     props.defaultCurrentRowKey ?? null,
   );
-  const cache = shallowRef(new Map<string, { row: T; rows: readonly T[] }>());
+  const cache = shallowRef(
+    new Map<string, { row: T; rows: readonly T[]; override?: boolean }>(),
+  );
   const pending = shallowRef(
     new Map<string, { row: T; controller: AbortController }>(),
   );
@@ -96,11 +102,14 @@ export function useTable<T extends object>(
           ? tableValue(row, props.childrenKey ?? "children")
           : undefined,
         stored = cache.value.get(token);
-      const children: readonly T[] = Array.isArray(raw)
-        ? raw
-        : stored?.row === row
+      const children: readonly T[] =
+        stored?.row === row && stored.override
           ? stored.rows
-          : [];
+          : Array.isArray(raw)
+            ? raw
+            : stored?.row === row
+              ? stored.rows
+              : [];
       const node: TableNode<T> = {
         row,
         key,
@@ -161,7 +170,9 @@ export function useTable<T extends object>(
         if (next.length !== selectedKeys.value.length)
           void requestSelection(next);
       }
-      let nextCache: Map<string, { row: T; rows: readonly T[] }> | undefined;
+      let nextCache:
+        | Map<string, { row: T; rows: readonly T[]; override?: boolean }>
+        | undefined;
       for (const [token, item] of cache.value)
         if (graph.value.map.get(token)?.row !== item.row) {
           nextCache ??= new Map(cache.value);
@@ -310,6 +321,7 @@ export function useTable<T extends object>(
   function eligible(node: TableNode<T>) {
     return (
       props.selectable !== false &&
+      props.getSelectionProps?.(node.row, node.index).disabled !== true &&
       (typeof props.selectable !== "function" ||
         props.selectable(node.row, node.index))
     );
@@ -401,7 +413,9 @@ export function useTable<T extends object>(
     const previous = sorts.value.find((s) => s.key === column.key)?.direction,
       orders = column.sortOrders?.length
         ? column.sortOrders
-        : (["asc", "desc", null] as const);
+        : props.sortOrders?.length
+          ? props.sortOrders
+          : (["asc", "desc", null] as const);
     const next = direction
       ? previous === direction
         ? null
@@ -672,6 +686,36 @@ export function useTable<T extends object>(
         hasExpand())
     );
   }
+  async function updateKeyChildren(
+    value: T | HysTableKey,
+    children: readonly T[],
+  ) {
+    const node = find(value);
+    if (
+      !node ||
+      !props.treeMode ||
+      busy.value ||
+      !live.value ||
+      !Array.isArray(children)
+    )
+      return false;
+    abortRow(node.token);
+    autoAttempted.add(node.row);
+    const record = { row: node.row, rows: [...children], override: true };
+    cache.value = new Map(cache.value).set(node.token, record);
+    const errors = new Map(loadErrors.value);
+    errors.delete(node.token);
+    loadErrors.value = errors;
+    await nextTick();
+    if (
+      !live.value ||
+      cache.value.get(node.token) !== record ||
+      graph.value.map.get(node.token)?.row !== node.row
+    )
+      return false;
+    emit("childrenChange", node.row, record.rows);
+    return true;
+  }
   async function toggleRowExpansion(
     value: T | HysTableKey,
     expanded?: boolean,
@@ -777,5 +821,7 @@ export function useTable<T extends object>(
     setCurrentRow,
     toggleRowExpansion,
     loadRow,
+    updateKeyChildren,
+    find,
   };
 }

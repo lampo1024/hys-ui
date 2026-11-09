@@ -71,9 +71,9 @@ const filters = ref<HysTableFilters>({});
             @keydown.enter="confirm"
           />
           <div class="demo-control-actions">
-            <HysButton size="sm" variant="secondary" @click="clear"
+            <HysButton size="sm" variant="secondary" @click="clear()"
               >重置</HysButton
-            ><HysButton size="sm" @click="confirm">应用</HysButton>
+            ><HysButton size="sm" @click="confirm()">应用</HysButton>
           </div>
         </div></template
       ></HysTable

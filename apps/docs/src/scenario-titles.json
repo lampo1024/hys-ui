@@ -335,7 +335,14 @@
       "Server": "异步服务端查询",
       "Methods": "实例方法与键盘操作",
       "States": "状态行、空数据与加载",
-      "Locale": "内置文案与语言配置"
+      "Locale": "内置文案与语言配置",
+      "Layout": "布局模式与表头行样式",
+      "SortFields": "多字段排序与标题循环",
+      "SelectionCustom": "选择单元格与业务禁用规则",
+      "FilterControl": "筛选面板控制与连续应用",
+      "ExpandCustom": "展开图标与操作列定制",
+      "UpdateChildren": "动态更新树形子行",
+      "Scroll": "行定位与独立视口滚动"
     },
     "HysBadge": {
       "Counters": "计数、圆点与显示控制",
@@ -451,7 +458,12 @@
       "Form": "表单校验与尺寸继承",
       "Keyboard": "键盘操作与实例定位",
       "Locale": "语言与每周起始日",
-      "States": "空值、只读与禁用"
+      "States": "空值、只读与禁用",
+      "Weeks": "按周选择与起止日期",
+      "WeekMultiple": "多周选择与数量限制",
+      "WeekYear": "跨年周与周编号格式",
+      "WeekRules": "自定义周起始日与第一周",
+      "WeekBounds": "整周禁用与完整周校验"
     },
     "HysDateRangePicker": {
       "Basic": "基础范围与草稿",
@@ -466,7 +478,8 @@
       "Custom": "自定义操作区",
       "Inline": "内嵌范围面板",
       "Methods": "实例方法与范围定位",
-      "States": "绑定类型与受限状态"
+      "States": "绑定类型与受限状态",
+      "Weeks": "周范围与完整覆盖日期"
     }
   }
 }

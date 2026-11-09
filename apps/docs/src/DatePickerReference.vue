@@ -4,7 +4,7 @@
     <p>
       默认保留字符串绑定：date 为 YYYY-MM-DD，month 为 YYYY-MM，year 为
       YYYY，quarter 为 YYYY-[Q]Q。week 返回所在周的起始日期，默认展示 ISO
-      周编号。dates、months、quarters、years
+      周编号。dates、weeks、months、quarters、years
       选择多个值；范围选择器沿用单一输入区，返回两个端点。
     </p>
     <p>
@@ -20,6 +20,32 @@
       format。输入必须是有效日期，不会把二月三十一日自动进位。Enter
       或离开控件提交，Esc 取消；inputReadonly
       阻止文本编辑，仍允许打开面板。multiple 模式使用面板逐项切换。
+    </p>
+  </section>
+  <section class="notes">
+    <h2>周选择与跨年周</h2>
+    <p>
+      week 选择一周，weeks 选择不连续的多周，范围选择器 type="week"
+      选择周区间。默认绑定值为各周起始日期；change 与 value-change 的 weeks
+      元数据提供 year、week、start、end 和 dates，范围的完整覆盖日期为首周 start
+      至末周 end。清空时对应元数据为空，不提前提交面板草稿。
+    </p>
+    <p>
+      默认 firstDayOfWeek=1、firstWeekContainsDate=4，采用 ISO 周规则；GGGG
+      表示周所属年，WW 表示周编号，跨年时应组合使用
+      GGGG-[W]WW。firstWeekContainsDate 可设置
+      1–7，表示包含一月该日的周为第一周。面板周编号、格式化和文本解析使用相同规则，无效第
+      53 周不会自动进位。
+    </p>
+    <p>
+      disabledWeek 按周元数据禁用整周。weekValidation='any'
+      保持至少一天可用的规则，'full' 要求七天都通过 min / max / disabledDate
+      校验；两者均遵守 disabledWeek。面板、快捷选择、文本输入与 setValue
+      使用相同校验。weekNumberFormatter 定制周编号文本，week-number
+      插槽定制内容；点击编号也可选周。数量限制与确认取消规则同其他多值日期类型。
+      周范围的 minRangeDays / maxRangeDays
+      按完整周覆盖天数计算，rangeValidation='continuous'
+      会检查中间各周以及最后一周的全部日期。
     </p>
   </section>
   <section class="notes">

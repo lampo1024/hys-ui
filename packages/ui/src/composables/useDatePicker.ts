@@ -7,6 +7,7 @@ import {
   dateClone,
   dateEqual,
   dateFormat,
+  dateWeek,
   dateMultiple,
   dateNative,
   datePattern,
@@ -43,6 +44,11 @@ export function useDatePicker(
       Number.isFinite(props.firstDayOfWeek)
         ? ((Math.trunc(props.firstDayOfWeek!) % 7) + 7) % 7
         : 1,
+    ),
+    weekContains = computed(() =>
+      Number.isFinite(props.firstWeekContainsDate)
+        ? Math.max(1, Math.min(7, Math.trunc(props.firstWeekContainsDate!)))
+        : 4,
     ),
     pattern = computed(
       () => props.valueFormat ?? datePattern(props.type, time.value),
@@ -108,7 +114,7 @@ export function useDatePicker(
           (range.value && !!props.allowEmpty?.some(Boolean))),
     );
   function parse(value: unknown) {
-    return datePoint(value, pattern.value);
+    return datePoint(value, pattern.value, first.value, weekContains.value);
   }
   function boundary(value: unknown) {
     return (
@@ -137,11 +143,17 @@ export function useDatePicker(
         const point = Array.isArray(value) ? parse(value[i]) : undefined;
         return point ? normalize(point) : null;
       });
-    if (multiple.value)
+    if (multiple.value) {
+      const seen = new Set<number>();
       return (Array.isArray(value) ? value : []).flatMap((v) => {
         const point = parse(v);
-        return point ? [normalize(point)] : [];
+        if (!point) return [];
+        const normalized = normalize(point);
+        if (unit.value === "week" && seen.has(normalized.day)) return [];
+        seen.add(normalized.day);
+        return [normalized];
       });
+    }
     const point = parse(value);
     return point ? [normalize(point)] : [];
   }
@@ -170,7 +182,13 @@ export function useDatePicker(
     if (props.disabledDate?.(new Date(day * 86400000), context(day, endpoint)))
       return false;
     if (range.value && rangeLimit && endpoint === 1 && draft.value[0]) {
-      const days = Math.abs(day - draft.value[0].day) + 1;
+      const days =
+        unit.value === "week"
+          ? Math.abs(
+              datePeriod(day, "week", first.value)[0] -
+                datePeriod(draft.value[0].day, "week", first.value)[0],
+            ) + 7
+          : Math.abs(day - draft.value[0].day) + 1;
       if (
         (props.minRangeDays && days < props.minRangeDays) ||
         (props.maxRangeDays && days > props.maxRangeDays)
@@ -185,6 +203,18 @@ export function useDatePicker(
     endpoint = stage.value === "end" ? 1 : 0,
     rangeLimit = true,
   ) {
+    if (unit.value === "week" && end - start <= 6) {
+      if (
+        props.disabledWeek?.(dateWeek(start, first.value, weekContains.value))
+      )
+        return false;
+      if (props.weekValidation === "full") {
+        if (end - start !== 6) return false;
+        for (let day = start; day <= end; day++)
+          if (!available(day, endpoint, rangeLimit)) return false;
+        return true;
+      }
+    }
     const from = Math.max(start, minPoint.value?.day ?? DATE_MIN),
       to = Math.min(end, maxPoint.value?.day ?? DATE_MAX);
     for (let day = from; day <= to; day++)
@@ -228,7 +258,11 @@ export function useDatePicker(
       if (a && b && a.day * 86400 + a.second > b.day * 86400 + b.second)
         return false;
       if (a && b) {
-        const days = b.day - a.day + 1;
+        const end =
+            unit.value === "week"
+              ? datePeriod(b.day, "week", first.value)[1]
+              : b.day,
+          days = end - a.day + 1;
         if (
           (props.minRangeDays && days < props.minRangeDays) ||
           (props.maxRangeDays && days > props.maxRangeDays)
@@ -236,8 +270,17 @@ export function useDatePicker(
           return false;
         if (props.rangeValidation === "continuous") {
           if (b.day > dateShift(a.day, 1200)) return false;
-          for (let day = a.day; day <= b.day; day++)
+          for (let day = a.day; day <= end; day++) {
             if (!available(day, day === a.day ? 0 : 1, false)) return false;
+            if (
+              unit.value === "week" &&
+              (day - a.day) % 7 === 0 &&
+              props.disabledWeek?.(
+                dateWeek(day, first.value, weekContains.value),
+              )
+            )
+              return false;
+          }
         }
       }
       if (
@@ -274,7 +317,7 @@ export function useDatePicker(
           ? String(date.getTime())
           : pattern.value === "X"
             ? String(Math.floor(date.getTime() / 1000))
-            : dateFormat(point, pattern.value);
+            : dateFormat(point, pattern.value, first.value, weekContains.value);
   }
   function encode(list: readonly (HysDatePoint | null)[]): HysDatePickerValue {
     return range.value || multiple.value
@@ -300,7 +343,14 @@ export function useDatePicker(
   }
   function describe(list = selected.value) {
     return list.map((point) =>
-      point ? dateFormat(point, displayPattern.value) : "",
+      point
+        ? dateFormat(
+            point,
+            displayPattern.value,
+            first.value,
+            weekContains.value,
+          )
+        : "",
     );
   }
   function invalid(reason: string) {
@@ -343,9 +393,16 @@ export function useDatePicker(
       source,
       dates: list.map((p) => (p ? dateNative(p) : null)),
       formatted: describe(list),
+      ...(unit.value === "week"
+        ? {
+            weeks: list.map((p) =>
+              p ? dateWeek(p.day, first.value, weekContains.value) : null,
+            ),
+          }
+        : {}),
     };
     const ok = await model.commit(
-      dateClone(value),
+      dateClone(unit.value === "week" && !allowClear ? encode(list) : value),
       (next) => emit("update:modelValue", next),
       (next) => emit("change", next, info),
       true,
@@ -546,7 +603,9 @@ export function useDatePicker(
       return clear();
     }
     const formats = [displayPattern.value, ...(props.inputFormats ?? [])],
-      point = formats.map((f) => datePoint(value, f)).find(Boolean);
+      point = formats
+        .map((f) => datePoint(value, f, first.value, weekContains.value))
+        .find(Boolean);
     if (!point) return invalid("format");
     const list = range.value ? points() : [];
     if (range.value) list[index] = normalize(point);
@@ -619,6 +678,7 @@ export function useDatePicker(
     rightView,
     panels,
     first,
+    weekContains,
     time,
     unit,
     multiple,

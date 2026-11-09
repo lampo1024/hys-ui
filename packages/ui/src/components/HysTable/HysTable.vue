@@ -54,6 +54,9 @@ import {
   type HysTableCellContext,
   type TableNode,
   type TableHeader,
+  type HysTableFilterConfirmOptions,
+  type HysTableFilterResetOptions,
+  type HysTableScrollRowOptions,
 } from "../../composables/table";
 const props = withDefaults(defineProps<HysTableProps<T>>(), {
   rowKey: "id",
@@ -71,6 +74,10 @@ const props = withDefaults(defineProps<HysTableProps<T>>(), {
   hasChildrenKey: "hasChildren",
   indent: 18,
   sumText: "合计",
+  tableLayout: "fixed",
+  scrollbarTabindex: 0,
+  showExpandColumn: true,
+  allowDragLastColumn: true,
 });
 const emit = defineEmits<{
   rowClick: [row: T, index: number, event: MouseEvent];
@@ -100,6 +107,9 @@ const emit = defineEmits<{
   expandChange: [row: T, expanded: boolean, keys: HysTableKey[]];
   load: [row: T, children: readonly T[]];
   loadError: [row: T, error: unknown];
+  childrenChange: [row: T, children: readonly T[]];
+  "update:filterColumnKey": [key: string | null];
+  filterOpenChange: [key: string | null];
   "update:page": [page: number];
   pageChange: [page: number];
   "update:pageSize": [size: number];
@@ -182,25 +192,27 @@ const definitions = computed<HysTableColumn<T>[]>(() => {
   if (props.selectable && !hasType("selection"))
     result.push({
       key: utilityKey("selection"),
-      label: "选择",
       type: "selection",
       align: "center",
       width: 48,
       fixed: "left",
       resizable: false,
+      ...props.selectionColumn,
+      label: props.selectionColumn?.label ?? "选择",
     });
   if (
     (props.expandable || slots.expand) &&
     !props.treeMode &&
+    props.showExpandColumn &&
     !hasType("expand")
   )
     result.push({
       key: utilityKey("expand"),
-      label: "展开",
+      label: props.expandColumnTitle ?? "展开",
       type: "expand",
       align: "center",
       width: 48,
-      fixed: "left",
+      fixed: props.expandFixed ?? "left",
       resizable: false,
     });
   if (props.showIndex && !hasType("index"))
@@ -212,10 +224,16 @@ const definitions = computed<HysTableColumn<T>[]>(() => {
       width: 64,
       resizable: false,
     });
-  return [...result, ...props.columns];
+  return [...result, ...props.columns].filter(
+    (c) => props.showExpandColumn || c.type !== "expand",
+  );
 });
 const layout = computed(() =>
-  tableColumns(definitions.value, tableBreakpoint(containerWidth.value)),
+  tableColumns(
+    definitions.value,
+    tableBreakpoint(containerWidth.value),
+    props.showExpandColumn,
+  ),
 );
 const model = useTable(
   props,
@@ -562,12 +580,99 @@ const filterAnchor = ref<HTMLElement>(),
   filterPanel = ref<HTMLElement>(),
   filterColumn = shallowRef<HysTableColumn<T>>(),
   filterDraft = ref<HysTableFilterValue[]>([]);
+const ownFilterKey = ref<string | null>(null),
+  desiredFilterKey = computed(() =>
+    props.filterColumnKey === undefined
+      ? ownFilterKey.value
+      : props.filterColumnKey,
+  );
+let restoreFilterFocus = false;
+async function requestFilter(key: string | null, restore = false) {
+  if (
+    key !== null &&
+    (busy.value ||
+      !model.live.value ||
+      !layout.value.leaves.some(
+        (c) => c.key === key && (c.filterable || c.filters),
+      ))
+  )
+    return false;
+  restoreFilterFocus = restore;
+  ownFilterKey.value = key;
+  emit("update:filterColumnKey", key);
+  if (desiredFilterKey.value === key) syncFilter();
+  await nextTick();
+  if (desiredFilterKey.value === key) syncFilter();
+  await nextTick();
+  return (
+    model.live.value &&
+    desiredFilterKey.value === key &&
+    (key === null
+      ? !filterOpen.value
+      : filterOpen.value && filterColumn.value?.key === key)
+  );
+}
 const floatingFilter = useFloating(filterAnchor, filterPanel, {
-  placement: "bottom-end",
+  get placement() {
+    return props.filterPlacement ?? "bottom-end";
+  },
   width: () => 260,
+  requestOpen(open, restore) {
+    void requestFilter(
+      open ? (filterColumn.value?.key ?? null) : null,
+      restore,
+    );
+    return false;
+  },
 });
 const filterOpen = floatingFilter.open,
   filterStyle = floatingFilter.style;
+function syncFilter() {
+  const key = desiredFilterKey.value,
+    column = layout.value.leaves.find(
+      (c) => c.key === key && (c.filterable || c.filters),
+    );
+  if (busy.value || !model.live.value || !column) {
+    floatingFilter.close(restoreFilterFocus, true);
+    restoreFilterFocus = false;
+    return;
+  }
+  const anchor = Array.from(
+    table.value?.querySelectorAll<HTMLElement>("th[data-leaf]") ?? [],
+  )
+    .find((th) => th.dataset.columnKey === key)
+    ?.querySelector<HTMLElement>(".hys-ui-table-filter");
+  if (!anchor) {
+    floatingFilter.close(false, true);
+    return;
+  }
+  const changed = filterColumn.value?.key !== key || !filterOpen.value;
+  filterAnchor.value = anchor;
+  filterColumn.value = column;
+  if (changed) filterDraft.value = [...(filters.value[column.key] ?? [])];
+  floatingFilter.show(true);
+  void nextTick(() => {
+    if (changed && filterOpen.value && desiredFilterKey.value === key)
+      filterPanel.value
+        ?.querySelector<HTMLElement>('input,button,[tabindex="0"]')
+        ?.focus();
+  });
+}
+watch(
+  [
+    desiredFilterKey,
+    busy,
+    model.live,
+    () => layout.value.leaves,
+    () => props.showHeader,
+  ],
+  syncFilter,
+  { immediate: true, flush: "post" },
+);
+watch(
+  () => (filterOpen.value ? (filterColumn.value?.key ?? null) : null),
+  (key) => emit("filterOpenChange", key),
+);
 async function openFilter(column: HysTableColumn<T>, event: MouseEvent) {
   if (busy.value) return;
   if (filterOpen.value && filterColumn.value?.key === column.key) {
@@ -575,21 +680,21 @@ async function openFilter(column: HysTableColumn<T>, event: MouseEvent) {
     return;
   }
   filterAnchor.value = event.currentTarget as HTMLElement;
-  filterColumn.value = column;
-  filterDraft.value = [...(filters.value[column.key] ?? [])];
-  floatingFilter.show();
-  await nextTick();
-  filterPanel.value?.querySelector<HTMLElement>("input,button")?.focus();
+  await requestFilter(column.key);
 }
 function setFilterDraft(values: readonly HysTableFilterValue[]) {
   filterDraft.value = [...values];
 }
-function confirmFilter() {
+function confirmFilter(options?: HysTableFilterConfirmOptions | Event) {
   if (filterColumn.value)
     model.setFilter(filterColumn.value.key, filterDraft.value);
-  floatingFilter.close(true);
+  if (
+    (options as HysTableFilterConfirmOptions | undefined)?.closeDropdown !==
+    false
+  )
+    floatingFilter.close(true);
 }
-function clearActiveFilter() {
+function clearActiveFilter(options?: HysTableFilterResetOptions | Event) {
   const column = filterColumn.value;
   filterDraft.value = column?.filterResetToDefault
     ? [
@@ -598,7 +703,9 @@ function clearActiveFilter() {
           []),
       ]
     : [];
-  confirmFilter();
+  const config = options as HysTableFilterResetOptions | undefined;
+  if (config?.confirm !== false) confirmFilter(options);
+  else if (config?.closeDropdown === true) floatingFilter.close(true);
 }
 const tipAnchor = ref<HTMLElement>(),
   tipPanel = ref<HTMLElement>(),
@@ -864,7 +971,10 @@ watch(
   },
   { deep: true },
 );
-onMounted(observe);
+onMounted(() => {
+  observe();
+  syncFilter();
+});
 onActivated(observe);
 onUpdated(scheduleMeasure);
 onDeactivated(cleanup);
@@ -877,6 +987,52 @@ watch(
   },
   { flush: "post" },
 );
+function scrollPosition(options: ScrollToOptions) {
+  const el = viewport.value;
+  if (!model.live.value || !el) return;
+  if (typeof el.scrollTo === "function") el.scrollTo(options);
+  else {
+    if (options.top !== undefined) el.scrollTop = options.top;
+    if (options.left !== undefined) el.scrollLeft = options.left;
+  }
+}
+async function scrollToRow(
+  value: T | HysTableKey,
+  options: HysTableScrollRowOptions = {},
+) {
+  await nextTick();
+  const node = model.find(value),
+    el = viewport.value;
+  if (!model.live.value || !el || !node || props.loading) return false;
+  const index = display.value.findIndex((n) => n.token === node.token);
+  const row = Array.from(
+    table.value?.querySelectorAll<HTMLElement>("tbody tr[data-row-key]") ?? [],
+  )[index];
+  if (index < 0 || !row) return false;
+  const box = el.getBoundingClientRect(),
+    rect = row.getBoundingClientRect(),
+    header = sticky.value
+      ? (table.value?.querySelector("thead")?.getBoundingClientRect().height ??
+        0)
+      : 0,
+    top = rect.top - box.top - el.clientTop + el.scrollTop,
+    available = Math.max(0, el.clientHeight - header);
+  let target = top - header;
+  if (options.block === "center") target -= (available - rect.height) / 2;
+  else if (options.block === "end") target -= available - rect.height;
+  else if (!options.block || options.block === "nearest") {
+    if (
+      rect.top >= box.top + el.clientTop + header &&
+      rect.bottom <= box.top + el.clientTop + el.clientHeight
+    )
+      return true;
+    if (rect.top >= box.top + el.clientTop + header)
+      target -= available - rect.height;
+  }
+  scrollPosition({ top: Math.max(0, target), behavior: options.behavior });
+  return true;
+}
+const visibleColumns = computed(() => layout.value.leaves);
 defineExpose({
   element,
   viewport,
@@ -884,6 +1040,7 @@ defineExpose({
   currentRow: model.currentRow,
   expandedKeys,
   query,
+  columns: visibleColumns,
   clearSelection: model.clearSelection,
   getSelectionRows: model.getSelectionRows,
   getHalfSelectionRows: model.getHalfSelectionRows,
@@ -893,15 +1050,25 @@ defineExpose({
   setCurrentRow: model.setCurrentRow,
   toggleRowExpansion: model.toggleRowExpansion,
   loadRow: model.loadRow,
+  updateKeyChildren: model.updateKeyChildren,
   clearSort: () => model.setSort(null),
   setSort: model.setSort,
   clearFilter: model.clearFilter,
   setFilter: model.setFilter,
+  showFilter: (key: string) => requestFilter(key),
+  hideFilter: () => requestFilter(null, true),
   setPage: model.requestPage,
   resizeColumn,
   resetColumnWidths,
   doLayout,
-  scrollTo: (options: ScrollToOptions) => viewport.value?.scrollTo(options),
+  scrollTo: scrollPosition,
+  setScrollTop: (top: number) => {
+    if (Number.isFinite(top)) scrollPosition({ top: Math.max(0, top) });
+  },
+  setScrollLeft: (left: number) => {
+    if (Number.isFinite(left)) scrollPosition({ left: Math.max(0, left) });
+  },
+  scrollToRow,
 });
 </script>
 
@@ -980,8 +1147,12 @@ defineExpose({
     <div
       ref="viewport"
       class="hys-ui-table-scroll"
-      :style="{ height: length(height), maxHeight: length(maxHeight) }"
-      tabindex="0"
+      :style="{
+        height: length(height),
+        maxHeight: length(maxHeight),
+        overflowY: scrollbarAlwaysOn ? 'scroll' : undefined,
+      }"
+      :tabindex="scrollbarTabindex"
       :aria-label="caption || words.scrollLabel"
       @scroll="scrolled"
     >
@@ -990,6 +1161,7 @@ defineExpose({
         class="hys-ui-data-table"
         :style="{
           minWidth: minTableWidth + 'px',
+          tableLayout: pixelLayout || resizeBase ? 'fixed' : tableLayout,
           width:
             fit &&
             !pixelLayout &&
@@ -1015,6 +1187,22 @@ defineExpose({
           <tr
             v-for="(headers, level) in layout.headers"
             :key="level"
+            :class="
+              typeof headerRowClassName === 'function'
+                ? headerRowClassName(
+                    headers.map((h) => h.column),
+                    level,
+                  )
+                : headerRowClassName
+            "
+            :style="
+              typeof headerRowStyle === 'function'
+                ? headerRowStyle(
+                    headers.map((h) => h.column),
+                    level,
+                  )
+                : headerRowStyle
+            "
             v-bind="
               customAttrs(
                 customHeaderRow?.(
@@ -1057,30 +1245,45 @@ defineExpose({
               @click="emit('headerClick', header.column, $event)"
               @contextmenu="emit('headerContextmenu', header.column, $event)"
             >
-              <HysCheckbox
-                v-if="
-                  header.column.type === 'selection' &&
-                  selectionType !== 'radio' &&
-                  !hideSelectAll
-                "
-                :model-value="allSelected"
+              <slot
+                v-if="header.column.type === 'selection'"
+                name="selection-header"
+                :column="header.column"
+                :checked="allSelected"
                 :indeterminate="someSelected"
                 :disabled="busy || !model.graph.value.all.some(model.eligible)"
-                :aria-label="words.selectAll"
-                @click.stop
-                @update:model-value="
-                  model.toggleAllSelection(
-                    someSelected && !selectOnIndeterminate
-                      ? false
-                      : $event === true,
-                  )
-                "
-              />
-              <span
-                v-else-if="header.column.type === 'selection'"
-                class="hys-ui-table-sr-only"
-                >选择</span
+                :toggle="model.toggleAllSelection"
               >
+                <HysCheckbox
+                  v-if="
+                    header.column.type === 'selection' &&
+                    selectionType !== 'radio' &&
+                    !hideSelectAll
+                  "
+                  :model-value="allSelected"
+                  :indeterminate="someSelected"
+                  :disabled="
+                    busy || !model.graph.value.all.some(model.eligible)
+                  "
+                  :aria-label="words.selectAll"
+                  @click.stop
+                  @update:model-value="
+                    model.toggleAllSelection(
+                      someSelected && !selectOnIndeterminate
+                        ? false
+                        : $event === true,
+                    )
+                  "
+                  ><template v-if="selectionColumn?.label">{{
+                    selectionColumn.label
+                  }}</template></HysCheckbox
+                >
+                <span
+                  v-else-if="header.column.type === 'selection'"
+                  class="hys-ui-table-sr-only"
+                  >选择</span
+                >
+              </slot>
               <div v-else class="hys-ui-table-heading">
                 <div class="hys-ui-table-label">
                   <button
@@ -1159,12 +1362,22 @@ defineExpose({
                   :aria-controls="id + '-filter'"
                   @click.stop="openFilter(header.column, $event)"
                 >
-                  <ListFilter :size="14" aria-hidden="true" />
+                  <slot
+                    name="filter-icon"
+                    :column="header.column"
+                    :filtered="!!filters[header.column.key]?.length"
+                    :open="
+                      filterOpen && filterColumn?.key === header.column.key
+                    "
+                    ><ListFilter :size="14" aria-hidden="true"
+                  /></slot>
                 </button>
                 <span
                   v-if="
                     !header.column.children &&
                     (header.column.resizable ?? resizable) &&
+                    (allowDragLastColumn ||
+                      header.column.key !== layout.leaves.at(-1)?.key) &&
                     (!header.column.type || header.column.type === 'default')
                   "
                   class="hys-ui-table-resize"
@@ -1304,26 +1517,53 @@ defineExpose({
                       )
                     "
                   >
-                    <template v-if="column.type === 'selection'"
-                      ><HysRadio
-                        v-if="selectionType === 'radio'"
-                        :name="id + '-selection'"
-                        :model-value="selectedKeys[0] ?? null"
-                        :value="node.key"
-                        :disabled="busy || !model.eligible(node)"
-                        :aria-label="labelText(words.selectRow, index + 1)"
-                        @click.stop
-                        @update:model-value="
-                          model.toggleRowSelection(node.key, true)
-                        " /><HysCheckbox
-                        v-else
-                        :model-value="selectedSet.has(node.token)"
+                    <template v-if="column.type === 'selection'">
+                      <slot
+                        name="selection-cell"
+                        :row="node.row"
+                        :index="index"
+                        :column="column"
+                        :checked="selectedSet.has(node.token)"
                         :indeterminate="halfSet.has(node.token)"
                         :disabled="busy || !model.eligible(node)"
-                        :aria-label="labelText(words.selectRow, index + 1)"
-                        @click.stop="selectionShift = $event.shiftKey"
-                        @update:model-value="selectRow(node, $event === true)"
-                    /></template>
+                        :toggle="
+                          (selected?: boolean) =>
+                            model.toggleRowSelection(node.key, selected)
+                        "
+                      >
+                        <HysRadio
+                          v-if="selectionType === 'radio'"
+                          :name="id + '-selection'"
+                          :model-value="selectedKeys[0] ?? null"
+                          :value="node.key"
+                          :disabled="busy || !model.eligible(node)"
+                          :aria-label="
+                            getSelectionProps?.(node.row, node.index).label ??
+                            labelText(words.selectRow, index + 1)
+                          "
+                          :title="
+                            getSelectionProps?.(node.row, node.index).title
+                          "
+                          @click.stop
+                          @update:model-value="
+                            model.toggleRowSelection(node.key, true)
+                          " /><HysCheckbox
+                          v-else
+                          :model-value="selectedSet.has(node.token)"
+                          :indeterminate="halfSet.has(node.token)"
+                          :disabled="busy || !model.eligible(node)"
+                          :aria-label="
+                            getSelectionProps?.(node.row, node.index).label ??
+                            labelText(words.selectRow, index + 1)
+                          "
+                          :title="
+                            getSelectionProps?.(node.row, node.index).title
+                          "
+                          @click.stop="selectionShift = $event.shiftKey"
+                          @update:model-value="
+                            selectRow(node, $event === true)
+                          " /></slot
+                    ></template>
                     <RenderContent
                       v-else-if="column.type === 'index'"
                       :value="
@@ -1358,20 +1598,28 @@ defineExpose({
                       "
                       @click.stop="model.toggleRowExpansion(node.key)"
                     >
-                      <component
-                        :is="
-                          pending.has(node.token)
-                            ? LoaderCircle
-                            : expandedSet.has(node.token)
-                              ? ChevronDown
-                              : ChevronRight
-                        "
-                        :class="{
-                          'hys-ui-table-spinner': pending.has(node.token),
-                        }"
-                        :size="16"
-                        aria-hidden="true"
-                      />
+                      <slot
+                        name="expand-icon"
+                        :row="node.row"
+                        :index="index"
+                        :expanded="expandedSet.has(node.token)"
+                        :loading="pending.has(node.token)"
+                        :depth="node.depth"
+                      >
+                        <component
+                          :is="
+                            pending.has(node.token)
+                              ? LoaderCircle
+                              : expandedSet.has(node.token)
+                                ? ChevronDown
+                                : ChevronRight
+                          "
+                          :class="{
+                            'hys-ui-table-spinner': pending.has(node.token),
+                          }"
+                          :size="16"
+                          aria-hidden="true"
+                      /></slot>
                     </button>
                     <template v-else-if="column.type !== 'expand'"
                       ><div class="hys-ui-table-cell-content">
@@ -1388,7 +1636,8 @@ defineExpose({
                           v-if="
                             treeMode &&
                             column.key === firstData &&
-                            !explicitExpand
+                            !explicitExpand &&
+                            showExpandColumn
                           "
                           ><button
                             v-if="model.canExpand(node)"
@@ -1409,20 +1658,30 @@ defineExpose({
                             "
                             @click.stop="model.toggleRowExpansion(node.key)"
                           >
-                            <component
-                              :is="
-                                pending.has(node.token)
-                                  ? LoaderCircle
-                                  : expandedSet.has(node.token)
-                                    ? ChevronDown
-                                    : ChevronRight
-                              "
-                              :class="{
-                                'hys-ui-table-spinner': pending.has(node.token),
-                              }"
-                              :size="16"
-                              aria-hidden="true"
-                            /></button
+                            <slot
+                              name="expand-icon"
+                              :row="node.row"
+                              :index="index"
+                              :expanded="expandedSet.has(node.token)"
+                              :loading="pending.has(node.token)"
+                              :depth="node.depth"
+                            >
+                              <component
+                                :is="
+                                  pending.has(node.token)
+                                    ? LoaderCircle
+                                    : expandedSet.has(node.token)
+                                      ? ChevronDown
+                                      : ChevronRight
+                                "
+                                :class="{
+                                  'hys-ui-table-spinner': pending.has(
+                                    node.token,
+                                  ),
+                                }"
+                                :size="16"
+                                aria-hidden="true"
+                            /></slot></button
                           ><span v-else class="hys-ui-table-tree-spacer"
                         /></template>
                         <span
@@ -1574,7 +1833,9 @@ defineExpose({
         @page-size-change="model.changeSize"
       />
     </div>
-    <Teleport to="body"
+    <Teleport
+      :to="appendFilterTo || 'body'"
+      :disabled="appendFilterTo === false"
       ><div
         v-if="filterOpen && filterColumn"
         :id="id + '-filter'"
@@ -1588,6 +1849,7 @@ defineExpose({
         <slot
           name="filter-dropdown"
           :column="filterColumn"
+          :open="filterOpen"
           :values="filterDraft"
           :set-values="setFilterDraft"
           :confirm="confirmFilter"
@@ -1620,9 +1882,9 @@ defineExpose({
             <HysButton
               size="sm"
               variant="secondary"
-              @click="clearActiveFilter"
+              @click="clearActiveFilter()"
               >{{ words.reset }}</HysButton
-            ><HysButton size="sm" @click="confirmFilter">{{
+            ><HysButton size="sm" @click="confirmFilter()">{{
               words.apply
             }}</HysButton>
           </div></slot
@@ -1687,6 +1949,12 @@ defineExpose({
   white-space: normal;
 }
 .hys-ui-data-table th,
+.hys-ui-data-table thead tr {
+  background: var(--hys-ui-table-head-bg);
+}
+.hys-ui-data-table thead th {
+  background: inherit;
+}
 .hys-ui-data-table td {
   box-sizing: border-box;
   padding: 12px 14px;

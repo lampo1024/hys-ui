@@ -18,6 +18,44 @@
     </p>
   </section>
   <section class="notes">
+    <h2>布局与操作定制</h2>
+    <p>
+      tableLayout 默认 fixed，auto
+      允许内容参与布局；交互改变列宽后使用固定像素布局。headerRowClassName /
+      headerRowStyle 接收 (columns, level) 或固定值。scrollbarAlwaysOn
+      始终显示纵向滚动条，scrollbarTabindex
+      控制滚动区域焦点；allowDragLastColumn=false 隐藏最后一列的调整手柄。
+    </p>
+    <p>
+      sortBy 支持字段与取值函数数组，按数组顺序逐项比较；列 defaultSortOrder
+      用作未配置 defaultSort 时的初始顺序。表格 sortOrders
+      提供默认标题点击循环，列配置优先，自定义 sorter 优先于字段取值比较。
+    </p>
+    <p>
+      selectionColumn 配置自动选择列宽度、固定方向与对齐。getSelectionProps 返回
+      disabled、label、title，禁用规则同步约束行选择、批量选择及实例方法。selection-header
+      / selection-cell 插槽接收 checked、indeterminate、disabled、toggle
+      等上下文，替换控件时应保留辅助标签与焦点操作。
+    </p>
+    <p>
+      filterColumnKey 可控制唯一打开的筛选列，showFilter / hideFilter
+      返回显隐请求是否接受；filterOpenChange 报告实际状态。filterPlacement /
+      appendFilterTo 定制定位和挂载。筛选插槽的 confirm({closeDropdown:false})
+      可连续应用而不关闭，clear({confirm:false})
+      只清空草稿；原有无参调用保持有效。filter-icon / expand-icon
+      只替换图标内容，保留内置按钮语义。showExpandColumn、expandFixed、expandColumnTitle
+      控制自动展开列，隐藏图标不影响行点击或实例展开。
+    </p>
+    <p>
+      updateKeyChildren(rowOrKey, children)
+      更新组件内的子行视图，支持静态及已加载子项；不修改原始数据，并取消同一行旧请求。空数组移除子项，childrenChange
+      报告有效更新。替换行对象后内部子行覆盖失效。columns
+      读取当前可见叶列；setScrollTop / setScrollLeft 设置独立视口，scrollToRow
+      支持 start / center / end / nearest
+      对齐，仅定位当前已显示的行，不改变分页、展开、筛选或选择。
+    </p>
+  </section>
+  <section class="notes">
     <h2>列参数</h2>
     <div class="api-scroll">
       <table>

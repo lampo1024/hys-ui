@@ -659,3 +659,171 @@ test("DatePicker programmatic panel modes still commit the configured date unit"
   assert(popup().querySelector(".hys-ui-date-view-month"));
   assert.equal(b.props.modelValue, "2026-11-03");
 });
+
+test("Weekly selection reports complete ISO week metadata and selects from a week number", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "week",
+    modelValue: "2026-11-02",
+  });
+  await a.vm.show();
+  const button = [
+    ...popup().querySelectorAll(".hys-ui-date-week-number button"),
+  ].find((el) => el.getAttribute("aria-label").includes("2026-11-09"));
+  await fire(button, "click");
+  await settle();
+  assert.equal(a.props.modelValue, "2026-11-09");
+  const info = a.events.change.at(-1)[1].weeks[0];
+  assert.equal(info.year, 2026);
+  assert.equal(info.week, 46);
+  assert.equal(info.start, "2026-11-09");
+  assert.equal(info.end, "2026-11-15");
+  assert.equal(info.dates.length, 7);
+});
+test("Multiple week selection toggles a whole week and confirms without duplicate days", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "weeks",
+    modelValue: ["2026-11-02"],
+    maxDates: 2,
+  });
+  await a.vm.show();
+  await fire(date("2026-11-12"), "click");
+  assert.deepEqual(a.props.modelValue, ["2026-11-02"]);
+  await fire(date("2026-11-13"), "click");
+  await a.vm.confirm();
+  assert.deepEqual(a.props.modelValue, ["2026-11-02"]);
+  await a.vm.show();
+  await fire(date("2026-11-12"), "click");
+  await fire(date("2026-11-19"), "click");
+  assert.equal(a.events.invalid.at(-1)[0].reason, "limit");
+  await a.vm.confirm();
+  assert.deepEqual(a.props.modelValue, ["2026-11-02", "2026-11-09"]);
+  assert.equal(a.events.change.at(-1)[1].weeks.length, 2);
+});
+test("Week-year formatting and input parsing round trip across New Year and reject missing week 53", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "week",
+    modelValue: "2020-W53",
+    valueFormat: "GGGG-[W]WW",
+    format: "GGGG 年第 WW 周",
+    editable: true,
+  });
+  await a.vm.show();
+  assert(date("2021-01-01").getAttribute("aria-selected") === "true");
+  assert.equal(await a.vm.setValue("2021-W53"), false);
+  assert.equal(a.props.modelValue, "2020-W53");
+  assert.equal(await a.vm.setValue("2021-W01"), true);
+  assert(a.find(".hys-ui-date-input").value.includes("2021 年第 01 周"));
+});
+test("Custom first-day and first-week rules keep display, parsing and metadata consistent", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "week",
+    modelValue: "2027-W01",
+    valueFormat: "GGGG-[W]WW",
+    firstDayOfWeek: 0,
+    firstWeekContainsDate: 1,
+  });
+  await a.vm.show();
+  assert.equal(date("2026-12-27").getAttribute("aria-selected"), "true");
+  await fire(date("2027-01-06"), "click");
+  await settle();
+  assert.equal(a.props.modelValue, "2027-W02");
+  const info = a.events.change.at(-1)[1].weeks[0];
+  assert.equal(info.start, "2027-01-03");
+  assert.equal(info.end, "2027-01-09");
+  assert.equal(info.year, 2027);
+});
+test("Whole-week validation applies consistently to panel, shortcuts and instance updates", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "week",
+    modelValue: "2026-11-09",
+    min: "2026-11-03",
+    max: "2026-11-27",
+    weekValidation: "full",
+    disabledWeek: (week) => week.start === "2026-11-16",
+  });
+  await a.vm.show();
+  assert(date("2026-11-04").disabled);
+  assert(!date("2026-11-10").disabled);
+  assert(date("2026-11-18").disabled);
+  assert(date("2026-11-24").disabled);
+  assert.equal(await a.vm.setValue("2026-11-02"), false);
+  assert.equal(await a.vm.setValue("2026-11-16"), false);
+  a.props.weekValidation = "any";
+  await settle();
+  assert(!date("2026-11-02").disabled);
+  assert.equal(await a.vm.setValue("2026-11-02"), true);
+});
+test("Week range reports inclusive covered dates while keeping week-start endpoints", async () => {
+  const a = await mount(ui.HysDateRangePicker, {
+    type: "week",
+    modelValue: ["2026-11-02", "2026-11-09"],
+  });
+  await a.vm.show();
+  await fire(date("2026-11-25"), "click");
+  await fire(date("2026-11-10"), "click");
+  await settle();
+  assert.deepEqual(a.props.modelValue, ["2026-11-09", "2026-11-23"]);
+  const weeks = a.events.change.at(-1)[1].weeks;
+  assert.equal(weeks[0].start, "2026-11-09");
+  assert.equal(weeks[1].end, "2026-11-29");
+});
+test("Week-number formatter and slot receive the configured week year and full range", async () => {
+  const a = await mount(
+    ui.HysDatePicker,
+    {
+      type: "week",
+      modelValue: "2026-12-28",
+      weekNumberFormatter: (week) => "W" + week.week,
+    },
+    {
+      "week-number": (week) =>
+        h(
+          "span",
+          { "data-week-year": week.year },
+          week.start + " / " + week.week,
+        ),
+    },
+  );
+  await a.vm.show();
+  assert(popup().querySelector('[data-week-year="2026"]'));
+  assert(
+    popup()
+      .querySelector(".hys-ui-date-week-number")
+      .textContent.includes(" / "),
+  );
+});
+
+test("Week range limits count full weeks and continuous validation checks the final week", async () => {
+  const a = await mount(ui.HysDateRangePicker, {
+    type: "week",
+    modelValue: ["2026-11-02", "2026-11-09"],
+    minRangeDays: 14,
+    maxRangeDays: 21,
+    weekValidation: "full",
+    rangeValidation: "continuous",
+    disabledWeek: (week) => week.start === "2026-11-16",
+  });
+  assert.equal(await a.vm.setValue(["2026-11-02", "2026-11-02"]), false);
+  assert.equal(await a.vm.setValue(["2026-11-09", "2026-11-23"]), false);
+  a.props.disabledWeek = undefined;
+  await settle();
+  assert.equal(await a.vm.setValue(["2026-11-09", "2026-11-16"]), true);
+  a.props.disabledDate = (date) =>
+    date.toISOString().slice(0, 10) === "2026-11-20";
+  await settle();
+  assert.equal(await a.vm.setValue(["2026-11-02", "2026-11-16"]), false);
+});
+
+test("Week APIs normalize arbitrary weekdays and deduplicate whole weeks before limits", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "weeks",
+    modelValue: [],
+    maxDates: 2,
+  });
+  assert.equal(
+    await a.vm.setValue(["2026-11-03", "2026-11-05", "2026-11-10"]),
+    true,
+  );
+  assert.deepEqual(a.props.modelValue, ["2026-11-02", "2026-11-09"]);
+  assert.equal(a.events.change.at(-1)[1].weeks.length, 2);
+});

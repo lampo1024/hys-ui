@@ -99,6 +99,8 @@ defineExpose({
     v-on="listeners"
     ><template v-if="$slots.default" #default="scope"
       ><slot v-bind="scope" /></template
+    ><template v-if="$slots['week-number']" #week-number="scope"
+      ><slot name="week-number" v-bind="scope" /></template
     ><template v-if="$slots.cell" #cell="scope"
       ><slot name="cell" v-bind="scope" /></template
     ><template v-if="$slots.header" #header="scope"

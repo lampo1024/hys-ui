@@ -7,7 +7,6 @@ import {
   calendarISO,
   calendarParts,
   calendarShift,
-  calendarWeek,
   civilDay,
 } from "./calendar";
 export type HysDateScalar = string | Date | number;
@@ -19,6 +18,7 @@ export type HysDatePickerType =
   | "date"
   | "dates"
   | "week"
+  | "weeks"
   | "month"
   | "months"
   | "quarter"
@@ -60,11 +60,22 @@ export interface HysDatePickerCell {
   inRange: boolean;
   today: boolean;
   week: number;
+  weekYear: number;
+  weekStart: string;
+  weekEnd: string;
+}
+export interface HysDatePickerWeek {
+  year: number;
+  week: number;
+  start: string;
+  end: string;
+  dates: readonly string[];
 }
 export interface HysDatePickerChange {
   source: "date" | "time" | "input" | "shortcut" | "clear" | "confirm" | "api";
   dates: readonly (Date | null)[];
   formatted: readonly string[];
+  weeks?: readonly (HysDatePickerWeek | null)[];
 }
 export interface HysDatePickerLocale {
   today: string;
@@ -122,6 +133,10 @@ export interface HysDatePickerProps<
     context: HysDatePickerContext,
   ) => HysDateDisabledTime;
   firstDayOfWeek?: number;
+  firstWeekContainsDate?: number;
+  weekNumberFormatter?: (week: HysDatePickerWeek) => string;
+  disabledWeek?: (week: HysDatePickerWeek) => boolean;
+  weekValidation?: "any" | "full";
   locale?: string;
   messages?: Partial<HysDatePickerLocale>;
   showWeekNumbers?: boolean;
@@ -190,6 +205,9 @@ export interface HysDatePickerInstance<
   setMode: (view: HysDatePickerView) => boolean;
 }
 export interface HysDatePickerSlots {
+  "week-number"?: (
+    week: HysDatePickerWeek & { selected: boolean; disabled: boolean },
+  ) => any;
   default?: (cell: HysDatePickerCell) => any;
   cell?: (cell: HysDatePickerCell) => any;
   prefix?: () => any;
@@ -297,7 +315,7 @@ export const dateUnit = (type: string | undefined): HysDatePickerUnit =>
     ? "date"
     : (type.replace(/s$/, "") as HysDatePickerUnit);
 export const dateMultiple = (type: string | undefined) =>
-  ["dates", "months", "quarters", "years"].includes(type ?? "");
+  ["dates", "weeks", "months", "quarters", "years"].includes(type ?? "");
 export function datePattern(type: string | undefined, time = false) {
   return time
     ? "YYYY-MM-DD HH:mm:ss"
@@ -341,18 +359,52 @@ export function dateTimeSeconds(value: string | undefined) {
     : 0;
 }
 const TOKEN = /\[[^\]]*\]|YYYY|GGGG|MM|DD|HH|mm|ss|WW|Q/g;
-export function dateFormat(point: HysDatePoint, pattern: string) {
+export function dateWeek(
+  day: number,
+  first = 1,
+  contains = 4,
+): HysDatePickerWeek {
+  first = Number.isFinite(first) ? ((Math.trunc(first) % 7) + 7) % 7 : 1;
+  contains = Number.isFinite(contains)
+    ? Math.max(1, Math.min(7, Math.trunc(contains)))
+    : 4;
+  const startOfYear = (year: number) => {
+    const anchor = civilDay(year, 0, contains);
+    return anchor - ((calendarParts(anchor).weekday - first + 7) % 7);
+  };
+  const rawStart = day - ((calendarParts(day).weekday - first + 7) % 7);
+  let year = calendarParts(day).year;
+  if (rawStart < startOfYear(year)) year--;
+  else if (rawStart >= startOfYear(year + 1)) year++;
+  const start = Math.max(DATE_MIN, rawStart),
+    end = Math.min(DATE_MAX, rawStart + 6);
+  return {
+    year,
+    week: Math.floor((rawStart - startOfYear(year)) / 7) + 1,
+    start: calendarISO(start),
+    end: calendarISO(end),
+    dates: Array.from({ length: Math.max(0, end - start + 1) }, (_, i) =>
+      calendarISO(start + i),
+    ),
+  };
+}
+export function dateFormat(
+  point: HysDatePoint,
+  pattern: string,
+  first = 1,
+  contains = 4,
+) {
   const p = calendarParts(point.day),
-    weekYear = calendarParts(point.day + 3 - ((p.weekday + 6) % 7)).year;
+    info = dateWeek(point.day, first, contains);
   const values: Record<string, string> = {
     YYYY: String(p.year).padStart(4, "0"),
-    GGGG: String(weekYear).padStart(4, "0"),
+    GGGG: String(info.year).padStart(4, "0"),
     MM: String(p.month + 1).padStart(2, "0"),
     DD: String(p.day).padStart(2, "0"),
     HH: String(Math.floor(point.second / 3600)).padStart(2, "0"),
     mm: String(Math.floor(point.second / 60) % 60).padStart(2, "0"),
     ss: String(point.second % 60).padStart(2, "0"),
-    WW: String(calendarWeek(point.day)).padStart(2, "0"),
+    WW: String(info.week).padStart(2, "0"),
     Q: String(Math.floor(p.month / 3) + 1),
   };
   return pattern.replace(TOKEN, (t) =>
@@ -362,6 +414,8 @@ export function dateFormat(point: HysDatePoint, pattern: string) {
 export function datePoint(
   value: unknown,
   pattern = "YYYY-MM-DD",
+  first = 1,
+  contains = 4,
 ): HysDatePoint | undefined {
   if (value instanceof Date || typeof value === "number") {
     const date = value instanceof Date ? value : new Date(value);
@@ -429,9 +483,17 @@ export function datePoint(
   let day = civilDay(y, m - 1, d);
   if (parts.WW !== undefined) {
     if (parts.WW < 1 || parts.WW > 53) return;
-    const jan4 = civilDay(y, 0, 4);
-    day = jan4 - ((calendarParts(jan4).weekday + 6) % 7) + (parts.WW - 1) * 7;
-    if (calendarWeek(day) !== parts.WW) return;
+    const anchor = civilDay(
+      y,
+      0,
+      Math.max(1, Math.min(7, Math.trunc(contains))),
+    );
+    day =
+      anchor -
+      ((calendarParts(anchor).weekday - first + 7) % 7) +
+      (parts.WW - 1) * 7;
+    const info = dateWeek(day, first, contains);
+    if (info.week !== parts.WW || info.year !== y) return;
   } else if (calendarParts(day).month !== m - 1 || calendarParts(day).day !== d)
     return;
   if (day < DATE_MIN || day > DATE_MAX) return;
