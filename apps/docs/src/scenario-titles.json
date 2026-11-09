@@ -280,7 +280,9 @@
     "HysGantt": {
       "Scrolling": "多任务与双向滚动",
       "LargeData": "大数据与虚拟滚动",
-      "Dependencies": "前置依赖与交互连接"
+      "Dependencies": "前置依赖与交互连接",
+      "DependencyRouting": "折返连线与排期重叠",
+      "Reconnecting": "重新连接与终点调整"
     }
   }
 }

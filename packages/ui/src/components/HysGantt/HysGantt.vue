@@ -18,6 +18,7 @@ import type {
   HysGanttScrollOptions,
   HysGanttDependencyChange,
   HysGanttDependencyInvalid,
+  HysGanttDependencyMove,
 } from "../../composables/gantt";
 import {
   useGanttDependencies,
@@ -83,6 +84,11 @@ const emit = defineEmits<{
   dependencyAdd: [info: HysGanttDependencyChange, item: GanttItem];
   dependencyRemove: [info: HysGanttDependencyChange, item: GanttItem];
   dependencyInvalid: [info: HysGanttDependencyInvalid];
+  dependencyMove: [
+    info: HysGanttDependencyMove,
+    item: GanttItem,
+    previousItem: GanttItem,
+  ];
   "update:labelWidth": [width: number];
   labelResize: [width: number];
 }>();
@@ -410,7 +416,9 @@ const allEdges = computed(() =>
           targetId: t.id,
           first: Math.min(from.index, to.index),
           last: Math.max(from.index, to.index),
-          path: ganttDependencyPath(from, to),
+          endpoint: { x: to.x - 9, y: to.y },
+          editable: !t.disabled && !normalized.value[from.index]?.disabled,
+          path: ganttDependencyPath(from, to, rowSize.value),
         },
       ];
     }),
@@ -445,6 +453,8 @@ const links = useGanttDependencies<GanttItem>({
   change: (item) => emit("change", item),
   added: (info, item) => emit("dependencyAdd", info, item),
   removed: (info, item) => emit("dependencyRemove", info, item),
+  moved: (info, item, previousItem) =>
+    emit("dependencyMove", info, item, previousItem),
   invalid: (info) => emit("dependencyInvalid", info),
 });
 watch(
@@ -526,6 +536,19 @@ function select(t: GanttItem) {
   selected.value = t.id;
   emit("update:modelValue", t.id);
   emit("open", t);
+}
+function clearEdgeOnSurface(event: Event) {
+  // Pointer clicks were handled on press; the release click after a drag must
+  // not clear the newly accepted connection. Keep keyboard clicks supported.
+  if (event.type === "click" && (event as MouseEvent).detail > 0) return;
+  if (
+    event.target instanceof Element &&
+    event.target.closest(
+      ".hys-ui-pg-edge-hit, .hys-ui-pg-edge-endpoint-hit, .hys-ui-pg-link-feedback button",
+    )
+  )
+    return;
+  links.clearSelected();
 }
 function moveToToday() {
   if (!active) return;
@@ -661,6 +684,7 @@ defineExpose({
   scrollToTop,
   addDependency: links.add,
   removeDependency: links.remove,
+  moveDependency: links.moveTarget,
   cancelDependency: () => links.cancel(),
 });
 </script>
@@ -672,6 +696,8 @@ defineExpose({
     :class="{ 'hys-ui-pg-resizing-label': labelResize.resizing.value }"
     aria-label="项目甘特图"
     @keydown="links.key"
+    @pointerdown.capture="clearEdgeOnSurface"
+    @click.capture="clearEdgeOnSurface"
   >
     <div class="hys-ui-pg-toolbar">
       <HysSegmented
@@ -926,7 +952,19 @@ ${entry.task.start} → ${entry.task.end}
               :aria-hidden="!dependencyEnabled || undefined"
             >
               <template v-if="showDependencies">
-                <g v-for="edge in edges" :key="edge.id">
+                <g
+                  v-for="edge in edges"
+                  :key="edge.id"
+                  class="hys-ui-pg-edge-group"
+                  :class="{
+                    'hys-ui-pg-edge-current':
+                      links.selected.value?.sourceId === edge.sourceId &&
+                      links.selected.value?.targetId === edge.targetId,
+                    'hys-ui-pg-edge-rewiring':
+                      links.draft.value?.sourceId === edge.sourceId &&
+                      links.draft.value?.previousTargetId === edge.targetId,
+                  }"
+                >
                   <path
                     class="hys-ui-pg-edge-line"
                     :class="{
@@ -942,6 +980,7 @@ ${entry.task.start} → ${entry.task.end}
                     stroke="currentColor"
                     stroke-width="1.5"
                   />
+
                   <path
                     v-if="dependencyEnabled"
                     class="hys-ui-pg-edge-hit"
@@ -969,6 +1008,46 @@ ${entry.task.start} → ${entry.task.end}
                       links.selectEdge($event, edge.sourceId, edge.targetId)
                     "
                   />
+                  <template v-if="dependencyEnabled && edge.editable">
+                    <circle
+                      class="hys-ui-pg-edge-endpoint"
+                      :cx="edge.endpoint.x"
+                      :cy="edge.endpoint.y"
+                      r="5"
+                      aria-hidden="true"
+                    />
+                    <circle
+                      class="hys-ui-pg-edge-endpoint-hit"
+                      :cx="edge.endpoint.x"
+                      :cy="edge.endpoint.y"
+                      r="12"
+                      fill="transparent"
+                      role="button"
+                      tabindex="0"
+                      :aria-label="
+                        '改接依赖终点：' + edge.sourceId + ' → ' + edge.targetId
+                      "
+                      @focus="
+                        links.selectEdge($event, edge.sourceId, edge.targetId)
+                      "
+                      @pointerdown.stop.prevent="
+                        links.beginPointer($event, edge.sourceId, edge.targetId)
+                      "
+                      @click.stop="
+                        links.clickSource($event, edge.sourceId, edge.targetId)
+                      "
+                      @keydown.enter.stop.prevent="
+                        links.beginKeyboard(edge.sourceId, edge.targetId)
+                      "
+                      @keydown.space.stop.prevent="
+                        links.beginKeyboard(edge.sourceId, edge.targetId)
+                      "
+                    >
+                      <title>
+                        拖动修改连接终点，或按 Enter 后用上下键选择新任务
+                      </title>
+                    </circle>
+                  </template>
                 </g>
               </template>
               <path
@@ -996,7 +1075,7 @@ ${entry.task.start} → ${entry.task.end}
       <div v-if="dependencyEnabled" class="hys-ui-pg-link-feedback">
         <span role="status" aria-live="polite">{{
           links.message.value ||
-          "拖动任务右侧圆点连接前置依赖；选中连线可移除。"
+          "拖动圆点连接依赖；选中连线可拖动终点改接或移除。"
         }}</span
         ><HysButton
           v-if="links.draft.value"
@@ -1160,6 +1239,33 @@ ${entry.task.start} → ${entry.task.end}
     var(--hys-ui-primary, var(--hys-ui-theme-primary)) 18%,
     transparent
   );
+}
+.hys-ui-pg-edge-endpoint {
+  opacity: 0;
+  fill: var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff));
+  stroke: var(--hys-ui-primary, var(--hys-ui-theme-primary, #4776ed));
+  stroke-width: 2;
+  pointer-events: none;
+}
+.hys-ui-pg-edge-endpoint-hit {
+  cursor: crosshair;
+  pointer-events: all;
+  outline: none;
+  touch-action: none;
+}
+.hys-ui-pg-edge-group:hover .hys-ui-pg-edge-endpoint,
+.hys-ui-pg-edge-group:focus-within .hys-ui-pg-edge-endpoint,
+.hys-ui-pg-edge-current .hys-ui-pg-edge-endpoint,
+.hys-ui-pg-edge-rewiring .hys-ui-pg-edge-endpoint {
+  opacity: 1;
+}
+.hys-ui-pg-edge-endpoint-hit:focus-visible {
+  stroke: var(--hys-ui-primary, var(--hys-ui-theme-primary, #4776ed));
+  stroke-width: 1.5;
+}
+.hys-ui-pg-edge-rewiring .hys-ui-pg-edge-line {
+  opacity: 0.2;
+  stroke-dasharray: 3 3;
 }
 .hys-ui-pg-link-preview {
   color: var(--hys-ui-primary, var(--hys-ui-theme-primary));

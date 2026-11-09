@@ -468,3 +468,166 @@ test("Date edits preserve distinct string and number task identifiers", async ()
   assert.equal(a.props.items[0].start, "2026-11-02");
   assert.equal(a.props.items[1].start, "2026-11-01");
 });
+
+test("Backward dependency paths approach outside target bars in both vertical directions", async () => {
+  const { ganttDependencyPath } =
+    await import("../packages/ui/dist/composables/useGanttDependencies.js");
+  assert.equal(
+    ganttDependencyPath({ x: 80, y: 24, w: 120 }, { x: 40, y: 72 }, 48),
+    "M 200 24 H 214 V 48 H 20 V 72 H 36 M 31 68 L 36 72 L 31 76",
+  );
+  assert.equal(
+    ganttDependencyPath({ x: 80, y: 120, w: 120 }, { x: 40, y: 24 }, 48),
+    "M 200 120 H 214 V 48 H 20 V 24 H 36 M 31 20 L 36 24 L 31 28",
+  );
+  assert.equal(
+    ganttDependencyPath({ x: 80, y: 24, w: 120 }, { x: 280, y: 72 }, 48),
+    "M 200 24 H 214 V 72 H 276 M 271 68 L 276 72 L 271 76",
+  );
+  assert.equal(
+    ganttDependencyPath({ x: 80, y: 24, w: 120 }, { x: 200, y: 24 }, 48),
+    "",
+  );
+});
+
+test("Moving a dependency atomically changes both targets and preserves unrelated predecessors", async () => {
+  const items = [
+      task("source"),
+      task("other"),
+      task("old", { dependencies: ["source", "other"] }),
+      task("next", { dependencies: ["other"] }),
+    ],
+    a = await mount(ui.HysGantt, { items, editable: true });
+  assert.equal(await a.vm.moveDependency("source", "old", "next"), true);
+  assert.equal(a.events["update:items"].length, 1);
+  assert.equal(a.props.items[0], items[0]);
+  assert.equal(a.props.items[1], items[1]);
+  assert.deepEqual(a.props.items[2].dependencies, ["other"]);
+  assert.deepEqual(a.props.items[3].dependencies, ["other", "source"]);
+  assert.deepEqual(items[2].dependencies, ["source", "other"]);
+  assert.equal(a.events.change.length, 2);
+  assert.deepEqual(a.events.dependencyMove[0][0], {
+    sourceId: "source",
+    previousTargetId: "old",
+    targetId: "next",
+    type: "move",
+  });
+  assert.equal(a.events.dependencyAdd, undefined);
+  assert.equal(a.events.dependencyRemove, undefined);
+});
+
+test("Rejected dependency moves keep the original edge for every invalid target", async () => {
+  const items = [
+      task("source", { dependencies: ["parent"] }),
+      task("parent"),
+      task("old", { dependencies: ["source"] }),
+      task("duplicate", { dependencies: ["source"] }),
+      task("locked", { disabled: true }),
+    ],
+    a = await mount(ui.HysGantt, { items, editable: true });
+  for (const [target, reason] of [
+    ["source", "self"],
+    ["parent", "cycle"],
+    ["duplicate", "duplicate"],
+    ["locked", "disabled"],
+    ["missing", "missing"],
+  ]) {
+    assert.equal(await a.vm.moveDependency("source", "old", target), false);
+    assert.deepEqual(a.props.items[2].dependencies, ["source"]);
+    assert.deepEqual(a.events.dependencyInvalid.at(-1)[0], {
+      sourceId: "source",
+      previousTargetId: "old",
+      targetId: target,
+      type: "move",
+      reason,
+    });
+  }
+  assert.equal(await a.vm.moveDependency("source", "old", "old"), true);
+  assert.equal(a.events["update:items"], undefined);
+  a.props.items = items.map((item) =>
+    item.id === "old" ? { ...item, disabled: true } : item,
+  );
+  await settle();
+  assert.equal(await a.vm.moveDependency("source", "old", "parent"), false);
+  assert.equal(a.events.dependencyInvalid.at(-1)[0].reason, "disabled");
+});
+
+test("Host rejection and unmount prevent false dependency-move acceptance", async () => {
+  const a = await mount(
+    ui.HysGantt,
+    {
+      items: [task("a"), task("b", { dependencies: ["a"] }), task("c")],
+      editable: true,
+    },
+    false,
+  );
+  assert.equal(await a.vm.moveDependency("a", "b", "c"), false);
+  assert.equal(a.events.dependencyMove, undefined);
+  assert.deepEqual(a.props.items[1].dependencies, ["a"]);
+  assert.equal(a.events.dependencyInvalid[0][0].reason, "rejected");
+  const b = await mount(ui.HysGantt, {
+    items: [task("a"), task("b", { dependencies: ["a"] }), task("c")],
+    editable: true,
+  });
+  const result = b.vm.moveDependency("a", "b", "c");
+  b.unmount();
+  assert.equal(await result, false);
+  assert.equal(b.events.dependencyMove, undefined);
+});
+
+test("Existing dependency endpoints support keyboard retargeting and cancellation", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a"), task("b", { dependencies: ["a"] }), task("c")],
+    editable: true,
+  });
+  await key(a.find(".hys-ui-pg-edge-endpoint-hit"), "Enter");
+  await key(a.vm.viewport, "ArrowDown");
+  await key(a.vm.viewport, "Escape");
+  assert.deepEqual(a.props.items[1].dependencies, ["a"]);
+  assert.equal(a.events.dependencyMove, undefined);
+  await key(a.find(".hys-ui-pg-edge-endpoint-hit"), "Enter");
+  await key(a.vm.viewport, "ArrowDown");
+  await key(a.vm.viewport, "Enter");
+  assert.deepEqual(a.props.items[1].dependencies, []);
+  assert.deepEqual(a.props.items[2].dependencies, ["a"]);
+  assert.equal(a.events.dependencyMove.length, 1);
+});
+
+test("Chart surface clicks clear edge selection without interfering with removal or endpoint editing", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a"), task("b", { dependencies: ["a"] }), task("c")],
+    editable: true,
+  });
+  const select = async () => {
+    a.find(".hys-ui-pg-edge-hit").dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
+    await settle();
+    assert(a.find(".hys-ui-pg-edge-current"));
+  };
+  for (const surface of [
+    ".hys-ui-pg-grid",
+    ".hys-ui-pg-days",
+    ".hys-ui-pg-toolbar",
+    ".hys-ui-pg-task-label",
+    ".hys-ui-pg-footer",
+  ]) {
+    await select();
+    a.find(surface).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await settle();
+    assert.equal(a.find(".hys-ui-pg-edge-current"), null);
+    assert.deepEqual(a.props.items[1].dependencies, ["a"]);
+    assert(!a.find('[role="status"]').textContent.includes("Delete"));
+  }
+  await select();
+  await key(a.find(".hys-ui-pg-edge-endpoint-hit"), "Enter");
+  assert(a.find(".hys-ui-pg-link-preview"));
+  await key(a.vm.viewport, "Escape");
+  await select();
+  const remove = [...a.host.querySelectorAll("button")].find((el) =>
+    el.textContent.includes("移除依赖"),
+  );
+  remove.click();
+  await settle();
+  assert.deepEqual(a.props.items[1].dependencies, []);
+});

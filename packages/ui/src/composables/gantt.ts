@@ -10,9 +10,15 @@ export interface HysGanttDependencyChange {
 }
 export type HysGanttDependencyReason =
   "missing" | "disabled" | "self" | "duplicate" | "cycle" | "rejected";
-export interface HysGanttDependencyInvalid extends HysGanttDependencyChange {
-  reason: HysGanttDependencyReason;
+export interface HysGanttDependencyMove {
+  sourceId: string | number;
+  previousTargetId: string | number;
+  targetId: string | number;
+  type: "move";
 }
+export type HysGanttDependencyInvalid = (
+  HysGanttDependencyChange | HysGanttDependencyMove
+) & { reason: HysGanttDependencyReason };
 export interface HysGanttInstance {
   element: HTMLElement | undefined;
   viewport: HTMLElement | null;
@@ -30,4 +36,9 @@ export interface HysGanttInstance {
     targetId: string | number,
   ) => Promise<boolean>;
   cancelDependency: () => void;
+  moveDependency: (
+    sourceId: string | number,
+    previousTargetId: string | number,
+    targetId: string | number,
+  ) => Promise<boolean>;
 }

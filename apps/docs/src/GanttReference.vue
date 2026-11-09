@@ -43,6 +43,25 @@
       dependencies，日期继续由 start / end 管理。
     </p>
     <p>
+      点击任务、时间轴空白、日期表头或工具栏会取消连线的选中状态，保留关系数据；终点编辑和移除按钮可继续操作当前连线。
+    </p>
+    <p>
+      当前后任务排期发生重叠时，折返连线会沿目标行外的空隙绕行，从目标左侧收口。终点保留水平引导线与箭头间距，避免被任务条或选中轮廓遮挡；向上、向下连接和自定义行高均采用同一规则。
+    </p>
+    <p>
+      已有连线可再次编辑。悬停或选中连线后，拖动终点空心圆到新的后置任务，或聚焦终点后按
+      Enter 进入键盘选择。改接期间保留原关系；校验通过后通过一次 update:items
+      同时更新原后置任务和新后置任务，日期及其他前置关系保持不变。无效目标、Esc
+      或丢弃到空白处均保留原关系。
+    </p>
+    <p>
+      moveDependency(sourceId, previousTargetId, targetId)
+      可通过实例执行同样的操作。dependencyMove 在宿主接受后返回关系信息（含
+      previousTargetId）、新后置任务与原后置任务；不会同时触发 dependencyAdd /
+      dependencyRemove。change
+      分别报告两个任务的更新请求。放回原任务视为未修改，不产生更新事件。
+    </p>
+    <p>
       dependencyEditable 默认继承
       editable，可单独配置依赖编辑权限。showDependencies
       控制连线与连接点的展示，隐藏时保留关系数据。update:items 和 change

@@ -129,6 +129,16 @@ async function locate(row: number) {
         (info) =>
           (lastChange = '已移除 ' + info.sourceId + ' → ' + info.targetId)
       "
+      @dependency-move="
+        (info) =>
+          (lastChange =
+            '已改接 ' +
+            info.sourceId +
+            '：' +
+            info.previousTargetId +
+            ' → ' +
+            info.targetId)
+      "
     />
     <output
       >{{ message || "可上下滚动，或按任务序号定位" }} · 共

@@ -7,6 +7,9 @@
 - Add optional Gantt virtual rows and task-location methods, with bounded rendering, cached-page scroll restoration and independent large-data examples.
 - Add pointer and keyboard dependency editing, edge selection/removal, cycle and permission checks, edge auto-scrolling and accepted-change events.
 - Add resizable Gantt task columns with controlled widths, bounds, responsive timeline space, keyboard adjustments, cancellation and reset.
+- Route backward Gantt dependencies through the row gap and keep a visible approach segment outside the target bar.
+- Allow dragging or keyboard retargeting existing dependency endpoints, with atomic moves, validation, cancellation and accepted-move events.
+- Clear Gantt edge selection when interacting with the surrounding chart, retaining endpoint editing and removal actions.
 
 - Expand Rating with precise fractional display, custom level colors/icons, score/text templates, controlled hover previews, keyboard/RTL and form/reset integration.
 - Expand Segmented with typed/mapped options, custom content, vertical/block/rounded layouts, animated selection, keyboard navigation and cached-page observer cleanup.

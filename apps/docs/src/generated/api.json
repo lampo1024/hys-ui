@@ -4754,7 +4754,14 @@
         "type": "[info: HysGanttDependencyInvalid]",
         "required": false,
         "default": "",
-        "description": "关系编辑未通过：(sourceId,targetId,type,reason)，reason 为 missing / disabled / self / duplicate / cycle / rejected"
+        "description": "关系编辑未通过：(sourceId,targetId,type,reason)，改接时同时提供 previousTargetId；reason 为 missing / disabled / self / duplicate / cycle / rejected"
+      },
+      {
+        "name": "dependencyMove",
+        "type": "[info: HysGanttDependencyMove, item: GanttItem, previousItem: GanttItem]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受终点改接后触发：(关系信息 {sourceId,previousTargetId,targetId,type:move}, 新后置任务, 原后置任务)"
       },
       {
         "name": "update:labelWidth",
@@ -4821,6 +4828,13 @@
         "required": true,
         "default": "",
         "description": "取消当前依赖连接操作，保留已保存的关系"
+      },
+      {
+        "name": "moveDependency",
+        "type": "(\n    sourceId: string | number,\n    previousTargetId: string | number,\n    targetId: string | number,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "改接 sourceId → previousTargetId 至 targetId；一次更新原/新两个后置任务，校验未通过保留原关系，返回 Promise<boolean>"
       }
     ]
   },

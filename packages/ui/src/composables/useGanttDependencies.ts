@@ -14,6 +14,7 @@ import {
 import type {
   HysGanttDependencyChange,
   HysGanttDependencyInvalid,
+  HysGanttDependencyMove,
   HysGanttDependencyReason,
   HysGanttScrollOptions,
 } from "./gantt";
@@ -32,6 +33,7 @@ interface Position {
 }
 interface Draft {
   sourceId: Id;
+  previousTargetId?: Id;
   targetId?: Id;
   mode: "pointer" | "keyboard";
   point: { x: number; y: number };
@@ -54,6 +56,7 @@ interface Context<T extends Task> {
   change: (item: T) => void;
   added: (info: HysGanttDependencyChange, item: T) => void;
   removed: (info: HysGanttDependencyChange, item: T) => void;
+  moved: (info: HysGanttDependencyMove, item: T, previousItem: T) => void;
   invalid: (info: HysGanttDependencyInvalid) => void;
 }
 const reasons: Record<HysGanttDependencyReason, string> = {
@@ -67,10 +70,19 @@ const reasons: Record<HysGanttDependencyReason, string> = {
 export function ganttDependencyPath(
   from: { x: number; y: number; w: number },
   to: { x: number; y: number },
+  rowHeight = 46,
 ) {
   const x = from.x + from.w,
-    elbow = x + 12;
-  return `M ${x} ${from.y} H ${elbow} V ${to.y} H ${to.x} M ${to.x - 5} ${to.y - 4} L ${to.x} ${to.y} L ${to.x - 5} ${to.y + 4}`;
+    elbow = x + 14,
+    tip = to.x - 4;
+  if (to.x === x && to.y === from.y) return "";
+  // A backward relation approaches outside the target bar, through the row gap.
+  // Ending at its centre from the right would hide the connector under the bar.
+  const route =
+    tip >= elbow + 12
+      ? `V ${to.y} H ${tip}`
+      : `V ${to.y + ((to.y < from.y ? 1 : -1) * rowHeight) / 2} H ${tip - 16} V ${to.y} H ${tip}`;
+  return `M ${x} ${from.y} H ${elbow} ${route} M ${tip - 5} ${to.y - 4} L ${tip} ${to.y} L ${tip - 5} ${to.y + 4}`;
 }
 export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
   const draft = shallowRef<Draft>(),
@@ -126,7 +138,7 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     return null;
   }
   function reject(
-    info: HysGanttDependencyChange,
+    info: HysGanttDependencyChange | HysGanttDependencyMove,
     reason: HysGanttDependencyReason,
   ) {
     message.value = reasons[reason];
@@ -172,6 +184,82 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
       update({ sourceId, targetId, type: "add" }),
     remove = (sourceId: Id, targetId: Id) =>
       update({ sourceId, targetId, type: "remove" });
+  function moveIssue(
+    info: HysGanttDependencyMove,
+  ): HysGanttDependencyReason | null {
+    const original = issue({
+      sourceId: info.sourceId,
+      targetId: info.previousTargetId,
+      type: "remove",
+    });
+    if (original) return original;
+    if (info.previousTargetId === info.targetId) return null;
+    return issue({
+      sourceId: info.sourceId,
+      targetId: info.targetId,
+      type: "add",
+    });
+  }
+  async function moveTarget(sourceId: Id, previousTargetId: Id, targetId: Id) {
+    if (!ctx.live()) return false;
+    const info: HysGanttDependencyMove = {
+        sourceId,
+        previousTargetId,
+        targetId,
+        type: "move",
+      },
+      reason = moveIssue(info);
+    if (reason) {
+      reject(info, reason);
+      return false;
+    }
+    if (previousTargetId === targetId) return true;
+    const previous = {
+      ...tasks.value.get(previousTargetId)!,
+      dependencies: (
+        tasks.value.get(previousTargetId)!.dependencies ?? []
+      ).filter((id) => id !== sourceId),
+    } as T;
+    const target = {
+      ...tasks.value.get(targetId)!,
+      dependencies: [
+        ...new Set([
+          ...(tasks.value.get(targetId)!.dependencies ?? []),
+          sourceId,
+        ]),
+      ],
+    } as T;
+    ctx.update(
+      ctx
+        .items()
+        .map((item) =>
+          item.id === previousTargetId
+            ? previous
+            : item.id === targetId
+              ? target
+              : item,
+        ),
+    );
+    ctx.change(previous);
+    ctx.change(target);
+    await nextTick();
+    if (!ctx.live()) return false;
+    const actualPrevious = tasks.value.get(previousTargetId),
+      actualTarget = tasks.value.get(targetId);
+    if (
+      !actualPrevious ||
+      !actualTarget ||
+      actualPrevious.dependencies?.includes(sourceId) ||
+      !actualTarget.dependencies?.includes(sourceId)
+    ) {
+      reject(info, "rejected");
+      return false;
+    }
+    selectedRef.value = { sourceId, targetId, type: "remove" };
+    message.value = "前置依赖的终点已修改";
+    ctx.moved(info, actualTarget, actualPrevious);
+    return true;
+  }
   let pointerId: number | undefined,
     capture: HTMLElement | undefined,
     point: { x: number; y: number } | undefined,
@@ -205,7 +293,14 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     const reason =
         id === undefined
           ? null
-          : issue({ sourceId: current.sourceId, targetId: id, type: "add" }),
+          : current.previousTargetId === undefined
+            ? issue({ sourceId: current.sourceId, targetId: id, type: "add" })
+            : moveIssue({
+                sourceId: current.sourceId,
+                previousTargetId: current.previousTargetId,
+                targetId: id,
+                type: "move",
+              }),
       target = id === undefined ? undefined : ctx.position(id),
       next = target ? { x: target.x, y: target.y } : position;
     if (
@@ -274,7 +369,11 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
       if (el.scrollTop !== oldTop || el.scrollLeft !== oldLeft) schedule();
     }
   }
-  function beginPointer(event: PointerEvent, source: Id) {
+  function beginPointer(
+    event: PointerEvent,
+    source: Id,
+    previousTargetId?: Id,
+  ) {
     if (
       !ctx.live() ||
       !ctx.enabled.value ||
@@ -292,15 +391,26 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     moved = false;
     draft.value = {
       sourceId: source,
+      previousTargetId,
+      targetId: previousTargetId,
       mode: "pointer",
-      point: { x: position.x + position.w, y: position.y },
+      point:
+        previousTargetId === undefined
+          ? { x: position.x + position.w, y: position.y }
+          : (ctx.position(previousTargetId) ?? {
+              x: position.x + position.w,
+              y: position.y,
+            }),
       reason: null,
     };
     pointerId = event.pointerId;
     capture = ctx.viewport.value;
     capture.setPointerCapture(event.pointerId);
     capture.focus({ preventScroll: true });
-    message.value = "拖到后置任务，释放建立前置依赖";
+    message.value =
+      previousTargetId === undefined
+        ? "拖到后置任务，释放建立前置依赖"
+        : "拖到新的后置任务，释放修改终点；Esc 保留原连接";
   }
   function move(event: PointerEvent) {
     if (pointerId !== event.pointerId || !draft.value) return;
@@ -317,19 +427,29 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
       message.value = "请选择一个后置任务";
       return false;
     }
-    const info: HysGanttDependencyChange = {
-        sourceId: current.sourceId,
-        targetId: id,
-        type: "add",
-      },
-      reason = issue(info);
+    const info: HysGanttDependencyChange | HysGanttDependencyMove =
+        current.previousTargetId === undefined
+          ? {
+              sourceId: current.sourceId,
+              targetId: id,
+              type: "add",
+            }
+          : {
+              sourceId: current.sourceId,
+              previousTargetId: current.previousTargetId,
+              targetId: id,
+              type: "move",
+            },
+      reason = info.type === "move" ? moveIssue(info) : issue(info);
     if (reason) {
       reject(info, reason);
       if (current.mode === "pointer") cancel(false);
       return false;
     }
     cancel(false);
-    return add(info.sourceId, info.targetId);
+    return info.type === "move"
+      ? moveTarget(info.sourceId, info.previousTargetId, info.targetId)
+      : add(info.sourceId, info.targetId);
   }
   function end(event: PointerEvent) {
     if (pointerId !== event.pointerId) return;
@@ -342,19 +462,24 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
       void submit();
       if (draft.value?.mode === "pointer") cancel(false);
     } else {
-      const source = draft.value?.sourceId;
+      const source = draft.value?.sourceId,
+        previousTargetId = draft.value?.previousTargetId;
       cancel();
       suppressClickBefore = performance.now() + 350;
-      if (source !== undefined) beginKeyboard(source);
+      if (source !== undefined) beginKeyboard(source, previousTargetId);
     }
   }
   function lost(event: PointerEvent) {
     if (pointerId === event.pointerId) cancel();
   }
-  function beginKeyboard(source: Id) {
+  function beginKeyboard(source: Id, previousTargetId?: Id) {
     if (!ctx.live() || !ctx.enabled.value || tasks.value.get(source)?.disabled)
       return;
-    if (draft.value?.mode === "keyboard" && draft.value.sourceId === source) {
+    if (
+      draft.value?.mode === "keyboard" &&
+      draft.value.sourceId === source &&
+      draft.value.previousTargetId === previousTargetId
+    ) {
       cancel();
       return;
     }
@@ -365,16 +490,27 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     if (!position) return;
     draft.value = {
       sourceId: source,
+      previousTargetId,
+      targetId: previousTargetId,
       mode: "keyboard",
-      point: { x: position.x + position.w, y: position.y },
+      point:
+        previousTargetId === undefined
+          ? { x: position.x + position.w, y: position.y }
+          : (ctx.position(previousTargetId) ?? {
+              x: position.x + position.w,
+              y: position.y,
+            }),
       reason: null,
     };
-    message.value = "点击后置任务，或用上下键选择后按 Enter 确认；Esc 取消";
+    message.value =
+      previousTargetId === undefined
+        ? "点击后置任务，或用上下键选择后按 Enter 确认；Esc 取消"
+        : "选择新的后置任务后按 Enter 确认；Esc 保留原连接";
     ctx.viewport.value?.focus({ preventScroll: true });
   }
-  function clickSource(event: MouseEvent, id: Id) {
+  function clickSource(event: MouseEvent, id: Id, previousTargetId?: Id) {
     if (performance.now() < suppressClickBefore) return;
-    beginKeyboard(id);
+    beginKeyboard(id, previousTargetId);
   }
   function key(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
@@ -430,17 +566,21 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     if (!ctx.enabled.value || !ctx.live()) return;
     cancel();
     selectedRef.value = { sourceId, targetId, type: "remove" };
-    message.value = `${tasks.value.get(sourceId)?.title ?? sourceId} → ${tasks.value.get(targetId)?.title ?? targetId}，按 Delete 或点击移除依赖`;
+    message.value = `${tasks.value.get(sourceId)?.title ?? sourceId} → ${tasks.value.get(targetId)?.title ?? targetId}，拖动终点可改接；Delete 可移除`;
     if (event.currentTarget instanceof SVGElement)
       (event.currentTarget as SVGElement & { focus: () => void }).focus();
   }
   const path = computed(() => {
     const current = draft.value,
       from = current && ctx.position(current.sourceId);
-    return current && from ? ganttDependencyPath(from, current.point) : "";
+    return current && from
+      ? ganttDependencyPath(from, current.point, ctx.rowHeight())
+      : "";
   });
   const clearSelected = () => {
+    const hadSelection = !!selected.value;
     selectedRef.value = undefined;
+    if (hadSelection && !draft.value) message.value = "";
   };
   function blur() {
     cancel();
@@ -467,6 +607,7 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
     path,
     add,
     remove,
+    moveTarget,
     cancel,
     beginPointer,
     move,
