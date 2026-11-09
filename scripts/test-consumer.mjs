@@ -125,6 +125,14 @@ export async function operateCalendar(calendar:HysCalendarInstance<string>){cons
 export function readCell(cell:HysCalendarCell){return [cell.date.getDate(),cell.day,cell.type,cell.events]}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {calendarChecks} from './calendar-types'\nvoid calendarChecks\n")
+fs.writeFileSync(path.join(dir,'table-types.ts'),`import {h,ref} from 'vue'
+import {HysTable,type HysTableColumn,type HysTableInstance,type HysTableCellContext,type HysTableQuery,type HysTableLoadContext,type HysTableKey} from 'hys-ui'
+interface Person {id:number;name:string;amount:number;children?:Person[];hasChildren?:boolean}
+const rows:Person[]=[{id:1,name:'A',amount:20}],columns:HysTableColumn<Person>[]=[{key:'name',label:'Name',fixed:'left',width:150,filterable:true},{key:'amount',label:'Amount',sortable:true,summary:'sum',sorter:(a,b)=>a.amount-b.amount,formatter:(row,col,value)=>String(value),tooltipFormatter:(ctx:HysTableCellContext<Person>)=>ctx.row.name}]
+export const tableChecks=[h(HysTable<Person>,{ref:ref<HysTableInstance<Person>>(),rows,columns,selectable:(row,index)=>row.id!==0,pagination:{pageSize:5},treeMode:true,loadChildren:async(row:Person,ctx:HysTableLoadContext)=>{void ctx.signal;return []},onQueryChange:(query:HysTableQuery<Person>)=>void query.filters,onSelectionChange:(rows:Person[],keys:HysTableKey[])=>void [rows,keys],onRowClick:(row:Person)=>void row.name,resizable:true})]
+export async function operateTable(api:HysTableInstance<Person>){await api.toggleRowSelection(1,true);api.setSort({key:'amount',direction:'desc'});api.setFilter('name',['A']);api.clearFilter();api.setPage(2);await api.setCurrentRow();api.resizeColumn('name',200);api.resetColumnWidths();await api.doLayout();return api.getSelectionRows()}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {tableChecks} from './table-types'\nvoid tableChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

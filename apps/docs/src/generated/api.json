@@ -10520,34 +10520,42 @@
   "HysTable": {
     "props": [
       {
+        "name": "locale",
+        "type": "Partial<HysTableLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按需覆盖内置文案与辅助技术标签，支持分页导航标签",
+        "global": false
+      },
+      {
         "name": "columns",
-        "type": "HysTableColumn[]",
+        "type": "readonly HysTableColumn<T>[]",
         "required": true,
         "default": "",
-        "description": "列定义",
+        "description": "列配置，支持 children 分组、固定、排序、筛选、插槽和响应式显示",
         "global": false
       },
       {
         "name": "rows",
-        "type": "T[]",
+        "type": "readonly T[]",
         "required": true,
         "default": "",
-        "description": "行数据，由使用方提供",
+        "description": "只读数据源；树形使用 childrenKey，组件不修改宿主行对象",
         "global": false
       },
       {
         "name": "rowKey",
-        "type": "string | undefined",
+        "type": "string | ((row: T) => HysTableKey) | undefined",
         "required": false,
         "default": "\"id\"",
-        "description": "",
+        "description": "稳定行标识的路径或函数，默认 id；选择与树形需唯一字符串/数字",
         "global": false
       },
       {
         "name": "emptyText",
         "type": "string | undefined",
         "required": false,
-        "default": "",
+        "default": "undefined",
         "description": "空数据提示",
         "global": false
       },
@@ -10557,6 +10565,14 @@
         "required": false,
         "default": "false",
         "description": "显示加载状态",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止用户操作",
         "global": false
       },
       {
@@ -10580,7 +10596,7 @@
         "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
         "default": "\"md\"",
-        "description": "",
+        "description": "sm / md / lg，控制表格间距与文字大小",
         "global": false
       },
       {
@@ -10592,44 +10608,762 @@
         "global": false
       },
       {
-        "name": "rowClassName",
-        "type": "((row: T, index: number) => string) | undefined",
+        "name": "height",
+        "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "共享滚动区固定高度，数值单位 px，也可传 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "maxHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "共享滚动区最大高度，内容不足时自然收缩",
+        "global": false
+      },
+      {
+        "name": "stickyHeader",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "固定整个多级表头；未设置时根据 height / maxHeight 自动启用",
+        "global": false
+      },
+      {
+        "name": "showHeader",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示多级表头",
+        "global": false
+      },
+      {
+        "name": "fit",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "未交互调整列宽时填满容器；false 按列宽布局",
+        "global": false
+      },
+      {
+        "name": "rowClassName",
+        "type": "string | ((row: T, index: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "行类名字符串或 (row,index) 回调，保留原有签名",
+        "global": false
+      },
+      {
+        "name": "rowStyle",
+        "type": "CSSProperties | ((row: T, index: number) => CSSProperties) | undefined",
+        "required": false,
+        "default": "",
+        "description": "行样式或 (row,index) 回调",
+        "global": false
+      },
+      {
+        "name": "cellClassName",
+        "type": "string | ((context: HysTableCellContext<T>) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "单元格类名或上下文回调",
+        "global": false
+      },
+      {
+        "name": "cellStyle",
+        "type": "CSSProperties | ((context: HysTableCellContext<T>) => CSSProperties) | undefined",
+        "required": false,
+        "default": "",
+        "description": "单元格样式或上下文回调，合并列级 cellStyle",
+        "global": false
+      },
+      {
+        "name": "headerCellClassName",
+        "type": "string | ((column: HysTableColumn<T>, index: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "表头类名或 (column,index) 回调",
+        "global": false
+      },
+      {
+        "name": "headerCellStyle",
+        "type": "CSSProperties | ((column: HysTableColumn<T>, index: number) => CSSProperties) | undefined",
+        "required": false,
+        "default": "",
+        "description": "表头样式或 (column,index) 回调，固定位置由组件维护",
+        "global": false
+      },
+      {
+        "name": "selectable",
+        "type": "boolean | ((row: T, index: number) => boolean) | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示多选/单选列，或传 (row,index)=>boolean 控制行可选状态",
+        "global": false
+      },
+      {
+        "name": "selectionType",
+        "type": "\"checkbox\" | \"radio\" | undefined",
+        "required": false,
+        "default": "\"checkbox\"",
+        "description": "checkbox 多选或 radio 单选",
+        "global": false
+      },
+      {
+        "name": "selectedRowKeys",
+        "type": "readonly HysTableKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控选择编号，支持 v-model:selectedRowKeys",
+        "global": false
+      },
+      {
+        "name": "defaultSelectedRowKeys",
+        "type": "readonly HysTableKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始选择编号",
+        "global": false
+      },
+      {
+        "name": "reserveSelection",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "保留跨页编号及已见过的选中行对象",
+        "global": false
+      },
+      {
+        "name": "checkStrictly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "树形选择父子独立，默认 true；false 联动已加载可选后代",
+        "global": false
+      },
+      {
+        "name": "selectOnIndeterminate",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "半选表头点击时选中当前页；false 取消当前页选择",
+        "global": false
+      },
+      {
+        "name": "highlightCurrentRow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击行时高亮当前行，独立于复选/单选选择",
+        "global": false
+      },
+      {
+        "name": "currentRowKey",
+        "type": "HysTableKey | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控当前行编号，null 清除",
+        "global": false
+      },
+      {
+        "name": "defaultCurrentRowKey",
+        "type": "HysTableKey | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始当前行",
+        "global": false
+      },
+      {
+        "name": "showIndex",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "自动添加序号列",
+        "global": false
+      },
+      {
+        "name": "indexMethod",
+        "type": "((index: number, row: T) => VNodeChild) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义序号渲染 (index,row)",
+        "global": false
+      },
+      {
+        "name": "sort",
+        "type": "HysTableSort | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控单列排序 {key,direction} 或 null",
+        "global": false
+      },
+      {
+        "name": "sorts",
+        "type": "readonly HysTableSort[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控多列排序数组，优先于 sort",
+        "global": false
+      },
+      {
+        "name": "defaultSort",
+        "type": "HysTableSort | readonly HysTableSort[] | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始单列/多列排序",
+        "global": false
+      },
+      {
+        "name": "multiSort",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许多个排序条件，按数组次序决定优先级",
+        "global": false
+      },
+      {
+        "name": "filters",
+        "type": "HysTableFilters | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控筛选条件，以列 key 对应值数组",
+        "global": false
+      },
+      {
+        "name": "defaultFilters",
+        "type": "HysTableFilters | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始筛选条件",
+        "global": false
+      },
+      {
+        "name": "pagination",
+        "type": "boolean | HysTablePagination | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认关闭；true 或分页配置对象，可显示条数、跳转及单页隐藏",
+        "global": false
+      },
+      {
+        "name": "page",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控页码，优先于 pagination.page",
+        "global": false
+      },
+      {
+        "name": "pageSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控页大小，优先于 pagination.pageSize，非受控默认 10",
+        "global": false
+      },
+      {
+        "name": "total",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "服务端总根行数，优先于 pagination.total",
+        "global": false
+      },
+      {
+        "name": "serverMode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "仅发送查询，不进行本地排序、过滤或分页",
+        "global": false
+      },
+      {
+        "name": "expandable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "自动添加详情展开列；expand 插槽也会自动启用",
+        "global": false
+      },
+      {
+        "name": "expandedRowKeys",
+        "type": "readonly HysTableKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控展开编号",
+        "global": false
+      },
+      {
+        "name": "defaultExpandedRowKeys",
+        "type": "readonly HysTableKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始展开编号",
+        "global": false
+      },
+      {
+        "name": "defaultExpandAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始展开全部节点，异步请求有并发限制",
+        "global": false
+      },
+      {
+        "name": "rowExpandable",
+        "type": "((row: T) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许展开指定行 (row)=>boolean",
+        "global": false
+      },
+      {
+        "name": "expandOnClickRow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击非交互内容时切换展开",
+        "global": false
+      },
+      {
+        "name": "preserveExpandedContent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "折叠后保留曾展开的详情 DOM 与控件状态",
+        "global": false
+      },
+      {
+        "name": "treeMode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用树形数据、缩进与同级排序",
+        "global": false
+      },
+      {
+        "name": "childrenKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"children\"",
+        "description": "静态子节点字段，默认 children",
+        "global": false
+      },
+      {
+        "name": "hasChildrenKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"hasChildren\"",
+        "description": "懒加载标记字段，默认 hasChildren",
+        "global": false
+      },
+      {
+        "name": "indent",
+        "type": "number | undefined",
+        "required": false,
+        "default": "18",
+        "description": "每层树形缩进，默认 18px",
+        "global": false
+      },
+      {
+        "name": "loadChildren",
+        "type": "((row: T, context: HysTableLoadContext) => readonly T[] | Promise<readonly T[]>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "异步获取子行 (row,{signal,key,depth})，支持取消与重试",
+        "global": false
+      },
+      {
+        "name": "showSummary",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示表尾汇总",
+        "global": false
+      },
+      {
+        "name": "sumText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"合计\"",
+        "description": "首个数据列的汇总说明，默认 合计",
+        "global": false
+      },
+      {
+        "name": "summaryMethod",
+        "type": "((context: { columns: readonly HysTableColumn<T>[]; rows: T[]; }) => readonly VNodeChild[] | Record<string, VNodeChild>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义汇总 ({columns,rows})，返回数组或 key 映射",
+        "global": false
+      },
+      {
+        "name": "spanMethod",
+        "type": "((context: HysTableCellContext<T>) => readonly [number, number] | { rowspan?: number | undefined; colspan?: number | undefined; } | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "单元格合并回调，返回 {rowspan,colspan} 或二元数组",
+        "global": false
+      },
+      {
+        "name": "showOverflowTooltip",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认对全部列启用省略和溢出提示，可在列上覆盖",
+        "global": false
+      },
+      {
+        "name": "tooltipFormatter",
+        "type": "((context: HysTableCellContext<T>) => VNodeChild) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义共享提示的 VNode 内容，参数为单元格上下文",
+        "global": false
+      },
+      {
+        "name": "resizable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认启用数据列宽度调整，列级值优先",
+        "global": false
+      },
+      {
+        "name": "columnWidths",
+        "type": "Readonly<Record<string, number>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控像素列宽快照，支持 v-model:columnWidths",
         "global": false
       }
     ],
     "events": [
       {
-        "name": "rowClick",
-        "type": "[row: T]",
+        "name": "change",
+        "type": "[query: HysTableQuery<T>]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "queryChange 的统一事件别名"
+      },
+      {
+        "name": "select",
+        "type": "[rows: T[], row: T, checked: boolean]",
+        "required": false,
+        "default": "",
+        "description": "接受行选择：行数组、操作行、选中状态"
+      },
+      {
+        "name": "loadError",
+        "type": "[row: T, error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "有效异步请求失败：row、error"
+      },
+      {
+        "name": "load",
+        "type": "[row: T, children: readonly T[]]",
+        "required": false,
+        "default": "",
+        "description": "有效异步子行返回：row、children"
+      },
+      {
+        "name": "scroll",
+        "type": "[position: { scrollLeft: number; scrollTop: number; }, event: Event]",
+        "required": false,
+        "default": "",
+        "description": "用户滚动：{scrollLeft,scrollTop}、Event"
+      },
+      {
+        "name": "rowClick",
+        "type": "[row: T, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "行点击，保留首个行对象，另提供 index 与原生事件"
+      },
+      {
+        "name": "selectionChange",
+        "type": "[rows: T[], keys: HysTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受选择变化：行数组、编号数组"
       },
       {
         "name": "sortChange",
-        "type": "[sort: { key: string; direction: \"asc\" | \"desc\"; } | null]",
+        "type": "[sort: HysTableSort | null, sorts: HysTableSort[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求排序，首个参数为原单列条件或 null，第二参数为全部条件"
+      },
+      {
+        "name": "pageChange",
+        "type": "[page: number]",
+        "required": false,
+        "default": "",
+        "description": "请求页码"
+      },
+      {
+        "name": "queryChange",
+        "type": "[query: HysTableQuery<T>]",
+        "required": false,
+        "default": "",
+        "description": "请求查询：action、page、pageSize、sorts、filters、currentData"
+      },
+      {
+        "name": "pageSizeChange",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": "请求页大小"
+      },
+      {
+        "name": "update:page",
+        "type": "[page: number]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "update:pageSize",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "rowDblclick",
+        "type": "[row: T, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "行双击：row、index、MouseEvent"
+      },
+      {
+        "name": "rowContextmenu",
+        "type": "[row: T, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "行右键：row、index、MouseEvent"
+      },
+      {
+        "name": "cellClick",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "单元格点击：上下文与原生事件"
+      },
+      {
+        "name": "cellDblclick",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "单元格双击：上下文与原生事件"
+      },
+      {
+        "name": "cellContextmenu",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "单元格右键：上下文与原生事件"
+      },
+      {
+        "name": "cellMouseEnter",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "进入单元格：上下文与原生事件"
+      },
+      {
+        "name": "cellMouseLeave",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "离开单元格：上下文与原生事件"
+      },
+      {
+        "name": "headerClick",
+        "type": "[column: HysTableColumn<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "表头点击：column、MouseEvent"
+      },
+      {
+        "name": "headerContextmenu",
+        "type": "[column: HysTableColumn<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "表头右键：column、MouseEvent"
+      },
+      {
+        "name": "update:sort",
+        "type": "[sort: HysTableSort | null]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "update:sorts",
+        "type": "[sorts: HysTableSort[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "update:filters",
+        "type": "[filters: HysTableFilters]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "filterChange",
+        "type": "[filters: HysTableFilters]",
+        "required": false,
+        "default": "",
+        "description": "请求应用筛选条件"
+      },
+      {
+        "name": "update:selectedRowKeys",
+        "type": "[keys: HysTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "selectAll",
+        "type": "[rows: T[], checked: boolean]",
+        "required": false,
+        "default": "",
+        "description": "接受全选/取消：行数组、选中状态"
+      },
+      {
+        "name": "update:currentRowKey",
+        "type": "[key: HysTableKey | null]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "currentChange",
+        "type": "[row: T | undefined, previous: T | undefined]",
+        "required": false,
+        "default": "",
+        "description": "接受当前行变化：新行、原行"
+      },
+      {
+        "name": "update:expandedRowKeys",
+        "type": "[keys: HysTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "expandChange",
+        "type": "[row: T, expanded: boolean, keys: HysTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "接受展开变化：row、expanded、keys"
+      },
+      {
+        "name": "update:columnWidths",
+        "type": "[widths: Record<string, number>]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
+        "name": "columnResize",
+        "type": "[column: HysTableColumn<T>, width: number, previous: number]",
+        "required": false,
+        "default": "",
+        "description": "列宽提交：column、新宽度、原宽度"
       }
     ],
     "slots": [
+      {
+        "name": "title",
+        "type": "{ rows: T[]; query: HysTableQuery<T>; }",
+        "required": false,
+        "default": "",
+        "description": "表格上方内容：rows、query"
+      },
+      {
+        "name": "header-cell",
+        "type": "{ column: HysTableColumn<T>; sorts: HysTableSort[]; }",
+        "required": false,
+        "default": "",
+        "description": "默认表头内容：column、sorts"
+      },
       {
         "name": "loading",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": "显示加载状态"
+        "description": "加载行内容"
+      },
+      {
+        "name": "body-cell",
+        "type": "{ row: T; column: HysTableColumn<T>; value: unknown; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "默认单元格：row、column、value、index"
+      },
+      {
+        "name": "expand",
+        "type": "{ row: T; index: number; expanded: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "详情内容：row、index、expanded"
       },
       {
         "name": "empty",
         "type": "{}",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "空数据内容"
+      },
+      {
+        "name": "append",
+        "type": "{ rows: T[]; }",
+        "required": false,
+        "default": "",
+        "description": "数据行后、汇总行前的内容：rows"
+      },
+      {
+        "name": "summary-cell",
+        "type": "{ column: HysTableColumn<T>; index: number; value: any; rows: T[]; }",
+        "required": false,
+        "default": "",
+        "description": "汇总单元格：column、index、value、rows"
+      },
+      {
+        "name": "footer",
+        "type": "{ rows: T[]; query: HysTableQuery<T>; }",
+        "required": false,
+        "default": "",
+        "description": "表格下方内容：rows、query"
+      },
+      {
+        "name": "filter-dropdown",
+        "type": "{ column: HysTableColumn<T>; values: HysTableFilterValue[]; setValues: (values: readonly HysTableFilterValue[]) => void; confirm: () => void; clear: () => void; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "自定义筛选：column、values、setValues、confirm、clear、close"
+      },
+      {
+        "name": "tooltip",
+        "type": "{ row: T; column: HysTableColumn<T>; value: unknown; rowIndex: number; columnIndex: number; }",
+        "required": false,
+        "default": "",
+        "description": "溢出提示，接收 HysTableCellContext"
+      },
+      {
+        "name": "header-[column.key]",
+        "type": "{column:HysTableColumn<T>;sorts:HysTableSort[]}",
+        "required": false,
+        "default": "",
+        "description": "列专属表头插槽，优先于 header-cell"
       },
       {
         "name": "[column.key]",
@@ -10639,7 +11373,169 @@
         "description": "与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素"
+      },
+      {
+        "name": "viewport",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "共享滚动区域元素"
+      },
+      {
+        "name": "selectedKeys",
+        "type": "HysTableKey[]",
+        "required": true,
+        "default": "",
+        "description": "当前选中编号"
+      },
+      {
+        "name": "currentRow",
+        "type": "T | undefined",
+        "required": true,
+        "default": "",
+        "description": "当前高亮行对象"
+      },
+      {
+        "name": "expandedKeys",
+        "type": "HysTableKey[]",
+        "required": true,
+        "default": "",
+        "description": "当前展开编号"
+      },
+      {
+        "name": "query",
+        "type": "HysTableQuery<T>",
+        "required": true,
+        "default": "",
+        "description": "当前已应用的排序、过滤、分页和数据"
+      },
+      {
+        "name": "clearSelection",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求清空选择，返回 Promise<boolean>"
+      },
+      {
+        "name": "getSelectionRows",
+        "type": "() => T[]",
+        "required": true,
+        "default": "",
+        "description": "读取已知的选中行，reserveSelection 时包含跨页缓存"
+      },
+      {
+        "name": "getHalfSelectionRows",
+        "type": "() => T[]",
+        "required": true,
+        "default": "",
+        "description": "读取树形半选行"
+      },
+      {
+        "name": "toggleRowSelection",
+        "type": "(\n    row: T | HysTableKey,\n    selected?: boolean,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按行对象或编号切换选择，可传明确 selected"
+      },
+      {
+        "name": "toggleAllSelection",
+        "type": "(selected?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "切换当前根行页及已加载后代的可用选择"
+      },
+      {
+        "name": "setCurrentRow",
+        "type": "(row?: T | HysTableKey | null) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "设置高亮行，省略或 null 清除"
+      },
+      {
+        "name": "toggleRowExpansion",
+        "type": "(\n    row: T | HysTableKey,\n    expanded?: boolean,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按行对象或编号展开/折叠，返回宿主是否接受"
+      },
+      {
+        "name": "loadRow",
+        "type": "(row: T | HysTableKey, force?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "加载指定懒节点，force=true 重新加载，返回是否成功"
+      },
+      {
+        "name": "clearSort",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "清除排序请求"
+      },
+      {
+        "name": "setSort",
+        "type": "(sort: HysTableSort | readonly HysTableSort[] | null) => void",
+        "required": true,
+        "default": "",
+        "description": "请求设置单列或多列排序"
+      },
+      {
+        "name": "clearFilter",
+        "type": "(keys?: readonly string[]) => void",
+        "required": true,
+        "default": "",
+        "description": "清除全部或指定列的筛选"
+      },
+      {
+        "name": "setFilter",
+        "type": "(key: string, values: readonly HysTableFilterValue[]) => void",
+        "required": true,
+        "default": "",
+        "description": "请求设置列筛选值数组"
+      },
+      {
+        "name": "setPage",
+        "type": "(page: number) => void",
+        "required": true,
+        "default": "",
+        "description": "请求改变页码"
+      },
+      {
+        "name": "resizeColumn",
+        "type": "(key: string, width: number) => void",
+        "required": true,
+        "default": "",
+        "description": "请求将列调整到指定像素宽度"
+      },
+      {
+        "name": "resetColumnWidths",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "清空交互宽度快照并恢复自动布局"
+      },
+      {
+        "name": "doLayout",
+        "type": "() => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "下一次 DOM 更新后重新测量固定列"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(options: ScrollToOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "按 ScrollToOptions 滚动，不改变选择"
+      }
+    ]
   },
   "HysTabs": {
     "props": [

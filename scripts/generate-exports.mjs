@@ -15,4 +15,5 @@ code+="export type {HysChoiceValue,HysChoiceFieldNames,HysChoiceOption,HysChoice
 code+="export type {HysRatingIcon,HysRatingLevels,HysRatingInstance} from './composables/rating'\nexport type {HysSegmentedOption,HysSegmentedInstance} from './composables/segmented'\n"
 code+="export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyChange,HysGanttDependencyMove,HysGanttDependencyInvalid,HysGanttDependencyReason,HysGanttHistoryType,HysGanttHistoryEntry,HysGanttHistoryState,HysGanttHistoryInvalid,HysGanttConflictType,HysGanttConflict} from './composables/gantt'\n"
 code+="export type {CalendarEvent,HysCalendarValue,HysCalendarMode,HysCalendarTransition,HysCalendarAction,HysCalendarCell,HysCalendarMonthCell,HysCalendarSelectInfo,HysCalendarInstance} from './composables/calendar'\n"
+code+="export type {HysTableKey,HysTableDirection,HysTableFilterValue,HysTableFilters,HysTableSort,HysTableFilter,HysTableCellContext,HysTableColumn,HysTablePagination,HysTableQuery,HysTableLoadContext,HysTableLocale,HysTableProps,HysTableInstance} from './composables/table'\n"
 fs.writeFileSync(root+'index.ts',code)

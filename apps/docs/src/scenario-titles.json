@@ -306,6 +306,32 @@
     },
     "HysSelect": {
       "ManyOptions": "多选项与内部滚动"
+    },
+    "HysTable": {
+      "Basic": "基础表格与列配置",
+      "Configure": "外观与状态配置",
+      "Fixed": "固定表头、列与高度",
+      "Grouped": "多级分组表头",
+      "Sort": "默认、多列与受控排序",
+      "Filters": "选项与文本筛选",
+      "CustomFilter": "自定义筛选面板",
+      "Selection": "多选与禁用行",
+      "Current": "单选与当前行高亮",
+      "Reserve": "跨页保留选择",
+      "Expand": "展开详情与状态保留",
+      "Tree": "树形数据与父子选择",
+      "Lazy": "异步子行与失败重试",
+      "Summary": "内置与自定义汇总",
+      "Span": "合并行与单元格",
+      "Templates": "表头、数据与操作模板",
+      "Overflow": "溢出省略与浮层提示",
+      "Resize": "拖动与键盘调整列宽",
+      "Editing": "自定义行内编辑",
+      "Responsive": "容器响应式列",
+      "Server": "异步服务端查询",
+      "Methods": "实例方法与键盘操作",
+      "States": "状态行、空数据与加载",
+      "Locale": "内置文案与语言配置"
     }
   }
 }

@@ -1,17 +1,103 @@
 <script setup lang="ts">
-import { HysTable } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysSelect as DemoSelect, HysInput as DemoInput } from 'hys-ui';
-const rows = [{ id: 1, name: '需求评审' }, { id: 2, name: '技术设计' }];
-const demoConfig = demoReactive<{
-    emptyText: string;
-    loading: boolean;
-    striped: boolean;
-    bordered: boolean;
-    size: "md" | "sm" | "lg";
-}>({ "emptyText": "自定义emptyText", "loading": false, "striped": false, "bordered": false, "size": "md" });
+import { ref, computed } from "vue";
+import { HysTable, HysCheckbox, HysSelect, type HysTableColumn } from "hys-ui";
+type Person = {
+  id: number;
+  name: string;
+  team: string;
+  age: number;
+  budget: number;
+  note: string;
+  active: boolean;
+};
+const rows = ref<Person[]>(
+  Array.from({ length: 18 }, (_, i) => ({
+    id: i + 1,
+    name:
+      ["陈晓", "林夕", "周宁", "许晨", "方悦", "李然"][i % 6] +
+      (i >= 6 ? " " + (i + 1) : ""),
+    team: ["design", "dev", "qa"][i % 3],
+    age: 24 + (i % 12),
+    budget: 1200 + i * 350,
+    note: "负责产品设计、研发协作和交付跟进，记录工作进展与阶段目标。",
+    active: i % 4 !== 0,
+  })),
+);
+const columns: HysTableColumn<Person>[] = [
+  { key: "name", label: "姓名", width: 140, sortable: true },
+  {
+    key: "team",
+    label: "团队",
+    width: 130,
+    filters: [
+      { label: "设计", value: "design" },
+      { label: "研发", value: "dev" },
+      { label: "质量", value: "qa" },
+    ],
+  },
+  { key: "age", label: "年龄", width: 100, sortable: true, align: "right" },
+  {
+    key: "budget",
+    label: "预算",
+    width: 140,
+    align: "right",
+    sortable: true,
+    summary: "sum",
+  },
+];
+const size = ref<"sm" | "md" | "lg">("md"),
+  striped = ref(true),
+  bordered = ref(false),
+  header = ref(true),
+  index = ref(true),
+  loading = ref(false);
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>空数据提示</span><code>emptyText</code></span><DemoInput v-model="demoConfig.emptyText"/></label>
-<label class="demo-field"><span class="demo-control-label"><span>尺寸</span><code>size</code></span><DemoSelect :model-value="demoConfig.size" @update:model-value="demoConfig.size=$event as typeof demoConfig.size" :options='[{"label":"md","value":"md"},{"label":"sm","value":"sm"},{"label":"lg","value":"lg"}]'/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.striped" label="striped"/></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.bordered" label="bordered"/><small>显示边框</small></div></div></section></div><div class="demo-content"><HysTable v-bind="demoConfig" :rows="rows" :columns="[{key:'id',label:'编号'},{key:'name',label:'任务名称'}]"/></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div>
+    <div class="demo-controls">
+      <section class="demo-control-section">
+        <h3>外观设置</h3>
+        <div class="demo-control-fields">
+          <label class="demo-field"
+            >尺寸<HysSelect
+              v-model="size"
+              :options="[
+                { label: '小尺寸', value: 'sm' },
+                { label: '标准尺寸', value: 'md' },
+                { label: '大尺寸', value: 'lg' },
+              ]"
+          /></label>
+        </div>
+        <div class="demo-control-toggles">
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="striped">斑马纹</HysCheckbox>
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="bordered">纵向边框</HysCheckbox>
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="header">显示表头</HysCheckbox>
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="index">显示序号</HysCheckbox>
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="loading">加载状态</HysCheckbox>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="demo-content">
+      <HysTable
+        :rows="rows.slice(0, 5)"
+        :columns="columns"
+        :size="size"
+        :striped="striped"
+        :bordered="bordered"
+        :show-header="header"
+        :show-index="index"
+        :loading="loading"
+      />
+    </div>
+  </div>
+</template>
