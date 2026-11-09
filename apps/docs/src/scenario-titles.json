@@ -283,7 +283,10 @@
       "Dependencies": "前置依赖与交互连接",
       "DependencyRouting": "折返连线与排期重叠",
       "Reconnecting": "重新连接与终点调整",
-      "MultipleDependencies": "多前置关系与精确选择"
+      "MultipleDependencies": "多前置关系与精确选择",
+      "History": "撤销与重做",
+      "Conflicts": "排期冲突与数据检查",
+      "ConflictPreview": "拖动中的冲突预览"
     }
   }
 }

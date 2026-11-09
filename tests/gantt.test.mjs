@@ -70,7 +70,7 @@ globalThis.ResizeObserver = class {
     observers.delete(this);
   }
 };
-const { createApp, h, ref, shallowReactive, nextTick, KeepAlive } =
+const { createApp, h, ref, reactive, shallowReactive, nextTick, KeepAlive } =
     await import("vue"),
   ui = await import("../packages/ui/dist/index.js"),
   mounts = new Set();
@@ -100,7 +100,10 @@ async function mount(Component, values = {}, accept = true) {
       "on" + name[0].toUpperCase() + name.slice(1),
       (...args) => {
         (events[name] ??= []).push(args);
-        if (accept && name.startsWith("update:"))
+        if (
+          name.startsWith("update:") &&
+          (typeof accept === "function" ? accept(name, args) : accept)
+        )
           props[name.slice(7)] = args[0];
       },
     ]),
@@ -874,4 +877,293 @@ test("Picker task-location actions do not open details and retarget actions pres
   await key(a.vm.viewport, "Enter");
   assert.deepEqual(a.props.items[2].dependencies, ["a"]);
   assert.deepEqual(a.props.items[3].dependencies, ["b"]);
+});
+
+test("Gantt history records date edits and replays them without duplicating entries", async () => {
+  const a = await mount(ui.HysGantt, { items: [task("a")], editable: true });
+  assert.equal(a.vm.canUndo, false);
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  assert.equal(a.vm.historyState.undoCount, 1);
+  assert.equal(a.vm.canUndo, true);
+  assert.equal(await a.vm.undo(), true);
+  assert.equal(a.props.items[0].start, "2026-11-01");
+  assert.equal(a.vm.historyState.undoCount, 0);
+  assert.equal(a.vm.canRedo, true);
+  assert.equal(await a.vm.redo(), true);
+  assert.equal(a.props.items[0].start, "2026-11-02");
+  assert.equal(a.vm.historyState.undoCount, 1);
+  assert.equal(a.vm.canRedo, false);
+  assert.equal(a.events.undo[0][0].type, "nudge");
+  assert.equal(a.events.redo[0][0].taskIds[0], "a");
+});
+test("One dependency operation is one history entry, including atomic endpoint moves", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a"), task("b"), task("c")],
+    editable: true,
+  });
+  await a.vm.addDependency("a", "b");
+  assert.equal(a.vm.historyState.undoCount, 1);
+  await a.vm.undo();
+  assert.equal(a.props.items[1].dependencies, undefined);
+  await a.vm.redo();
+  assert.deepEqual(a.props.items[1].dependencies, ["a"]);
+  await a.vm.moveDependency("a", "b", "c");
+  assert.equal(a.vm.historyState.undoCount, 2);
+  assert.equal(a.events.dependencyMove.length, 1);
+  const requests = a.events["update:items"].length;
+  await a.vm.undo();
+  assert.equal(a.events["update:items"].length, requests + 1);
+  assert.deepEqual(a.props.items[1].dependencies, ["a"]);
+  assert.equal(a.props.items[2].dependencies, undefined);
+  assert.equal(a.events.dependencyMove.length, 1);
+  await a.vm.redo();
+  await a.vm.removeDependency("a", "c");
+  await a.vm.undo();
+  assert.deepEqual(a.props.items[2].dependencies, ["a"]);
+  assert.equal(a.events.dependencyRemove.length, 1);
+});
+test("New edits discard the redo branch and bounded history drops the oldest entries", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task(1)],
+    editable: true,
+    historyLimit: 2,
+  });
+  for (let n = 0; n < 3; n++)
+    await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  assert.equal(a.vm.historyState.undoCount, 2);
+  await a.vm.undo();
+  await a.vm.undo();
+  assert.equal(a.props.items[0].start, "2026-11-02");
+  assert.equal(a.vm.canUndo, false);
+  await key(a.find(".hys-ui-pg-bar"), "ArrowLeft", { altKey: true });
+  assert.equal(a.vm.historyState.redoCount, 0);
+  a.vm.clearHistory();
+  assert.equal(a.vm.canUndo, false);
+  assert.equal(a.props.items[0].start, "2026-11-01");
+});
+test("Rejected edits do not enter history, and rejected replay leaves the stack intact", async () => {
+  let accept = true;
+  const a = await mount(
+    ui.HysGantt,
+    { items: [task("a")], editable: true },
+    () => accept,
+  );
+  accept = false;
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  assert.equal(a.vm.historyState.undoCount, 0);
+  accept = true;
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  accept = false;
+  assert.equal(await a.vm.undo(), false);
+  assert.equal(a.props.items[0].start, "2026-11-02");
+  assert.equal(a.vm.historyState.undoCount, 1);
+  assert.equal(a.vm.historyState.redoCount, 0);
+  assert.equal(a.events.historyInvalid.at(-1)[0].reason, "rejected");
+  accept = true;
+  assert.equal(await a.vm.undo(), true);
+});
+test("History preserves metadata updates and resets on external schedule or dataset changes", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a", { progress: 10 })],
+    editable: true,
+  });
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  a.props.items = a.props.items.map((item) => ({
+    ...item,
+    progress: 75,
+    title: "Renamed",
+  }));
+  await settle();
+  assert.equal(a.vm.historyState.undoCount, 1);
+  await a.vm.undo();
+  assert.equal(a.props.items[0].progress, 75);
+  assert.equal(a.props.items[0].title, "Renamed");
+  a.props.items = a.props.items.map((item) => ({ ...item, end: "2026-11-10" }));
+  await settle();
+  assert.equal(a.vm.historyState.redoCount, 0);
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  a.props.items = [task("new")];
+  await settle();
+  assert.equal(a.vm.historyState.undoCount, 0);
+});
+test("History respects current permissions and can be disabled independently of editing", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task(1)],
+    editable: true,
+    history: false,
+  });
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  assert.equal(a.props.items[0].start, "2026-11-02");
+  assert.equal(a.vm.historyState.undoCount, 0);
+  a.props.history = true;
+  await settle();
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  a.props.editable = false;
+  await settle();
+  assert.equal(a.vm.canUndo, false);
+  assert.equal(await a.vm.undo(), false);
+  a.props.editable = true;
+  a.props.showHistoryControls = false;
+  await settle();
+  assert.equal(a.vm.canUndo, true);
+  assert.equal(a.find(".hys-ui-pg-history-controls"), null);
+  a.props.items = a.props.items.map((item) => ({ ...item, disabled: true }));
+  await settle();
+  assert.equal(a.vm.canUndo, false);
+  assert.equal(a.vm.historyState.undoCount, 1);
+});
+test("Gantt shortcuts stay inside the chart and preserve native input undo", async () => {
+  const a = await mount(ui.HysGantt, {
+      items: [task("a"), task("b", { dependencies: ["a"] })],
+      editable: true,
+    }),
+    b = await mount(ui.HysGantt, { items: [task("other")], editable: true });
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  await key(b.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  a.find(".hys-ui-pg-conflict-summary button").click();
+  await settle();
+  const input = a.find(".hys-ui-pg-conflict-panel input");
+  const native = new KeyboardEvent("keydown", {
+    key: "z",
+    ctrlKey: true,
+    bubbles: true,
+    cancelable: true,
+  });
+  input.dispatchEvent(native);
+  await settle();
+  assert.equal(native.defaultPrevented, false);
+  assert.equal(a.vm.historyState.undoCount, 1);
+  await key(a.vm.viewport, "z", { ctrlKey: true });
+  assert.equal(a.vm.historyState.undoCount, 0);
+  assert.equal(b.vm.historyState.undoCount, 1);
+  await key(a.vm.viewport, "Z", { metaKey: true, shiftKey: true });
+  assert.equal(a.vm.historyState.undoCount, 1);
+});
+test("Concurrent edits are safely rejected while the first model update is pending", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [task("a"), task("b"), task("c")],
+    editable: true,
+  });
+  const result = await Promise.all([
+    a.vm.addDependency("a", "b"),
+    a.vm.addDependency("a", "c"),
+  ]);
+  assert.deepEqual(result, [true, false]);
+  assert.equal(a.events.dependencyInvalid.at(-1)[0].reason, "busy");
+  assert.equal(a.vm.historyState.undoCount, 1);
+});
+test("History replay works on deep virtual rows without replacing unchanged task objects", async () => {
+  const items = Array.from({ length: 10000 }, (_, index) => task(index)),
+    a = await mount(ui.HysGantt, { items, editable: true, virtual: true });
+  await a.vm.scrollToTask(9999);
+  await key(a.all(".hys-ui-pg-bar").at(-1), "ArrowRight", { altKey: true });
+  assert.equal(a.vm.historyState.undoCount, 1);
+  await a.vm.undo();
+  assert.equal(a.props.items[9999].start, "2026-11-01");
+  assert.equal(a.props.items[0], items[0]);
+  assert(a.all(".hys-ui-pg-row").length < 50);
+});
+test("Cached history survives page switches and rejects inactive replay commands", async () => {
+  const visible = ref(true),
+    items = ref([task("a")]),
+    api = ref(),
+    Page = {
+      setup: () => () =>
+        h(ui.HysGantt, {
+          ref: api,
+          items: items.value,
+          editable: true,
+          "onUpdate:items": (value) => (items.value = value),
+        }),
+    };
+  const a = await mount({
+    setup: () => () =>
+      h(KeepAlive, null, () => (visible.value ? h(Page) : null)),
+  });
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  visible.value = false;
+  await settle();
+  assert.equal(await api.value.undo(), false);
+  visible.value = true;
+  await settle();
+  assert.equal(api.value.historyState.undoCount, 1);
+  assert.equal(await api.value.undo(), true);
+  assert.equal(items.value[0].start, "2026-11-01");
+});
+test("Conflict results update on accepted edits and history replay without changing dates automatically", async () => {
+  const a = await mount(ui.HysGantt, {
+    items: [
+      task("a"),
+      task("b", {
+        start: "2026-11-04",
+        end: "2026-11-06",
+        dependencies: ["a"],
+      }),
+    ],
+    editable: true,
+  });
+  assert.equal(a.vm.conflicts.length, 0);
+  await key(a.all(".hys-ui-pg-bar")[1], "ArrowLeft", { altKey: true });
+  assert.equal(a.vm.conflicts.length, 1);
+  assert.equal(a.vm.conflicts[0].days, 1);
+  assert.equal(a.props.items[1].start, "2026-11-03");
+  await a.vm.undo();
+  assert.equal(a.vm.conflicts.length, 0);
+  await a.vm.redo();
+  assert.equal(a.vm.conflicts.length, 1);
+  a.props.showConflicts = false;
+  await settle();
+  assert.equal(a.find(".hys-ui-pg-conflict-area"), null);
+  assert.equal(a.vm.conflicts.length, 1);
+});
+
+test("A complete pointer gesture produces one history entry and preserves metadata updated during the drag", async () => {
+  const a = await mount(ui.HysGantt, {
+      items: [task("a", { progress: 10 })],
+      editable: true,
+    }),
+    bar = a.find(".hys-ui-pg-bar");
+  let captured = false;
+  bar.setPointerCapture = () => (captured = true);
+  bar.hasPointerCapture = () => captured;
+  bar.releasePointerCapture = () => (captured = false);
+  const pointer = (type, x) => {
+    const event = new MouseEvent(type, {
+      clientX: x,
+      button: 0,
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(event, "pointerId", { value: 7 });
+    bar.dispatchEvent(event);
+  };
+  pointer("pointerdown", 0);
+  for (const x of [12, 24, 36, 54, 72]) pointer("pointermove", x);
+  assert.equal(a.events["update:items"], undefined);
+  a.props.items = a.props.items.map((item) => ({ ...item, progress: 85 }));
+  await settle();
+  pointer("pointerup", 72);
+  await settle();
+  assert.equal(a.vm.historyState.undoCount, 1);
+  assert.equal(a.events["update:items"].length, 1);
+  assert.equal(a.props.items[0].start, "2026-11-03");
+  assert.equal(a.props.items[0].progress, 85);
+  await a.vm.undo();
+  assert.equal(a.props.items[0].start, "2026-11-01");
+  assert.equal(a.props.items[0].progress, 85);
+});
+test("Batched in-place host acceptance is recorded and replayed as one date transaction", async () => {
+  const items = reactive([task("a")]),
+    a = await mount(ui.HysGantt, { items, editable: true }, (name, args) => {
+      if (name === "update:items")
+        args[0].forEach((item, index) => Object.assign(items[index], item));
+      return false;
+    });
+  await key(a.find(".hys-ui-pg-bar"), "ArrowRight", { altKey: true });
+  assert.equal(a.vm.historyState.undoCount, 1);
+  assert.equal(items[0].start, "2026-11-02");
+  assert.equal(items[0].end, "2026-11-04");
+  assert.equal(await a.vm.undo(), true);
+  assert.equal(items[0].start, "2026-11-01");
+  assert.equal(items[0].end, "2026-11-03");
 });

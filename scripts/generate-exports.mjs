@@ -13,5 +13,5 @@ code+="export type {HysAvatarProps,HysAvatarSize,HysAvatarBreakpoint,HysAvatarFi
 code+="export type {HysAutocompleteProps,HysAutocompleteRow,HysAutocompleteOption,HysAutocompleteItem,HysAutocompleteGroup,HysAutocompleteDataOption,HysAutocompleteContext,HysAutocompleteCallback,HysAutocompleteFetch,HysAutocompleteInstance} from './composables/autocomplete'\n"
 code+="export type {HysChoiceValue,HysChoiceFieldNames,HysChoiceOption,HysChoiceDataOption,HysCheckboxChange,HysCheckboxReject,HysCheckboxInstance,HysCheckboxGroupInstance,HysRadioInstance,HysRadioGroupInstance,HysSwitchGuardContext,HysSwitchInstance} from './composables/choice'\n"
 code+="export type {HysRatingIcon,HysRatingLevels,HysRatingInstance} from './composables/rating'\nexport type {HysSegmentedOption,HysSegmentedInstance} from './composables/segmented'\n"
-code+="export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyChange,HysGanttDependencyMove,HysGanttDependencyInvalid,HysGanttDependencyReason} from './composables/gantt'\n"
+code+="export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyChange,HysGanttDependencyMove,HysGanttDependencyInvalid,HysGanttDependencyReason,HysGanttHistoryType,HysGanttHistoryEntry,HysGanttHistoryState,HysGanttHistoryInvalid,HysGanttConflictType,HysGanttConflict} from './composables/gantt'\n"
 fs.writeFileSync(root+'index.ts',code)

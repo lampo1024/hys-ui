@@ -4690,6 +4690,46 @@
         "default": "true",
         "description": "显示依赖连线与连接点，默认 true；隐藏时保留关系数据",
         "global": false
+      },
+      {
+        "name": "history",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用排期及依赖的撤销/重做，默认 true",
+        "global": false
+      },
+      {
+        "name": "historyLimit",
+        "type": "number | undefined",
+        "required": false,
+        "default": "50",
+        "description": "最大记录步数，默认 50；0 停止记录，范围 0–1000",
+        "global": false
+      },
+      {
+        "name": "historyKeyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用图表内 Ctrl/⌘+Z、Ctrl+Y、Ctrl/⌘+Shift+Z；文本输入保留原生撤销",
+        "global": false
+      },
+      {
+        "name": "showHistoryControls",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示内置撤销与重做按钮，实例方法不受影响",
+        "global": false
+      },
+      {
+        "name": "showConflicts",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示任务、连线与详情中的排期警告；隐藏时仍可读取 conflicts",
+        "global": false
       }
     ],
     "events": [
@@ -4754,7 +4794,7 @@
         "type": "[info: HysGanttDependencyInvalid]",
         "required": false,
         "default": "",
-        "description": "关系编辑未通过：(sourceId,targetId,type,reason)，改接时同时提供 previousTargetId；reason 为 missing / disabled / self / duplicate / cycle / rejected"
+        "description": "关系编辑未通过：(sourceId,targetId,type,reason)，改接时同时提供 previousTargetId；reason 为 missing / disabled / self / duplicate / cycle / rejected / busy"
       },
       {
         "name": "dependencyMove",
@@ -4776,6 +4816,41 @@
         "required": false,
         "default": "",
         "description": "拖动释放、键盘调整或双击还原后触发，返回最终像素宽度"
+      },
+      {
+        "name": "historyChange",
+        "type": "[state: HysGanttHistoryState]",
+        "required": false,
+        "default": "",
+        "description": "历史数量、标签、可用状态或 pending 变化时触发"
+      },
+      {
+        "name": "undo",
+        "type": "[entry: HysGanttHistoryEntry]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受撤销后触发，返回操作类型、标签与 taskIds"
+      },
+      {
+        "name": "redo",
+        "type": "[entry: HysGanttHistoryEntry]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受重做后触发，返回操作信息"
+      },
+      {
+        "name": "historyInvalid",
+        "type": "[info: HysGanttHistoryInvalid]",
+        "required": false,
+        "default": "",
+        "description": "无法恢复历史：(action, reason)；reason 为 disabled / busy / missing / stale / rejected"
+      },
+      {
+        "name": "conflictChange",
+        "type": "[conflicts: HysGanttConflict[]]",
+        "required": false,
+        "default": "",
+        "description": "初始化及诊断内容变化时触发；拖动预览不会提交此事件"
       }
     ],
     "slots": [],
@@ -4835,6 +4910,55 @@
         "required": true,
         "default": "",
         "description": "改接 sourceId → previousTargetId 至 targetId；一次更新原/新两个后置任务，校验未通过保留原关系，返回 Promise<boolean>"
+      },
+      {
+        "name": "canUndo",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前是否可撤销，考虑权限、停用与等待状态"
+      },
+      {
+        "name": "canRedo",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前是否可重做"
+      },
+      {
+        "name": "historyState",
+        "type": "HysGanttHistoryState",
+        "required": true,
+        "default": "",
+        "description": "撤销/重做数量、标签、可用状态与 pending"
+      },
+      {
+        "name": "undo",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "撤销最近一步，返回 Promise<boolean>；仅恢复当前允许编辑的字段，宿主拒绝时保留栈"
+      },
+      {
+        "name": "redo",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "重做一步；不重复生成历史项，返回 Promise<boolean>"
+      },
+      {
+        "name": "clearHistory",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "清空撤销/重做栈，不修改任务"
+      },
+      {
+        "name": "conflicts",
+        "type": "readonly HysGanttConflict[]",
+        "required": true,
+        "default": "",
+        "description": "当前诊断结果；包括 dependency-order、invalid-date、missing-dependency、dependency-cycle"
       }
     ]
   },

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add bounded Gantt undo/redo for accepted scheduling and dependency edits, with atomic replay, scoped shortcuts and external-update safety.
+- Add dependency-order and invalid-data diagnostics, cycle detection, paged conflict inspection and incident-only drag previews.
+
 - Use one shared Gantt scroll viewport for task names and timelines, with pinned date headers and task labels; prevent clipped rows and blank space after vertical scrolling.
 - Add Gantt viewport height controls and multi-task scrolling examples; preserve horizontal fitting and center bars within configurable row heights.
 - Add optional Gantt virtual rows and task-location methods, with bounded rendering, cached-page scroll restoration and independent large-data examples.

@@ -114,4 +114,4 @@ export type {HysAutocompleteProps,HysAutocompleteRow,HysAutocompleteOption,HysAu
 export type {HysChoiceValue,HysChoiceFieldNames,HysChoiceOption,HysChoiceDataOption,HysCheckboxChange,HysCheckboxReject,HysCheckboxInstance,HysCheckboxGroupInstance,HysRadioInstance,HysRadioGroupInstance,HysSwitchGuardContext,HysSwitchInstance} from './composables/choice'
 export type {HysRatingIcon,HysRatingLevels,HysRatingInstance} from './composables/rating'
 export type {HysSegmentedOption,HysSegmentedInstance} from './composables/segmented'
-export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyChange,HysGanttDependencyMove,HysGanttDependencyInvalid,HysGanttDependencyReason} from './composables/gantt'
+export type {HysGanttScrollOptions,HysGanttInstance,HysGanttDependencyChange,HysGanttDependencyMove,HysGanttDependencyInvalid,HysGanttDependencyReason,HysGanttHistoryType,HysGanttHistoryEntry,HysGanttHistoryState,HysGanttHistoryInvalid,HysGanttConflictType,HysGanttConflict} from './composables/gantt'

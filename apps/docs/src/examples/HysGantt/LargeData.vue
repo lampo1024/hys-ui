@@ -29,20 +29,26 @@ watch(
   count,
   (size) => {
     const dates = Array.from({ length: 70 }, (_, index) => dateAt(index - 20));
-    items.value = Array.from({ length: size }, (_, index) => ({
-      id: "bulk-" + (index + 1),
-      title:
-        "任务 " +
-        String(index + 1).padStart(5, "0") +
-        " · " +
-        ["需求分析", "接口开发", "联调验证", "测试验收"][index % 4],
-      owner: ["李工", "王工", "陈工", "林工"][index % 4],
-      status: index % 5 === 4 ? "已完成" : "进行中",
-      progress: (index % 5) * 25,
-      start: dates[index % 40],
-      end: dates[(index % 40) + 1 + (index % 8)],
-      dependencies: index > 0 && index % 5 === 0 ? ["bulk-" + index] : [],
-    }));
+    items.value = Array.from({ length: size }, (_, index) => {
+      const dependent = index > 0 && index % 5 === 0,
+        start = dependent
+          ? ((index - 1) % 40) + 2 + ((index - 1) % 8)
+          : index % 40;
+      return {
+        id: "bulk-" + (index + 1),
+        title:
+          "任务 " +
+          String(index + 1).padStart(5, "0") +
+          " · " +
+          ["需求分析", "接口开发", "联调验证", "测试验收"][index % 4],
+        owner: ["李工", "王工", "陈工", "林工"][index % 4],
+        status: index % 5 === 4 ? "已完成" : "进行中",
+        progress: (index % 5) * 25,
+        start: dates[start],
+        end: dates[start + 1 + (index % 8)],
+        dependencies: index > 0 && index % 5 === 0 ? ["bulk-" + index] : [],
+      };
+    });
     target.value = 1;
     selected.value = null;
     message.value = "";

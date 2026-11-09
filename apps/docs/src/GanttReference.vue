@@ -1,5 +1,34 @@
 <template>
   <section class="notes">
+    <h2>撤销与重做</h2>
+    <p>
+      history 默认启用，historyLimit 默认保留 50 步，可设为 0
+      停止记录；showHistoryControls 和 historyKeyboard
+      分别控制工具栏与快捷键。一次任务移动、起止日期调整、键盘微调、关系增删或终点改接只记作一步；仅在宿主接受
+      update:items 后入栈，取消操作和拒绝更新不记入历史。
+    </p>
+    <p>
+      undo / redo 返回 Promise&lt;boolean&gt;，通过一次 update:items
+      原子恢复受影响任务，并分别触发 change；成功后触发 undo 或
+      redo，恢复过程不重复触发 dependencyAdd / dependencyRemove /
+      dependencyMove。canUndo、canRedo、historyState
+      可用于宿主工具栏，clearHistory 只清空记录，不改数据。
+    </p>
+    <p>
+      历史按字段保存差量，恢复时保留任务标题、负责人、进度等最新数据；宿主从外部修改排期、依赖或任务集合时清空旧历史。操作遵守当前编辑权限。缓存页面保留历史并停用快捷键，返回后可继续恢复。选择、视图、滚动和列宽不进入排期历史。
+    </p>
+  </section>
+  <section class="notes">
+    <h2>排期冲突检查</h2>
+    <p>
+      当前关系为完成→开始，日期包含结束当天，因此后置任务最早从前置任务结束的次日开始。组件检查前后置日期冲突、无效日期、失效引用和外部数据中的循环依赖；不会自动推迟任务或修改宿主数据。showConflicts
+      可隐藏图表提示，conflicts 与 conflictChange 仍提供诊断结果。
+    </p>
+    <p>
+      任务与冲突连线使用警示标记，详情支持搜索、分页和定位，定位不打开业务详情。循环检测使用迭代图遍历，能区分环内任务与环下游任务。拖动时仅重新检查该任务相连的依赖，并预览新增及消除的冲突；松开、撤销和重做后更新完整结果。
+    </p>
+  </section>
+  <section class="notes">
     <h2>滚动区域与大数据</h2>
     <p>
       点击时间轴空白处或按 Esc 可取消任务行选中；宿主也可将 v-model 设为

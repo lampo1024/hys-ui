@@ -27,20 +27,27 @@ function dateAt(offset: number) {
 watch(
   count,
   (value) => {
-    items.value = Array.from({ length: value }, (_, index) => ({
-      id: "task-" + index,
-      title:
-        "任务 " +
-        String(index + 1).padStart(3, "0") +
-        " · 项目交付阶段 " +
-        ((index % 5) + 1),
-      owner: ["李工", "王工", "陈工"][index % 3],
-      status: index % 5 === 4 ? "已完成" : "进行中",
-      progress: (index % 5) * 25,
-      start: dateAt((index % 16) - 8),
-      end: dateAt((index % 16) - 6 + (index % 7)),
-      dependencies: index > 0 && index % 4 === 0 ? ["task-" + (index - 1)] : [],
-    }));
+    items.value = Array.from({ length: value }, (_, index) => {
+      const dependent = index > 0 && index % 4 === 0,
+        start = dependent
+          ? ((index - 1) % 16) - 5 + ((index - 1) % 7)
+          : (index % 16) - 8;
+      return {
+        id: "task-" + index,
+        title:
+          "任务 " +
+          String(index + 1).padStart(3, "0") +
+          " · 项目交付阶段 " +
+          ((index % 5) + 1),
+        owner: ["李工", "王工", "陈工"][index % 3],
+        status: index % 5 === 4 ? "已完成" : "进行中",
+        progress: (index % 5) * 25,
+        start: dateAt(start),
+        end: dateAt(start + 2 + (index % 7)),
+        dependencies:
+          index > 0 && index % 4 === 0 ? ["task-" + (index - 1)] : [],
+      };
+    });
     selected.value = null;
   },
   { immediate: true },

@@ -52,7 +52,10 @@ interface Context<T extends Task> {
   position: (id: Id) => Position | undefined;
   locate: (id: Id, options?: HysGanttScrollOptions) => Promise<boolean>;
   cancelTask: () => void;
-  update: (items: T[]) => void;
+  update: (
+    items: T[],
+    info: HysGanttDependencyChange | HysGanttDependencyMove,
+  ) => boolean;
   change: (item: T) => void;
   added: (info: HysGanttDependencyChange, item: T) => void;
   removed: (info: HysGanttDependencyChange, item: T) => void;
@@ -66,6 +69,7 @@ const reasons: Record<HysGanttDependencyReason, string> = {
   duplicate: "这条前置依赖已存在",
   cycle: "该连接会形成循环依赖",
   rejected: "依赖更新请求未被接受",
+  busy: "上一项修改尚未完成，请稍后再试",
 };
 export function ganttDependencyPath(
   from: { x: number; y: number; w: number },
@@ -172,7 +176,15 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
             ? [...new Set([...(target.dependencies ?? []), info.sourceId])]
             : (target.dependencies ?? []).filter((id) => id !== info.sourceId),
       } as T;
-    ctx.update(ctx.items().map((item) => (item.id === next.id ? next : item)));
+    if (
+      !ctx.update(
+        ctx.items().map((item) => (item.id === next.id ? next : item)),
+        info,
+      )
+    ) {
+      reject(info, "busy");
+      return false;
+    }
     ctx.change(next);
     await nextTick();
     if (!ctx.live()) return false;
@@ -246,17 +258,23 @@ export function useGanttDependencies<T extends Task>(ctx: Context<T>) {
         ]),
       ],
     } as T;
-    ctx.update(
-      ctx
-        .items()
-        .map((item) =>
-          item.id === previousTargetId
-            ? previous
-            : item.id === targetId
-              ? target
-              : item,
-        ),
-    );
+    if (
+      !ctx.update(
+        ctx
+          .items()
+          .map((item) =>
+            item.id === previousTargetId
+              ? previous
+              : item.id === targetId
+                ? target
+                : item,
+          ),
+        info,
+      )
+    ) {
+      reject(info, "busy");
+      return false;
+    }
     ctx.change(previous);
     ctx.change(target);
     await nextTick();

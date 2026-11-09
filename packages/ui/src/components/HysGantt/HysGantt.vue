@@ -12,15 +12,21 @@ import {
   onActivated,
   onDeactivated,
   onBeforeUnmount,
+  useId,
 } from "vue";
 import HysSegmented from "../HysSegmented/HysSegmented.vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysInput from "../HysInput/HysInput.vue";
+import HysPagination from "../HysPagination/HysPagination.vue";
 import type {
   HysGanttScrollOptions,
   HysGanttDependencyChange,
   HysGanttDependencyInvalid,
   HysGanttDependencyMove,
+  HysGanttHistoryEntry,
+  HysGanttHistoryState,
+  HysGanttHistoryInvalid,
+  HysGanttConflict,
 } from "../../composables/gantt";
 import {
   useGanttDependencies,
@@ -35,12 +41,22 @@ import {
   LocateFixed,
   CornerDownRight,
   Search,
+  Undo2,
+  Redo2,
+  TriangleAlert,
+  ChevronDown,
 } from "lucide-vue-next";
 import { useGanttLabelResize } from "../../composables/useGanttLabelResize";
 import {
   useFloating,
   type FloatingAnchor,
 } from "../../composables/useFloating";
+import { useGanttHistory } from "../../composables/useGanttHistory";
+import {
+  analyzeGanttSchedule,
+  previewGanttConflicts,
+  ganttEdgeKey,
+} from "../../composables/ganttConflicts";
 export interface GanttItem {
   id: string | number;
   title: string;
@@ -72,6 +88,11 @@ const props = withDefaults(
     overscan?: number;
     dependencyEditable?: boolean;
     showDependencies?: boolean;
+    history?: boolean;
+    historyLimit?: number;
+    historyKeyboard?: boolean;
+    showHistoryControls?: boolean;
+    showConflicts?: boolean;
   }>(),
   {
     scale: "day",
@@ -87,6 +108,11 @@ const props = withDefaults(
     overscan: 6,
     dependencyEditable: undefined,
     showDependencies: true,
+    history: true,
+    historyLimit: 50,
+    historyKeyboard: true,
+    showHistoryControls: true,
+    showConflicts: true,
   },
 );
 const emit = defineEmits<{
@@ -106,6 +132,11 @@ const emit = defineEmits<{
   ];
   "update:labelWidth": [width: number];
   labelResize: [width: number];
+  historyChange: [state: HysGanttHistoryState];
+  undo: [entry: HysGanttHistoryEntry];
+  redo: [entry: HysGanttHistoryEntry];
+  historyInvalid: [info: HysGanttHistoryInvalid];
+  conflictChange: [conflicts: HysGanttConflict[]];
 }>();
 const currentScale = ref<Scale>(props.scale);
 watch(
@@ -485,6 +516,104 @@ const incomingEndpoints = computed(() =>
 const dependencyEnabled = computed(
   () => props.dependencyEditable ?? props.editable,
 );
+const history = useGanttHistory<GanttItem>({
+  items: () => props.items,
+  enabled: () => props.history,
+  limit: () => props.historyLimit,
+  live: () => active,
+  allowed: (item, fields) =>
+    !item.disabled &&
+    fields.every((field) =>
+      field === "dependencies" ? dependencyEnabled.value : props.editable,
+    ),
+  send: (items) => emit("update:items", items),
+  change: (item) => emit("change", item),
+  beforeReplay: () => {
+    cancelDrag();
+    links.cancel();
+    links.clearSelected();
+    picker.close();
+  },
+  external: () => {
+    cancelDrag();
+    links.cancel();
+    links.clearSelected();
+    picker.close();
+  },
+  state: (state) => emit("historyChange", state),
+  invalid: (info) => emit("historyInvalid", info),
+  replay: (action, entry) => {
+    if (action === "undo") emit("undo", entry);
+    else emit("redo", entry);
+    scroller.value?.focus({ preventScroll: true });
+  },
+});
+const sourceItems = computed(
+  () => new Map(props.items.map((item) => [item.id, item])),
+);
+const scheduleAnalysis = computed(() => analyzeGanttSchedule(props.items));
+const scheduleConflicts = computed(() => scheduleAnalysis.value.conflicts);
+const publicConflicts = computed(() =>
+  scheduleConflicts.value.map((conflict) => ({ ...conflict })),
+);
+const conflictPanelOpen = ref(false),
+  conflictQuery = ref(""),
+  conflictPage = ref(1);
+const conflictPanelId = "hys-gantt-conflicts-" + useId();
+const filteredConflicts = computed(() => {
+  const query = conflictQuery.value.trim().toLocaleLowerCase();
+  return query
+    ? scheduleConflicts.value.filter((item) =>
+        (
+          item.taskTitle +
+          " " +
+          item.taskId +
+          " " +
+          (item.sourceTitle ?? "") +
+          " " +
+          (item.sourceId ?? "") +
+          " " +
+          item.message
+        )
+          .toLocaleLowerCase()
+          .includes(query),
+      )
+    : scheduleConflicts.value;
+});
+const pagedConflicts = computed(() =>
+  filteredConflicts.value.slice(
+    (conflictPage.value - 1) * 10,
+    conflictPage.value * 10,
+  ),
+);
+watch([filteredConflicts, conflictQuery], () => {
+  conflictPage.value = Math.min(
+    conflictPage.value,
+    Math.max(1, Math.ceil(filteredConflicts.value.length / 10)),
+  );
+});
+watch(conflictQuery, () => (conflictPage.value = 1));
+watch(
+  () => props.showConflicts,
+  (value) => {
+    if (!value) conflictPanelOpen.value = false;
+  },
+);
+let conflictSignature = "";
+watch(
+  scheduleConflicts,
+  (value) => {
+    const signature = JSON.stringify(value);
+    if (signature !== conflictSignature) {
+      conflictSignature = signature;
+      emit(
+        "conflictChange",
+        value.map((item) => ({ ...item })),
+      );
+    }
+  },
+  { immediate: true },
+);
 const links = useGanttDependencies<GanttItem>({
   items: () => props.items,
   rows: () => normalized.value,
@@ -498,7 +627,24 @@ const links = useGanttDependencies<GanttItem>({
   position: (id) => positions.value.get(id),
   locate: scrollToTask,
   cancelTask: cancelDrag,
-  update: (items) => emit("update:items", items),
+  update: (items, info) =>
+    history.capture(items, {
+      type:
+        info.type === "add"
+          ? "dependency-add"
+          : info.type === "remove"
+            ? "dependency-remove"
+            : "dependency-move",
+      label:
+        (info.type === "add"
+          ? "添加依赖："
+          : info.type === "remove"
+            ? "删除依赖："
+            : "改接依赖：") +
+        (sourceItems.value.get(info.sourceId)?.title ?? info.sourceId) +
+        " → " +
+        (sourceItems.value.get(info.targetId)?.title ?? info.targetId),
+    }),
   change: (item) => emit("change", item),
   added: (info, item) => emit("dependencyAdd", info, item),
   removed: (info, item) => emit("dependencyRemove", info, item),
@@ -611,6 +757,7 @@ async function removeFromPicker(edge: (typeof allEdges.value)[number]) {
   else if (active) scroller.value?.focus({ preventScroll: true });
 }
 function pickerKeys(event: KeyboardEvent) {
+  if (historyShortcut(event)) return;
   if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
   if (
     event.target instanceof HTMLInputElement &&
@@ -742,6 +889,7 @@ function clearTaskSelection() {
   emit("update:modelValue", null);
 }
 function chartKey(event: KeyboardEvent) {
+  if (historyShortcut(event)) return;
   links.key(event);
   if (event.defaultPrevented || event.key !== "Escape") return;
   if (!drag.value && selected.value === null) return;
@@ -749,6 +897,37 @@ function chartKey(event: KeyboardEvent) {
   else clearTaskSelection();
   event.preventDefault();
   event.stopPropagation();
+}
+function historyShortcut(event: KeyboardEvent) {
+  if (
+    !history.enabled.value ||
+    !props.historyKeyboard ||
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.altKey ||
+    !(event.ctrlKey || event.metaKey)
+  )
+    return false;
+  const key = event.key.toLowerCase(),
+    redo = key === "y" || (key === "z" && event.shiftKey);
+  if (key !== "z" && key !== "y") return false;
+  if (
+    event.target instanceof Element &&
+    event.target.closest(
+      'input,textarea,select,[contenteditable="true"],[role="textbox"]',
+    )
+  )
+    return false;
+  event.preventDefault();
+  event.stopPropagation();
+  if (drag.value || links.draft.value || labelResize.resizing.value) {
+    cancelDrag();
+    links.cancel();
+    labelResize.cancel();
+    return true;
+  }
+  if (!history.pending.value) void (redo ? history.redo() : history.undo());
+  return true;
 }
 function clearEdgeOnSurface(event: Event) {
   // Pointer clicks were handled on press; the release click after a drag must
@@ -813,7 +992,8 @@ function pointerDown(
   t: GanttItem,
   type: "move" | "start" | "end",
 ) {
-  if (!props.editable || t.disabled || e.button !== 0) return;
+  if (!props.editable || t.disabled || e.button !== 0 || history.pending.value)
+    return;
   e.preventDefault();
   e.stopPropagation();
   (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -844,6 +1024,8 @@ function pointerEnd(e: PointerEvent) {
   drag.value = null;
   releasePointer();
   if (e.type === "pointercancel" || !state.days) return;
+  const current = sourceItems.value.get(state.id);
+  if (!props.editable || !current || current.disabled) return;
   const s = parseDate(state.original.start),
     end = parseDate(state.original.end);
   if (!s || !end) return;
@@ -858,15 +1040,30 @@ function pointerEnd(e: PointerEvent) {
     finish = Math.max(start, finish + state.days);
   }
   const next = {
-    ...state.original,
+    ...current,
     start: formatDay(start),
     end: formatDay(finish),
   };
-  emit(
-    "update:items",
-    props.items.map((t) => (t.id === next.id ? next : t)),
-  );
-  emit("change", next);
+  if (
+    history.capture(
+      props.items.map((t) => (t.id === next.id ? next : t)),
+      {
+        type:
+          state.type === "move"
+            ? "move"
+            : state.type === "start"
+              ? "resize-start"
+              : "resize-end",
+        label:
+          (state.type === "move"
+            ? "移动任务："
+            : state.type === "start"
+              ? "调整开始日期："
+              : "调整结束日期：") + next.title,
+      },
+    )
+  )
+    emit("change", next);
 }
 function preview(t: (typeof normalized.value)[number]) {
   const state = drag.value;
@@ -893,7 +1090,7 @@ function portStyle(t: (typeof normalized.value)[number]) {
   };
 }
 function nudge(t: GanttItem, offset: number) {
-  if (!props.editable || t.disabled) return;
+  if (!props.editable || t.disabled || history.pending.value) return;
   const s = parseDate(t.start),
     e = parseDate(t.end);
   if (!s || !e) return;
@@ -902,11 +1099,68 @@ function nudge(t: GanttItem, offset: number) {
     start: formatDay(atDay(s) + offset),
     end: formatDay(atDay(e) + offset),
   };
-  emit(
-    "update:items",
-    props.items.map((x) => (x.id === t.id ? next : x)),
-  );
-  emit("change", next);
+  if (
+    history.capture(
+      props.items.map((x) => (x.id === t.id ? next : x)),
+      { type: "nudge", label: "微调排期：" + next.title },
+    )
+  )
+    emit("change", next);
+}
+const dragConflictPreview = computed(() => {
+  const state = drag.value;
+  if (!state || !state.days) return;
+  const task = scheduleAnalysis.value.tasks.get(state.id);
+  if (!task || task.s === null || task.e === null) return;
+  const start =
+      state.type === "end"
+        ? task.s
+        : state.type === "start"
+          ? Math.min(task.e, task.s + state.days)
+          : task.s + state.days,
+    end =
+      state.type === "start"
+        ? task.e
+        : state.type === "end"
+          ? Math.max(task.s, task.e + state.days)
+          : task.e + state.days;
+  const before = (scheduleAnalysis.value.incident.get(state.id) ?? []).flatMap(
+      (edge) => {
+        const issue = scheduleAnalysis.value.byEdge.get(edge.id);
+        return issue?.type === "dependency-order" ? [issue] : [];
+      },
+    ),
+    after = previewGanttConflicts(scheduleAnalysis.value, state.id, start, end),
+    oldIds = new Set(before.map((item) => item.id)),
+    newIds = new Set(after.map((item) => item.id));
+  return {
+    conflicts: after,
+    added: after.filter((item) => !oldIds.has(item.id)).length,
+    resolved: before.filter((item) => !newIds.has(item.id)).length,
+    before: before.length,
+  };
+});
+function taskConflicts(id: string | number) {
+  return scheduleAnalysis.value.byTask.get(id) ?? [];
+}
+function edgeConflict(source: string | number, target: string | number) {
+  return scheduleAnalysis.value.byEdge.get(ganttEdgeKey(source, target));
+}
+function conflictTypeLabel(type: HysGanttConflict["type"]) {
+  return {
+    "dependency-order": "前后置日期冲突",
+    "invalid-date": "日期无效",
+    "missing-dependency": "前置引用失效",
+    "dependency-cycle": "循环依赖",
+  }[type];
+}
+async function locateConflict(conflict: HysGanttConflict) {
+  if (!(await scrollToTask(conflict.taskId))) return;
+  selected.value = conflict.taskId;
+  emit("update:modelValue", conflict.taskId);
+  if (conflict.sourceId !== undefined && positions.value.has(conflict.sourceId))
+    links.selectEdge(new Event("select"), conflict.sourceId, conflict.taskId);
+  scroller.value?.focus({ preventScroll: true });
 }
 defineExpose({
   element: root,
@@ -917,6 +1171,13 @@ defineExpose({
   removeDependency: links.remove,
   moveDependency: links.moveTarget,
   cancelDependency: () => links.cancel(),
+  undo: history.undo,
+  redo: history.redo,
+  clearHistory: history.clear,
+  canUndo: history.canUndo,
+  canRedo: history.canRedo,
+  historyState: history.state,
+  conflicts: publicConflicts,
 });
 </script>
 <template>
@@ -947,7 +1208,48 @@ defineExpose({
         class="hys-ui-pg-today"
         @click="moveToToday"
         >定位今天</HysButton
-      ><span class="hys-ui-pg-hint">{{
+      >
+      <div
+        v-if="
+          history.enabled.value &&
+          showHistoryControls &&
+          (editable ||
+            dependencyEnabled ||
+            history.state.value.undoCount ||
+            history.state.value.redoCount)
+        "
+        class="hys-ui-pg-history-controls"
+        role="group"
+        aria-label="排期历史操作"
+      >
+        <HysButton
+          variant="secondary"
+          size="sm"
+          :disabled="!history.canUndo.value"
+          aria-label="撤销"
+          :title="
+            (history.state.value.undoLabel
+              ? '撤销：' + history.state.value.undoLabel
+              : '没有可撤销的操作') + '（Ctrl/⌘ + Z）'
+          "
+          @click="history.undo()"
+          ><Undo2 :size="15" />撤销</HysButton
+        >
+        <HysButton
+          variant="secondary"
+          size="sm"
+          :disabled="!history.canRedo.value"
+          aria-label="重做"
+          :title="
+            (history.state.value.redoLabel
+              ? '重做：' + history.state.value.redoLabel
+              : '没有可重做的操作') + '（Ctrl/⌘ + Shift + Z）'
+          "
+          @click="history.redo()"
+          ><Redo2 :size="15" />重做</HysButton
+        >
+      </div>
+      <span class="hys-ui-pg-hint">{{
         editable
           ? "拖动任务条调整排期 · Alt + 左/右方向键微调日期 · Esc / 点击空白取消选中"
           : "点击任务查看详情 · Esc / 点击空白取消选中"
@@ -1010,6 +1312,8 @@ defineExpose({
             :data-row-index="entry.index"
             :class="{
               'hys-ui-selected': selected === entry.task.id,
+              'hys-ui-pg-task-has-conflict':
+                showConflicts && taskConflicts(entry.task.id).length > 0,
               'hys-ui-pg-link-target':
                 links.draft.value?.targetId === entry.task.id,
               'hys-ui-pg-link-invalid':
@@ -1029,6 +1333,17 @@ defineExpose({
               >{{ entry.task.owner || "未分配" }} ·
               {{ entry.task.status || "待办" }}</small
             >
+            <span
+              v-if="showConflicts && taskConflicts(entry.task.id).length"
+              class="hys-ui-pg-task-warning"
+              aria-hidden="true"
+              :title="
+                taskConflicts(entry.task.id)
+                  .map((item) => item.message)
+                  .join('\n')
+              "
+              ><TriangleAlert :size="14"
+            /></span>
           </button>
         </div>
         <div v-if="!normalized.length" class="hys-ui-pg-empty">
@@ -1102,6 +1417,11 @@ defineExpose({
                   'hys-ui-selected': selected === entry.task.id,
                   'hys-ui-dragging': drag?.id === entry.task.id,
                   'hys-ui-disabled': entry.task.disabled,
+                  'hys-ui-pg-bar-has-conflict':
+                    showConflicts &&
+                    (drag?.id === entry.task.id && dragConflictPreview
+                      ? dragConflictPreview.conflicts.length > 0
+                      : taskConflicts(entry.task.id).length > 0),
                   'hys-ui-pg-link-source':
                     links.draft.value?.sourceId === entry.task.id,
                   'hys-ui-pg-link-target':
@@ -1210,6 +1530,9 @@ ${entry.task.start} → ${entry.task.end}
                       'hys-ui-pg-edge-selected':
                         links.selected.value?.sourceId === edge.sourceId &&
                         links.selected.value?.targetId === edge.targetId,
+                      'hys-ui-pg-edge-conflict':
+                        showConflicts &&
+                        !!edgeConflict(edge.sourceId, edge.targetId),
                       'hys-ui-pg-edge-related':
                         selected === edge.sourceId ||
                         selected === edge.targetId,
@@ -1301,6 +1624,14 @@ ${entry.task.start} → ${entry.task.end}
                 <template v-if="activeEdge">
                   <path
                     class="hys-ui-pg-active-edge-line"
+                    :class="{
+                      'hys-ui-pg-edge-conflict':
+                        showConflicts &&
+                        !!edgeConflict(
+                          activeEdge.sourceId,
+                          activeEdge.targetId,
+                        ),
+                    }"
                     :d="activeEdge.path"
                     fill="none"
                     stroke-width="2.5"
@@ -1409,6 +1740,103 @@ ${entry.task.start} → ${entry.task.end}
           "
           ><Trash2 :size="14" />移除依赖</HysButton
         >
+      </div>
+      <p
+        v-if="history.message.value"
+        class="hys-ui-pg-history-message"
+        aria-live="polite"
+      >
+        {{ history.message.value }}
+      </p>
+      <div
+        v-if="
+          showConflicts &&
+          (scheduleConflicts.length ||
+            conflictPanelOpen ||
+            (dragConflictPreview &&
+              (dragConflictPreview.before ||
+                dragConflictPreview.conflicts.length)))
+        "
+        class="hys-ui-pg-conflict-area"
+      >
+        <div class="hys-ui-pg-conflict-summary">
+          <TriangleAlert :size="14" /><span aria-live="polite">{{
+            scheduleConflicts.length
+              ? scheduleConflicts.length + " 项排期冲突"
+              : "当前排期检查正常"
+          }}</span
+          ><HysButton
+            variant="ghost"
+            size="sm"
+            :aria-expanded="conflictPanelOpen"
+            :aria-controls="conflictPanelId"
+            @click="conflictPanelOpen = !conflictPanelOpen"
+            >{{ conflictPanelOpen ? "收起详情" : "查看详情"
+            }}<ChevronDown
+              :size="13"
+              :style="{
+                transform: conflictPanelOpen ? 'rotate(180deg)' : undefined,
+              }"
+          /></HysButton>
+        </div>
+        <p v-if="dragConflictPreview" class="hys-ui-pg-conflict-preview">
+          调整预览：相关依赖有
+          {{ dragConflictPreview.conflicts.length }} 项冲突，新增
+          {{ dragConflictPreview.added }} 项、消除
+          {{ dragConflictPreview.resolved }} 项。{{
+            dragConflictPreview.conflicts[0]?.message ?? ""
+          }}
+        </p>
+        <section
+          v-if="conflictPanelOpen"
+          :id="conflictPanelId"
+          class="hys-ui-pg-conflict-panel"
+          aria-label="排期冲突详情"
+        >
+          <HysInput
+            v-model="conflictQuery"
+            size="sm"
+            :prefix-icon="Search"
+            clearable
+            placeholder="搜索任务、编号或冲突说明"
+            aria-label="搜索排期冲突"
+          />
+          <ul class="hys-ui-pg-conflict-list">
+            <li v-for="conflict in pagedConflicts" :key="conflict.id">
+              <div>
+                <span class="hys-ui-pg-conflict-tag">{{
+                  conflictTypeLabel(conflict.type)
+                }}</span
+                ><strong
+                  >{{ conflict.sourceTitle ? conflict.sourceTitle + " → " : ""
+                  }}{{ conflict.taskTitle }}</strong
+                >
+                <p>{{ conflict.message }}</p>
+              </div>
+              <HysButton
+                variant="ghost"
+                size="sm"
+                :disabled="!positions.has(conflict.taskId)"
+                :aria-label="'定位冲突任务：' + conflict.taskTitle"
+                @click="locateConflict(conflict)"
+                ><LocateFixed :size="14" />定位</HysButton
+              >
+            </li>
+            <li
+              v-if="!filteredConflicts.length"
+              class="hys-ui-pg-conflict-empty"
+            >
+              {{ conflictQuery ? "没有匹配的排期冲突" : "当前没有排期冲突" }}
+            </li>
+          </ul>
+          <HysPagination
+            v-if="filteredConflicts.length > 10"
+            v-model:page="conflictPage"
+            :total="filteredConflicts.length"
+            :page-size="10"
+            compact
+          />
+        </section>
       </div>
     </div>
     <Teleport to="body">
@@ -2034,5 +2462,120 @@ ${entry.task.start} → ${entry.task.end}
 .hys-ui-pg-toolbar :deep(.hys-ui-pg-today) {
   min-height: 32px;
   transform: none;
+}
+
+.hys-ui-pg-history-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hys-ui-pg-history-message {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+}
+.hys-ui-pg-task-has-conflict {
+  padding-right: 34px;
+}
+.hys-ui-pg-task-warning {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c));
+}
+.hys-ui-pg-bar-has-conflict {
+  box-shadow:
+    0 0 0 1px var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c)),
+    0 2px 6px #0002;
+}
+.hys-ui-pg-edge-line.hys-ui-pg-edge-conflict {
+  color: var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c));
+  opacity: 0.85;
+}
+.hys-ui-pg-active-edge-line.hys-ui-pg-edge-conflict {
+  stroke: var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c));
+}
+.hys-ui-pg-conflict-area {
+  border-top: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  margin-top: 6px;
+  padding-top: 5px;
+}
+.hys-ui-pg-conflict-summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  color: var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c));
+  font-size: 12px;
+}
+.hys-ui-pg-conflict-summary :deep(.hys-ui-btn) {
+  margin-left: auto;
+  min-height: 26px;
+  padding: 3px 7px;
+  font-size: 12px;
+}
+.hys-ui-pg-conflict-preview {
+  margin: 5px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c));
+}
+.hys-ui-pg-conflict-panel {
+  padding: 9px 0 0;
+}
+.hys-ui-pg-conflict-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  max-height: 320px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.hys-ui-pg-conflict-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+}
+.hys-ui-pg-conflict-list li > div {
+  flex: 1;
+  min-width: 0;
+}
+.hys-ui-pg-conflict-list strong {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+  overflow-wrap: anywhere;
+}
+.hys-ui-pg-conflict-list p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 4px 0 0;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+  overflow-wrap: anywhere;
+}
+.hys-ui-pg-conflict-tag {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c)) 10%,
+    transparent
+  );
+  color: var(--hys-ui-warning, var(--hys-ui-theme-orange, #d9860c));
+  font-size: 10px;
+}
+.hys-ui-pg-conflict-list :deep(.hys-ui-btn) {
+  flex: none;
+}
+.hys-ui-pg-conflict-empty {
+  justify-content: center;
+  color: var(--hys-ui-text-muted, var(--hys-ui-theme-text-muted));
+  font-size: 12px;
 }
 </style>
