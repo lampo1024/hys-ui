@@ -178,6 +178,17 @@ export async function operateCascader(instance:HysCascaderInstance<Department>){
 export function readOption(option:HysCascaderOptionContext<Department>){return [option.node.code,option.path,option.labels,option.level,option.checked]}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {cascaderChecks} from './cascader-types'\nvoid cascaderChecks\n")
+fs.writeFileSync(path.join(dir,'date-picker-types.ts'),`import {h,ref} from 'vue'
+import {HysDatePicker,HysDateRangePicker,type HysDatePickerProps,type HysDateRangePickerProps,type HysDatePickerInstance,type HysDateRangePickerInstance,type HysDatePickerChange,type HysDatePickerCell,type HysDateShortcut} from 'hys-ui'
+const date=ref<HysDatePickerInstance<Date|null>>(),range=ref<HysDateRangePickerInstance<readonly [number|null,number|null]|null>>()
+export const dateChecks=[h(HysDatePicker<Date|null>,{ref:date,defaultValue:null,valueType:'date',disabledTime:(date,context)=>({hours:context.range==='start'?[0,1]:[],minutes:hour=>hour===9?[0]:[]}),onChange:(value:Date|null,info:HysDatePickerChange)=>void [value,info.formatted]}),h(HysDateRangePicker<readonly [number|null,number|null]|null>,{ref:range,modelValue:[0,null],valueType:'timestamp',allowEmpty:[false,true],disabled:[true,false],singlePanel:false}),h(HysDatePicker<readonly string[]>,{defaultValue:['2026-11-03'],type:'dates',maxDates:3})]
+export const scalarProps:HysDatePickerProps<Date|null>={defaultValue:new Date(),valueType:'date',cellClassName:cell=>cell.inRange?'in-range':''}
+export const rangeProps:HysDateRangePickerProps={modelValue:['2026-11-03',null],showTime:true,allowEmpty:[false,true],shortcuts:[{label:'Now',value:()=>[new Date(),new Date()]}]}
+export const shortcut:HysDateShortcut={label:'Today',value:()=>new Date()}
+export function readCell(cell:HysDatePickerCell){return [cell.date.getUTCDate(),cell.iso,cell.type,cell.selected]}
+export async function operateDate(api:HysDatePickerInstance<Date|null>){await api.setValue(new Date());await api.showMonth('2026-11-01');api.setMode('month');await api.confirm();api.cancel();return api.draft}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {dateChecks} from './date-picker-types'\nvoid dateChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

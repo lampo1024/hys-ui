@@ -1,101 +1,125 @@
-<script setup lang="ts">
-import {useHysControlState} from '../../composables/formContext'
-
-import {useHysRootAttrs} from '../../config'
-const hysRootAttrs=useHysRootAttrs()
-
-import { computed, ref, watch, nextTick } from 'vue'
-import { CalendarDays } from 'lucide-vue-next'
-import HysCalendarNavigation from '../HysCalendarNavigation/HysCalendarNavigation.vue'
-import { useFloating } from '../../composables/useFloating'
-
-const props = defineProps<{modelValue:[string,string]; disabled?:boolean; min?:string; max?:string; placeholder?:string; label?:string;clearable?:boolean;disabledDate?:(date:Date)=>boolean}>()
-const {disabled:controlDisabled}=useHysControlState(props)
-
-const emit = defineEmits<{'update:modelValue':[value:[string,string]]}>()
-const trigger = ref<HTMLElement>(), panel = ref<HTMLElement>()
-const { open, style, show, close } = useFloating(trigger, panel)
-const draftStart = ref('')
-const draftEnd = ref('')
-const pickingEnd = ref(false)
-const preview = ref('')
-const range = computed(() => {
- const end = pickingEnd.value ? preview.value || draftStart.value : draftEnd.value
- return [draftStart.value, end].filter(Boolean).sort()
-})
-const display = computed(() => props.modelValue.filter(Boolean).join(' 至 '))
-function inRange(value:string) { return range.value.length === 2 && value >= range.value[0] && value <= range.value[1] }
-function isEndpoint(value:string) { return value === draftStart.value || value === (pickingEnd.value ? preview.value : draftEnd.value) }
-const today = new Date()
-function format(date:Date) { return [date.getUTCFullYear(), String(date.getUTCMonth()+1).padStart(2,'0'), String(date.getUTCDate()).padStart(2,'0')].join('-') }
-const todayKey = format(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())))
-const month = ref(new Date(todayKey+'T00:00:00Z'))
-function unavailable(value:string) { return !!((props.min && value < props.min) || (props.max && value > props.max) || props.disabledDate?.(new Date(value+'T00:00:00Z'))) }
-const days = computed(() => {
- const first = new Date(Date.UTC(month.value.getUTCFullYear(), month.value.getUTCMonth(), 1))
- return Array.from({length:42}, (_, i) => {
-  const date = new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),i-(first.getUTCDay()+6)%7+1))
-  return {value:format(date),day:date.getUTCDate(),outside:date.getUTCMonth()!==first.getUTCMonth()}
- })
-})
-async function expand() {
- if (controlDisabled.value) return
- if (open.value) {close(); return}
- draftStart.value = props.modelValue[0]
- draftEnd.value = props.modelValue[1]
- pickingEnd.value = false
- preview.value = ''
- let value = props.modelValue[0] || todayKey
- if(props.min && value<props.min) value=props.min
- if(props.max && value>props.max) value=props.max
- const date=new Date(value+'T00:00:00Z')
- if(!Number.isNaN(date.getTime())) month.value=date
- await show()
- const target=Array.from(panel.value?.querySelectorAll<HTMLButtonElement>('[data-date]:not(:disabled)')||[]).find(el=>el.dataset.date===value)
- ;(target || panel.value?.querySelector<HTMLButtonElement>('[data-date]:not(:disabled)'))?.focus()
-}
-function choose(value:string) {
- if(controlDisabled.value || unavailable(value)) return
- if (!pickingEnd.value) {
-  draftStart.value = value
-  draftEnd.value = ''
-  preview.value = value
-  pickingEnd.value = true
-  return
- }
- const ordered = [draftStart.value, value].sort() as [string,string]
- emit('update:modelValue',ordered)
- close(true)
-}
-async function navigate(event:KeyboardEvent,value:string) {
- const offsets:Record<string,number>={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}
- if(!(event.key in offsets)) return
- event.preventDefault()
- const date=new Date(value+'T00:00:00Z')
- date.setUTCDate(date.getUTCDate()+offsets[event.key])
- const next=format(date)
- if(unavailable(next)) return
- month.value=date
- await nextTick()
- Array.from(panel.value?.querySelectorAll<HTMLButtonElement>('[data-date]')||[]).find(el=>el.dataset.date===next)?.focus()
-}
-watch(()=>controlDisabled.value,value=>{if(value)close()})
-
+<script
+  setup
+  lang="ts"
+  generic="V extends HysDatePickerValue = [string, string]"
+>
+import { ref, computed } from "vue";
+import HysDatePickerControl from "../HysDatePicker/HysDatePickerControl.vue";
+import {
+  datePickerDefaults,
+  type HysDatePickerProps,
+  type HysDateRangePickerProps,
+  type HysDatePickerValue,
+  type HysDatePickerChange,
+  type HysDateScalar,
+  type HysDatePickerView,
+  type HysDatePickerSlots,
+  type HysDatePickerInstance,
+} from "../../composables/datePicker";
+defineOptions({ inheritAttrs: false });
+const props = withDefaults(
+  defineProps<HysDateRangePickerProps<V>>(),
+  datePickerDefaults,
+);
+const emit = defineEmits<{
+  "update:modelValue": [value: V];
+  change: [value: V, info: HysDatePickerChange];
+  "value-change": [value: V, info: HysDatePickerChange];
+  "update:open": [value: boolean];
+  "visible-change": [value: boolean];
+  "update:panelValue": [value: HysDateScalar];
+  "update:mode": [value: HysDatePickerView];
+  panelChange: [
+    date: Date,
+    view: HysDatePickerView,
+    context: { index: number },
+  ];
+  calendarChange: [
+    value: HysDatePickerValue,
+    context: { range: "start" | "end"; dates: readonly (Date | null)[] },
+  ];
+  clear: [];
+  ok: [value: V];
+  invalid: [
+    info: { reason: string; dates?: readonly (Date | null)[]; error?: unknown },
+  ];
+  focus: [event: FocusEvent];
+  blur: [event: FocusEvent];
+}>();
+const slots = defineSlots<HysDatePickerSlots>(),
+  control = ref<HysDatePickerInstance<V>>();
+const listeners = Object.fromEntries(
+  [
+    "update:modelValue",
+    "change",
+    "value-change",
+    "update:open",
+    "visible-change",
+    "update:panelValue",
+    "update:mode",
+    "panelChange",
+    "calendarChange",
+    "clear",
+    "ok",
+    "invalid",
+    "focus",
+    "blur",
+  ].map((name) => [
+    name,
+    (...args: any[]) =>
+      (emit as (name: string, ...args: any[]) => void)(name, ...args),
+  ]),
+);
+defineExpose({
+  element: computed(() => control.value?.element),
+  open: computed(() => control.value?.open ?? false),
+  value: computed(() => control.value?.value),
+  draft: computed(() => control.value?.draft ?? []),
+  focus: () => control.value?.focus(),
+  blur: () => control.value?.blur(),
+  show: () => control.value?.show() ?? Promise.resolve(false),
+  hide: (restore = false) => control.value?.hide(restore),
+  handleOpen: () => control.value?.show() ?? Promise.resolve(false),
+  handleClose: () => control.value?.hide(),
+  clear: () => control.value?.clear() ?? Promise.resolve(false),
+  setValue: (value: V) =>
+    control.value?.setValue(value) ?? Promise.resolve(false),
+  confirm: () => control.value?.confirm() ?? Promise.resolve(false),
+  cancel: () => control.value?.cancel(),
+  showMonth: (value: HysDateScalar) =>
+    control.value?.showMonth(value) ?? Promise.resolve(false),
+  setMode: (view: HysDatePickerView) => control.value?.setMode(view) ?? false,
+});
 </script>
 <template>
- <div v-bind="hysRootAttrs" class="hys-ui-pf-date-picker">
-  <button ref="trigger" type="button" class="hys-ui-v4-control hys-ui-pf-select-trigger" :disabled="controlDisabled" :aria-label="label||'选择日期范围'" aria-haspopup="dialog" :aria-expanded="open" @click="expand">
-   <span :class="{'hys-ui-pf-placeholder':!display}">{{display||placeholder||'开始日期 至 结束日期'}}</span><CalendarDays :size="16" class="hys-ui-pf-select-icon" aria-hidden="true"/>
-  </button>
-  <Teleport to="body">
-   <div v-bind="hysRootAttrs" v-if="open" ref="panel" class="hys-ui-v4-menu hys-ui-pf-calendar hys-ui-pf-range-calendar" :style="style" role="dialog" :aria-label="label||'选择日期范围'">
-    <HysCalendarNavigation v-model:month="month" :min="min" :max="max">
-    <p class="hys-ui-pf-range-instruction" role="status">{{pickingEnd?'请选择结束日期':'请选择开始日期'}}</p><div class="hys-ui-pf-calendar-week" aria-hidden="true"><span v-for="day in ['一','二','三','四','五','六','日']" :key="day">{{day}}</span></div>
-    <div class="hys-ui-pf-calendar-grid">
-     <button v-for="day in days" :key="day.value" type="button" :data-date="day.value" :aria-label="day.value" :aria-pressed="isEndpoint(day.value)" :aria-current="day.value===todayKey?'date':undefined" :disabled="unavailable(day.value)" :class="{'hys-ui-is-outside':day.outside,'hys-ui-is-selected':isEndpoint(day.value),'hys-ui-is-in-range':inRange(day.value),'hys-ui-is-today':day.value===todayKey}" @mouseenter="!unavailable(day.value)&&(preview=day.value)" @focus="preview=day.value" @click="choose(day.value)" @keydown="navigate($event,day.value)">{{day.day}}</button>
-    </div>
-    </HysCalendarNavigation><button v-if="clearable" type="button" class="hys-ui-v4-option" @click="emit('update:modelValue',['','']);close(true)">清空</button><div class="hys-ui-pf-calendar-footer"><span class="hys-ui-pf-range-summary">{{range.join(' 至 ')||'请选择日期范围'}}</span><button type="button" @click="close(true)">取消</button></div>
-   </div>
-  </Teleport>
- </div>
+  <HysDatePickerControl
+    v-bind="{ ...(props as unknown as HysDatePickerProps), ...$attrs }"
+    :range="true"
+    ref="control"
+    v-on="listeners"
+    ><template v-if="$slots.default" #default="scope"
+      ><slot v-bind="scope" /></template
+    ><template v-if="$slots.cell" #cell="scope"
+      ><slot name="cell" v-bind="scope" /></template
+    ><template v-if="$slots.header" #header="scope"
+      ><slot name="header" v-bind="scope" /></template
+    ><template v-if="$slots.footer" #footer="scope"
+      ><slot name="footer" v-bind="scope" /></template
+    ><template v-if="$slots.shortcut" #shortcut="scope"
+      ><slot name="shortcut" v-bind="scope" /></template
+    ><template v-if="$slots['prefix']" #prefix><slot name="prefix" /></template
+    ><template v-if="$slots['suffix']" #suffix><slot name="suffix" /></template
+    ><template v-if="$slots['clear-icon']" #clear-icon
+      ><slot name="clear-icon" /></template
+    ><template v-if="$slots['prev-month']" #prev-month
+      ><slot name="prev-month" /></template
+    ><template v-if="$slots['next-month']" #next-month
+      ><slot name="next-month" /></template
+    ><template v-if="$slots['prev-year']" #prev-year
+      ><slot name="prev-year" /></template
+    ><template v-if="$slots['next-year']" #next-year
+      ><slot name="next-year" /></template
+    ><template v-if="$slots['range-separator']" #range-separator
+      ><slot name="range-separator" /></template
+  ></HysDatePickerControl>
 </template>

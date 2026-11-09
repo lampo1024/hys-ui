@@ -4704,34 +4704,106 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string",
-        "required": true,
+        "type": "V | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控日期或日期数组；字符串接口保持兼容",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始值，原生表单重置后恢复",
+        "global": false
+      },
+      {
+        "name": "clearValue",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空时输出的自定义空值，不能同时用作有效日期",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "HysDatePickerType | undefined",
+        "required": false,
+        "default": "date",
+        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / months / quarters / years",
+        "global": false
+      },
+      {
+        "name": "valueType",
+        "type": "\"string\" | \"date\" | \"timestamp\" | undefined",
+        "required": false,
+        "default": "从非空值推断，默认 string",
+        "description": "string / date / timestamp；未指定从非空值推断，清空保留已推断类型",
+        "global": false
+      },
+      {
+        "name": "valueFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "字符串绑定格式；支持日期、时刻、季度、ISO 周及 x / X 时间戳",
+        "global": false
+      },
+      {
+        "name": "format",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "展示格式，不改变绑定值",
+        "global": false
+      },
+      {
+        "name": "inputFormats",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "文本输入额外允许的解析格式",
         "global": false
       },
       {
         "name": "disabled",
+        "type": "boolean | readonly [boolean, boolean] | undefined",
+        "required": false,
+        "default": "",
+        "description": "禁止操作并继承表单禁用；范围可为 [开始禁用,结束禁用]",
+        "global": false
+      },
+      {
+        "name": "readonly",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "description": "保持值与焦点，禁止编辑和打开面板",
         "global": false
       },
       {
-        "name": "min",
-        "type": "string | undefined",
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "",
-        "description": "允许的最小值或最早日期",
+        "default": "继承字段/表单或 md",
+        "description": "继承字段或表单尺寸，默认 md",
         "global": false
       },
       {
-        "name": "max",
-        "type": "string | undefined",
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
         "required": false,
         "default": "",
-        "description": "允许的最大值或最晚日期",
+        "description": "显式 error / warning / success 外观",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示输入区边框，默认 true",
         "global": false
       },
       {
@@ -4739,7 +4811,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "空值占位提示",
+        "description": "整体输入区的空值提示",
         "global": false
       },
       {
@@ -4747,7 +4819,151 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "显示标签",
+        "description": "控件辅助标签，优先于默认占位",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | readonly [string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "隐藏表单值名称，范围可传两个名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单归属 ID",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "最早日期或时刻；字符串也可使用 YYYY-MM-DD",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "最晚日期或时刻，纯日期边界包含当天",
+        "global": false
+      },
+      {
+        "name": "disabledDate",
+        "type": "((date: Date, context: HysDatePickerContext) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "UTC 零时的 Date 和 {iso,range,from}，返回是否禁用",
+        "global": false
+      },
+      {
+        "name": "disabledTime",
+        "type": "((date: Date, context: HysDatePickerContext) => HysDateDisabledTime) | undefined",
+        "required": false,
+        "default": "",
+        "description": "返回 hours、minutes(hour)、seconds(hour,minute) 的禁用编号",
+        "global": false
+      },
+      {
+        "name": "firstDayOfWeek",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "每周第一天，0 周日到 6 周六；默认 1",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "string | undefined",
+        "required": false,
+        "default": "zh-CN",
+        "description": "Intl 月份与星期名称，zh-CN 默认；en 提供英文操作文字",
+        "global": false
+      },
+      {
+        "name": "messages",
+        "type": "Partial<HysDatePickerLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖操作文字、提示与时间单位",
+        "global": false
+      },
+      {
+        "name": "showWeekNumbers",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示 ISO 周编号；week 类型始终显示",
+        "global": false
+      },
+      {
+        "name": "showAdjacentDays",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "展示相邻月份日期；false 时相邻日不能选择",
+        "global": false
+      },
+      {
+        "name": "defaultPickerValue",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "初始浏览日期，不改变已选值",
+        "global": false
+      },
+      {
+        "name": "panelValue",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控左侧浏览日期",
+        "global": false
+      },
+      {
+        "name": "mode",
+        "type": "HysDatePickerView | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控面板 date / month / quarter / year",
+        "global": false
+      },
+      {
+        "name": "defaultMode",
+        "type": "HysDatePickerView | undefined",
+        "required": false,
+        "default": "",
+        "description": "首次打开的面板类型，默认跟随 type",
+        "global": false
+      },
+      {
+        "name": "shortcuts",
+        "type": "readonly HysDateShortcut[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "快捷值数组 {label,value,disabled}；value 可在点击时计算",
         "global": false
       },
       {
@@ -4755,62 +4971,686 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示清空操作，默认 false；实例 clear 方法独立可用",
         "global": false
       },
       {
-        "name": "disabledDate",
-        "type": "((date: Date) => boolean) | undefined",
+        "name": "editable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示可编辑的自定义文本输入区，默认 false",
+        "global": false
+      },
+      {
+        "name": "inputReadonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "阻止文本键入，仍允许通过面板选择",
+        "global": false
+      },
+      {
+        "name": "showOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "聚焦时自动打开，默认 false",
+        "global": false
+      },
+      {
+        "name": "showToday",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示今天操作，默认 true",
+        "global": false
+      },
+      {
+        "name": "showNow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "日期时间显示此刻操作，默认 true",
+        "global": false
+      },
+      {
+        "name": "showFooter",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示默认操作区；需要确认时保留必要操作",
+        "global": false
+      },
+      {
+        "name": "showConfirm",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随日期类型与开放区间配置",
+        "description": "是否暂存并确认；默认多日期、时间或开放区间开启",
+        "global": false
+      },
+      {
+        "name": "showTime",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "日期选择时增加自定义时间列表，等价于 datetime",
+        "global": false
+      },
+      {
+        "name": "defaultTime",
+        "type": "string | readonly [string, string] | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "新端点默认 HH:mm:ss，范围可指定两个时刻",
+        "global": false
+      },
+      {
+        "name": "hourStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "小时列表步长，默认 1",
+        "global": false
+      },
+      {
+        "name": "minuteStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "分钟列表步长，默认 1",
+        "global": false
+      },
+      {
+        "name": "secondStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "秒列表步长，默认 1",
+        "global": false
+      },
+      {
+        "name": "showSeconds",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示秒列表，默认 true；隐藏后保留已有秒值",
+        "global": false
+      },
+      {
+        "name": "rangeSeparator",
+        "type": "string | undefined",
+        "required": false,
+        "default": " 至 ",
+        "description": "范围展示的分隔符，默认 至",
+        "global": false
+      },
+      {
+        "name": "startPlaceholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "可编辑范围开始端占位",
+        "global": false
+      },
+      {
+        "name": "endPlaceholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "可编辑范围结束端占位",
+        "global": false
+      },
+      {
+        "name": "allowEmpty",
+        "type": "readonly [boolean, boolean] | undefined",
+        "required": false,
+        "default": "",
+        "description": "分别允许开放起止边界，默认都不允许",
+        "global": false
+      },
+      {
+        "name": "singlePanel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "范围显示单个面板，默认 true",
+        "global": false
+      },
+      {
+        "name": "unlinkPanels",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "双面板是否独立浏览，默认 false",
+        "global": false
+      },
+      {
+        "name": "minRangeDays",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "包含首尾的最短自然日跨度",
+        "global": false
+      },
+      {
+        "name": "maxRangeDays",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "包含首尾的最长自然日跨度",
+        "global": false
+      },
+      {
+        "name": "rangeValidation",
+        "type": "\"endpoints\" | \"continuous\" | undefined",
+        "required": false,
+        "default": "endpoints",
+        "description": "endpoints 只检查端点；continuous 逐日检查，最多一百年",
+        "global": false
+      },
+      {
+        "name": "maxDates",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "多日期的数量限制，0 / 未设置不限制，超限显示反馈",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "未受控",
+        "description": "受控弹层显隐，宿主可以拒绝请求",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "初始打开浮层",
+        "global": false
+      },
+      {
+        "name": "inline",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "直接嵌入面板，不创建浮层",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层位置，默认 bottom-start",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "body",
+        "description": "浮层目标，默认 body；false 保留原地",
+        "global": false
+      },
+      {
+        "name": "popupWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义浮层宽度，受视口约束",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义面板类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义面板样式",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "主动触发 change / blur 字段校验，默认 true",
+        "global": false
+      },
+      {
+        "name": "cellClassName",
+        "type": "((cell: HysDatePickerCell) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按日期或周期元数据返回单元格类名",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string]",
+        "type": "[value: V]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "change",
+        "type": "[value: V, info: HysDatePickerChange]",
+        "required": false,
+        "default": "",
+        "description": "一次选择或编辑请求：(value,{source,dates,formatted})，宿主可拒绝"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "清空已被接受后触发"
+      },
+      {
+        "name": "update:open",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个选择器"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个选择器"
+      },
+      {
+        "name": "invalid",
+        "type": "[info: { reason: string; dates?: readonly (Date | null)[] | undefined; error?: unknown; }]",
+        "required": false,
+        "default": "",
+        "description": "无效日期、时刻、顺序、数量或快捷值：{reason,dates?,error?}"
+      },
+      {
+        "name": "update:mode",
+        "type": "[value: HysDatePickerView]",
+        "required": false,
+        "default": "",
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "panelChange",
+        "type": "[date: Date, view: HysDatePickerView, context: { index: number; }]",
+        "required": false,
+        "default": "",
+        "description": "浏览日期或面板类型变化：(date,view,{index})"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysDatePickerChange]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受后的值变化；字段 change 校验同时触发"
+      },
+      {
+        "name": "visible-change",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "浮层实际显示状态变化"
+      },
+      {
+        "name": "update:panelValue",
+        "type": "[value: HysDateScalar]",
+        "required": false,
+        "default": "",
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "calendarChange",
+        "type": "[value: HysDatePickerValue, context: { range: \"start\" | \"end\"; dates: readonly (Date | null)[]; }]",
+        "required": false,
+        "default": "",
+        "description": "草稿变化：(value,{range,dates})，不会提前修改绑定值"
+      },
+      {
+        "name": "ok",
+        "type": "[value: V]",
+        "required": false,
+        "default": "",
+        "description": "有效确认后触发，返回已接受值"
       }
     ],
-    "slots": [],
-    "exposed": []
+    "slots": [
+      {
+        "name": "default",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "日期 / 周期单元格，参数同 cell"
+      },
+      {
+        "name": "cell",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "日期或周期元数据：date(UTC)、iso、text、type、selected、inRange、disabled 等"
+      },
+      {
+        "name": "prefix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区前缀"
+      },
+      {
+        "name": "suffix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区后缀"
+      },
+      {
+        "name": "clear-icon",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "清空图标"
+      },
+      {
+        "name": "prev-month",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "上一月图标"
+      },
+      {
+        "name": "next-month",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "下一月图标"
+      },
+      {
+        "name": "prev-year",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "上一年 / 年份页图标"
+      },
+      {
+        "name": "next-year",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "下一年 / 年份页图标"
+      },
+      {
+        "name": "header",
+        "type": "{ dates: readonly (Date | null)[]; view: HysDatePickerView; }",
+        "required": false,
+        "default": "",
+        "description": "顶部内容：dates、view"
+      },
+      {
+        "name": "footer",
+        "type": "{ dates: readonly (Date | null)[]; confirm: () => Promise<boolean>; cancel: () => void; clear: () => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "操作区：dates、confirm、cancel、clear"
+      },
+      {
+        "name": "shortcut",
+        "type": "{ shortcut: HysDateShortcut; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "快捷项模板：shortcut、index"
+      },
+      {
+        "name": "range-separator",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "可编辑范围分隔内容"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "控件根元素"
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "面板是否可见"
+      },
+      {
+        "name": "value",
+        "type": "V",
+        "required": true,
+        "default": "",
+        "description": "当前已接受值"
+      },
+      {
+        "name": "draft",
+        "type": "readonly (Date | null)[]",
+        "required": true,
+        "default": "",
+        "description": "当前草稿的本地 Date 或 null 数组"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦输入区"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开焦点并关闭"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "打开面板并聚焦，返回 Promise<boolean>"
+      },
+      {
+        "name": "hide",
+        "type": "(restoreFocus?: boolean) => void",
+        "required": true,
+        "default": "",
+        "description": "关闭面板，可恢复焦点"
+      },
+      {
+        "name": "handleOpen",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "show 别名"
+      },
+      {
+        "name": "handleClose",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "hide 别名"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "清空可修改端点，返回宿主是否接受"
+      },
+      {
+        "name": "setValue",
+        "type": "(value: V) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "校验并请求更新值，返回 Promise<boolean>"
+      },
+      {
+        "name": "confirm",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "校验并提交草稿，返回是否成功"
+      },
+      {
+        "name": "cancel",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "放弃草稿并关闭"
+      },
+      {
+        "name": "showMonth",
+        "type": "(value: HysDateScalar) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "打开并浏览日期所在月份，不改变选择"
+      },
+      {
+        "name": "setMode",
+        "type": "(view: HysDatePickerView) => boolean",
+        "required": true,
+        "default": "",
+        "description": "请求切换 date / month / quarter / year 面板，返回是否接受"
+      }
+    ]
   },
   "HysDateRangePicker": {
     "props": [
       {
         "name": "modelValue",
-        "type": "[string, string]",
-        "required": true,
+        "type": "V | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "受控日期或日期数组；字符串接口保持兼容",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始值，原生表单重置后恢复",
+        "global": false
+      },
+      {
+        "name": "clearValue",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空时输出的自定义空值，不能同时用作有效日期",
+        "global": false
+      },
+      {
+        "name": "type",
+        "type": "HysDatePickerType | undefined",
+        "required": false,
+        "default": "date",
+        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / months / quarters / years",
+        "global": false
+      },
+      {
+        "name": "valueType",
+        "type": "\"string\" | \"date\" | \"timestamp\" | undefined",
+        "required": false,
+        "default": "从非空值推断，默认 string",
+        "description": "string / date / timestamp；未指定从非空值推断，清空保留已推断类型",
+        "global": false
+      },
+      {
+        "name": "valueFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "字符串绑定格式；支持日期、时刻、季度、ISO 周及 x / X 时间戳",
+        "global": false
+      },
+      {
+        "name": "format",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "展示格式，不改变绑定值",
+        "global": false
+      },
+      {
+        "name": "inputFormats",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "文本输入额外允许的解析格式",
         "global": false
       },
       {
         "name": "disabled",
+        "type": "boolean | readonly [boolean, boolean] | undefined",
+        "required": false,
+        "default": "",
+        "description": "禁止操作并继承表单禁用；范围可为 [开始禁用,结束禁用]",
+        "global": false
+      },
+      {
+        "name": "readonly",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "description": "保持值与焦点，禁止编辑和打开面板",
         "global": false
       },
       {
-        "name": "min",
-        "type": "string | undefined",
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
         "required": false,
-        "default": "",
-        "description": "允许的最小值或最早日期",
+        "default": "继承字段/表单或 md",
+        "description": "继承字段或表单尺寸，默认 md",
         "global": false
       },
       {
-        "name": "max",
-        "type": "string | undefined",
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
         "required": false,
         "default": "",
-        "description": "允许的最大值或最晚日期",
+        "description": "显式 error / warning / success 外观",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示输入区边框，默认 true",
         "global": false
       },
       {
@@ -4818,7 +5658,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "空值占位提示",
+        "description": "整体输入区的空值提示",
         "global": false
       },
       {
@@ -4826,7 +5666,151 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "显示标签",
+        "description": "控件辅助标签，优先于默认占位",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | readonly [string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "隐藏表单值名称，范围可传两个名称",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单归属 ID",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载后聚焦",
+        "global": false
+      },
+      {
+        "name": "min",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "最早日期或时刻；字符串也可使用 YYYY-MM-DD",
+        "global": false
+      },
+      {
+        "name": "max",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "最晚日期或时刻，纯日期边界包含当天",
+        "global": false
+      },
+      {
+        "name": "disabledDate",
+        "type": "((date: Date, context: HysDatePickerContext) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "UTC 零时的 Date 和 {iso,range,from}，返回是否禁用",
+        "global": false
+      },
+      {
+        "name": "disabledTime",
+        "type": "((date: Date, context: HysDatePickerContext) => HysDateDisabledTime) | undefined",
+        "required": false,
+        "default": "",
+        "description": "返回 hours、minutes(hour)、seconds(hour,minute) 的禁用编号",
+        "global": false
+      },
+      {
+        "name": "firstDayOfWeek",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "每周第一天，0 周日到 6 周六；默认 1",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "string | undefined",
+        "required": false,
+        "default": "zh-CN",
+        "description": "Intl 月份与星期名称，zh-CN 默认；en 提供英文操作文字",
+        "global": false
+      },
+      {
+        "name": "messages",
+        "type": "Partial<HysDatePickerLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖操作文字、提示与时间单位",
+        "global": false
+      },
+      {
+        "name": "showWeekNumbers",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示 ISO 周编号；week 类型始终显示",
+        "global": false
+      },
+      {
+        "name": "showAdjacentDays",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "展示相邻月份日期；false 时相邻日不能选择",
+        "global": false
+      },
+      {
+        "name": "defaultPickerValue",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "初始浏览日期，不改变已选值",
+        "global": false
+      },
+      {
+        "name": "panelValue",
+        "type": "HysDateScalar | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控左侧浏览日期",
+        "global": false
+      },
+      {
+        "name": "mode",
+        "type": "HysDatePickerView | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控面板 date / month / quarter / year",
+        "global": false
+      },
+      {
+        "name": "defaultMode",
+        "type": "HysDatePickerView | undefined",
+        "required": false,
+        "default": "",
+        "description": "首次打开的面板类型，默认跟随 type",
+        "global": false
+      },
+      {
+        "name": "shortcuts",
+        "type": "readonly HysDateShortcut[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "快捷值数组 {label,value,disabled}；value 可在点击时计算",
         "global": false
       },
       {
@@ -4834,29 +5818,581 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示清空操作，默认 false；实例 clear 方法独立可用",
         "global": false
       },
       {
-        "name": "disabledDate",
-        "type": "((date: Date) => boolean) | undefined",
+        "name": "editable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示可编辑的自定义文本输入区，默认 false",
+        "global": false
+      },
+      {
+        "name": "inputReadonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "阻止文本键入，仍允许通过面板选择",
+        "global": false
+      },
+      {
+        "name": "showOnFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "聚焦时自动打开，默认 false",
+        "global": false
+      },
+      {
+        "name": "showToday",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示今天操作，默认 true",
+        "global": false
+      },
+      {
+        "name": "showNow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "日期时间显示此刻操作，默认 true",
+        "global": false
+      },
+      {
+        "name": "showFooter",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示默认操作区；需要确认时保留必要操作",
+        "global": false
+      },
+      {
+        "name": "showConfirm",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随日期类型与开放区间配置",
+        "description": "是否暂存并确认；默认多日期、时间或开放区间开启",
+        "global": false
+      },
+      {
+        "name": "showTime",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "日期选择时增加自定义时间列表，等价于 datetime",
+        "global": false
+      },
+      {
+        "name": "defaultTime",
+        "type": "string | readonly [string, string] | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "新端点默认 HH:mm:ss，范围可指定两个时刻",
+        "global": false
+      },
+      {
+        "name": "hourStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "小时列表步长，默认 1",
+        "global": false
+      },
+      {
+        "name": "minuteStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "分钟列表步长，默认 1",
+        "global": false
+      },
+      {
+        "name": "secondStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "秒列表步长，默认 1",
+        "global": false
+      },
+      {
+        "name": "showSeconds",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示秒列表，默认 true；隐藏后保留已有秒值",
+        "global": false
+      },
+      {
+        "name": "rangeSeparator",
+        "type": "string | undefined",
+        "required": false,
+        "default": " 至 ",
+        "description": "范围展示的分隔符，默认 至",
+        "global": false
+      },
+      {
+        "name": "startPlaceholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "可编辑范围开始端占位",
+        "global": false
+      },
+      {
+        "name": "endPlaceholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "可编辑范围结束端占位",
+        "global": false
+      },
+      {
+        "name": "allowEmpty",
+        "type": "readonly [boolean, boolean] | undefined",
+        "required": false,
+        "default": "",
+        "description": "分别允许开放起止边界，默认都不允许",
+        "global": false
+      },
+      {
+        "name": "singlePanel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "范围显示单个面板，默认 true",
+        "global": false
+      },
+      {
+        "name": "unlinkPanels",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "双面板是否独立浏览，默认 false",
+        "global": false
+      },
+      {
+        "name": "minRangeDays",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "包含首尾的最短自然日跨度",
+        "global": false
+      },
+      {
+        "name": "maxRangeDays",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "包含首尾的最长自然日跨度",
+        "global": false
+      },
+      {
+        "name": "rangeValidation",
+        "type": "\"endpoints\" | \"continuous\" | undefined",
+        "required": false,
+        "default": "endpoints",
+        "description": "endpoints 只检查端点；continuous 逐日检查，最多一百年",
+        "global": false
+      },
+      {
+        "name": "maxDates",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "多日期的数量限制，0 / 未设置不限制，超限显示反馈",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "未受控",
+        "description": "受控弹层显隐，宿主可以拒绝请求",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "初始打开浮层",
+        "global": false
+      },
+      {
+        "name": "inline",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "直接嵌入面板，不创建浮层",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层位置，默认 bottom-start",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "body",
+        "description": "浮层目标，默认 body；false 保留原地",
+        "global": false
+      },
+      {
+        "name": "popupWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义浮层宽度，受视口约束",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义面板类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义面板样式",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "主动触发 change / blur 字段校验，默认 true",
+        "global": false
+      },
+      {
+        "name": "cellClassName",
+        "type": "((cell: HysDatePickerCell) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按日期或周期元数据返回单元格类名",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: [string, string]]",
+        "type": "[value: V]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "change",
+        "type": "[value: V, info: HysDatePickerChange]",
+        "required": false,
+        "default": "",
+        "description": "一次选择或编辑请求：(value,{source,dates,formatted})，宿主可拒绝"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "清空已被接受后触发"
+      },
+      {
+        "name": "update:open",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个选择器"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个选择器"
+      },
+      {
+        "name": "invalid",
+        "type": "[info: { reason: string; dates?: readonly (Date | null)[] | undefined; error?: unknown; }]",
+        "required": false,
+        "default": "",
+        "description": "无效日期、时刻、顺序、数量或快捷值：{reason,dates?,error?}"
+      },
+      {
+        "name": "update:mode",
+        "type": "[value: HysDatePickerView]",
+        "required": false,
+        "default": "",
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "panelChange",
+        "type": "[date: Date, view: HysDatePickerView, context: { index: number; }]",
+        "required": false,
+        "default": "",
+        "description": "浏览日期或面板类型变化：(date,view,{index})"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysDatePickerChange]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受后的值变化；字段 change 校验同时触发"
+      },
+      {
+        "name": "visible-change",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "浮层实际显示状态变化"
+      },
+      {
+        "name": "update:panelValue",
+        "type": "[value: HysDateScalar]",
+        "required": false,
+        "default": "",
+        "description": "对应状态的受控更新请求"
+      },
+      {
+        "name": "calendarChange",
+        "type": "[value: HysDatePickerValue, context: { range: \"start\" | \"end\"; dates: readonly (Date | null)[]; }]",
+        "required": false,
+        "default": "",
+        "description": "草稿变化：(value,{range,dates})，不会提前修改绑定值"
+      },
+      {
+        "name": "ok",
+        "type": "[value: V]",
+        "required": false,
+        "default": "",
+        "description": "有效确认后触发，返回已接受值"
       }
     ],
-    "slots": [],
-    "exposed": []
+    "slots": [
+      {
+        "name": "default",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "日期 / 周期单元格，参数同 cell"
+      },
+      {
+        "name": "cell",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "日期或周期元数据：date(UTC)、iso、text、type、selected、inRange、disabled 等"
+      },
+      {
+        "name": "prefix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区前缀"
+      },
+      {
+        "name": "suffix",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "输入区后缀"
+      },
+      {
+        "name": "clear-icon",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "清空图标"
+      },
+      {
+        "name": "prev-month",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "上一月图标"
+      },
+      {
+        "name": "next-month",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "下一月图标"
+      },
+      {
+        "name": "prev-year",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "上一年 / 年份页图标"
+      },
+      {
+        "name": "next-year",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "下一年 / 年份页图标"
+      },
+      {
+        "name": "header",
+        "type": "{ dates: readonly (Date | null)[]; view: HysDatePickerView; }",
+        "required": false,
+        "default": "",
+        "description": "顶部内容：dates、view"
+      },
+      {
+        "name": "footer",
+        "type": "{ dates: readonly (Date | null)[]; confirm: () => Promise<boolean>; cancel: () => void; clear: () => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "操作区：dates、confirm、cancel、clear"
+      },
+      {
+        "name": "shortcut",
+        "type": "{ shortcut: HysDateShortcut; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "快捷项模板：shortcut、index"
+      },
+      {
+        "name": "range-separator",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "可编辑范围分隔内容"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "控件根元素"
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "面板是否可见"
+      },
+      {
+        "name": "value",
+        "type": "V",
+        "required": true,
+        "default": "",
+        "description": "当前已接受值"
+      },
+      {
+        "name": "draft",
+        "type": "readonly (Date | null)[]",
+        "required": true,
+        "default": "",
+        "description": "当前草稿的本地 Date 或 null 数组"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦输入区"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移开焦点并关闭"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "打开面板并聚焦，返回 Promise<boolean>"
+      },
+      {
+        "name": "hide",
+        "type": "(restoreFocus?: boolean) => void",
+        "required": true,
+        "default": "",
+        "description": "关闭面板，可恢复焦点"
+      },
+      {
+        "name": "handleOpen",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "show 别名"
+      },
+      {
+        "name": "handleClose",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "hide 别名"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "清空可修改端点，返回宿主是否接受"
+      },
+      {
+        "name": "setValue",
+        "type": "(value: V) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "校验并请求更新值，返回 Promise<boolean>"
+      },
+      {
+        "name": "confirm",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "校验并提交草稿，返回是否成功"
+      },
+      {
+        "name": "cancel",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "放弃草稿并关闭"
+      },
+      {
+        "name": "showMonth",
+        "type": "(value: HysDateScalar) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "打开并浏览日期所在月份，不改变选择"
+      },
+      {
+        "name": "setMode",
+        "type": "(view: HysDatePickerView) => boolean",
+        "required": true,
+        "default": "",
+        "description": "请求切换 date / month / quarter / year 面板，返回是否接受"
+      }
+    ]
   },
   "HysDiffViewer": {
     "props": [

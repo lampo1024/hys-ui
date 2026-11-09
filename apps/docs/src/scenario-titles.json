@@ -434,6 +434,39 @@
       "Form": "表单校验与尺寸继承",
       "Keyboard": "键盘逐级导航",
       "States": "空数据、禁用与加载"
+    },
+    "HysDatePicker": {
+      "Basic": "基础日期与清空",
+      "Configure": "交互配置",
+      "Types": "日期、周、月、季度与年",
+      "Formats": "绑定类型与显示格式",
+      "Multiple": "多日期与数量限制",
+      "Shortcuts": "快捷日期",
+      "Bounds": "日期边界与禁用规则",
+      "Time": "日期时间与默认时刻",
+      "Input": "直接输入与严格解析",
+      "Custom": "单元格与图标模板",
+      "Inline": "内嵌日期面板",
+      "Controlled": "受控选择与显隐",
+      "Form": "表单校验与尺寸继承",
+      "Keyboard": "键盘操作与实例定位",
+      "Locale": "语言与每周起始日",
+      "States": "空值、只读与禁用"
+    },
+    "HysDateRangePicker": {
+      "Basic": "基础范围与草稿",
+      "Configure": "交互配置",
+      "Units": "月份、季度与年份范围",
+      "Dual": "双面板与独立浏览",
+      "Shortcuts": "快捷范围",
+      "Bounds": "范围长度与连续校验",
+      "Time": "范围日期时间",
+      "Partial": "开放起止边界",
+      "Locked": "固定起止端点",
+      "Custom": "自定义操作区",
+      "Inline": "内嵌范围面板",
+      "Methods": "实例方法与范围定位",
+      "States": "绑定类型与受限状态"
     }
   }
 }
