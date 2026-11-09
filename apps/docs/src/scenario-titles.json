@@ -354,6 +354,22 @@
       "Template": "自定义占位模板",
       "Loading": "延迟显示与防闪烁",
       "Repeated": "列表占位与段落宽度"
+    },
+    "HysTransfer": {
+      "Search": "双侧搜索与自定义匹配",
+      "Selection": "全选、半选与受控勾选",
+      "Ordering": "目标列表的排列顺序",
+      "OneWay": "单向选择与逐项移除",
+      "Dragging": "多项拖拽与移动动画",
+      "Mapping": "业务字段与数值编号",
+      "Custom": "条目内容与区域插槽",
+      "Pagination": "独立分页与跨页勾选",
+      "Virtual": "大数据虚拟滚动",
+      "CustomPanel": "组合表格的自定义面板",
+      "Form": "表单校验与尺寸继承",
+      "Methods": "实例操作与焦点定位",
+      "States": "空数据、加载与禁用状态",
+      "Locale": "文案与本地化"
     }
   }
 }

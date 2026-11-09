@@ -92,6 +92,7 @@ export interface HysFormField {
 export interface HysFormContext {
   model: ComputedRef<Record<string, unknown> | undefined>;
   resetting: Ref<boolean>;
+  suppressAutoBlur?: Ref<boolean>;
   errors: Ref<Record<string, string>>;
   warnings: Ref<Record<string, string>>;
   errorMessages: Ref<Record<string, string[]>>;

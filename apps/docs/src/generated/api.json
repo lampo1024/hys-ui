@@ -13246,19 +13246,43 @@
   "HysTransfer": {
     "props": [
       {
-        "name": "modelValue",
-        "type": "string[]",
+        "name": "options",
+        "type": "readonly T[]",
         "required": true,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "原始选项数组，默认字段为 value / label / disabled，不修改源对象",
         "global": false
       },
       {
-        "name": "options",
-        "type": "Item[]",
-        "required": true,
+        "name": "modelValue",
+        "type": "readonly K[] | undefined",
+        "required": false,
         "default": "",
-        "description": "可选项数据，支持单项禁用",
+        "description": "已经移入右侧的编号数组；支持 v-model；未知编号保留至数据补齐",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "readonly K[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始目标编号",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "HysTransferFieldNames | undefined",
+        "required": false,
+        "default": "",
+        "description": "映射 value、label、disabled，字段路径支持点号",
+        "global": false
+      },
+      {
+        "name": "rowKey",
+        "type": "((option: T) => K) | undefined",
+        "required": false,
+        "default": "",
+        "description": "由业务对象生成稳定字符串或有限数值编号",
         "global": false
       },
       {
@@ -13270,40 +13294,387 @@
         "global": false
       },
       {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "展示两侧加载内容，暂停选择、移动、搜索与拖拽",
+        "global": false
+      },
+      {
         "name": "filterable",
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "同时启用两侧独立搜索，保留原有默认 true",
+        "global": false
+      },
+      {
+        "name": "filterMethod",
+        "type": "((query: string, option: T, side: HysTransferSide) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "搜索规则 (query,option,side)，option 是原始对象",
+        "global": false
+      },
+      {
+        "name": "filterPlaceholder",
+        "type": "string | readonly [string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "两侧共用搜索提示，或 [左,右] 提示",
+        "global": false
+      },
+      {
+        "name": "searchValues",
+        "type": "Partial<Record<HysTransferSide, string>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "分别受控的左右搜索条件 {left,right}",
         "global": false
       },
       {
         "name": "titles",
-        "type": "[string, string] | undefined",
+        "type": "readonly [string, string] | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "左右标题 [左,右]",
+        "global": false
+      },
+      {
+        "name": "buttonTexts",
+        "type": "readonly [string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "从上到下的按钮文字 [添加,移除]",
+        "global": false
+      },
+      {
+        "name": "showSelectAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示当前筛选页的全选与半选复选框",
+        "global": false
+      },
+      {
+        "name": "showInvert",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示当前页反选操作",
+        "global": false
+      },
+      {
+        "name": "checkedKeys",
+        "type": "readonly K[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "两侧已勾选、准备移动的编号，独立于 modelValue；支持 v-model:checkedKeys",
+        "global": false
+      },
+      {
+        "name": "defaultCheckedKeys",
+        "type": "readonly K[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始勾选编号",
+        "global": false
+      },
+      {
+        "name": "leftDefaultChecked",
+        "type": "readonly K[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "左侧初始勾选，合并至 defaultCheckedKeys",
+        "global": false
+      },
+      {
+        "name": "rightDefaultChecked",
+        "type": "readonly K[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "右侧初始勾选，合并至 defaultCheckedKeys",
+        "global": false
+      },
+      {
+        "name": "targetOrder",
+        "type": "\"push\" | \"unshift\" | \"original\" | undefined",
+        "required": false,
+        "default": "\"original\"",
+        "description": "original 按源数据；push 按绑定值并追加；unshift 把新增项放到开头",
+        "global": false
+      },
+      {
+        "name": "oneWay",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "单向添加，右侧通过逐项按钮移除，禁用项受到保护",
+        "global": false
+      },
+      {
+        "name": "draggable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许在本组件左右面板间拖动条目，默认 true",
+        "global": false
+      },
+      {
+        "name": "dragChecked",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "拖动已勾选项时携带同侧全部有效勾选",
+        "global": false
+      },
+      {
+        "name": "animated",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用逐行动画；虚拟模式、大列表、全局关闭和减少动态效果优先",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单配置或 md",
+        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "global": false
+      },
+      {
+        "name": "listHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "240",
+        "description": "内置列表的视口高度，单位像素",
+        "global": false
+      },
+      {
+        "name": "listStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "内置列表样式；虚拟模式会观察实际高度",
+        "global": false
+      },
+      {
+        "name": "operationStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "中间操作区域样式",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "error 或 warning 外观；实际字段错误优先",
+        "global": false
+      },
+      {
+        "name": "pagination",
+        "type": "boolean | HysTransferPagination | undefined",
+        "required": false,
+        "default": "",
+        "description": "启用两侧独立分页，配置初始 pageSize、pageSizeOptions、showSizeChanger、compact",
+        "global": false
+      },
+      {
+        "name": "pages",
+        "type": "Partial<Record<HysTransferSide, number>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "分别受控的左右页码，支持 v-model:pages",
+        "global": false
+      },
+      {
+        "name": "pageSizes",
+        "type": "Partial<Record<HysTransferSide, number>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "分别受控的左右页大小，支持 v-model:pageSizes",
+        "global": false
+      },
+      {
+        "name": "virtual",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "固定行高虚拟滚动，只渲染视口附近的条目；自定义面板自己负责行渲染",
+        "global": false
+      },
+      {
+        "name": "itemHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "36",
+        "description": "虚拟模式行高，单位像素，需与自定义内容保持一致",
+        "global": false
+      },
+      {
+        "name": "overscan",
+        "type": "number | undefined",
+        "required": false,
+        "default": "4",
+        "description": "视口前后额外渲染行数",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "Partial<HysTransferLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖界面、键盘与辅助技术提示文案，支持 {title} / {label} / {count} 等占位符",
+        "global": false
+      },
+      {
+        "name": "format",
+        "type": "((info: HysTransferHeaderInfo) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题计数格式化 (info)，含 side、total、filtered、checked",
+        "global": false
+      },
+      {
+        "name": "renderContent",
+        "type": "((option: T, side: HysTransferSide) => VNodeChild) | undefined",
+        "required": false,
+        "default": "",
+        "description": "条目内容函数 (原始选项,side)，返回 VNode；option / default 插槽优先",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "有效转移与整体失焦后主动触发表单 change / blur 校验",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string[]]",
+        "type": "[value: K[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "change",
-        "type": "[value: string[], direction: \"right\" | \"left\", movedKeys: string[]]",
+        "type": "[value: K[], direction: HysTransferSide, movedKeys: K[]]",
+        "required": false,
+        "default": "",
+        "description": "兼容原有转移请求事件：目标编号、right / left、本次移动编号；调用方可拒绝受控更新"
+      },
+      {
+        "name": "search",
+        "type": "[side: HysTransferSide, value: string]",
+        "required": false,
+        "default": "",
+        "description": "搜索请求：side、query；搜索不清除目标或勾选"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个控件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个控件"
+      },
+      {
+        "name": "scroll",
+        "type": "[side: HysTransferSide, event: Event]",
+        "required": false,
+        "default": "",
+        "description": "列表滚动：side、原始事件"
+      },
+      {
+        "name": "pageChange",
+        "type": "[side: HysTransferSide, page: number, pageSize: number]",
+        "required": false,
+        "default": "",
+        "description": "分页请求：side、page、pageSize"
+      },
+      {
+        "name": "pageSizeChange",
+        "type": "[side: HysTransferSide, size: number]",
+        "required": false,
+        "default": "",
+        "description": "页大小请求：side、size"
+      },
+      {
+        "name": "update:checkedKeys",
+        "type": "[keys: K[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
+        "name": "dragStart",
+        "type": "[side: HysTransferSide, keys: K[], event: DragEvent]",
+        "required": false,
+        "default": "",
+        "description": "拖动开始：side、有效编号数组、原始事件"
+      },
+      {
+        "name": "dragEnd",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "拖动释放或取消后清理状态"
+      },
+      {
         "name": "checkChange",
-        "type": "[side: \"right\" | \"left\", values: string[]]",
+        "type": "[side: HysTransferSide, keys: K[]]",
+        "required": false,
+        "default": "",
+        "description": "某一侧的勾选请求：side、该侧全部勾选编号"
+      },
+      {
+        "name": "selectChange",
+        "type": "[left: K[], right: K[]]",
+        "required": false,
+        "default": "",
+        "description": "两侧的勾选请求：左侧编号、右侧编号"
+      },
+      {
+        "name": "update:searchValues",
+        "type": "[values: Record<HysTransferSide, string>]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:pages",
+        "type": "[pages: Record<HysTransferSide, number>]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:pageSizes",
+        "type": "[sizes: Record<HysTransferSide, number>]",
         "required": false,
         "default": "",
         "description": ""
@@ -13311,14 +13682,211 @@
     ],
     "slots": [
       {
-        "name": "option",
-        "type": "{ option: Item; }",
+        "name": "default",
+        "type": "{ option: T; label: string; side: HysTransferSide; checked: boolean; disabled: boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "条目内容：option、label、side、checked、disabled"
+      },
+      {
+        "name": "option",
+        "type": "{ option: T; label: string; side: HysTransferSide; checked: boolean; disabled: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "条目内容，优先于默认插槽"
+      },
+      {
+        "name": "panel",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "自定义列表：items、filteredItems、checkedKeys、query、disabled、side、check、setCheckedKeys、checkAll、remove"
+      },
+      {
+        "name": "header",
+        "type": "{ info: HysTransferHeaderInfo; side: HysTransferSide; allChecked: boolean; indeterminate: boolean; checkAll: (checked?: boolean | undefined) => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "标题区域：info、side、allChecked、indeterminate、checkAll"
+      },
+      {
+        "name": "footer",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "面板底部，接收与 panel 相同的上下文"
+      },
+      {
+        "name": "left-footer",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "左侧底部，优先于 footer"
+      },
+      {
+        "name": "right-footer",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "右侧底部，优先于 footer"
+      },
+      {
+        "name": "empty",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "空数据或无匹配内容，接收面板上下文"
+      },
+      {
+        "name": "left-empty",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "左侧空内容，优先于 empty"
+      },
+      {
+        "name": "right-empty",
+        "type": "HysTransferPanelContext<T, K>",
+        "required": false,
+        "default": "",
+        "description": "右侧空内容，优先于 empty"
+      },
+      {
+        "name": "loading",
+        "type": "{ side: HysTransferSide; }",
+        "required": false,
+        "default": "",
+        "description": "两侧加载内容：side"
+      },
+      {
+        "name": "operations",
+        "type": "{ move: (side: HysTransferSide, keys?: readonly K[] | undefined) => Promise<boolean>; disabled: boolean; leftChecked: K[]; rightChecked: K[]; }",
+        "required": false,
+        "default": "",
+        "description": "移动按钮：move、disabled、leftChecked、rightChecked"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素"
+      },
+      {
+        "name": "targetKeys",
+        "type": "K[]",
+        "required": true,
+        "default": "",
+        "description": "实际目标编号，遵守宿主受控状态"
+      },
+      {
+        "name": "checkedKeys",
+        "type": "K[]",
+        "required": true,
+        "default": "",
+        "description": "有效勾选编号，不含禁用项"
+      },
+      {
+        "name": "getCheckedKeys",
+        "type": "(side?: HysTransferSide) => K[]",
+        "required": true,
+        "default": "",
+        "description": "读取全部或指定侧的勾选编号"
+      },
+      {
+        "name": "getTargetItems",
+        "type": "() => T[]",
+        "required": true,
+        "default": "",
+        "description": "按当前展示顺序读取右侧原始对象"
+      },
+      {
+        "name": "move",
+        "type": "(direction: HysTransferSide, keys?: readonly K[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "移动指定或默认勾选编号，Promise<boolean> 表示宿主是否接受有效变化"
+      },
+      {
+        "name": "remove",
+        "type": "(keys: readonly K[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "move(left,keys) 的别名"
+      },
+      {
+        "name": "setCheckedKeys",
+        "type": "(keys: readonly K[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "替换两侧勾选；遵守宿主控制与禁用保护"
+      },
+      {
+        "name": "clearChecked",
+        "type": "(side?: HysTransferSide) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "清空全部或指定侧的勾选"
+      },
+      {
+        "name": "checkAll",
+        "type": "(\n    side: HysTransferSide,\n    checked?: boolean,\n    scope?: \"page\" | \"filtered\" | \"all\",\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "指定侧全选或取消；scope 为 page / filtered / all"
+      },
+      {
+        "name": "invertSelection",
+        "type": "(\n    side: HysTransferSide,\n    scope?: \"page\" | \"filtered\" | \"all\",\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "指定侧反选；scope 为 page / filtered / all"
+      },
+      {
+        "name": "setSearch",
+        "type": "(side: HysTransferSide, value: string) => void",
+        "required": true,
+        "default": "",
+        "description": "请求设置指定侧搜索条件"
+      },
+      {
+        "name": "clearSearch",
+        "type": "(side?: HysTransferSide) => void",
+        "required": true,
+        "default": "",
+        "description": "清空全部或指定侧搜索"
+      },
+      {
+        "name": "setPage",
+        "type": "(side: HysTransferSide, page: number) => void",
+        "required": true,
+        "default": "",
+        "description": "请求设置指定侧页码"
+      },
+      {
+        "name": "setPageSize",
+        "type": "(side: HysTransferSide, size: number) => void",
+        "required": true,
+        "default": "",
+        "description": "请求设置指定侧页大小，并回到首页"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(\n    side: HysTransferSide,\n    options: { key?: K; top?: number; behavior?: ScrollBehavior },\n  ) => Promise<void>",
+        "required": true,
+        "default": "",
+        "description": "按 key 或 top 定位指定侧，分页时先请求目标页"
+      },
+      {
+        "name": "focus",
+        "type": "(side?: HysTransferSide) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦指定侧的搜索或首个可用控件，默认 left"
+      }
+    ]
   },
   "HysTree": {
     "props": [

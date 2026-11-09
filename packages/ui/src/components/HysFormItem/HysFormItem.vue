@@ -312,6 +312,7 @@ provide(fieldKey, {
 });
 async function validate(event?: HysFormTrigger) {
   if (form?.resetting.value || disabled.value || !path.value) return true;
+  if (event === "blur" && form?.suppressAutoBlur?.value) return true;
   return (await form?.validateField(path.value, event)) ?? true;
 }
 function getControl() {

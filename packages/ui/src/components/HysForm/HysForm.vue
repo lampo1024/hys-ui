@@ -114,6 +114,7 @@ const hysRootAttrs = useHysRootAttrs(),
   warnings = ref<Record<string, string>>({}),
   states = ref<Record<string, HysFormFieldState>>({}),
   resetting = ref(false),
+  suppressAutoBlur = ref(false),
   validating = ref(false);
 const errorMessages = ref<Record<string, string[]>>({}),
   warningMessages = ref<Record<string, string[]>>({});
@@ -226,6 +227,29 @@ let initial = snapshotForm(props.initialValues ?? props.model ?? {}) as Record<
   modelVersion = 0;
 let lastRules = snapshotForm(props.rules);
 let batchController: AbortController | undefined;
+let blurGuardTimer: ReturnType<typeof setTimeout> | undefined;
+function clearBlurGuard() {
+  clearTimeout(blurGuardTimer);
+  blurGuardTimer = undefined;
+  suppressAutoBlur.value = false;
+}
+function preparePointerSubmit(event: MouseEvent) {
+  if (event.button !== 0 || !(event.target instanceof Element)) return;
+  const button = event.target.closest<HTMLButtonElement | HTMLInputElement>(
+    "button,input",
+  );
+  if (
+    !button ||
+    button.form !== root.value ||
+    button.disabled ||
+    !["submit", "image"].includes(button.type)
+  )
+    return;
+  // Full submit validation follows; blur feedback must not move the click target.
+  clearBlurGuard();
+  suppressAutoBlur.value = true;
+  blurGuardTimer = setTimeout(clearBlurGuard, 0);
+}
 const stateFor = (name: string): HysFormFieldState => ({
   status: errors.value[name]
     ? "error"
@@ -283,6 +307,7 @@ function cancelBatch() {
   batchController = undefined;
 }
 function cancelAll() {
+  clearBlurGuard();
   lifetime++;
   cancelBatch();
   submission++;
@@ -860,6 +885,7 @@ function register(field: HysFormField) {
 provide(formKey, {
   model: computed(() => props.model),
   resetting,
+  suppressAutoBlur,
   errors,
   warnings,
   errorMessages,
@@ -1002,6 +1028,7 @@ defineExpose({
     :style="formStyle"
     novalidate
     :aria-busy="loading || validating || undefined"
+    @mousedown.capture="preparePointerSubmit"
     @submit.prevent="submit"
     @reset.prevent="resetFields()"
   >

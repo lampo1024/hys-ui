@@ -296,6 +296,17 @@ test('Form trigger filtering preserves an existing blur-only error',async()=>{
  await form.vm.validateField('name','blur');assert.equal(form.vm.errors.name,undefined)
 })
 
+test('Form pointer submission avoids blur layout shifts while keyboard blur and full validation still run',async()=>{
+ let calls=0;
+ const form=await mount(ui.HysForm,{model:{name:''},rules:{name:{trigger:'blur',validator:()=>{calls++;return 'Required'}}},scrollToError:false,focusOnError:false},{default:()=>[h(ui.HysFormItem,{prop:'name',label:'Name'},()=>h(ui.HysInput,{modelValue:''})),h(ui.HysButton,{nativeType:'submit'},()=>h('span','Save'))]});
+ const field=form.find('input'),button=form.find('button[type="submit"]');
+ field.focus();button.querySelector('span').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,button:0}));button.focus();await nextTick();await pause(5);
+ assert.equal(calls,0);assert.equal(form.vm.errors.name,undefined);
+ await fire(form.find('form'),'submit');await pause(5);assert.equal(calls,1);assert.equal(form.events.invalid.length,1);assert.equal(form.vm.errors.name,'Required');
+ form.vm.clearValidate();field.focus();button.focus();await pause(5);assert.equal(calls,2);assert.equal(form.vm.errors.name,'Required');
+ form.vm.clearValidate();field.focus();button.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,button:2}));button.focus();await pause(5);assert.equal(calls,3);
+})
+
 test('FormItem merges local rules, supports dependent fields and exposes field methods',async()=>{
  const model=reactive({password:'secret',confirm:'secret'}),form=await mount(ui.HysForm,{model,rules:{confirm:{min:4}}},{default:()=>[h(ui.HysFormItem,{prop:'password',label:'Password'},()=>h(ui.HysInput,{modelValue:model.password})),h(ui.HysFormItem,{prop:'confirm',label:'Confirm',dependencies:['password'],rules:{validator:(value,values)=>value===values.password||'Does not match'}},()=>h(ui.HysInput,{modelValue:model.confirm}))]})
  assert.equal(await form.vm.validate(),true);assert.equal(form.vm.getFields().length,2)

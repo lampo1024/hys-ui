@@ -139,6 +139,15 @@ const tabs:HysCardTab[]=[{label:'Overview',value:0},{label:'Activity',value:'act
 export const surfacesChecks=[h(HysCard,{tabs,activeTab:0,headerStyle:{padding:16},bodyStyle:{padding:24},onTabChange:(value:string|number)=>void value}),h(HysBadge,{checkable:true,checked:true,offset:[2,'3px'],badgeStyle:{fontWeight:600},onChange:(checked:boolean,event:MouseEvent)=>void [checked,event]}),h(HysSkeleton,{variant,delay:100,minDuration:250,width:140,height:'100px',onVisibilityChange:(visible:boolean)=>void visible}),h(HysDivider,{orientation:'start',borderStyle:'double',orientationMargin:0})]
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {surfacesChecks} from './surfaces-types'\nvoid surfacesChecks\n")
+fs.writeFileSync(path.join(dir,'transfer-types.ts'),`import {h,ref} from 'vue'
+import {HysTransfer,type HysTransferInstance,type HysTransferSide,type HysTransferPanelContext,type HysTransferSlots,type HysTransferOption} from 'hys-ui'
+interface Member {id:string;name:string;locked?:boolean}
+const options:Member[]=[{id:'a',name:'A'}],api=ref<HysTransferInstance<Member,string>>()
+export const transferChecks=[h(HysTransfer<Member,string>,{ref:api,options,modelValue:['a'],checkedKeys:[],fieldNames:{value:'id',label:'name',disabled:'locked'},filterMethod:(query,item,side)=>item.name.includes(query)&&side==='left',pagination:{pageSize:6,showSizeChanger:true},virtual:true,listStyle:{height:250},onChange:(keys:string[],side:HysTransferSide,moved:string[])=>void [keys,side,moved],onCheckChange:(side:HysTransferSide,keys:string[])=>void keys}),h(HysTransfer<HysTransferOption<number>,number>,{options:[{value:0,label:'Zero'}],defaultValue:[0]})]
+export const panel:HysTransferSlots<Member,string>['panel']=(scope:HysTransferPanelContext<Member,string>)=>h('p',scope.items.map(item=>item.name).join(','))
+export async function operateTransfer(instance:HysTransferInstance<Member,string>){await instance.setCheckedKeys(['a']);await instance.checkAll('left',true,'filtered');await instance.invertSelection('right');instance.setSearch('left','A');instance.clearSearch();instance.setPageSize('left',5);instance.setPage('left',2);await instance.scrollTo('left',{key:'a'});instance.focus('right');return [await instance.move('right',['a']),instance.getTargetItems(),instance.getCheckedKeys()]}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {transferChecks} from './transfer-types'\nvoid transferChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})
