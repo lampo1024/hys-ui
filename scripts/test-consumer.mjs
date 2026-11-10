@@ -216,6 +216,26 @@ export const batchCheck=h(HysSelect<string[]>,{modelValue:[],options:[],multiple
 export function batchMethods(api:HysSelectInstance):number{return api.selectAll()+api.deselectAll()}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {batchCheck} from './select-bulk-types'\nvoid batchCheck\n")
+fs.writeFileSync(path.join(dir,'menu-types.ts'),`import {h,ref} from 'vue'
+import {HysContextMenu,HysBreadcrumb,type HysContextMenuItem,type HysMenuKey,type HysMenuSelectInfo,type HysContextMenuProps,type HysContextMenuInstance,type HysBreadcrumbItem,type HysBreadcrumbSelectInfo} from 'hys-ui'
+const items:HysContextMenuItem[]=[{label:'Export',value:1,children:[{label:'CSV',value:2}]},{label:'Check',value:'check',type:'checkbox'}]
+const menuProps:HysContextMenuProps={items,trigger:['click','contextmenu'],defaultOpenPath:[1],checkedKeys:['check'],maxHeight:240,popupTransition:'fade'}
+export const menuChecks=[h(HysContextMenu<HysContextMenuItem>,{...menuProps,ref:ref<HysContextMenuInstance>(),onSelect:(value:HysMenuKey,info:HysMenuSelectInfo)=>void [value,info.path]}),h(HysContextMenu<{code:number;name:string}>,{items:[{code:3,name:'Raw'}],fieldNames:{value:'code',label:'name'},onSelect:(value:HysMenuKey,info:HysMenuSelectInfo<{code:number;name:string}>)=>void [value,info.item.code]})]
+type ActualMenu=Parameters<NonNullable<Parameters<typeof HysContextMenu<HysContextMenuItem>>[2]>>[0]
+export function actualMenu(actual:ActualMenu):HysContextMenuInstance{return actual}
+export async function operateMenu(api:HysContextMenuInstance){await api.showAt(10,10);await api.openSubmenu(1);await api.focusItem(2);await api.setCheckedKeys(['check']);await api.setSelectedKeys([1]);await api.closeSubmenus();await api.hide(true);return api.getItems()}
+const crumbs:readonly HysBreadcrumbItem[]=[{label:'Home',to:{path:'/'},children:[{label:'Sibling',href:'/sibling'}]},{label:'Current'}]
+export const crumbChecks=h(HysBreadcrumb,{items:crumbs,maxItems:4,maxItemWidth:180,size:'sm',popupTransition:'slide',onDropdownSelect:(item:HysBreadcrumbItem,info:HysBreadcrumbSelectInfo)=>void [item.label,info.source]})
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {menuChecks,crumbChecks} from './menu-types'\nvoid menuChecks\nvoid crumbChecks\n")
+fs.writeFileSync(path.join(dir,'menu-fixture.vue'),`<script setup lang="ts">
+import {ref} from 'vue'
+import {HysContextMenu,HysButton,type HysMenuSelectInfo,type HysMenuKey,type HysContextMenuInstance} from 'hys-ui'
+const items=[{label:'Open',value:'open'}],raw=[{code:1,title:'Raw'}],menu=ref<HysContextMenuInstance<{label:string;value:string}>>()
+function selected(value:string,info:HysMenuSelectInfo<{label:string;value:string}>){void [value,info.item.label]}
+function mapped(value:HysMenuKey,info:HysMenuSelectInfo<{code:number;title:string}>){void [value,info.item.code]}
+</script><template><HysContextMenu ref="menu" :items="items" @select="selected"><HysButton>Actions</HysButton></HysContextMenu><HysContextMenu :items="raw" :field-names="{value:'code',label:'title'}" @select="mapped"><HysButton>Mapped actions</HysButton></HysContextMenu></template>`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport MenuFixture from './menu-fixture.vue'\nvoid MenuFixture\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

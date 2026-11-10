@@ -1692,11 +1692,19 @@
   "HysBreadcrumb": {
     "props": [
       {
+        "name": "items",
+        "type": "readonly HysBreadcrumbItem[]",
+        "required": true,
+        "default": "",
+        "description": "层级数组；支持 label、href、icon、disabled、target、rel、separator、showSeparator、children、to、replace",
+        "global": false
+      },
+      {
         "name": "separator",
         "type": "string | undefined",
         "required": false,
         "default": "\"/\"",
-        "description": "默认分隔文本；单项 separator 优先",
+        "description": "默认分隔文本 /；单项 separator 优先，separator 插槽最高优先级",
         "global": false
       },
       {
@@ -1704,15 +1712,7 @@
         "type": "Component | undefined",
         "required": false,
         "default": "",
-        "description": "分隔图标组件；separator 插槽优先",
-        "global": false
-      },
-      {
-        "name": "items",
-        "type": "HysBreadcrumbItem[]",
-        "required": true,
-        "default": "",
-        "description": "展示项；每项的字段见公开类型",
+        "description": "分隔图标组件",
         "global": false
       },
       {
@@ -1720,7 +1720,87 @@
         "type": "string | undefined",
         "required": false,
         "default": "\"面包屑\"",
-        "description": "辅助技术使用的组件名称",
+        "description": "导航区域辅助技术名称，默认 面包屑",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "sm / md（默认）/ lg，调整文字和图标尺寸",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用全部链接和菜单入口",
+        "global": false
+      },
+      {
+        "name": "maxItems",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "显示项上限，包含省略入口；默认 0 展示全部，小于 3 不折叠",
+        "global": false
+      },
+      {
+        "name": "itemsBeforeCollapse",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "折叠时保留前面的层级数，默认 1，至少 1",
+        "global": false
+      },
+      {
+        "name": "itemsAfterCollapse",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "折叠时保留末尾层级数，默认 1，至少 1",
+        "global": false
+      },
+      {
+        "name": "maxItemWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "单项文字截断宽度，数值为像素，默认不截断",
+        "global": false
+      },
+      {
+        "name": "ellipsisLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"更多层级\"",
+        "description": "折叠入口辅助技术名称，默认 更多层级",
+        "global": false
+      },
+      {
+        "name": "dropdownLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"{label} 的其他页面\"",
+        "description": "同级导航入口说明，{label} 替换当前标签",
+        "global": false
+      },
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
         "global": false
       }
     ],
@@ -1731,29 +1811,43 @@
         "required": false,
         "default": "",
         "description": "默认链接点击事件：item、index、MouseEvent"
+      },
+      {
+        "name": "dropdownSelect",
+        "type": "[item: HysBreadcrumbItem, info: HysBreadcrumbSelectInfo]",
+        "required": false,
+        "default": "",
+        "description": "选择同级或折叠项：(item, {index,parent,path,source,event})；index 对应原始 items"
       }
     ],
     "slots": [
-      {
-        "name": "separator",
-        "type": "{ item: HysBreadcrumbItem; index: number; }",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
-        "name": "link",
-        "type": "{ item: HysBreadcrumbItem; index: number; }",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
       {
         "name": "item",
         "type": "{ item: HysBreadcrumbItem; index: number; current: boolean; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义标签：item、原始 index、current；默认显示 icon 与 label"
+      },
+      {
+        "name": "link",
+        "type": "{ item: HysBreadcrumbItem; index: number; current: boolean; attrs: Record<string, unknown>; }",
+        "required": false,
+        "default": "",
+        "description": "适配宿主导航：item、原始 index、current、attrs；菜单内复用，绑定 attrs 保留键盘行为"
+      },
+      {
+        "name": "separator",
+        "type": "{ item: HysBreadcrumbItem; index: number; }",
+        "required": false,
+        "default": "",
+        "description": "逐项分隔符：item、原始 index"
+      },
+      {
+        "name": "overflow",
+        "type": "{ items: readonly HysBreadcrumbItem[]; }",
+        "required": false,
+        "default": "",
+        "description": "折叠入口内容，接收被折叠的原始 items"
       }
     ],
     "exposed": []
@@ -4491,6 +4585,302 @@
   "HysContextMenu": {
     "props": [
       {
+        "name": "items",
+        "type": "readonly N[]",
+        "required": true,
+        "default": "[]",
+        "description": "菜单项数组；可操作项 value 为整棵树唯一的字符串或数字，结构项 type 为 group/divider；children 提供子菜单",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "Partial<HysMenuFieldNames> | undefined",
+        "required": false,
+        "default": "",
+        "description": "映射业务字段，支持点路径；事件返回原始项目与路径",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "关闭菜单并禁止触发，继承表单禁用状态",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "保持菜单展开并显示加载内容，阻止条目操作",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "sm / md / lg，继承所属表单配置",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "HysContextMenuTrigger | readonly HysContextMenuTrigger[] | undefined",
+        "required": false,
+        "default": "\"contextmenu\"",
+        "description": "contextmenu（默认）、click、hover、focus 或组合；触屏不响应 hover",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控显示状态，可拒绝展开或关闭请求",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始显示状态",
+        "global": false
+      },
+      {
+        "name": "openPath",
+        "type": "readonly HysMenuKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控已展开分支键路径，不包含叶节点",
+        "global": false
+      },
+      {
+        "name": "defaultOpenPath",
+        "type": "readonly HysMenuKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始展开路径",
+        "global": false
+      },
+      {
+        "name": "checkedKeys",
+        "type": "readonly HysMenuKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控 checkbox/radio 勾选键",
+        "global": false
+      },
+      {
+        "name": "defaultCheckedKeys",
+        "type": "readonly HysMenuKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控勾选初值；未提供时读取项目 checked",
+        "global": false
+      },
+      {
+        "name": "selectedKeys",
+        "type": "readonly HysMenuKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控普通项选中键；selectable 时生效",
+        "global": false
+      },
+      {
+        "name": "defaultSelectedKeys",
+        "type": "readonly HysMenuKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "普通项初始选中键",
+        "global": false
+      },
+      {
+        "name": "selectable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用普通项目的选中状态，默认关闭",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "普通项支持多选切换；不改变 checkbox/radio 的规则",
+        "global": false
+      },
+      {
+        "name": "hideOnClick",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "普通项操作后关闭，默认 true；勾选项默认保持展开，条目 closeOnSelect 优先",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "打开时聚焦菜单可用项，默认 true；悬停与焦点触发保留原焦点",
+        "global": false
+      },
+      {
+        "name": "loopNavigation",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "上下方向键首尾循环，默认 true",
+        "global": false
+      },
+      {
+        "name": "showDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "悬停展开延迟，默认 120ms",
+        "global": false
+      },
+      {
+        "name": "hideDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "悬停移出关闭延迟，默认 180ms",
+        "global": false
+      },
+      {
+        "name": "submenuDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "悬停切换子菜单延迟，默认 160ms",
+        "global": false
+      },
+      {
+        "name": "submenuTrigger",
+        "type": "\"click\" | \"hover\" | undefined",
+        "required": false,
+        "default": "\"hover\"",
+        "description": "hover（默认）或 click；键盘仍可展开",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"bottom-start\"",
+        "description": "相对触发器的优先位置，默认 bottom-start；右键按鼠标位置",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "浮层挂载目标，默认 body；false 保留在宿主 DOM 内",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "根菜单显式宽度，数值单位 px；受 maxWidth 和视口约束",
+        "global": false
+      },
+      {
+        "name": "minWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "190",
+        "description": "菜单最小宽度，默认 190px",
+        "global": false
+      },
+      {
+        "name": "maxWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "360",
+        "description": "菜单最大宽度，默认 360px",
+        "global": false
+      },
+      {
+        "name": "maxHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "320",
+        "description": "整个菜单最大高度，默认 320px；条目区独立滚动",
+        "global": false
+      },
+      {
+        "name": "arrow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示根菜单位置箭头",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加到每层浮层的类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义每层菜单样式；定位与尺寸上限由组件维护",
+        "global": false
+      },
+      {
+        "name": "direction",
+        "type": "\"ltr\" | \"rtl\" | undefined",
+        "required": false,
+        "default": "\"ltr\"",
+        "description": "ltr（默认）或 rtl，影响子菜单方向和左右键",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"操作菜单\"",
+        "description": "根菜单辅助技术名称，默认 操作菜单",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无操作\"",
+        "description": "空菜单文字，默认 暂无操作",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"加载中…\"",
+        "description": "加载文字，默认 加载中…",
+        "global": false
+      },
+      {
+        "name": "backText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"返回\"",
+        "description": "小屏幕逐级返回文字，默认 返回",
+        "global": false
+      },
+      {
         "name": "popupTransition",
         "type": "HysPopupTransition | undefined",
         "required": false,
@@ -4505,50 +4895,266 @@
         "default": "160",
         "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
         "global": false
-      },
-      {
-        "name": "items",
-        "type": "{ label: string; value: string; disabled?: boolean | undefined; type?: \"item\" | \"divider\" | undefined; }[]",
-        "required": true,
-        "default": "",
-        "description": "展示项目数据",
-        "global": false
-      },
-      {
-        "name": "disabled",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "禁止用户操作",
-        "global": false
       }
     ],
     "events": [
       {
-        "name": "select",
-        "type": "[value: string]",
+        "name": "update:open",
+        "type": "[value: boolean]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求显示状态，可由宿主拒绝"
+      },
+      {
+        "name": "select",
+        "type": "[value: N extends { value: infer V extends HysMenuKey; } ? V : HysMenuKey, info: HysMenuSelectInfo<N>]",
+        "required": false,
+        "default": "",
+        "description": "激活叶项目：(value, info)；info 包含原始 item、path、keys、原生事件及请求的勾选/选中状态"
+      },
+      {
+        "name": "visibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际显示状态变化：boolean"
+      },
+      {
+        "name": "update:openPath",
+        "type": "[value: HysMenuKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求展开路径"
+      },
+      {
+        "name": "openPathChange",
+        "type": "[value: HysMenuKey[]]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受的展开路径变化"
+      },
+      {
+        "name": "update:checkedKeys",
+        "type": "[value: HysMenuKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求新的勾选键"
+      },
+      {
+        "name": "checkedChange",
+        "type": "[value: HysMenuKey[], info?: HysMenuSelectInfo<N> | undefined]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受勾选变化：(keys, info?)"
+      },
+      {
+        "name": "update:selectedKeys",
+        "type": "[value: HysMenuKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求新的选中键"
+      },
+      {
+        "name": "selectionChange",
+        "type": "[value: HysMenuKey[], info?: HysMenuSelectInfo<N> | undefined]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受普通项选择变化：(keys, info?)"
       }
     ],
     "slots": [
       {
         "name": "default",
-        "type": "{}",
+        "type": "{ open: boolean; show: (event?: KeyboardEvent | MouseEvent | HysMenuShowOptions | undefined) => Promise<boolean>; hide: (restoreFocus?: boolean | undefined) => Promise<boolean>; toggle: () => Promise<boolean>; attrs: Record<string, unknown>; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "触发器：open、show、hide、toggle、attrs；单个元素自动接收展开语义"
       },
       {
         "name": "item",
-        "type": "{ item: { label: string; value: string; disabled?: boolean | undefined; type?: \"item\" | \"divider\" | undefined; }; }",
+        "type": "HysMenuItemContext<N>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "默认项目正文：原始 item、value、label、path、keys、level、disabled、checked、selected、expanded、submenu"
+      },
+      {
+        "name": "icon",
+        "type": "HysMenuItemContext<N>",
+        "required": false,
+        "default": "",
+        "description": "条目前缀图标，接收与 item 相同的上下文"
+      },
+      {
+        "name": "link",
+        "type": "HysMenuItemContext<N> & { attrs: Record<string, unknown>; }",
+        "required": false,
+        "default": "",
+        "description": "自定义链接，接收项目上下文和 attrs；将 attrs 绑定到可聚焦元素"
+      },
+      {
+        "name": "header",
+        "type": "{ close: () => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "根菜单顶部，接收 close"
+      },
+      {
+        "name": "footer",
+        "type": "{ close: () => Promise<boolean>; }",
+        "required": false,
+        "default": "",
+        "description": "根菜单底部，接收 close"
+      },
+      {
+        "name": "empty",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "空菜单内容"
+      },
+      {
+        "name": "loading",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "加载状态内容"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "触发器根元素"
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "实际显示状态"
+      },
+      {
+        "name": "checkedKeys",
+        "type": "HysMenuKey[]",
+        "required": true,
+        "default": "",
+        "description": "当前勾选键"
+      },
+      {
+        "name": "selectedKeys",
+        "type": "HysMenuKey[]",
+        "required": true,
+        "default": "",
+        "description": "当前普通项选中键"
+      },
+      {
+        "name": "openPath",
+        "type": "HysMenuKey[]",
+        "required": true,
+        "default": "",
+        "description": "实际有效展开路径"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦可用触发器"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "关闭菜单并移开组件内部焦点，不影响外部焦点"
+      },
+      {
+        "name": "show",
+        "type": "(\n    event?: MouseEvent | KeyboardEvent | HysMenuShowOptions,\n  ) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求展开，可传鼠标/键盘事件或 {x,y,focus}；返回是否展开"
+      },
+      {
+        "name": "showAt",
+        "type": "(x: number, y: number, focus?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按窗口坐标展开：(x,y,focus=true)"
+      },
+      {
+        "name": "hide",
+        "type": "(restoreFocus?: boolean) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求关闭；true 时恢复触发前焦点"
+      },
+      {
+        "name": "handleOpen",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "show 的无参数别名"
+      },
+      {
+        "name": "handleClose",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "hide 的别名"
+      },
+      {
+        "name": "toggle",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "切换展开状态"
+      },
+      {
+        "name": "focusItem",
+        "type": "(key: HysMenuKey) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按键展开祖先菜单并聚焦项目，返回是否成功"
+      },
+      {
+        "name": "openSubmenu",
+        "type": "(key: HysMenuKey) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "展开指定分支，返回是否成功"
+      },
+      {
+        "name": "closeSubmenus",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "收起全部子菜单"
+      },
+      {
+        "name": "setCheckedKeys",
+        "type": "(keys: readonly HysMenuKey[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求替换勾选键，去重并保留类型，返回是否接受"
+      },
+      {
+        "name": "setSelectedKeys",
+        "type": "(keys: readonly HysMenuKey[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求替换普通项选中键，单选只保留首项"
+      },
+      {
+        "name": "getItems",
+        "type": "() => N[]",
+        "required": true,
+        "default": "",
+        "description": "获取规范化后的原始可操作项，不包含结构项与隐藏/重复项"
+      }
+    ]
   },
   "HysCronEditor": {
     "props": [
@@ -4746,15 +5352,15 @@
     ],
     "events": [
       {
-        "name": "rowClick",
-        "type": "[row: Row]",
+        "name": "selectionChange",
+        "type": "[keys: (string | number)[]]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "selectionChange",
-        "type": "[keys: (string | number)[]]",
+        "name": "rowClick",
+        "type": "[row: Row]",
         "required": false,
         "default": "",
         "description": ""
@@ -15494,18 +16100,18 @@
         "description": "接受展开变化：row、expanded、keys"
       },
       {
-        "name": "rowClick",
-        "type": "[row: T, index: number, event: MouseEvent]",
-        "required": false,
-        "default": "",
-        "description": "行点击，保留首个行对象，另提供 index 与原生事件"
-      },
-      {
         "name": "selectionChange",
         "type": "[rows: T[], keys: HysTableKey[]]",
         "required": false,
         "default": "",
         "description": "宿主接受选择变化：行数组、编号数组"
+      },
+      {
+        "name": "rowClick",
+        "type": "[row: T, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "行点击，保留首个行对象，另提供 index 与原生事件"
       },
       {
         "name": "sortChange",
@@ -17758,6 +18364,13 @@
         "description": "列表滚动：side、原始事件"
       },
       {
+        "name": "update:checkedKeys",
+        "type": "[keys: K[]]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
         "name": "pageChange",
         "type": "[side: HysTransferSide, page: number, pageSize: number]",
         "required": false,
@@ -17784,13 +18397,6 @@
         "required": false,
         "default": "",
         "description": "拖动释放或取消后清理状态"
-      },
-      {
-        "name": "update:checkedKeys",
-        "type": "[keys: K[]]",
-        "required": false,
-        "default": "",
-        "description": ""
       },
       {
         "name": "checkChange",

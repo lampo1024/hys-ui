@@ -29,7 +29,7 @@ export default defineComponent({
     disabled: { type: Boolean, default: false },
     ignoreOwner: { type: Boolean, default: false },
   },
-  emits: ["inactive"],
+  emits: ["inactive", "entered", "left"],
   setup(props, { slots, emit }) {
     const skin = useHysRootAttrs(),
       active = ref(true),
@@ -164,6 +164,8 @@ export default defineComponent({
               name: "hys-ui-popup-" + effect.value,
               appear: true,
               css: css.value,
+              onAfterEnter: () => emit("entered"),
+              onAfterLeave: () => emit("left"),
               onBeforeEnter: prepare,
               onEnterCancelled: prepare,
               onBeforeLeave: leaving,

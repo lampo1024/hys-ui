@@ -508,6 +508,31 @@
       "Sections": "标题区与操作区尺寸",
       "PreviewDrag": "预览定位与释放动画",
       "Recovery": "越界保护与平滑复位"
+    },
+    "HysContextMenu": {
+      "Basic": "右键操作菜单",
+      "Configure": "触发方式与外观",
+      "Submenus": "多级菜单与分组",
+      "Checking": "复选与单选菜单项",
+      "Selection": "选中状态与多选",
+      "Controlled": "受控展开与关闭",
+      "Mapping": "业务字段与数值编号",
+      "Custom": "头尾操作与条目模板",
+      "Position": "长菜单与浮层边界",
+      "Methods": "键盘定位与实例操作",
+      "States": "加载、空数据与禁用",
+      "Nested": "弹窗内菜单与浮层清理"
+    },
+    "HysBreadcrumb": {
+      "Basic": "基础层级导航",
+      "Configure": "分隔符与外观",
+      "Icons": "条目图标与分隔图标",
+      "Dropdown": "同级页面与嵌套菜单",
+      "Collapse": "折叠较深的层级",
+      "Router": "宿主路由适配",
+      "Truncate": "尺寸与长文本",
+      "Custom": "自定义内容与导航操作",
+      "States": "禁用与边界状态"
     }
   }
 }

@@ -1,18 +1,317 @@
-<script setup lang="ts">
-import { popupSize, type HysPopupMotionProps } from '../../motion/popup';
-
-import PopupMotion from '../../motion/PopupMotion';
-
-import {ref,nextTick,onBeforeUnmount,onDeactivated,watch} from 'vue'
-import {useHysRootAttrs} from '../../config'
-import {registerOverlay} from '../../composables/overlayManager'
-const props=defineProps<HysPopupMotionProps & {items:{label:string;value:string;disabled?:boolean;type?:'item'|'divider'}[];disabled?:boolean}>(),emit=defineEmits<{select:[value:string]}>(),hysRootAttrs=useHysRootAttrs(),open=ref(false),x=ref(8),y=ref(8),panel=ref<HTMLElement>()
-let unregister:(()=>void)|undefined,isTop:(()=>boolean)|undefined,previous:HTMLElement|undefined
-function hide(restore=false){open.value=false;unregister?.();unregister=undefined;document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);if(restore&&previous?.isConnected)previous.focus()}
-function outside(event:PointerEvent){if(!panel.value?.contains(event.target as Node))hide()}
-function escape(event:KeyboardEvent){if(event.key==='Escape'&&isTop?.()){event.preventDefault();event.stopImmediatePropagation();hide(true)}}
-async function show(event:MouseEvent|KeyboardEvent){if(props.disabled)return;event.preventDefault();hide();previous=document.activeElement as HTMLElement;const bounds=(event.currentTarget as HTMLElement).getBoundingClientRect();x.value=event instanceof MouseEvent?event.clientX:bounds.left;y.value=event instanceof MouseEvent?event.clientY:bounds.bottom;open.value=true;const entry=registerOverlay('floating',()=>hide(true));unregister=entry.unregister;isTop=entry.isTop;await nextTick();if(!open.value)return;const box=panel.value ? popupSize(panel.value) : undefined;x.value=Math.max(8,Math.min(x.value,window.innerWidth-(box?.width||190)-8));y.value=Math.max(8,Math.min(y.value,window.innerHeight-(box?.height||240)-8));panel.value?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus();document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true)}
-function keyboard(event:KeyboardEvent){if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();const buttons=Array.from(panel.value?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)')||[]),index=buttons.indexOf(document.activeElement as HTMLElement),next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowUp'?-1:1)+buttons.length)%buttons.length;buttons[next]?.focus()}
-watch(()=>props.disabled,v=>{if(v)hide()});onBeforeUnmount(()=>hide());onDeactivated(()=>hide())
+<script setup lang="ts" generic="N extends object = HysContextMenuItem">
+import {
+  computed,
+  onUpdated,
+  ref,
+  useAttrs,
+  useId,
+  type CSSProperties,
+} from "vue";
+import { useHysRootAttrs } from "../../config";
+import { useContextMenu } from "../../composables/useContextMenu";
+import type {
+  HysContextMenuItem,
+  HysContextMenuProps,
+  HysContextMenuSlots,
+  HysMenuKey,
+  HysMenuSelectInfo,
+} from "../../composables/menu";
+import PopupMotion from "../../motion/PopupMotion";
+import HysMenuPanel from "./HysMenuPanel.vue";
+import HysMenuSlot from "./HysMenuSlot";
+defineOptions({ inheritAttrs: false });
+const props = withDefaults(defineProps<HysContextMenuProps<N>>(), {
+  trigger: "contextmenu",
+  open: undefined,
+  items: () => [],
+  hideOnClick: true,
+  autofocus: true,
+  loopNavigation: true,
+  placement: "bottom-start",
+  appendTo: "body",
+  minWidth: 190,
+  maxWidth: 360,
+  maxHeight: 320,
+  submenuTrigger: "hover",
+  direction: "ltr",
+  emptyText: "暂无操作",
+  loadingText: "加载中…",
+  backText: "返回",
+  ariaLabel: "操作菜单",
+});
+const slots = defineSlots<HysContextMenuSlots<N>>();
+const forwarded = computed(() =>
+  (["item", "icon", "link", "empty", "loading"] as const).filter(
+    (name) => !!slots[name],
+  ),
+);
+const emit = defineEmits<{
+  select: [
+    value: N extends { value: infer V extends HysMenuKey } ? V : HysMenuKey,
+    info: HysMenuSelectInfo<N>,
+  ];
+  "update:open": [value: boolean];
+  visibleChange: [value: boolean];
+  "update:openPath": [value: HysMenuKey[]];
+  openPathChange: [value: HysMenuKey[]];
+  "update:checkedKeys": [value: HysMenuKey[]];
+  checkedChange: [value: HysMenuKey[], info?: HysMenuSelectInfo<N>];
+  "update:selectedKeys": [value: HysMenuKey[]];
+  selectionChange: [value: HysMenuKey[], info?: HysMenuSelectInfo<N>];
+}>();
+const root = ref<HTMLElement>(),
+  layer = ref<HTMLElement>(),
+  panel = ref<HTMLElement>(),
+  id = "hys-menu-" + useId(),
+  skin = useHysRootAttrs(),
+  attrs = useAttrs();
+const menu = useContextMenu(
+  props,
+  root,
+  layer,
+  panel,
+  id,
+  emit as (name: string, ...args: any[]) => void,
+);
+onUpdated(menu.measureTrigger);
+const triggerAttrs = computed(() => ({
+  "aria-haspopup": "menu" as const,
+  "aria-expanded": menu.open.value,
+  "aria-controls": menu.open.value ? id + "-menu-0" : undefined,
+  "aria-disabled": menu.control.disabled.value || undefined,
+  ...(menu.control.disabled.value ? { tabindex: -1 } : {}),
+}));
+const scope = computed(() => ({
+  open: menu.open.value,
+  show: menu.show,
+  hide: menu.hide,
+  toggle: menu.toggle,
+  attrs: triggerAttrs.value,
+}));
+const finite = (value: number, fallback: number, min: number, max: number) =>
+  Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
+const maximum = computed(() => finite(props.maxWidth, 360, 80, 1600));
+const bounds = computed<CSSProperties>(() => ({
+  "--hys-ui-menu-min-width":
+    finite(props.minWidth, 190, 80, maximum.value) + "px",
+  "--hys-ui-menu-max-width": maximum.value + "px",
+  "--hys-ui-menu-max-height": finite(props.maxHeight, 320, 80, 1600) + "px",
+}));
+function assign(level: number, value: unknown) {
+  menu.setPanel(level, (value as { element?: HTMLElement } | null)?.element);
+}
+function surfaceStyle(level: number): CSSProperties {
+  return {
+    ...props.popupStyle,
+    ...(level
+      ? (menu.childStyles.value[level] ?? {
+          position: "fixed",
+          visibility: "hidden",
+        })
+      : menu.floating.style.value),
+    ...bounds.value,
+  };
+}
+defineExpose({
+  element: root,
+  open: menu.open,
+  checkedKeys: menu.checkedKeys,
+  selectedKeys: menu.selectedKeys,
+  openPath: menu.openPath,
+  focus: menu.focus,
+  blur: () => {
+    void menu.hide();
+    const active = document.activeElement as HTMLElement | null;
+    if (
+      active &&
+      (root.value?.contains(active) || layer.value?.contains(active))
+    )
+      active.blur();
+  },
+  show: menu.show,
+  showAt: (x: number, y: number, focus = true) => menu.show({ x, y, focus }),
+  hide: menu.hide,
+  handleOpen: () => menu.show(),
+  handleClose: menu.hide,
+  toggle: menu.toggle,
+  focusItem: menu.focusItem,
+  openSubmenu: menu.openSubmenu,
+  closeSubmenus: menu.closeSubmenus,
+  setCheckedKeys: menu.setCheckedKeys,
+  setSelectedKeys: menu.setSelectedKeys,
+  getItems: menu.getItems,
+});
 </script>
-<template><div v-bind="hysRootAttrs" :tabindex="disabled?-1:0" aria-haspopup="menu" @contextmenu="show" @keydown="($event.key==='ContextMenu'||$event.shiftKey&&$event.key==='F10')&&show($event)"><slot/></div><Teleport to="body"><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" @inactive="hide"><div v-if="open" ref="panel" v-bind="hysRootAttrs" class="hys-ui-ent-context" role="menu" :style="{left:x+'px',top:y+'px'}" @keydown="keyboard"><template v-for="item in items" :key="item.value"><hr v-if="item.type==='divider'" role="separator"/><button v-else type="button" role="menuitem" :disabled="item.disabled" @click.stop="emit('select',item.value);hide(true)"><slot name="item" :item="item">{{item.label}}</slot></button></template></div></PopupMotion></Teleport></template>
+<template>
+  <div
+    ref="root"
+    v-bind="{ ...skin, ...attrs, ...triggerAttrs }"
+    class="hys-ui-menu-trigger"
+    :class="{
+      'hys-ui-menu-inline': !menu.triggers.value.includes('contextmenu'),
+      'hys-ui-menu-disabled': menu.control.disabled.value,
+    }"
+    :tabindex="
+      menu.control.disabled.value
+        ? -1
+        : menu.focusableChild.value
+          ? undefined
+          : 0
+    "
+    @contextmenu="menu.contextmenu"
+    @click="menu.triggerClick"
+    @keydown="menu.triggerKey"
+    @pointerenter="menu.hoverRoot(true, $event)"
+    @pointerleave="menu.hoverRoot(false, $event)"
+    @focusin="menu.triggerFocus"
+    @focusout="menu.focusOut"
+  >
+    <HysMenuSlot
+      :content="$slots.default"
+      :scope="scope"
+      :node-attrs="triggerAttrs"
+    />
+  </div>
+  <Teleport
+    :to="appendTo === false ? 'body' : appendTo"
+    :disabled="appendTo === false"
+  >
+    <div
+      ref="layer"
+      class="hys-ui-menu-layer"
+      :style="{ zIndex: menu.floating.style.value.zIndex }"
+      @pointerenter="menu.enterPanel"
+      @pointerleave="menu.hoverRoot(false, $event)"
+      @focusout="menu.focusOut"
+    >
+      <PopupMotion
+        v-for="(rows, level) in menu.menus.value"
+        :key="level"
+        :popup-transition="popupTransition"
+        :popup-transition-duration="popupTransitionDuration"
+        :placement="
+          level
+            ? direction === 'rtl'
+              ? 'left'
+              : 'right'
+            : menu.floating.placement.value
+        "
+        @inactive="menu.forceHide"
+        @entered="menu.scheduleLayout(true)"
+      >
+        <HysMenuPanel
+          v-if="menu.open.value && menu.live.value"
+          :ref="(value) => assign(level, value)"
+          v-bind="skin"
+          :class="[
+            popupClass,
+            {
+              'hys-ui-menu-covered': level < menu.menus.value.length - 1,
+              'hys-ui-menu-arrow': !level && arrow,
+            },
+          ]"
+          :data-size="menu.control.size.value"
+          :data-level="level"
+          :data-placement="level ? 'right' : menu.floating.placement.value"
+          :style="surfaceStyle(level)"
+          :rows="rows"
+          :level="level"
+          :id="id + '-menu-' + level"
+          :root-id="id"
+          :label="
+            level
+              ? menu.branches.value[level - 1]?.label || ariaLabel
+              : ariaLabel
+          "
+          :parent-label="menu.branches.value[level - 1]?.label"
+          :busy="menu.busy.value"
+          :loading="!!loading"
+          :direction="direction"
+          :empty-text="emptyText"
+          :loading-text="loadingText"
+          :back-text="backText"
+          :context="menu.context"
+          :tabbable="menu.tabbable"
+          @choose="menu.choose"
+          @focus-row="(row) => menu.setActive(row)"
+          @hover-row="menu.hoverRow"
+          @keyboard="menu.keyboard(level, $event)"
+          @back="menu.setPath(menu.openPath.value.slice(0, level - 1), true)"
+          @scroll="menu.scheduleLayout()"
+        >
+          <template v-for="name in forwarded" #[name]="slotScope"
+            ><slot :name="name" v-bind="slotScope || {}"
+          /></template>
+          <template v-if="!level && $slots.header" #header
+            ><slot name="header" :close="() => menu.hide()"
+          /></template>
+          <template v-if="!level && $slots.footer" #footer
+            ><slot name="footer" :close="() => menu.hide()"
+          /></template>
+        </HysMenuPanel>
+      </PopupMotion>
+    </div>
+  </Teleport>
+</template>
+<style scoped>
+.hys-ui-menu-trigger {
+  max-width: 100%;
+  outline: none;
+}
+.hys-ui-menu-trigger:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 3px;
+  border-radius: 7px;
+}
+.hys-ui-menu-inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+.hys-ui-menu-disabled {
+  opacity: 0.55;
+}
+.hys-ui-menu-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+.hys-ui-menu-arrow::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 16px;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  border-top: inherit;
+  border-left: inherit;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.hys-ui-menu-arrow[data-placement$="end"]::before {
+  left: auto;
+  right: 16px;
+}
+.hys-ui-menu-arrow[data-placement^="top"]::before {
+  top: auto;
+  bottom: -5px;
+  transform: rotate(225deg);
+}
+.hys-ui-menu-arrow[data-placement="right"]::before {
+  left: -5px;
+  top: 18px;
+  transform: rotate(-45deg);
+}
+.hys-ui-menu-arrow[data-placement="left"]::before {
+  left: auto;
+  right: -5px;
+  top: 18px;
+  transform: rotate(135deg);
+}
+@media (max-width: 650px) {
+  .hys-ui-menu-covered {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+</style>

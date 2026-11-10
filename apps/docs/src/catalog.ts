@@ -250,7 +250,10 @@ export const catalog=[
     "slug": "hys-checkbox-group",
     "category": "表单输入",
     "description": "管理多项选择，支持数量约束、全选、字段映射和自定义选项。",
-    "notes": ["值保留原始类型；不可编辑的选择与未加载的值由宿主维护。", "全选和清除遵守 min / max，不会自动改写外部传入的初值。"]
+    "notes": [
+      "值保留原始类型；不可编辑的选择与未加载的值由宿主维护。",
+      "全选和清除遵守 min / max，不会自动改写外部传入的初值。"
+    ]
   },
   {
     "name": "HysRadio",
@@ -259,7 +262,10 @@ export const catalog=[
     "slug": "hys-radio",
     "category": "表单输入",
     "description": "在互斥选项中选择一个值，支持按钮外观、自定义内容和表单语义。",
-    "notes": ["多个独立单选框使用相同的模型和 name。", "使用 HysRadioGroup 获得分组配置和完整键盘导航。"]
+    "notes": [
+      "多个独立单选框使用相同的模型和 name。",
+      "使用 HysRadioGroup 获得分组配置和完整键盘导航。"
+    ]
   },
   {
     "name": "HysRadioGroup",
@@ -581,10 +587,11 @@ export const catalog=[
     "label": "面包屑",
     "slug": "hys-breadcrumb",
     "category": "导航布局",
-    "description": "面包屑的独立交互示例、配置场景与类型参考。",
+    "description": "带同级导航、层级折叠与路由适配的面包屑。",
     "notes": [
       "link 插槽适配宿主路由，组件库不依赖 Vue Router。item 与 separator 插槽可自定义显示内容。",
-      "末项表示当前页面；禁用项不产生链接。新窗口默认链接会补充安全 rel 属性。"
+      "末项表示当前页面；禁用项不产生链接。新窗口默认链接会补充安全 rel 属性。",
+      "children 提供同级导航，maxItems 折叠中间层级；事件索引始终对应原始 items。"
     ]
   },
   {
@@ -665,10 +672,11 @@ export const catalog=[
     "label": "右键菜单",
     "slug": "hys-context-menu",
     "category": "反馈浮层",
-    "description": "右键菜单的独立交互示例、配置场景与类型参考。",
+    "description": "多种触发方式、嵌套操作、选择与键盘导航。",
     "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "默认保持右键触发；trigger 可配置点击、悬停、焦点或组合。条目 value 在整棵菜单中保持唯一。",
+      "复选与单选项默认操作后不关闭，closeOnSelect 可逐项覆盖。受控状态允许宿主拒绝请求。",
+      "子菜单使用左右方向键进入与返回；小屏幕提供逐级返回。页面离开、禁用或父弹窗关闭时清理浮层和延迟任务。"
     ]
   },
   {
