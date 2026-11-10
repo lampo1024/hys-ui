@@ -289,6 +289,8 @@ void [thresholds,strategy,config,actual]
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport ProgressFixture from './progress-fixture.vue'\nconst progressHost=document.createElement('section');progressHost.id='progress-fixture';document.body.append(progressHost);createApp(ProgressFixture).mount(progressHost)\n")
 fs.copyFileSync(path.join(root,'scripts/consumer-feedback.vue'),path.join(dir,'feedback-fixture.vue'))
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport FeedbackFixture from './feedback-fixture.vue'\nconst feedbackHost=document.createElement('section');feedbackHost.id='feedback-fixture';document.body.append(feedbackHost);createApp(FeedbackFixture).mount(feedbackHost)\n")
+fs.copyFileSync(path.join(root,'scripts/consumer-tag-color.vue'),path.join(dir,'tag-color-fixture.vue'))
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport TagColorFixture from './tag-color-fixture.vue'\nconst tagColorHost=document.createElement('section');tagColorHost.id='tag-color-fixture';document.body.append(tagColorHost);createApp(TagColorFixture).mount(tagColorHost)\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

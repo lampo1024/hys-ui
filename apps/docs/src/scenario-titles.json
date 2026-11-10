@@ -660,6 +660,43 @@
       "Mapping": "业务字段与原始数据",
       "Dynamic": "动态记录与稳定标识",
       "States": "空记录与长内容"
+    },
+    "HysTagInput": {
+      "Basic": "基础添加与删除",
+      "Configure": "输入与行为配置",
+      "Trigger": "添加按键与失焦保存",
+      "Tokens": "分隔符与批量粘贴",
+      "Limits": "数量、重复与校验",
+      "Async": "异步检查与取消",
+      "Collapse": "折叠标签与大列表",
+      "Appearance": "尺寸与标签外观",
+      "Dragging": "拖拽与键盘排序",
+      "Custom": "前后缀与自定义内容",
+      "Controlled": "受控更新与拒绝处理",
+      "Methods": "实例操作与初始值",
+      "Form": "表单校验与尺寸继承",
+      "States": "只读、禁用与边界状态",
+      "Lifecycle": "缓存页面与检查取消",
+      "PopupMotion": "折叠面板的展开动效"
+    },
+    "HysColorPicker": {
+      "Basic": "基础选色与即时更新",
+      "Configure": "颜色与行为配置",
+      "Alpha": "透明度与八位颜色",
+      "Formats": "颜色解析与输出格式",
+      "Presets": "常用颜色与透明色",
+      "Confirm": "预览、确认与取消",
+      "Inline": "内嵌面板与确认模式",
+      "Appearance": "尺寸与紧凑布局",
+      "Controlled": "受控颜色与面板状态",
+      "Custom": "自定义触发器与操作区",
+      "Methods": "实例操作与初始颜色",
+      "Form": "表单校验与尺寸继承",
+      "Performance": "连续拖动与按帧更新",
+      "States": "空值、错误与令牌集成",
+      "PopupMotion": "浮层展开与收起动效",
+      "Mount": "浮层挂载与容器定位",
+      "Lifecycle": "缓存页面与浮层清理"
     }
   }
 }

@@ -297,6 +297,7 @@ const describedBy = computed(
       .filter(Boolean)
       .join(" ") || undefined,
 );
+const deferredChangeChecks = ref(0);
 provide(fieldKey, {
   id: computed(() => (props.autoLink ? controlId.value : "")),
   label,
@@ -309,6 +310,14 @@ provide(fieldKey, {
   disabled,
   size,
   validate,
+  deferChangeValidation() {
+    deferredChangeChecks.value++;
+    let released = false;
+    return () => {
+      if (!released) deferredChangeChecks.value--;
+      released = true;
+    };
+  },
 });
 async function validate(event?: HysFormTrigger) {
   if (form?.resetting.value || disabled.value || !path.value) return true;
@@ -443,7 +452,12 @@ watch(
     ),
   ],
   (next, previous) => {
-    if (form?.model.value && !form.resetting.value && next[0] === previous?.[0])
+    if (
+      form?.model.value &&
+      !form.resetting.value &&
+      !deferredChangeChecks.value &&
+      next[0] === previous?.[0]
+    )
       void validate("change");
   },
   { deep: true },

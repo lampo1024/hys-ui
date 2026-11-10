@@ -29,6 +29,8 @@ code+="export type {HysUploadFile,HysUploadItem,HysUploadStatus,HysUploadListTyp
 code+="export type {HysProgressType,HysProgressStatus,HysProgressSize,HysProgressLinecap,HysProgressGapPosition,HysProgressGradientDirection,HysProgressGradientStop,HysProgressGradient,HysProgressColorStop,HysProgressColor,HysProgressSuccess,HysProgressLabelContext,HysProgressProps,HysProgressSlots,HysProgressInstance} from './composables/progress'\n"
 code+="export type {HysAlertTone,HysAlertEffect,HysAlertTransition,HysAlertCloseContext,HysAlertProps,HysAlertSlotContext,HysAlertSlots,HysAlertInstance,HysEmptyIllustration,HysEmptyProps,HysEmptySlotContext,HysEmptySlots,HysEmptyInstance} from './composables/feedback'\n"
 code+="export type {HysTimelineKey,HysTimelineMode,HysTimelinePosition,HysTimelineSize,HysTimelineTone,HysTimelineItem,HysTimelineFieldNames,HysTimelineProps,HysTimelineItemContext,HysTimelinePendingContext,HysTimelineSlots,HysTimelineInstance} from './composables/timeline'\n"
+code+="export type {HysTagInputReason,HysTagInputAddContext,HysTagInputInvalid,HysTagInputProps,HysTagInputSlotContext,HysTagInputTagContext,HysTagInputSlots,HysTagInputInstance} from './composables/tagInput'\n"
+code+="export type {HysColorFormat,HysColor,HysColorPickerProps,HysColorPickerContext,HysColorPickerSlots,HysColorPickerInstance} from './composables/color'\n"
 fs.writeFileSync(root+'index.ts',code)
 
 fs.appendFileSync(root+'index.ts',"export type {HysPopupTransition,HysPopupMotionProps} from './motion/popup'\n")

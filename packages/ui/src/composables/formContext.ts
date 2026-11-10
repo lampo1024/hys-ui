@@ -146,6 +146,8 @@ export interface HysFieldContext {
   invalid?: ComputedRef<boolean>;
   status?: ComputedRef<HysFormStatus>;
   validate?: (trigger?: HysFormTrigger) => Promise<boolean>;
+  /** Temporarily defer model-watch validation during a continuous control gesture. */
+  deferChangeValidation?: () => () => void;
   disabled?: ComputedRef<boolean>;
   size?: ComputedRef<"sm" | "md" | "lg">;
 }

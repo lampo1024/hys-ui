@@ -4649,6 +4649,286 @@
   "HysColorPicker": {
     "props": [
       {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "未设置",
+        "description": "受控字符串颜色，原有即时十六进制接口保持兼容",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始颜色，默认空值",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止全部操作并关闭浮层，继承表单/字段状态",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "保留查看和聚焦，禁止颜色编辑",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单或 md",
+        "description": "sm / md / lg，继承表单/字段尺寸",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "颜色触发器的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "presets",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "常用颜色数组；支持解析格式与透明色，无效值跳过",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许清空为字符串空值，默认 false",
+        "global": false
+      },
+      {
+        "name": "showAlpha",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示透明度轨道并在输出中保留透明度",
+        "global": false
+      },
+      {
+        "name": "format",
+        "type": "HysColorFormat | undefined",
+        "required": false,
+        "default": "hex（默认）/ rgb（showAlpha=true）",
+        "description": "输出 hex / rgb / hsl / hsv；未指定时无透明度用 hex，有透明度用 rgb",
+        "global": false
+      },
+      {
+        "name": "immediate",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认 true 即时更新；false 暂存预览，确认后更新",
+        "global": false
+      },
+      {
+        "name": "showInput",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示触发器旁和面板内的颜色文本框",
+        "global": false
+      },
+      {
+        "name": "showText",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "触发器同时显示颜色文字，可配合 showInput=false 紧凑展示",
+        "global": false
+      },
+      {
+        "name": "showPresets",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示常用颜色网格",
+        "global": false
+      },
+      {
+        "name": "inline",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "内嵌展示面板，不创建浮层",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "未设置",
+        "description": "受控浮层显示；inline 时不生效",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始浮层显示",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"bottom-start\"",
+        "description": "浮层位置，默认 bottom-start，支持边缘避让",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "浮层挂载目标，默认 body，false 保留原地",
+        "global": false
+      },
+      {
+        "name": "popupClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加面板类名",
+        "global": false
+      },
+      {
+        "name": "popupStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "面板附加样式；定位由组件维护",
+        "global": false
+      },
+      {
+        "name": "popupWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "288",
+        "description": "面板宽度，默认 288px，不超过视口空间",
+        "global": false
+      },
+      {
+        "name": "showFooter",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示默认或自定义操作区",
+        "global": false
+      },
+      {
+        "name": "confirmText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "确认/完成操作文字",
+        "global": false
+      },
+      {
+        "name": "cancelText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "取消预览操作文字",
+        "global": false
+      },
+      {
+        "name": "clearText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空操作文字",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "外部反馈状态",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "外部错误文案",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "隐藏字段提交实际已接受颜色，不提交预览",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联原生 form ID",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "触发器的 Tab 顺序",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载时聚焦颜色输入或面板",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "主动表单校验；连续指针编辑在释放时检查一次，表单模型其他自动检查仍由表单控制",
+        "global": false
+      },
+      {
+        "name": "inputProps",
+        "type": "Record<string, unknown> | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加外部颜色文本框原生属性",
+        "global": false
+      },
+      {
         "name": "popupTransition",
         "type": "HysPopupTransition | undefined",
         "required": false,
@@ -4663,46 +4943,6 @@
         "default": "160",
         "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
         "global": false
-      },
-      {
-        "name": "modelValue",
-        "type": "string",
-        "required": true,
-        "default": "",
-        "description": "受控值，配合 v-model 使用",
-        "global": false
-      },
-      {
-        "name": "disabled",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
-        "global": false
-      },
-      {
-        "name": "label",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "显示标签",
-        "global": false
-      },
-      {
-        "name": "presets",
-        "type": "string[] | undefined",
-        "required": false,
-        "default": "",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "clearable",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "",
-        "global": false
       }
     ],
     "events": [
@@ -4711,11 +4951,216 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求更新模型值"
+      },
+      {
+        "name": "change",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "已接受颜色变化：(value)"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "完成清空后触发"
+      },
+      {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际浮层可见状态变化"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "请求显示或收起浮层"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件获得焦点的 FocusEvent"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件和浮层后的 FocusEvent"
+      },
+      {
+        "name": "cancel",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "显式取消预览"
+      },
+      {
+        "name": "invalid",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "无法解析的原始颜色文本"
+      },
+      {
+        "name": "activeChange",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "颜色预览变化：(value)，确认模式不写模型"
+      },
+      {
+        "name": "confirm",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "确认已被接受：(value)"
       }
     ],
-    "slots": [],
-    "exposed": []
+    "slots": [
+      {
+        "name": "trigger",
+        "type": "HysColorPickerContext",
+        "required": false,
+        "default": "",
+        "description": "自定义触发器；使用上下文 show/hide 方法负责显示"
+      },
+      {
+        "name": "header",
+        "type": "HysColorPickerContext",
+        "required": false,
+        "default": "",
+        "description": "面板顶部内容，接收当前颜色与预览上下文"
+      },
+      {
+        "name": "footer",
+        "type": "HysColorPickerContext",
+        "required": false,
+        "default": "",
+        "description": "面板操作区；接收 confirm/cancel/clear 和 valid/dirty 状态"
+      },
+      {
+        "name": "preset",
+        "type": "{ value: string; color: string; selected: boolean; disabled: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "预设颜色内容，接收原始 value、CSS color、selected、disabled"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "控件根元素"
+      },
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "外部文本输入节点"
+      },
+      {
+        "name": "panel",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "当前颜色面板节点"
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "当前实际颜色值"
+      },
+      {
+        "name": "draft",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "当前草稿文字"
+      },
+      {
+        "name": "color",
+        "type": "Readonly<HysColor>",
+        "required": true,
+        "default": "",
+        "description": "当前预览的 HSV 与透明度快照"
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "颜色面板是否展示，内嵌面板在活动页面中为 true"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦文本框或可用触发器/内嵌色板"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移除控件内当前焦点"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求打开颜色浮层，返回是否已展示"
+      },
+      {
+        "name": "hide",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求关闭颜色浮层；内嵌面板不关闭"
+      },
+      {
+        "name": "confirm",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "应用预览并在接受后关闭浮层"
+      },
+      {
+        "name": "cancel",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "放弃预览并请求关闭浮层"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求清空；遵守禁用、只读和颜色 clearable"
+      },
+      {
+        "name": "setColor",
+        "type": "(value: string) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "解析颜色并预览；即时模式同时请求更新，返回结果"
+      }
+    ]
   },
   "HysColorTokenEditor": {
     "props": [
@@ -7890,6 +8335,14 @@
         "global": false
       },
       {
+        "name": "cancelText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"取消\"",
+        "description": "内置取消文字，默认 取消",
+        "global": false
+      },
+      {
         "name": "width",
         "type": "string | number | undefined",
         "required": false,
@@ -8159,14 +8612,6 @@
         "required": false,
         "default": "\"确定\"",
         "description": "内置确认文字，默认 确定",
-        "global": false
-      },
-      {
-        "name": "cancelText",
-        "type": "string | undefined",
-        "required": false,
-        "default": "\"取消\"",
-        "description": "内置取消文字，默认 取消",
         "global": false
       },
       {
@@ -18745,10 +19190,18 @@
     "props": [
       {
         "name": "modelValue",
-        "type": "string[]",
-        "required": true,
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "未设置",
+        "description": "受控标签字符串数组；宿主可以拒绝更新",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "readonly string[] | undefined",
+        "required": false,
         "default": "",
-        "description": "受控值，配合 v-model 使用",
+        "description": "非受控初始标签；组件不修改传入数组",
         "global": false
       },
       {
@@ -18756,7 +19209,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "10",
-        "description": "允许的最大值或最晚日期",
+        "description": "标签数量上限；默认 10，Infinity 不限制，0 禁止新增",
         "global": false
       },
       {
@@ -18764,7 +19217,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "\"输入后按 Enter\"",
-        "description": "空值占位提示",
+        "description": "草稿为空时的占位文字",
         "global": false
       },
       {
@@ -18772,7 +19225,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "description": "禁止全部操作，继承表单/字段状态",
         "global": false
       },
       {
@@ -18780,7 +19233,15 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "只读展示，允许聚焦和查看折叠标签",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "继承字段/表单或 md",
+        "description": "sm / md / lg，继承表单/字段尺寸",
         "global": false
       },
       {
@@ -18788,7 +19249,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "焦点离开整个组件时保存草稿，默认 true",
         "global": false
       },
       {
@@ -18796,65 +19257,489 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "保存时拆分的单个字符串分隔符；保留原有行为",
+        "global": false
+      },
+      {
+        "name": "delimiters",
+        "type": "string | RegExp | readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入/粘贴时拆分的字符串、字符串数组或正则，优先于 separator",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "readonly string[] | \"Enter\" | \"Space\" | \"Tab\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "添加按键 Enter / Space / Tab 或按键数组；Tab 仍允许正常移出焦点",
         "global": false
       },
       {
         "name": "beforeAdd",
-        "type": "((value: string) => boolean) | undefined",
+        "type": "((value: string, context: HysTagInputAddContext) => boolean | void | Promise<boolean | void>) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "同步或异步检查；接收 value 与 {signal,values,reason}，false 或异常拒绝",
+        "global": false
+      },
+      {
+        "name": "allowDuplicates",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许相同标签重复出现",
+        "global": false
+      },
+      {
+        "name": "caseSensitive",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "重复判定区分大小写，默认 true",
+        "global": false
+      },
+      {
+        "name": "trim",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "添加前去除两端空白，默认 true",
+        "global": false
+      },
+      {
+        "name": "clearable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示清空标签与草稿的按钮",
+        "global": false
+      },
+      {
+        "name": "clearIcon",
+        "type": "Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "替代清空图标的组件；clear-icon 插槽优先",
+        "global": false
+      },
+      {
+        "name": "tagTone",
+        "type": "\"primary\" | \"success\" | \"warning\" | \"danger\" | \"neutral\" | undefined",
+        "required": false,
+        "default": "\"primary\"",
+        "description": "primary / success / warning / danger / neutral 标签颜色",
+        "global": false
+      },
+      {
+        "name": "tagEffect",
+        "type": "\"light\" | \"dark\" | \"outline\" | undefined",
+        "required": false,
+        "default": "\"light\"",
+        "description": "light / dark / outline 标签外观",
+        "global": false
+      },
+      {
+        "name": "tagRound",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "圆角胶囊标签",
+        "global": false
+      },
+      {
+        "name": "draggable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许标签拖拽及 Alt+方向键排序",
+        "global": false
+      },
+      {
+        "name": "collapseTags",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "折叠超过 maxCollapseTags 的标签",
+        "global": false
+      },
+      {
+        "name": "maxCollapseTags",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "直接展示的标签数，默认 1，允许 0",
+        "global": false
+      },
+      {
+        "name": "collapseTagsTooltip",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示可展开的折叠标签列表；列表按可见范围渲染",
+        "global": false
+      },
+      {
+        "name": "overflowHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "240",
+        "description": "折叠列表高度上限，默认 240px，约束 72–480px",
+        "global": false
+      },
+      {
+        "name": "maxTagTextLength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "单个标签显示长度上限；完整值保留在标题与数据中",
+        "global": false
+      },
+      {
+        "name": "maxlength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "单个标签及原生草稿的最大文字长度",
+        "global": false
+      },
+      {
+        "name": "minlength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "单个标签最小文字长度",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "文本输入的辅助技术名称，默认使用字段标签或 输入标签",
+        "global": false
+      },
+      {
+        "name": "label",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术名称的备用值",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "以多个同名隐藏字段提交已接受标签，不提交草稿",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联原生 form ID",
+        "global": false
+      },
+      {
+        "name": "autocomplete",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"off\"",
+        "description": "原生文本自动完成策略，默认 off",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载时聚焦文本输入",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "文本输入的 Tab 顺序",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "外部 error / warning / success 状态",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "外部错误文案，同时关联输入语义",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "触发主动表单校验；表单模型本身的自动检查仍由表单控制",
+        "global": false
+      },
+      {
+        "name": "inputProps",
+        "type": "Record<string, unknown> | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加原生文本属性；固定的状态和输入行为优先",
+        "global": false
+      },
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
         "global": false
       }
     ],
     "events": [
       {
         "name": "update:modelValue",
-        "type": "[value: string[]]",
+        "type": "[values: string[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求更新模型值"
       },
       {
         "name": "change",
-        "type": "[value: string[]]",
+        "type": "[values: string[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "兼容的变更请求：新数组；受控宿主仍可拒绝"
       },
       {
         "name": "add",
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "通过检查的新增请求标签；保持原字符串参数"
+      },
+      {
+        "name": "clear",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "完成清空后触发"
+      },
+      {
+        "name": "input",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "草稿文字变化，不是标签数组变更"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件获得焦点的 FocusEvent"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件和浮层后的 FocusEvent"
+      },
+      {
+        "name": "compositionend",
+        "type": "[event: CompositionEvent]",
+        "required": false,
+        "default": "",
+        "description": "原生组合输入结束事件"
+      },
+      {
+        "name": "invalid",
+        "type": "[info: HysTagInputInvalid]",
+        "required": false,
+        "default": "",
+        "description": "详细拒绝信息 {value,reason,error?}"
       },
       {
         "name": "remove",
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "删除请求的标签文字；保持原字符串参数"
       },
       {
         "name": "reject",
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "未通过重复、上限、长度或守卫检查的标签文字"
+      },
+      {
+        "name": "acceptedChange",
+        "type": "[values: string[]]",
+        "required": false,
+        "default": "",
+        "description": "已接受标签变化的新数组；副作用和成功提示建议使用此事件"
+      },
+      {
+        "name": "reorder",
+        "type": "[from: number, to: number, values: string[]]",
+        "required": false,
+        "default": "",
+        "description": "请求排序：(from,to,values)，数组编号从 0 开始"
       }
     ],
     "slots": [
       {
         "name": "tag",
-        "type": "{ value: string; index: number; }",
+        "type": "HysTagInputTagContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "标签内容，兼容 value/index，并提供 disabled/readonly/remove"
+      },
+      {
+        "name": "prefix",
+        "type": "HysTagInputSlotContext",
+        "required": false,
+        "default": "",
+        "description": "输入前缀；接收 values/draft/pending/disabled/readonly/add/clear"
+      },
+      {
+        "name": "suffix",
+        "type": "HysTagInputSlotContext",
+        "required": false,
+        "default": "",
+        "description": "输入后缀，接收同样的上下文"
+      },
+      {
+        "name": "clear-icon",
+        "type": "HysTagInputSlotContext",
+        "required": false,
+        "default": "",
+        "description": "自定义清空图标，接收输入上下文"
+      },
+      {
+        "name": "remove-icon",
+        "type": "HysTagInputTagContext",
+        "required": false,
+        "default": "",
+        "description": "自定义单个移除图标，接收标签上下文"
+      },
+      {
+        "name": "collapse-tag",
+        "type": "{ count: number; values: readonly string[]; }",
+        "required": false,
+        "default": "",
+        "description": "折叠触发内容，接收隐藏 count/values"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "控件根元素"
+      },
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "外部文本输入节点"
+      },
+      {
+        "name": "values",
+        "type": "readonly string[]",
+        "required": true,
+        "default": "",
+        "description": "当前实际标签列表"
+      },
+      {
+        "name": "draft",
+        "type": "string",
+        "required": true,
+        "default": "",
+        "description": "当前草稿文字"
+      },
+      {
+        "name": "pending",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "标签异步检查状态"
+      },
+      {
+        "name": "focus",
+        "type": "(options?: FocusOptions) => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦文本框或可用触发器/内嵌色板"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "移除控件内当前焦点"
+      },
+      {
+        "name": "add",
+        "type": "(value?: string | string[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "检查并请求添加一个或多个标签，返回是否已接受"
+      },
+      {
+        "name": "remove",
+        "type": "(index: number) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按当前数组下标移除标签，返回是否已接受"
+      },
+      {
+        "name": "clear",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求清空；遵守禁用、只读和颜色 clearable"
+      },
+      {
+        "name": "move",
+        "type": "(from: number, to: number) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "按当前数组下标排序；需要 draggable=true"
+      },
+      {
+        "name": "setDraft",
+        "type": "(value: string) => void",
+        "required": true,
+        "default": "",
+        "description": "只更新标签草稿，不提交"
+      }
+    ]
   },
   "HysTextarea": {
     "props": [

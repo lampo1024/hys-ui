@@ -3,6 +3,7 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {createRequire} from 'node:module'
 import ts from 'typescript'
+import {applyTagColorApi} from './tag-color-api.mjs'
 import {applyFeedbackApi} from './feedback-api.mjs'
 const root=fileURLToPath(new URL('..',import.meta.url)),require=createRequire(import.meta.url)
 const {createChecker}=require('vue-component-meta')
@@ -327,6 +328,7 @@ for(const name of fs.readdirSync(dir).sort()){
   for(const slot of api[name].slots)slot.description=slot.name==='default'?'进度文字：value / successValue / status / indeterminate；showLabel=false 时不渲染':slot.name==='icon'?'自定义状态图标，接收同样的上下文，需开启 showStatusIcon':slot.description
  }
  applyFeedbackApi(name,api[name],root)
+ applyTagColorApi(name,api[name],root)
  for(const prop of api[name].props){if(prop.name==='popupTransition'){prop.default='scale';prop.description=descriptions[prop.name]}if(prop.name==='popupTransitionDuration'){prop.default='160';prop.description=descriptions[prop.name]}}
  if(['HysTable','HysDataGrid','HysVirtualTable'].includes(name))api[name].slots.push({name:'[column.key]',type:'{ row: Record<string, unknown>; value: unknown; index?: number }',required:false,default:'',description:'与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。'})
 }
