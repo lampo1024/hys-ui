@@ -382,7 +382,9 @@
       "Form": "表单校验与尺寸继承",
       "Methods": "实例操作与焦点定位",
       "States": "空数据、加载与禁用状态",
-      "Locale": "文案与本地化"
+      "Locale": "文案与本地化",
+      "Movement": "跨区域飞入与落地高亮",
+      "SelectionKeys": "快捷多选与双击移动"
     },
     "HysTree": {
       "Basic": "基础树形与独立状态",

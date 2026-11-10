@@ -27,6 +27,7 @@ import {
   fieldKey,
   type HysFieldContext,
 } from "../../composables/formContext";
+import { useTransferMotion } from "../../composables/useTransferMotion";
 import { useTransfer } from "../../composables/useTransfer";
 import {
   transferLabel,
@@ -43,7 +44,12 @@ const props = withDefaults(defineProps<HysTransferProps<T, K>>(), {
   targetOrder: "original",
   draggable: true,
   dragChecked: true,
+  moveOnDoubleClick: false,
   animated: true,
+  moveAnimation: "flight",
+  moveDuration: 240,
+  maxAnimatedItems: 6,
+  highlightOnArrival: true,
   listHeight: 240,
   itemHeight: 36,
   overscan: 4,
@@ -106,11 +112,47 @@ const {
   check,
   checkAll,
   invertSelection,
-  move,
   setSearch,
   setPage,
   setPageSize,
 } = store;
+const transferMotion = useTransferMotion(element, props);
+watch(
+  [() => store.keys.value, () => store.data.value],
+  transferMotion.cancelPlaying,
+);
+watch(
+  [
+    () => store.searchValues.value.left,
+    () => store.searchValues.value.right,
+    () => props.loading,
+    () => control.disabled.value,
+  ],
+  transferMotion.stop,
+);
+async function move(
+  direction: HysTransferSide,
+  requested: readonly K[] = getCheckedKeys(
+    direction === "right" ? "left" : "right",
+  ),
+) {
+  if (busy.value) return false;
+  const valid = [...new Set(requested)].filter((key) => {
+    const row = store.data.value.map.get(key);
+    return (
+      row &&
+      !row.disabled &&
+      store.targetSet.value.has(key) !== (direction === "right")
+    );
+  });
+  const snapshot = transferMotion.capture(direction, valid),
+    accepted = await store.move(direction, requested);
+  if (accepted) {
+    await nextTick();
+    transferMotion.play(snapshot);
+  }
+  return accepted;
+}
 const sides = ["left", "right"] as const;
 const titles = computed(() => ({
     left: props.titles?.[0] ?? words.value.leftTitle,
@@ -414,8 +456,8 @@ defineExpose({
         :item-height="itemHeight"
         :overscan="overscan"
         :virtual="!!virtual"
-        :animated="animated"
         :draggable="draggable"
+        :move-on-double-click="moveOnDoubleClick"
         :dragged-keys="dragged"
         :drop-target="dropTarget === panel.side"
         :words="words"
@@ -426,6 +468,13 @@ defineExpose({
         :format="format"
         :render-content="renderContent"
         @check="check"
+        @range-check="
+          (values) =>
+            store.setCheckedKeys([...new Set([...checked, ...values])])
+        "
+        @move-item="
+          (value) => move(panel.side === 'left' ? 'right' : 'left', [value])
+        "
         @check-all="checkAll(panel.side, $event)"
         @invert="invertSelection(panel.side)"
         @search="setSearch(panel.side, $event)"

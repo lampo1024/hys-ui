@@ -280,3 +280,11 @@
 .hys-ui-popup-backdrop.hys-ui-popup-scale-enter-from>.hys-ui-v4-dialog,.hys-ui-popup-backdrop.hys-ui-popup-scale-leave-to>.hys-ui-v4-dialog{transform:scale(.96)}
 .hys-ui-popup-backdrop.hys-ui-popup-slide-enter-from>.hys-ui-v4-dialog,.hys-ui-popup-backdrop.hys-ui-popup-slide-leave-to>.hys-ui-v4-dialog{transform:translateY(-6px)}
 .hys-ui-popup-backdrop.hys-ui-popup-slide-fade-enter-from>.hys-ui-v4-dialog,.hys-ui-popup-backdrop.hys-ui-popup-slide-fade-leave-to>.hys-ui-v4-dialog{transform:translateY(-6px) scale(.98)}
+
+.hys-ui-transfer-flight{position:fixed;z-index:2147483000;pointer-events:none;box-sizing:border-box;display:flex;align-items:center;padding:6px 12px;border:1px solid var(--hys-ui-primary,var(--hys-ui-theme-primary));border-radius:7px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface));color:var(--hys-ui-text,var(--hys-ui-theme-text));box-shadow:0 6px 20px #17274426;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform-origin:top left;will-change:transform,opacity}
+.hys-ui-pf-transfer .hys-ui-transfer-pane.hys-ui-transfer-received{border-color:var(--hys-ui-primary,var(--hys-ui-theme-primary))}
+.hys-ui-transfer-received .hys-ui-pf-transfer-header{background:var(--hys-ui-primary-soft,var(--hys-ui-theme-primary-soft));transition:background-color 160ms ease}
+
+.hys-ui-transfer-row.hys-ui-transfer-landed{position:relative}
+.hys-ui-transfer-row.hys-ui-transfer-landed::after{content:'';position:absolute;inset:1px;border-radius:6px;pointer-events:none;background:var(--hys-ui-primary,var(--hys-ui-theme-primary));animation:hys-ui-transfer-landing 360ms ease-out both;will-change:opacity}
+@keyframes hys-ui-transfer-landing{0%{opacity:.18}35%{opacity:.12}100%{opacity:0}}

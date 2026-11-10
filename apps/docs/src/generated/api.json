@@ -17538,11 +17538,51 @@
         "global": false
       },
       {
+        "name": "moveOnDoubleClick",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false；启用时文字区域单击只聚焦，双击仅移动该项目，覆盖双向与单向移除，禁用项不会移动",
+        "global": false
+      },
+      {
         "name": "animated",
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "启用逐行动画；虚拟模式、大列表、全局关闭和减少动态效果优先",
+        "description": "启用移动动效；全局关闭和减少动态效果优先",
+        "global": false
+      },
+      {
+        "name": "moveAnimation",
+        "type": "\"fade\" | \"none\" | \"flight\" | undefined",
+        "required": false,
+        "default": "\"flight\"",
+        "description": "flight（默认）从源列表飞入目标；fade 为目标位置淡入；none 关闭移动动效",
+        "global": false
+      },
+      {
+        "name": "moveDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "240",
+        "description": "移动动画时长，默认 240ms，0 关闭，最大 1500ms",
+        "global": false
+      },
+      {
+        "name": "maxAnimatedItems",
+        "type": "number | undefined",
+        "required": false,
+        "default": "6",
+        "description": "每次最多绘制的代表项目数量，默认 6，范围 0–12；大批量以数量提示表示",
+        "global": false
+      },
+      {
+        "name": "highlightOnArrival",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "飞入后对可见目标项目播放短暂高亮，默认 true；只改变透明度，不影响行高",
         "global": false
       },
       {

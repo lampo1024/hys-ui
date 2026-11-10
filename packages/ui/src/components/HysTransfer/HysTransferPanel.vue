@@ -8,7 +8,6 @@ import {
   onMounted,
   ref,
   watch,
-  TransitionGroup,
   type CSSProperties,
   type FunctionalComponent,
   type VNodeChild,
@@ -50,8 +49,8 @@ const props = defineProps<{
   itemHeight: number;
   overscan: number;
   virtual: boolean;
-  animated: boolean;
   draggable: boolean;
+  moveOnDoubleClick?: boolean;
   draggedKeys: readonly K[];
   dropTarget: boolean;
   words: HysTransferLocale;
@@ -64,6 +63,8 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   check: [key: K, checked: boolean];
+  rangeCheck: [keys: K[]];
+  moveItem: [key: K];
   checkAll: [checked: boolean];
   invert: [];
   search: [value: string];
@@ -157,25 +158,8 @@ const start = computed(() =>
       : props.items.length,
   );
 const rendered = computed(() => props.items.slice(start.value, end.value));
-const motion = computed(
-  () =>
-    props.animated &&
-    !props.virtual &&
-    props.items.length <= 100 &&
-    attrs.value["data-hys-motion"] !== "off",
-);
 const Content: FunctionalComponent<{ item: T }> = (p) =>
   props.renderContent?.(p.item, props.side) ?? "";
-function beforeLeave(node: Element) {
-  const row = node as HTMLElement;
-  row.inert = true;
-  row.setAttribute("aria-hidden", "true");
-}
-function beforeEnter(node: Element) {
-  const row = node as HTMLElement;
-  row.inert = false;
-  row.removeAttribute("aria-hidden");
-}
 function onScroll(event: Event) {
   if (!live || !viewport.value?.isConnected) return;
   savedTop = viewport.value.scrollTop;
@@ -232,6 +216,96 @@ async function focusIndex(index: number) {
     ?.querySelector<HTMLElement>("input:not(:disabled),button:not(:disabled)")
     ?.focus({ preventScroll: props.virtual });
 }
+let selectionAnchor: K | undefined, rangeClick: K | undefined;
+function rangeTo(key: K) {
+  const end = props.items.findIndex((item) => item.key === key);
+  if (end < 0) return;
+  const start = props.items.findIndex((item) => item.key === selectionAnchor),
+    from = start < 0 ? end : start;
+  if (start < 0) selectionAnchor = key;
+  emit(
+    "rangeCheck",
+    props.items
+      .slice(Math.min(from, end), Math.max(from, end) + 1)
+      .filter((item) => !item.disabled)
+      .map((item) => item.key),
+  );
+}
+function itemCheck(key: K, value: boolean) {
+  const range = rangeClick === key;
+  rangeClick = undefined;
+  if (range) {
+    rangeTo(key);
+    return;
+  }
+  selectionAnchor = key;
+  emit("check", key, value);
+}
+function rowClick(event: MouseEvent, item: HysTransferRecord<T, K>) {
+  if (props.busy || item.disabled || !checkable.value) return;
+  const target = event.target as HTMLElement;
+  if (
+    target.closest(
+      'button,a,textarea,select,input:not([type="checkbox"]),[contenteditable="true"]',
+    )
+  )
+    return;
+  if (target.matches('input[type="checkbox"]')) {
+    if (event.shiftKey) rangeClick = item.key;
+    return;
+  }
+  if (
+    props.moveOnDoubleClick &&
+    !event.shiftKey &&
+    !event.ctrlKey &&
+    !event.metaKey
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement)
+      .querySelector<HTMLElement>("input:not(:disabled)")
+      ?.focus({ preventScroll: true });
+    return;
+  }
+  if (
+    event.shiftKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    !target.closest(".hys-ui-transfer-check")
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.shiftKey) rangeTo(item.key);
+    else itemCheck(item.key, !checked.value.has(item.key));
+    (event.currentTarget as HTMLElement)
+      .querySelector<HTMLElement>("input:not(:disabled)")
+      ?.focus({ preventScroll: true });
+  }
+}
+function doubleClick(event: MouseEvent, item: HysTransferRecord<T, K>) {
+  if (
+    !props.moveOnDoubleClick ||
+    event.shiftKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    props.busy ||
+    item.disabled ||
+    (event.target as HTMLElement).closest(
+      'button,a,input,textarea,select,[contenteditable="true"]',
+    )
+  )
+    return;
+  event.preventDefault();
+  event.stopPropagation();
+  emit("moveItem", item.key);
+}
+watch(
+  () => [props.query, props.page, props.pageSize],
+  () => {
+    selectionAnchor = undefined;
+    rangeClick = undefined;
+  },
+);
 function keys(event: KeyboardEvent) {
   const target = event.target as HTMLElement;
   if (
@@ -268,10 +342,19 @@ function keys(event: KeyboardEvent) {
                 current + (event.key === "ArrowDown" ? 1 : -1),
               ),
             );
+  if (event.shiftKey && checkable.value) {
+    const key = props.items.find(
+      (item) => transferToken(item.key) === row.dataset.transferKey,
+    )?.key;
+    if (selectionAnchor === undefined) selectionAnchor = key;
+    rangeTo(candidates[next].item.key);
+  }
   void focusIndex(candidates[next].index);
 }
 function stop() {
   live = false;
+  selectionAnchor = undefined;
+  rangeClick = undefined;
   lifetime++;
   observer?.disconnect();
   observer = undefined;
@@ -412,10 +495,7 @@ defineExpose({ scrollTo, focus });
                 : undefined
             "
           >
-            <component
-              :is="motion ? TransitionGroup : 'div'"
-              :name="motion ? 'hys-ui-transfer-motion' : undefined"
-              :tag="motion ? 'div' : undefined"
+            <div
               class="hys-ui-transfer-rows"
               :style="
                 virtual
@@ -427,8 +507,6 @@ defineExpose({ scrollTo, focus });
                     }
                   : undefined
               "
-              @before-leave="beforeLeave"
-              @before-enter="beforeEnter"
             >
               <div
                 v-for="item in rendered"
@@ -449,9 +527,19 @@ defineExpose({ scrollTo, focus });
                 :title="
                   item.disabled
                     ? undefined
-                    : side === 'left'
-                      ? words.dragRight
-                      : words.dragLeft
+                    : moveOnDoubleClick
+                      ? side === 'left'
+                        ? words.doubleClickRight
+                        : words.doubleClickLeft
+                      : side === 'left'
+                        ? words.dragRight
+                        : words.dragLeft
+                "
+                @click.capture="rowClick($event, item)"
+                @dblclick="doubleClick($event, item)"
+                @mousedown="
+                  ($event.shiftKey || $event.ctrlKey || $event.metaKey) &&
+                  $event.preventDefault()
                 "
                 @dragstart="emit('dragStart', $event, item.key)"
                 @dragend="emit('dragEnd')"
@@ -463,7 +551,7 @@ defineExpose({ scrollTo, focus });
                   :model-value="checked.has(item.key)"
                   :disabled="busy || item.disabled"
                   :aria-label="item.label"
-                  @change="emit('check', item.key, $event)"
+                  @change="itemCheck(item.key, $event)"
                   ><span class="hys-ui-transfer-label"
                     ><slot
                       name="option"
@@ -510,7 +598,7 @@ defineExpose({ scrollTo, focus });
                   aria-hidden="true"
                 />
               </div>
-            </component>
+            </div>
           </div>
           <div
             v-if="!items.length && !loading"

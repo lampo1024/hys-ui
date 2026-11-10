@@ -32,6 +32,8 @@ export interface HysTransferLocale {
   moveLeft: string;
   dragRight: string;
   dragLeft: string;
+  doubleClickRight?: string;
+  doubleClickLeft?: string;
   dragCount: string;
   moved: string;
   added: string;
@@ -78,7 +80,12 @@ export interface HysTransferProps<T extends object, K extends HysTransferKey> {
   oneWay?: boolean;
   draggable?: boolean;
   dragChecked?: boolean;
+  moveOnDoubleClick?: boolean;
   animated?: boolean;
+  moveAnimation?: "flight" | "fade" | "none";
+  moveDuration?: number;
+  maxAnimatedItems?: number;
+  highlightOnArrival?: boolean;
   size?: "sm" | "md" | "lg";
   listHeight?: number;
   listStyle?: CSSProperties;
@@ -241,6 +248,8 @@ export const transferWords = (
   moveLeft: "移除选中项",
   dragRight: "拖动到已选择区域",
   dragLeft: "拖动到待选择区域",
+  doubleClickRight: "双击移入已选择区域，也可拖拽移动",
+  doubleClickLeft: "双击移回待选择区域，也可拖拽移动",
   dragCount: "正在拖动 {count} 项",
   moved: "已{direction} {count} 项",
   added: "移入",
