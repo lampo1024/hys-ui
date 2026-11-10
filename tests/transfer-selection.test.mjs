@@ -278,6 +278,25 @@ test("Disabled rows and interactive slot buttons never trigger double-click move
 });
 
 for (const area of ["label", "row"]) {
+  test(`Shortcut-mode ${area} blocks text selection on the second press without delaying focus`, async () => {
+    const a = await mount({ moveOnDoubleClick: true, checkedKeys: [1, 2] });
+    const row = a.row("left", 0),
+      target =
+        area === "label" ? row.querySelector(".hys-ui-transfer-label") : row;
+    for (const detail of [1, 2]) {
+      const press = new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        detail,
+      });
+      target.dispatchEvent(press);
+      assert.equal(press.defaultPrevented, detail === 2);
+      await click(target, { detail });
+      assert.equal(document.activeElement, row.querySelector("input"));
+      assert.deepEqual([...a.state.checkedKeys], [1, 2]);
+    }
+  });
   test(`Shortcut-mode ${area} double clicks never check the project during either click or the move`, async () => {
     const a = await mount({ moveOnDoubleClick: true, checkedKeys: [1, 2] });
     for (const side of ["left", "right"]) {
@@ -302,3 +321,41 @@ for (const area of ["label", "row"]) {
     }
   });
 }
+
+test("Double-click text-selection protection preserves interactive slot controls", async () => {
+  const a = await mount(
+    { moveOnDoubleClick: true },
+    {
+      option: () =>
+        h("span", [
+          h("button", "Action"),
+          h("input"),
+          h("textarea"),
+          h("a", { href: "#" }, "Link"),
+          h("span", { contenteditable: "true" }, "Editable"),
+        ]),
+    },
+  );
+  const row = a.row("left", 0);
+  for (const target of row.querySelectorAll(
+    "input,button,textarea,a,[contenteditable]",
+  )) {
+    const press = new MouseEvent("mousedown", {
+      bubbles: true,
+      cancelable: true,
+      detail: 2,
+    });
+    target.dispatchEvent(press);
+    assert.equal(press.defaultPrevented, false);
+  }
+  a.state.moveOnDoubleClick = false;
+  await settle();
+  const press = new MouseEvent("mousedown", {
+    bubbles: true,
+    cancelable: true,
+    detail: 2,
+  });
+  row.dispatchEvent(press);
+  assert.equal(press.defaultPrevented, false);
+  assert.deepEqual([...a.state.checkedKeys], []);
+});

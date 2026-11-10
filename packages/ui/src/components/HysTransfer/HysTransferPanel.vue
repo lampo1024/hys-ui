@@ -241,6 +241,24 @@ function itemCheck(key: K, value: boolean) {
   selectionAnchor = key;
   emit("check", key, value);
 }
+function rowMouseDown(event: MouseEvent, item: HysTransferRecord<T, K>) {
+  if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    event.preventDefault();
+    return;
+  }
+  if (
+    props.moveOnDoubleClick &&
+    !props.busy &&
+    !item.disabled &&
+    event.button === 0 &&
+    event.detail > 1 &&
+    !(event.target as HTMLElement).closest(
+      'button,a,input,textarea,select,[contenteditable="true"]',
+    )
+  )
+    // Text selection starts on the second press, before dblclick is dispatched.
+    event.preventDefault();
+}
 function rowClick(event: MouseEvent, item: HysTransferRecord<T, K>) {
   if (props.busy || item.disabled || !checkable.value) return;
   const target = event.target as HTMLElement;
@@ -537,10 +555,7 @@ defineExpose({ scrollTo, focus });
                 "
                 @click.capture="rowClick($event, item)"
                 @dblclick="doubleClick($event, item)"
-                @mousedown="
-                  ($event.shiftKey || $event.ctrlKey || $event.metaKey) &&
-                  $event.preventDefault()
-                "
+                @mousedown="rowMouseDown($event, item)"
                 @dragstart="emit('dragStart', $event, item.key)"
                 @dragend="emit('dragEnd')"
               >
