@@ -277,14 +277,28 @@ test("Disabled rows and interactive slot buttons never trigger double-click move
   assert.deepEqual([...a.state.modelValue], []);
 });
 
-test("Shortcut-mode content single clicks only focus and double clicks do not emit selection changes", async () => {
-  const a = await mount({ moveOnDoubleClick: true, checkedKeys: [1, 2] });
-  const label = a.row("left", 0).querySelector(".hys-ui-transfer-label");
-  await click(label);
-  assert.deepEqual([...a.state.checkedKeys], [1, 2]);
-  assert.equal(a.events.length, 0);
-  await click(label, {}, "dblclick");
-  assert.deepEqual([...a.state.modelValue], [0]);
-  assert.deepEqual([...a.state.checkedKeys], [1, 2]);
-  assert.equal(a.events.length, 0);
-});
+for (const area of ["label", "row"]) {
+  test(`Shortcut-mode ${area} double clicks never check the project during either click or the move`, async () => {
+    const a = await mount({ moveOnDoubleClick: true, checkedKeys: [1, 2] });
+    for (const side of ["left", "right"]) {
+      const row = a.row(side, 0),
+        target =
+          area === "label" ? row.querySelector(".hys-ui-transfer-label") : row;
+      // A real double click sends two click events before dblclick.
+      for (const detail of [1, 2]) {
+        await click(target, { detail });
+        assert.deepEqual([...a.state.checkedKeys], [1, 2]);
+        assert.equal(row.querySelector("input").checked, false);
+        assert.equal(row.classList.contains("hys-ui-is-checked"), false);
+        assert.equal(a.events.length, 0);
+      }
+      await click(target, { detail: 2 }, "dblclick");
+      assert.deepEqual([...a.state.modelValue], side === "left" ? [0] : []);
+      assert.deepEqual([...a.state.checkedKeys], [1, 2]);
+      const destination = a.row(side === "left" ? "right" : "left", 0);
+      assert.equal(destination.querySelector("input").checked, false);
+      assert.equal(destination.classList.contains("hys-ui-is-checked"), false);
+      assert.equal(a.events.length, 0);
+    }
+  });
+}
