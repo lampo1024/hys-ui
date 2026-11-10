@@ -1,16 +1,86 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { HysVirtualTable } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysInput as DemoInput, HysNumberInput as DemoNumber } from 'hys-ui';
-const rows = computed(() => Array.from({ length: 10000 }, (_, i) => ({ id: i + 1, title: `项目任务 #${i + 1}`, owner: ['Keller', 'Lisa', 'David'][i % 3], status: ['待办', '进行中', '已完成'][i % 3] })));
-const demoConfig = demoReactive<{
-    rowHeight: number;
-    height: number;
-    loading: boolean;
-    emptyText: string;
-}>({ "rowHeight": 42, "height": 280, "loading": false, "emptyText": "自定义emptyText" });
+import { reactive } from "vue";
+import { HysCheckbox, HysNumberInput, HysVirtualTable } from "hys-ui";
+const config = reactive({
+  height: 220,
+  rowHeight: 40,
+  overscan: 5,
+  showHeader: true,
+  fit: true,
+  striped: false,
+  bordered: false,
+});
+const rows = Array.from({ length: 120 }, (_, i) => ({
+  id: i + 1,
+  name: "交付事项 " + (i + 1),
+  team: ["产品", "研发", "测试"][i % 3],
+}));
+const columns = [
+  { key: "id", label: "编号", width: 72 },
+  { key: "name", label: "交付事项", width: 210 },
+  { key: "team", label: "团队", width: 110 },
+];
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field">rowHeight<DemoNumber v-model="demoConfig.rowHeight" :show-controls="false"/></label>
-<label class="demo-field"><span class="demo-control-label"><span>高度</span><code>height</code></span><DemoNumber v-model="demoConfig.height" :show-controls="false"/></label>
-<label class="demo-field"><span class="demo-control-label"><span>空数据提示</span><code>emptyText</code></span><DemoInput v-model="demoConfig.emptyText"/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div></div></section></div><div class="demo-content"><section class="card" style="padding:20px"><HysVirtualTable v-bind="demoConfig" :rows="rows" :columns="[{key:'id',label:'ID',width:65},{key:'title',label:'任务名称',width:190},{key:'owner',label:'负责人',width:110},{key:'status',label:'状态',width:100}]"/></section></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div class="demo-stack">
+    <div class="demo-controls">
+      <section class="demo-control-section">
+        <h3>视口尺寸</h3>
+        <div class="demo-control-fields">
+          <label class="demo-field"
+            ><span class="demo-control-label">表体高度<code>height</code></span
+            ><HysNumberInput
+              v-model="config.height"
+              :min="120"
+              :max="480"
+              :step="20"
+              aria-label="表体高度"
+          /></label>
+          <label class="demo-field"
+            ><span class="demo-control-label">行高<code>rowHeight</code></span
+            ><HysNumberInput
+              v-model="config.rowHeight"
+              :min="28"
+              :max="68"
+              :step="4"
+              aria-label="行高"
+          /></label>
+          <label class="demo-field"
+            ><span class="demo-control-label">缓冲行<code>overscan</code></span
+            ><HysNumberInput
+              v-model="config.overscan"
+              :min="0"
+              :max="12"
+              aria-label="缓冲行"
+          /></label>
+        </div>
+      </section>
+      <section class="demo-control-section">
+        <h3>表格外观</h3>
+        <div class="demo-control-toggles">
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.showHeader" label="显示表头" />
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.fit" label="填充剩余宽度" />
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.striped" label="交替行背景" />
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.bordered" label="显示列边线" />
+          </div>
+        </div>
+      </section>
+    </div>
+    <HysVirtualTable
+      v-bind="config"
+      :rows="rows"
+      :columns="columns"
+      aria-label="可配置虚拟表格"
+    />
+    <p class="scenario-note">
+      height 设置表体高度。表头和顶部固定行的高度会单独计入。
+    </p>
+  </div>
+</template>

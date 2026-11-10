@@ -24424,18 +24424,26 @@
     "props": [
       {
         "name": "rows",
-        "type": "Row[]",
+        "type": "readonly T[]",
         "required": true,
         "default": "",
-        "description": "行数据，由使用方提供",
+        "description": "只读业务行数组；追加保留滚动位置，缩短列表时限制到新的滚动范围",
         "global": false
       },
       {
         "name": "columns",
-        "type": "Column[]",
+        "type": "readonly HysVirtualTableColumn<T>[]",
         "required": true,
         "default": "",
-        "description": "列定义",
+        "description": "列定义，支持字段路径、值读取函数、格式化、尺寸、对齐、固定与排序",
+        "global": false
+      },
+      {
+        "name": "rowKey",
+        "type": "string | ((row: T, index: number) => HysVirtualTableKey) | undefined",
+        "required": false,
+        "default": "\"id\"",
+        "description": "唯一行键字段或函数，默认 id；数字与字符串键独立，缺失或重复键的行不可选择",
         "global": false
       },
       {
@@ -24443,15 +24451,71 @@
         "type": "number | undefined",
         "required": false,
         "default": "42",
-        "description": "每行高度",
+        "description": "统一行高，默认 42px；行样式不可改变虚拟布局所需的高度",
         "global": false
       },
       {
         "name": "height",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "280",
-        "description": "顶部、底部抽屉高度；未设置时使用 width",
+        "description": "表体视口高度，数值为像素，默认 280；表头和固定行高度单独计入",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "表格宽度，默认随容器；数值为像素，也接受 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "headerHeight",
+        "type": "number | undefined",
+        "required": false,
+        "default": "42",
+        "description": "表头高度，默认 42px",
+        "global": false
+      },
+      {
+        "name": "showHeader",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示固定在视口顶部的表头，默认 true",
+        "global": false
+      },
+      {
+        "name": "fit",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "将剩余宽度分配给非固定列，遵循最大列宽",
+        "global": false
+      },
+      {
+        "name": "overscan",
+        "type": "number | undefined",
+        "required": false,
+        "default": "5",
+        "description": "上下缓冲行数，默认 5",
+        "global": false
+      },
+      {
+        "name": "virtualColumns",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "仅渲染可见范围的中间列，固定列始终渲染，默认 false",
+        "global": false
+      },
+      {
+        "name": "columnOverscan",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1",
+        "description": "列虚拟化时两侧缓冲列数，默认 1",
         "global": false
       },
       {
@@ -24459,7 +24523,23 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "显示加载状态",
+        "description": "显示加载状态，停用行选择、排序和键盘操作",
+        "global": false
+      },
+      {
+        "name": "loadingMode",
+        "type": "\"replace\" | \"overlay\" | undefined",
+        "required": false,
+        "default": "\"replace\"",
+        "description": "replace（默认）隐藏数据行；overlay 保留数据并显示遮罩",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认加载提示，loading 插槽优先，兼容旧 empty 插槽",
         "global": false
       },
       {
@@ -24467,42 +24547,482 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "空数据提示",
+        "description": "空表体提示文字，默认 暂无数据",
         "global": false
       },
       {
-        "name": "rowKey",
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "停用表格交互",
+        "global": false
+      },
+      {
+        "name": "fixedRows",
+        "type": "readonly T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "固定在表头下方的展示行；不参与排序、选择和滚动索引",
+        "global": false
+      },
+      {
+        "name": "striped",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示交替行背景",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示列分隔线",
+        "global": false
+      },
+      {
+        "name": "sortState",
+        "type": "HysVirtualTableSort | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控排序规则，null 清空；未绑定时使用内部状态",
+        "global": false
+      },
+      {
+        "name": "defaultSort",
+        "type": "HysVirtualTableSort | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始排序；列 sortable=custom 时由宿主排序",
+        "global": false
+      },
+      {
+        "name": "selectable",
+        "type": "boolean | ((row: T, index: number) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "启用选择列；函数按原始记录和当前行下标判断可选性",
+        "global": false
+      },
+      {
+        "name": "selectedRowKeys",
+        "type": "readonly HysVirtualTableKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控选中键数组；更新事件后由宿主接受或拒绝",
+        "global": false
+      },
+      {
+        "name": "defaultSelectedRowKeys",
+        "type": "readonly HysVirtualTableKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始选中键",
+        "global": false
+      },
+      {
+        "name": "selectionType",
+        "type": "\"checkbox\" | \"radio\" | undefined",
+        "required": false,
+        "default": "\"checkbox\"",
+        "description": "checkbox（默认）或 radio 单选",
+        "global": false
+      },
+      {
+        "name": "selectionWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "44",
+        "description": "选择列宽度，默认 44px；始终固定在左侧",
+        "global": false
+      },
+      {
+        "name": "reserveSelection",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "保留暂时不在数据中的选中键",
+        "global": false
+      },
+      {
+        "name": "selectOnClick",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击行切换选中，Shift 点击扩选连续范围，单选模式除外",
+        "global": false
+      },
+      {
+        "name": "currentRowKey",
+        "type": "HysVirtualTableKey | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控当前行键；null 表示没有当前行",
+        "global": false
+      },
+      {
+        "name": "defaultCurrentRowKey",
+        "type": "HysVirtualTableKey | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始当前行键",
+        "global": false
+      },
+      {
+        "name": "highlightCurrentRow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示当前行高亮，点击该行再次取消",
+        "global": false
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用网格导航和焦点定位，默认 false，保留原 table 语义",
+        "global": false
+      },
+      {
+        "name": "endReachedThreshold",
+        "type": "number | undefined",
+        "required": false,
+        "default": "42",
+        "description": "距底部多少像素时触发 endReached，默认 42px",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "辅助技术名称，默认 虚拟表格",
+        "global": false
+      },
+      {
+        "name": "rowClassName",
+        "type": "string | ((row: T, index: number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "为当前渲染行设置类名或回调",
+        "global": false
+      },
+      {
+        "name": "rowStyle",
+        "type": "CSSProperties | ((row: T, index: number) => CSSProperties) | undefined",
+        "required": false,
+        "default": "",
+        "description": "为当前渲染行设置样式或回调",
+        "global": false
+      },
+      {
+        "name": "cellClassName",
+        "type": "string | ((context: HysVirtualTableCell<T>) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "为当前渲染单元格设置类名或回调",
+        "global": false
+      },
+      {
+        "name": "cellStyle",
+        "type": "CSSProperties | ((context: HysVirtualTableCell<T>) => CSSProperties) | undefined",
+        "required": false,
+        "default": "",
+        "description": "为当前渲染单元格设置样式或回调",
+        "global": false
+      },
+      {
+        "name": "customRow",
+        "type": "((row: T, index: number) => HTMLAttributes) | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加行属性和事件；固定几何与语义属性由组件管理",
+        "global": false
+      },
+      {
+        "name": "customCell",
+        "type": "((context: HysVirtualTableCell<T>) => HTMLAttributes) | undefined",
+        "required": false,
+        "default": "",
+        "description": "通过原始行、列和值附加单元格属性和事件",
+        "global": false
+      },
+      {
+        "name": "customHeaderCell",
+        "type": "((column: HysVirtualTableColumn<T>, index: number) => HTMLAttributes) | undefined",
+        "required": false,
+        "default": "",
+        "description": "为表头单元格附加属性和事件，接收列定义和列索引",
         "global": false
       }
     ],
-    "events": [],
+    "events": [
+      {
+        "name": "scroll",
+        "type": "[state: HysVirtualTableScroll]",
+        "required": false,
+        "default": "",
+        "description": "滚动位置及方向，原生滚动通知按帧合并"
+      },
+      {
+        "name": "selectionChange",
+        "type": "[keys: HysVirtualTableKey[], rows: T[]]",
+        "required": false,
+        "default": "",
+        "description": "选择被接受后触发，包含键及仍在当前数据中的原始行"
+      },
+      {
+        "name": "rowClick",
+        "type": "[row: T, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击数据行返回原始记录、当前排序后的索引和鼠标事件"
+      },
+      {
+        "name": "sortChange",
+        "type": "[sort: HysVirtualTableSort | null]",
+        "required": false,
+        "default": "",
+        "description": "排序更新被接受后触发；远程列可据此请求数据"
+      },
+      {
+        "name": "rowDblclick",
+        "type": "[row: T, index: number, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "双击数据行返回原始记录、索引和鼠标事件"
+      },
+      {
+        "name": "cellClick",
+        "type": "[context: HysVirtualTableCell<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击单元格返回值、原始记录、列及索引"
+      },
+      {
+        "name": "update:selectedRowKeys",
+        "type": "[keys: HysVirtualTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新选中键"
+      },
+      {
+        "name": "update:currentRowKey",
+        "type": "[key: HysVirtualTableKey | null]",
+        "required": false,
+        "default": "",
+        "description": "请求更新当前行键"
+      },
+      {
+        "name": "currentChange",
+        "type": "[row: T | null, key: HysVirtualTableKey | null]",
+        "required": false,
+        "default": "",
+        "description": "当前行更新被接受后触发"
+      },
+      {
+        "name": "update:sortState",
+        "type": "[sort: HysVirtualTableSort | null]",
+        "required": false,
+        "default": "",
+        "description": "请求更新排序规则"
+      },
+      {
+        "name": "rangeChange",
+        "type": "[range: HysVirtualTableRange]",
+        "required": false,
+        "default": "",
+        "description": "已渲染和可见行范围、渲染列键；下标从 0 开始，结束含末项"
+      },
+      {
+        "name": "endReached",
+        "type": "[info: { distance: number; total: number; }]",
+        "required": false,
+        "default": "",
+        "description": "接近底部时通知，提供剩余距离与总行数；用于追加数据"
+      }
+    ],
     "slots": [
       {
         "name": "header",
-        "type": "{ column: Column; }",
+        "type": "{ column: HysVirtualTableColumn<T>; columnIndex: number; }",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义表头，接收 column 与 columnIndex"
+      },
+      {
+        "name": "cell",
+        "type": "HysVirtualTableCell<T>",
+        "required": false,
+        "default": "",
+        "description": "通用单元格，接收 row、column、value、rowIndex 与 columnIndex"
       },
       {
         "name": "empty",
-        "type": "{}",
+        "type": "any",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "空数据内容；为兼容旧用法也作为未定义 loading 插槽时的备用内容"
+      },
+      {
+        "name": "loading",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "自定义加载状态内容"
+      },
+      {
+        "name": "footer",
+        "type": "{ rows: readonly T[]; range: HysVirtualTableRange; selectedRowKeys: HysVirtualTableKey[]; }",
+        "required": false,
+        "default": "",
+        "description": "表格下方操作区，接收原始 rows、range 和 selectedRowKeys"
       },
       {
         "name": "[column.key]",
-        "type": "{ row: Record<string, unknown>; value: unknown; index?: number }",
+        "type": "HysVirtualTableCell<T>",
         "required": false,
         "default": "",
-        "description": "与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。"
+        "description": "按列键提供内容，优先于 cell 插槽和列 formatter，保留 row 与 value。"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "default": "",
+        "required": false,
+        "description": "根元素"
+      },
+      {
+        "name": "viewport",
+        "type": "HTMLElement | undefined",
+        "default": "",
+        "required": false,
+        "description": "可滚动视口"
+      },
+      {
+        "name": "scrollTop",
+        "type": "number",
+        "default": "",
+        "required": false,
+        "description": "当前纵向像素位置"
+      },
+      {
+        "name": "scrollLeft",
+        "type": "number",
+        "default": "",
+        "required": false,
+        "description": "当前横向像素位置"
+      },
+      {
+        "name": "range",
+        "type": "HysVirtualTableRange",
+        "default": "",
+        "required": false,
+        "description": "当前可见和渲染范围"
+      },
+      {
+        "name": "selectedRowKeys",
+        "type": "HysVirtualTableKey[]",
+        "default": "",
+        "required": false,
+        "description": "实际选中键"
+      },
+      {
+        "name": "sortState",
+        "type": "HysVirtualTableSort | null",
+        "default": "",
+        "required": false,
+        "description": "实际排序规则"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(options: {\n    top?: number;\n    left?: number;\n    behavior?: ScrollBehavior;\n  }) => void",
+        "default": "",
+        "required": false,
+        "description": "按像素滚动任一方向，可指定原生 smooth"
+      },
+      {
+        "name": "scrollToRow",
+        "type": "(index: number, align?: HysVirtualTableAlign) => void",
+        "default": "",
+        "required": false,
+        "description": "定位排序后的行索引，支持对齐方式"
+      },
+      {
+        "name": "scrollToKey",
+        "type": "(key: HysVirtualTableKey, align?: HysVirtualTableAlign) => boolean",
+        "default": "",
+        "required": false,
+        "description": "按唯一行键定位，返回是否找到"
+      },
+      {
+        "name": "scrollToColumn",
+        "type": "(key: string, align?: HysVirtualTableAlign) => boolean",
+        "default": "",
+        "required": false,
+        "description": "按列键横向定位；固定列无需滚动"
+      },
+      {
+        "name": "focusCell",
+        "type": "(index: number, key?: string) => Promise<boolean>",
+        "default": "",
+        "required": false,
+        "description": "在键盘模式下定位并聚焦单元格，返回是否成功"
+      },
+      {
+        "name": "setSort",
+        "type": "(sort: HysVirtualTableSort | null) => Promise<boolean>",
+        "default": "",
+        "required": false,
+        "description": "请求更新排序；返回宿主是否接受"
+      },
+      {
+        "name": "clearSelection",
+        "type": "() => Promise<boolean>",
+        "default": "",
+        "required": false,
+        "description": "清空选择"
+      },
+      {
+        "name": "toggleRowSelection",
+        "type": "(key: HysVirtualTableKey, selected?: boolean) => Promise<boolean>",
+        "default": "",
+        "required": false,
+        "description": "按行键设置或切换选择"
+      },
+      {
+        "name": "selectAll",
+        "type": "(selected?: boolean) => Promise<boolean>",
+        "default": "",
+        "required": false,
+        "description": "选择或取消全部可选记录，单选模式不可用"
+      },
+      {
+        "name": "setCurrentRow",
+        "type": "(key: HysVirtualTableKey | null) => Promise<boolean>",
+        "default": "",
+        "required": false,
+        "description": "按键设置当前行，传 null 清除"
+      },
+      {
+        "name": "getRow",
+        "type": "(index: number) => T | undefined",
+        "default": "",
+        "required": false,
+        "description": "获取当前排序后的原始记录"
+      },
+      {
+        "name": "remeasure",
+        "type": "() => void",
+        "default": "",
+        "required": false,
+        "description": "主动重测视口尺寸；通常由 ResizeObserver 自动处理"
+      }
+    ]
   }
 }

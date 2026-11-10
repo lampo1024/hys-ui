@@ -132,4 +132,5 @@ export type {HysAlertTone,HysAlertEffect,HysAlertTransition,HysAlertCloseContext
 export type {HysTimelineKey,HysTimelineMode,HysTimelinePosition,HysTimelineSize,HysTimelineTone,HysTimelineItem,HysTimelineFieldNames,HysTimelineProps,HysTimelineItemContext,HysTimelinePendingContext,HysTimelineSlots,HysTimelineInstance} from './composables/timeline'
 export type {HysTagInputReason,HysTagInputAddContext,HysTagInputInvalid,HysTagInputProps,HysTagInputSlotContext,HysTagInputTagContext,HysTagInputSlots,HysTagInputInstance} from './composables/tagInput'
 export type {HysColorFormat,HysColor,HysColorPickerProps,HysColorPickerContext,HysColorPickerSlots,HysColorPickerInstance} from './composables/color'
+export type {HysVirtualTableKey,HysVirtualTableAlign,HysVirtualTableSort,HysVirtualTableCell,HysVirtualTableColumn,HysVirtualTableRange,HysVirtualTableScroll,HysVirtualTableProps,HysVirtualTableInstance} from './composables/virtualTable'
 export type {HysPopupTransition,HysPopupMotionProps} from './motion/popup'

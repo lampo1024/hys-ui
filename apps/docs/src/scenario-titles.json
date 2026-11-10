@@ -661,6 +661,19 @@
       "Dynamic": "动态记录与稳定标识",
       "States": "空记录与长内容"
     },
+    "HysVirtualTable": {
+      "Basic": "万行任务与快速定位",
+      "Configure": "视口尺寸与外观",
+      "Fixed": "固定列、表头与汇总行",
+      "Wide": "大数据双向虚拟化",
+      "Selection": "排序、复选与单选",
+      "Remote": "远程排序与加载",
+      "Append": "滚动追加与失败重试",
+      "Keyboard": "键盘操作与单元格定位",
+      "Templates": "业务字段与自定义单元格",
+      "Lifecycle": "容器变化与缓存恢复",
+      "States": "空数据、加载与禁用"
+    },
     "HysTagInput": {
       "Basic": "基础添加与删除",
       "Configure": "输入与行为配置",
