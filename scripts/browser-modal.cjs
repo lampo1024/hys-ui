@@ -39,10 +39,10 @@ async (page) => {
   await question.getByRole('button',{name:'取消',exact:true}).click();await question.waitFor({state:'hidden'});check('Guard cancel retains draft',await panel.getByRole('textbox').inputValue()==='未保存草稿');
   await panel.getByRole('button',{name:'取消',exact:true}).click();await question.getByRole('button',{name:'放弃修改',exact:true}).click();await panel.waitFor({state:'hidden'});
   await scene('dragresize').getByRole('button',{name:'打开可调整弹窗',exact:true}).click();panel=dialog('可移动工作面板');await panel.waitFor();
-  const original=await panel.boundingBox(),head=await panel.locator('[data-hys-modal-drag-handle]').boundingBox();
+  const original=await panel.boundingBox(),head=await panel.locator('[data-hys-modal-drag-handle]').first().boundingBox();
   await page.mouse.move(head.x+12,head.y+12);await page.mouse.down();check('Header press does not start dragging',await panel.evaluate(el=>!el.classList.contains('hys-ui-modal-dragging')));await page.mouse.move(head.x+14,head.y+13);check('Small pointer movement stays below drag threshold',await panel.evaluate(el=>!el.classList.contains('hys-ui-modal-dragging')));await page.mouse.move(head.x+92,head.y+57,{steps:15});await page.mouse.up();
   let moved=await panel.boundingBox();check('Header drag moves without jumps',Math.abs(moved.x-original.x-80)<3&&Math.abs(moved.y-original.y-45)<3);
-  await panel.locator('[data-hys-modal-drag-handle]').dblclick();let reset=await panel.boundingBox();check('Double click resets position',Math.abs(reset.x-original.x)<3&&Math.abs(reset.y-original.y)<3);
+  await panel.locator('[data-hys-modal-drag-handle]').first().dblclick();let reset=await panel.boundingBox();check('Double click resets position',Math.abs(reset.x-original.x)<3&&Math.abs(reset.y-original.y)<3);
   const handle=await panel.getByRole('button',{name:'调整弹窗尺寸',exact:true}).boundingBox();
   await page.mouse.move(handle.x+10,handle.y+10);await page.mouse.down();await page.mouse.move(handle.x+100,handle.y+70,{steps:12});await page.mouse.up();
   const resized=await panel.boundingBox();check('Resize changes both dimensions',resized.width>original.width+80&&resized.height>original.height+50);check('Resize anchors the top left corner',Math.abs(resized.x-original.x)<3&&Math.abs(resized.y-original.y)<3);
@@ -81,8 +81,9 @@ async (page) => {
   await page.emulateMedia({reducedMotion:'no-preference'});
   await scene('performance').getByRole('button',{name:'打开长列表工作区',exact:true}).click();panel=dialog('资源工作区');await panel.waitFor();await page.waitForFunction(()=>!document.querySelector('.hys-ui-modal-scale-enter-active'));
   check('Long-list example contains full data',await panel.locator('tbody tr').count()===120);
+  await page.mouse.move(10,10);await page.waitForTimeout(160);check('Idle grip remains subtle',await panel.locator('[data-hys-modal-drag-handle]').evaluate(el=>parseFloat(getComputedStyle(el).opacity)<.3));await panel.locator('header').hover({position:{x:130,y:40}});await page.waitForTimeout(160);check('Header hover reveals the grip',await panel.locator('[data-hys-modal-drag-handle]').evaluate(el=>{const opacity=parseFloat(getComputedStyle(el).opacity);return opacity>=.55&&opacity<=.65}));
   check('Default motion is gentle scale',await panel.evaluate(el=>{const p=el.parentElement;p.classList.add('hys-ui-modal-scale-enter-from');const m=new DOMMatrixReadOnly(getComputedStyle(el).transform);p.classList.remove('hys-ui-modal-scale-enter-from');return m.a<1&&m.a>.9&&Math.abs(m.m42)<1}));
-  const dragHead=await panel.locator('[data-hys-modal-drag-handle]').boundingBox();await page.mouse.move(dragHead.x+12,dragHead.y+12);await page.mouse.down();await page.mouse.move(dragHead.x+152,dragHead.y+78,{steps:30});
+  const dragHead=await panel.locator('[data-hys-modal-drag-handle]').first().boundingBox();await page.mouse.move(dragHead.x+12,dragHead.y+12);await page.mouse.down();await page.mouse.move(dragHead.x+152,dragHead.y+78,{steps:30});
   check('Drag effect adds a composited highlight',await panel.evaluate(el=>getComputedStyle(el,'::after').opacity!=='0'&&getComputedStyle(el,'::after').boxShadow!=='none'));
   check('Dragging disables transitions and uses compositing',await panel.evaluate(el=>getComputedStyle(el).transitionDuration==='0s'&&getComputedStyle(el).willChange==='transform'));await page.mouse.up();
   check('Drag does not recreate list rows',await panel.locator('tbody tr').count()===120);
@@ -94,7 +95,7 @@ async (page) => {
   await panel.locator('tbody tr').first().hover();await page.mouse.wheel(0,420);await page.waitForFunction(()=>document.querySelector('[aria-label="预览拖动工作区"] .hys-ui-dialog-body').scrollTop>100);
   check('Mouse wheel over table scrolls long modal content',await panel.locator('.hys-ui-dialog-body').evaluate(el=>el.scrollTop>100));
   await panel.locator('.hys-ui-dialog-body').evaluate(el=>el.scrollTop=0);
-  const previewOrigin=await panel.boundingBox(),previewHeader=await panel.locator('[data-hys-modal-drag-handle]').boundingBox();await page.mouse.move(previewHeader.x+12,previewHeader.y+12);await page.mouse.down();await page.mouse.move(previewHeader.x+132,previewHeader.y+82,{steps:18});
+  const previewOrigin=await panel.boundingBox(),previewHeader=await panel.locator('[data-hys-modal-drag-handle]').first().boundingBox();await page.mouse.move(previewHeader.x+12,previewHeader.y+12);await page.mouse.down();await page.mouse.move(previewHeader.x+132,previewHeader.y+82,{steps:18});
   const previewBox=await page.locator('.hys-ui-modal-drag-preview').boundingBox(),originDuringDrag=await panel.boundingBox();
   check('Preview mode keeps original content fixed',Math.abs(originDuringDrag.x-previewOrigin.x)<2&&Math.abs(originDuringDrag.y-previewOrigin.y)<2);
   check('Preview outline follows the target',Math.abs(previewBox.x-previewOrigin.x-120)<3&&Math.abs(previewBox.y-previewOrigin.y-70)<3);
@@ -104,16 +105,17 @@ async (page) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   for(const [effect,label] of [['lift','柔和抬升'],['outline','边缘高亮'],['glow','主题柔光'],['shadow','悬浮投影'],['ghost','半透明移动'],['none','关闭特效']]) {
     await scene('dragresize').getByRole('combobox').nth(1).click();await page.getByRole('option',{name:label,exact:true}).click();await scene('dragresize').getByRole('button',{name:'打开可调整弹窗',exact:true}).click();panel=dialog('可移动工作面板');
-    const head=await panel.locator('[data-hys-modal-drag-handle]').boundingBox();await page.mouse.move(head.x+12,head.y+12);await page.mouse.down();await page.mouse.move(head.x+52,head.y+32,{steps:4});
+    const head=await panel.locator('[data-hys-modal-drag-handle]').first().boundingBox();await page.mouse.move(head.x+12,head.y+12);await page.mouse.down();await page.mouse.move(head.x+52,head.y+32,{steps:4});
     check('Selectable drag effect '+effect,await panel.evaluate((el,effect)=>{const style=getComputedStyle(el),visual=getComputedStyle(el,'::after');return effect==='ghost'?Math.abs(parseFloat(style.opacity)-.88)<.01:effect==='none'?visual.content==='none':visual.opacity==='1'&&visual.boxShadow!=='none'},effect));await page.mouse.up();await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});
   }
   await page.emulateMedia({reducedMotion:'no-preference'});
   await scene('recovery').getByRole('button',{name:'查看边界与位置恢复',exact:true}).click();panel=dialog('可找回的工作面板');await panel.waitFor();await page.waitForFunction(()=>!document.querySelector('.hys-ui-modal-scale-enter-active'));
   const recoveryHandle=await panel.getByRole('button',{name:'移动弹窗',exact:true}).boundingBox();await page.mouse.move(recoveryHandle.x+12,recoveryHandle.y+12);await page.mouse.down();await page.mouse.move(1380,16,{steps:12});await page.mouse.up();
-  check('Overflow keeps move handle visible',await panel.locator('[data-hys-modal-drag-handle]').evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=7&&b.right<=document.documentElement.clientWidth-7&&b.top>=7&&b.bottom<=innerHeight-7}));
-  await page.setViewportSize({width:800,height:700});await page.waitForTimeout(100);check('Viewport resize keeps handle reachable',await panel.locator('[data-hys-modal-drag-handle]').evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=7&&b.right<=document.documentElement.clientWidth-7&&b.top>=7&&b.bottom<=innerHeight-7}));
+  check('Overflow keeps move handle visible',await panel.locator('[data-hys-modal-drag-handle]').first().evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=7&&b.right<=document.documentElement.clientWidth-7&&b.top>=7&&b.bottom<=innerHeight-7}));
+  await page.setViewportSize({width:800,height:700});await page.waitForTimeout(100);check('Viewport resize keeps handle reachable',await panel.locator('[data-hys-modal-drag-handle]').first().evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=7&&b.right<=document.documentElement.clientWidth-7&&b.top>=7&&b.bottom<=innerHeight-7}));
   await panel.getByRole('textbox').focus();await page.keyboard.press('Alt+Home');check('Alt Home resets with animation from input focus',await panel.evaluate(el=>el.getAnimations().some(a=>a.playState==='running')));await page.waitForFunction(()=>!document.querySelector('[aria-label="可找回的工作面板"]').getAnimations().some(a=>a.playState==='running'));
   const sizeHandle=await panel.getByRole('button',{name:'调整弹窗尺寸',exact:true}).boundingBox();await page.mouse.move(sizeHandle.x+14,sizeHandle.y+14);await page.mouse.down();await page.mouse.move(sizeHandle.x+55,sizeHandle.y+50,{steps:5});await page.mouse.up();await panel.getByRole('button',{name:'平滑恢复尺寸',exact:true}).click();check('Size reset animates',await panel.evaluate(el=>el.getAnimations().some(a=>a.playState==='running')));await page.waitForFunction(()=>!document.querySelector('[aria-label="可找回的工作面板"]').getAnimations().some(a=>a.playState==='running'));
+  const leftHandle=await panel.getByRole('button',{name:'移动弹窗',exact:true}).boundingBox();await page.mouse.move(leftHandle.x+12,leftHandle.y+10);await page.mouse.down();await page.mouse.move(20,leftHandle.y+10,{steps:8});await page.mouse.up();check('Center grip allows the panel to overflow left',await panel.evaluate(el=>el.getBoundingClientRect().left<0));check('Center grip stays available after left overflow',await panel.locator('[data-hys-modal-drag-handle]').evaluate(el=>el.getBoundingClientRect().left>=7));
   await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});await page.setViewportSize({width:1440,height:1000});
   check('No browser runtime errors',errors.length===0);check('No Vue warnings',warnings.length===0);
   return {checks,errors,warnings,base};

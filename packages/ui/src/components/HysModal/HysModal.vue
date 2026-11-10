@@ -13,6 +13,7 @@ import {
   Maximize2,
   Minimize2,
   GripVertical,
+  GripHorizontal,
   LoaderCircle,
   Info,
   CircleCheck,
@@ -47,6 +48,9 @@ const props = withDefaults(defineProps<HysModalProps>(), {
   dragMode: "live",
   dragThreshold: 6,
   keepHandleVisible: true,
+  initialFocus: "auto",
+  appendTo: "body",
+  dragHandlePosition: "center",
   centered: true,
   modal: true,
   closeOnMask: true,
@@ -320,15 +324,36 @@ defineExpose({
             :class="[
               headerClass,
               'hys-ui-modal-header-' + (headerSize ?? 'md'),
+              {
+                'hys-ui-modal-header-with-center-grip':
+                  draggable && !full && dragHandlePosition === 'center',
+              },
             ]"
             :style="{
               ...headerStyle,
               minHeight: modalLength(headerHeight) ?? headerStyle?.minHeight,
             }"
           >
+            <button
+              v-if="draggable && !full && dragHandlePosition === 'center'"
+              type="button"
+              class="hys-ui-modal-drag-handle hys-ui-modal-drag-handle-center"
+              data-hys-modal-drag-handle
+              aria-label="移动弹窗"
+              title="拖动移动弹窗；双击复位，Alt 加方向键微调"
+              @pointerdown="modal.interaction.start($event, 'drag')"
+              @keydown="modal.interaction.headerKey"
+              @dblclick="doubleClick"
+            >
+              <GripHorizontal :size="18" aria-hidden="true" />
+            </button>
             <div class="hys-ui-modal-title-wrap">
               <button
-                v-if="draggable && !full"
+                v-if="
+                  draggable &&
+                  !full &&
+                  ['left', 'both'].includes(dragHandlePosition)
+                "
                 type="button"
                 class="hys-ui-modal-drag-handle"
                 data-hys-modal-drag-handle
@@ -351,6 +376,23 @@ defineExpose({
               >
             </div>
             <div class="hys-ui-modal-head-actions" data-hys-modal-no-drag>
+              <button
+                v-if="
+                  draggable &&
+                  !full &&
+                  ['right', 'both'].includes(dragHandlePosition)
+                "
+                type="button"
+                class="hys-ui-modal-drag-handle"
+                data-hys-modal-drag-handle
+                aria-label="从右侧移动弹窗"
+                title="从右侧拖动；双击复位，Alt 加方向键微调"
+                @pointerdown="modal.interaction.start($event, 'drag')"
+                @keydown="modal.interaction.headerKey"
+                @dblclick="doubleClick"
+              >
+                <GripVertical :size="16" aria-hidden="true" />
+              </button>
               <button
                 v-if="showFullscreen"
                 type="button"
@@ -526,6 +568,7 @@ defineExpose({
 }
 .hys-ui-dialog-head {
   box-sizing: border-box;
+  position: relative;
   flex: none;
   min-width: 0;
   gap: 16px;
@@ -667,6 +710,34 @@ defineExpose({
     var(--hys-ui-primary, var(--hys-ui-theme-primary)) 7%,
     transparent
   );
+}
+.hys-ui-modal-drag-handle-center {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 18px;
+  opacity: 0.2;
+  transition:
+    opacity 0.14s ease,
+    background-color 0.14s ease,
+    color 0.14s ease;
+}
+.hys-ui-dialog-head:hover .hys-ui-modal-drag-handle-center {
+  opacity: 0.6;
+}
+.hys-ui-dialog-head .hys-ui-modal-drag-handle-center:hover,
+.hys-ui-dialog-head .hys-ui-modal-drag-handle-center:focus-visible {
+  opacity: 1;
+}
+.hys-ui-modal-dragging .hys-ui-dialog-head .hys-ui-modal-drag-handle-center {
+  opacity: 1;
+}
+@media (hover: none) {
+  .hys-ui-modal-drag-handle-center {
+    opacity: 0.6;
+  }
 }
 .hys-ui-modal-drag-handle:focus-visible {
   outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
@@ -880,6 +951,18 @@ defineExpose({
 }
 .hys-ui-modal .hys-ui-dialog-head.hys-ui-modal-header-lg {
   padding: 28px 30px;
+}
+.hys-ui-modal
+  .hys-ui-dialog-head.hys-ui-modal-header-sm.hys-ui-modal-header-with-center-grip {
+  padding-top: 18px;
+}
+.hys-ui-modal
+  .hys-ui-dialog-head.hys-ui-modal-header-md.hys-ui-modal-header-with-center-grip {
+  padding-top: 28px;
+}
+.hys-ui-modal
+  .hys-ui-dialog-head.hys-ui-modal-header-lg.hys-ui-modal-header-with-center-grip {
+  padding-top: 36px;
 }
 .hys-ui-modal-header-sm .hys-ui-modal-title {
   font-size: 15px;

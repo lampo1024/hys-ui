@@ -13,7 +13,13 @@ export type HysModalCloseReason =
 export type HysModalType =
   "default" | "confirm" | "info" | "success" | "warning" | "error";
 export type HysModalInitialFocus =
-  "auto" | "dialog" | "confirm" | "cancel" | false | string | HTMLElement;
+  | "auto"
+  | "dialog"
+  | "confirm"
+  | "cancel"
+  | false
+  | string
+  | InstanceType<typeof HTMLElement>;
 export type HysModalSizeName =
   "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "full";
 export const modalWidths = {
@@ -82,7 +88,7 @@ export interface HysModalProps {
   forceRender?: boolean;
   modal?: boolean;
   modalPenetrable?: boolean;
-  appendTo?: string | HTMLElement | false;
+  appendTo?: string | InstanceType<typeof HTMLElement> | false;
   lockScroll?: boolean;
   trapFocus?: boolean;
   restoreFocus?: boolean;
@@ -143,6 +149,7 @@ export interface HysModalProps {
     context: HysModalActionContext,
   ) => boolean | void | Promise<boolean | void>;
   draggable?: boolean;
+  dragHandlePosition?: "center" | "left" | "right" | "both";
   dragMode?: "live" | "preview";
   /** Pointer movement in pixels before a header press becomes a drag. */
   dragThreshold?: number;

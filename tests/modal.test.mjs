@@ -1222,3 +1222,63 @@ test("Modal repeated viewport resize events clamp against the applied position w
     });
   }
 });
+
+test("Modal autofocus enters by default and Element focus/teleport targets pass runtime validation", async () => {
+  const trigger = document.createElement("button"),
+    target = document.createElement("div"),
+    field = document.createElement("input");
+  document.body.append(trigger, target, field);
+  trigger.focus();
+  const a = await mount(ui.HysModal, { open: true });
+  assert(a.find('[role="dialog"]').contains(document.activeElement));
+  a.unmount();
+  const b = await mount(ui.HysModal, {
+    open: true,
+    appendTo: target,
+    initialFocus: field,
+  });
+  assert(target.querySelector('[role="dialog"]'));
+  assert(b.find('[role="dialog"]').contains(document.activeElement));
+  b.unmount();
+});
+test("Modal dual handles allow left overflow while keeping the right handle available", async () => {
+  const a = await mount(ui.HysModal, {
+      open: true,
+      draggable: true,
+      overflow: true,
+      dragHandlePosition: "both",
+    }),
+    panel = dialog(),
+    handles = a.all("[data-hys-modal-drag-handle]");
+  assert.equal(handles.length, 2);
+  const rect = (left, top, width, height) => ({
+      left,
+      top,
+      right: left + width,
+      bottom: top + height,
+      x: left,
+      y: top,
+      width,
+      height,
+    }),
+    x = () => parseFloat(panel.style.getPropertyValue("--hys-ui-modal-x")) || 0;
+  panel.getBoundingClientRect = () => rect(200 + x(), 150, 560, 400);
+  handles[0].getBoundingClientRect = () => rect(224 + x(), 170, 24, 28);
+  handles[1].getBoundingClientRect = () => rect(690 + x(), 170, 24, 28);
+  a.vm.setPosition({ x: -1000, y: 0 });
+  await settle();
+  assert.equal(handles[1].getBoundingClientRect().left, 8);
+  assert(panel.getBoundingClientRect().left < 0);
+  a.props.dragHandlePosition = "right";
+  await settle();
+  assert.equal(a.all("[data-hys-modal-drag-handle]").length, 1);
+  assert(a.find('[aria-label="从右侧移动弹窗"]'));
+});
+
+test("Modal teleports to body by default while appendTo=false remains inline", async () => {
+  const a = await mount(ui.HysModal, { open: true });
+  assert.equal(a.find(".hys-ui-modal-overlay").parentElement, document.body);
+  a.unmount();
+  const b = await mount(ui.HysModal, { open: true, appendTo: false });
+  assert(b.host.contains(dialog()));
+});

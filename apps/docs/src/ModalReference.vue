@@ -38,15 +38,19 @@
     </p>
     <p>
       draggable
-      仅允许从标题区域拖动，按钮与输入区域不参与。默认保留视口边距，overflow=true
-      允许越界。双击移动手柄或 弹窗内 Alt + Home 平滑复位，Alt +
-      方向键微调，Shift 加速。resizable 显示右下角手柄，支持指针、方向键与 Home
-      复位，并遵守 minWidth / minHeight / maxWidth 及数值 maxHeight。拖动时按
-      Esc 或指针取消会还原本次操作，dragMode=preview
-      时，实体内容保留在原处，预览框按帧显示目标位置，释放后通过合成层动画移动；取消时放弃预览，减少动态效果时直接定位。默认
-      live 模式直接跟手。dragEffect 可选择 lift 柔和抬升（默认）、outline
-      边缘高亮或 none
-      关闭；特效只在开始和结束时切换透明度。拖拽更新按动画帧合并，手势期间缓存边界、直接更新合成层位置，在结束时同步组件状态。
+      通过标题栏顶部居中的小手柄移动弹窗，默认低透明度，标题栏悬停时增强。dragHandlePosition
+      支持 center（默认）、left、right、both。按下后移动超过 dragThreshold（默认
+      6px）才进入拖动状态，标题文字与空白不参与。默认限制整个弹窗在视口内；overflow=true
+      允许内容越界，keepHandleVisible
+      默认保留至少一个可见手柄。双击手柄或在弹窗内按 Alt + Home
+      平滑复位；手柄聚焦后 Alt 加方向键微调，Shift 加速。resizable
+      显示右下角尺寸手柄，支持方向键与 Home 平滑复位，并遵守尺寸上下界。
+    </p>
+    <p>
+      dragMode=preview 保留原内容，用预览框指示目标，释放后实体动画到目标；默认
+      live 直接跟手。dragEffect 提供
+      lift（默认抬升）、outline（描边）、glow（柔光）、shadow（投影）、ghost（半透明）和
+      none。移动按动画帧合并，缓存手势边界并直接更新合成层，结束后同步状态；Esc、指针取消和窗口失焦会撤销当前手势，窗口缩小后保持手柄可见。所有过渡尊重减少动态效果设置。
     </p>
     <p>
       destroyOnClose 默认在退出完成后销毁内容；false 保留内部状态。forceRender

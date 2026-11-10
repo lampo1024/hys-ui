@@ -53,7 +53,7 @@ export function useModalInteraction(
           preview: boolean;
           activated: boolean;
           box: DOMRect;
-          handleBox: DOMRect | undefined;
+          handleBoxes: DOMRect[] | undefined;
           target: HTMLElement;
         }
       | undefined;
@@ -114,26 +114,34 @@ export function useModalInteraction(
     box: DOMRect,
     original = position.value,
     screen = viewport(),
-    handleBox?: DOMRect,
+    handleBoxes?: readonly DOMRect[],
   ) {
     if (props.overflow) {
       if (props.keepHandleVisible === false) return next;
-      const handle =
-        handleBox ??
-        dialog.value
-          ?.querySelector<HTMLElement>("[data-hys-modal-drag-handle]")
-          ?.getBoundingClientRect();
-      if (handle)
+      const handles =
+        handleBoxes ?? moveHandles().map((el) => el.getBoundingClientRect());
+      if (handles.length) {
+        let maxLeft = -Infinity,
+          minRight = Infinity,
+          minTop = Infinity,
+          maxBottom = -Infinity;
+        for (const handle of handles) {
+          maxLeft = Math.max(maxLeft, handle.left);
+          minRight = Math.min(minRight, handle.right);
+          minTop = Math.min(minTop, handle.top);
+          maxBottom = Math.max(maxBottom, handle.bottom);
+        }
         return {
           x: Math.max(
-            8 - handle.left + original.x,
-            Math.min(screen.width - 8 - handle.right + original.x, next.x),
+            8 - maxLeft + original.x,
+            Math.min(screen.width - 8 - minRight + original.x, next.x),
           ),
           y: Math.max(
-            8 - handle.top + original.y,
-            Math.min(screen.height - 8 - handle.bottom + original.y, next.y),
+            8 - minTop + original.y,
+            Math.min(screen.height - 8 - maxBottom + original.y, next.y),
           ),
         };
+      }
       return next;
     }
     const { width, height } = screen,
@@ -228,7 +236,7 @@ export function useModalInteraction(
         current.box,
         current.position,
         current.screen,
-        current.handleBox,
+        current.handleBoxes,
       );
       paint(current.previewPosition);
       emit("drag", current.previewPosition);
@@ -382,6 +390,26 @@ export function useModalInteraction(
     try {
       current.target.releasePointerCapture?.(current.pointerId);
     } catch {}
+    if (
+      current.activated &&
+      !cancel &&
+      current.kind === "drag" &&
+      live &&
+      visible.value
+    ) {
+      const screen = viewport(),
+        inView = (el: HTMLElement) => {
+          const b = el.getBoundingClientRect();
+          return (
+            b.left >= 0 &&
+            b.right <= screen.width &&
+            b.top >= 0 &&
+            b.bottom <= screen.height
+          );
+        };
+      if (!inView(current.target))
+        moveHandles().find(inView)?.focus({ preventScroll: true });
+    }
     if (current.activated)
       emit(
         current.kind === "drag" ? "dragEnd" : "resizeEnd",
@@ -486,10 +514,8 @@ export function useModalInteraction(
       preview: kind === "drag" && props.dragMode === "preview",
       activated: false,
       box,
-      handleBox: props.overflow
-        ? dialog.value
-            .querySelector<HTMLElement>("[data-hys-modal-drag-handle]")
-            ?.getBoundingClientRect()
+      handleBoxes: props.overflow
+        ? moveHandles().map((el) => el.getBoundingClientRect())
         : undefined,
       target,
     };
@@ -637,6 +663,13 @@ export function useModalInteraction(
   function resizeViewport() {
     stop(true);
     clampViewport();
+  }
+  function moveHandles() {
+    return [
+      ...(dialog.value?.querySelectorAll<HTMLElement>(
+        ":scope > .hys-ui-dialog-head [data-hys-modal-drag-handle]",
+      ) ?? []),
+    ];
   }
   onMounted(() => window.addEventListener("resize", resizeViewport));
   onDeactivated(cleanup);
