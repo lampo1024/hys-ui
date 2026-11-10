@@ -256,6 +256,24 @@ export function actualPopover(instance:InstanceType<typeof HysPopover>):HysPopup
 export async function operateSurface(instance:HysPopupSurfaceInstance){await instance.show();await instance.toggle();instance.updatePosition();instance.focus();await instance.close();return instance.placement}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {surfaceChecks} from './surface-types'\nvoid surfaceChecks\n")
+fs.writeFileSync(path.join(dir,'upload-fixture.vue'),`<script setup lang="ts">
+import {ref} from 'vue'
+import {HysUpload,HysButton,type HysUploadFile,type HysUploadItem,type HysUploadProps,type HysUploadInstance,type HysUploadRequestOptions,type HysUploadChange} from 'hys-ui'
+const local=ref<HysUploadFile[]>([]),remote=ref<HysUploadItem[]>([{uid:'saved',name:'saved.pdf',url:'/saved.pdf'}]),api=ref<HysUploadInstance>()
+const props:HysUploadProps={action:async(file,context)=>{const raw:File=file.raw;void [raw,context.signal];return '/upload'},data:async()=>({tags:['a','b'],id:1}),beforeUpload:async(raw,context)=>context.signal.aborted?false:new Blob([raw]),customRequest(options:HysUploadRequestOptions){const original:File=options.file.raw;options.onProgress(50);void original;return{abort(){},promise:Promise.resolve({ok:true})}}}
+function changed(files:HysUploadFile[]){files.forEach(file=>{const raw:File=file.raw;void raw})}
+function detailed(info:HysUploadChange){const name:string=info.changed[0]?.name??'';void name}
+interface BusinessFile extends HysUploadFile {documentId:string}
+const business=ref<BusinessFile[]>([])
+function createFile(raw:File,uid:string):BusinessFile{return{uid,name:raw.name,size:raw.size,raw,documentId:uid}}
+// @ts-expect-error The legacy local-file type still requires raw.
+const invalid:HysUploadFile={uid:'x',name:'x',size:0}
+void invalid
+async function methods(instance:HysUploadInstance){await instance.addFiles([new File(['x'],'x.txt')]);await instance.submit();instance.abort();await instance.retry('x');await instance.remove('x');await instance.clearFiles(['success']);const raw:File|undefined=instance.files[0]?.raw;void raw}
+void methods
+async function transformUpload(raw:File){return new File([await raw.text()," converted"],"converted.txt",{type:"text/plain"})}
+</script><template><HysUpload ref="api" v-model:file-list="local" v-bind="props" @change="changed" @file-change="detailed"><template #trigger="{disabled,open}"><HysButton :disabled="disabled" @click.stop="open">Choose</HysButton></template><template #item="{file,actions}"><HysButton @click="actions.remove()">{{file.raw.name}}</HysButton></template></HysUpload><HysUpload v-model:file-list="remote" :before-remove="file=>file.uid!=='locked'"/><HysUpload v-model:file-list="business" :create-file="createFile"><template #file="{file}">{{file.documentId}}</template></HysUpload><HysUpload aria-label="Protocol upload" action="/upload-protocol" method="PUT" name="attachment" :headers="{'X-Upload-Test':'consumer'}" :data="{tags:['one','two'],document:7}" :before-upload="transformUpload" /></template>`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport UploadFixture from './upload-fixture.vue'\nconst uploadHost=document.createElement('section');uploadHost.id='upload-fixture';document.body.append(uploadHost);createApp(UploadFixture).mount(uploadHost)\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

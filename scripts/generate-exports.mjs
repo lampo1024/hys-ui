@@ -25,6 +25,7 @@ code+="export type {HysModalDragEffect,HysModalSectionSize,HysModalSizeName,HysM
 code+="export type {HysMenuKey,HysContextMenuTrigger,HysContextMenuItem,HysMenuFieldNames,HysMenuSelectInfo,HysMenuShowOptions,HysContextMenuProps,HysContextMenuInstance,HysMenuItemContext,HysContextMenuSlots} from './composables/menu'\n"
 code+="export type {HysDrawerProps,HysDrawerBeforeClose,HysDrawerPlacement,HysDrawerSizeName,HysDrawerCloseReason,HysDrawerActionContext,HysDrawerInitialFocus,HysDrawerSectionSize,HysDrawerResizeOptions,HysDrawerResizeInfo,HysDrawerPushOptions,HysDrawerSlotContext,HysDrawerSlots,HysDrawerInstance} from './composables/drawer'\n"
 code+="export type {HysPopupPlacement,HysPopupTrigger,HysPopupVirtualReference,HysPopupReference,HysPopupSurfaceProps,HysTooltipProps,HysPopoverProps,HysPopupSurfaceContext,HysTooltipSlots,HysPopoverSlots,HysPopupSurfaceInstance,HysTooltipInstance,HysPopoverInstance} from './composables/popupSurface'\n"
+code+="export type {HysUploadFile,HysUploadItem,HysUploadStatus,HysUploadListType,HysUploadChangeType,HysUploadChange,HysUploadContext,HysUploadInvalid,HysUploadError,HysUploadDataScalar,HysUploadData,HysUploadRequestOptions,HysUploadRequestResult,HysUploadLocale,HysUploadProps,HysUploadActions,HysUploadFileContext,HysUploadSlotContext,HysUploadSlots,HysUploadInstance} from './composables/upload'\n"
 fs.writeFileSync(root+'index.ts',code)
 
 fs.appendFileSync(root+'index.ts',"export type {HysPopupTransition,HysPopupMotionProps} from './motion/popup'\n")

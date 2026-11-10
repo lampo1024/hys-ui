@@ -405,10 +405,10 @@ export const catalog=[
     "label": "文件上传",
     "slug": "hys-upload",
     "category": "表单输入",
-    "description": "文件上传的独立交互示例、配置场景与类型参考。",
+    "description": "管理文件选择、异步上传、状态反馈与图片预览。",
     "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "不配置 action 或 customRequest 时保留本地选择；示例请求使用浏览器内模拟。",
+      "远程列表可使用 HysUploadItem；文件 uid 唯一稳定，取消和缓存页面离开会清理任务。"
     ]
   },
   {

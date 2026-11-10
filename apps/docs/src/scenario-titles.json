@@ -592,6 +592,24 @@
       "States": "禁用与受限状态",
       "Sizes": "尺寸约束与长内容滚动",
       "Input": "输入与选择控件作为触发器"
+    },
+    "HysUpload": {
+      "Basic": "本地选择与文件列表",
+      "Configure": "外观与行为配置",
+      "Automatic": "自动上传、失败与重试",
+      "Manual": "手动提交与并发排队",
+      "Single": "单文件替换",
+      "Lists": "图片列表、预览与下载",
+      "Controlled": "受控列表与远程回填",
+      "Validation": "异步校验与内容转换",
+      "Removal": "移除拦截与取消",
+      "Custom": "自定义入口与文件条目",
+      "InputMethods": "拖入、粘贴与目录选择",
+      "Form": "表单校验与尺寸继承",
+      "Methods": "实例方法与键盘操作",
+      "Lifecycle": "缓存页面与任务清理",
+      "States": "禁用、只读与加载",
+      "Request": "请求参数与自定义进度"
     }
   }
 }

@@ -22087,11 +22087,43 @@
   "HysUpload": {
     "props": [
       {
+        "name": "fileList",
+        "type": "readonly T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控文件列表，优先于 modelValue；可使用不带 raw 的远程条目",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "readonly T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "fileList 的 v-model 别名",
+        "global": false
+      },
+      {
+        "name": "defaultFileList",
+        "type": "readonly T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始文件列表，条目 uid 唯一稳定",
+        "global": false
+      },
+      {
+        "name": "defaultValue",
+        "type": "readonly T[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始列表的别名",
+        "global": false
+      },
+      {
         "name": "accept",
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "扩展名或 MIME 类型规则，以逗号分隔",
         "global": false
       },
       {
@@ -22099,7 +22131,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "允许多选",
+        "description": "允许多文件选择；false 时校验通过后替换旧文件，默认 true",
         "global": false
       },
       {
@@ -22107,7 +22139,23 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
+        "description": "禁止用户操作",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止选择与修改，保留可用的预览和下载",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态",
         "global": false
       },
       {
@@ -22115,7 +22163,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "文件数量上限；不设置或非正数时不限",
         "global": false
       },
       {
@@ -22123,7 +22171,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "单文件字节上限，同时检查变换后的实际发送内容",
         "global": false
       },
       {
@@ -22131,7 +22179,23 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "支持拖入文件，默认 true",
+        "global": false
+      },
+      {
+        "name": "paste",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "聚焦上传区域后接受剪贴板中的文件，默认 false",
+        "global": false
+      },
+      {
+        "name": "directory",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用浏览器目录选择，保留 relativePath",
         "global": false
       },
       {
@@ -22139,85 +22203,569 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "显示文件列表，默认 true",
+        "global": false
+      },
+      {
+        "name": "listType",
+        "type": "HysUploadListType | undefined",
+        "required": false,
+        "default": "\"text\"",
+        "description": "text / picture / picture-card，默认 text",
+        "global": false
+      },
+      {
+        "name": "listHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "320",
+        "description": "文件列表最大高度；数字为 px，默认 320",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "sm / md / lg，继承表单尺寸",
+        "global": false
+      },
+      {
+        "name": "showToolbar",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示列表计数与批量操作，默认 true",
+        "global": false
+      },
+      {
+        "name": "showPreview",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示可预览文件的操作",
+        "global": false
+      },
+      {
+        "name": "showDownload",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示可下载文件的操作",
+        "global": false
+      },
+      {
+        "name": "showRemove",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示移除操作，也控制行上的 Delete 键",
+        "global": false
+      },
+      {
+        "name": "showRetry",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示失败文件重试操作",
+        "global": false
+      },
+      {
+        "name": "openFileDialogOnClick",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "选择区域点击及 Enter / Space 打开文件选择器；显式 open() 不受此项限制",
+        "global": false
+      },
+      {
+        "name": "autoUpload",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "配置请求后自动提交新选择的文件，默认 true",
+        "global": false
+      },
+      {
+        "name": "concurrency",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2",
+        "description": "并发请求数，包含异步准备阶段；1–20，默认 2",
+        "global": false
+      },
+      {
+        "name": "action",
+        "type": "string | ((file: T, context: HysUploadContext<T>) => string | Promise<string>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "上传地址或异步地址工厂；接收 file 与含 signal 的上下文",
+        "global": false
+      },
+      {
+        "name": "method",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"POST\"",
+        "description": "请求方法，默认 POST",
+        "global": false
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"file\"",
+        "description": "multipart 文件字段名称，默认 file",
+        "global": false
+      },
+      {
+        "name": "headers",
+        "type": "Record<string, string> | ((file: T, context: HysUploadContext<T>) => Record<string, string> | Promise<Record<string, string>>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "请求头或异步工厂；multipart Content-Type 由浏览器生成",
+        "global": false
+      },
+      {
+        "name": "data",
+        "type": "HysUploadData | ((file: T, context: HysUploadContext<T>) => HysUploadData | Promise<HysUploadData>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "额外表单字段或异步工厂；数组追加多个同名字段",
+        "global": false
+      },
+      {
+        "name": "withCredentials",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "跨域请求携带凭据，默认 false",
+        "global": false
+      },
+      {
+        "name": "timeout",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "请求超时毫秒，默认 0 不设置",
+        "global": false
+      },
+      {
+        "name": "customRequest",
+        "type": "((options: HysUploadRequestOptions<T>) => HysUploadRequestResult) | undefined",
+        "required": false,
+        "default": "",
+        "description": "替代 XHR 的请求方法；支持进度/成功/失败回调、Promise 及取消句柄",
         "global": false
       },
       {
         "name": "beforeUpload",
-        "type": "((file: File) => boolean | void | Promise<boolean | void>) | undefined",
+        "type": "((file: File, context: HysUploadContext<T>) => boolean | void | File | Blob | Promise<boolean | void | File | Blob>) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "添加前检查；false 或拒绝 Promise 跳过文件；返回 Blob / File 替换实际发送内容",
+        "global": false
+      },
+      {
+        "name": "beforeRemove",
+        "type": "((file: T, files: readonly T[], context: HysUploadContext<T>) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "移除前异步检查，false 保留；clearFiles 不调用此钩子",
+        "global": false
+      },
+      {
+        "name": "createFile",
+        "type": "((raw: File, uid: string) => T) | undefined",
+        "required": false,
+        "default": "",
+        "description": "构建带业务字段的条目，接收 raw 与生成的 uid，需保留合法的 uid/name/raw",
+        "global": false
+      },
+      {
+        "name": "previewFile",
+        "type": "((file: T, context: HysUploadContext<T>) => string | false | Promise<string | false>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "异步解析预览图片 URL；false 由业务处理；接收可取消上下文",
+        "global": false
+      },
+      {
+        "name": "downloadFile",
+        "type": "((file: T, context: HysUploadContext<T>) => string | boolean | void | Promise<string | boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义下载，返回 URL 使用默认下载，void/false 由业务处理",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "Partial<HysUploadLocale> | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖默认界面文案",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "组件整体辅助技术名称，继承表单标签",
+        "global": false
+      },
+      {
+        "name": "triggerLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "选择区域的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "外部错误提示",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "触发表单 change / blur 校验，默认 true",
+        "global": false
+      },
+      {
+        "name": "listStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "文件列表附加样式，最大高度由 listHeight 约束",
         "global": false
       }
     ],
     "events": [
       {
-        "name": "change",
-        "type": "[files: HysUploadFile[]]",
+        "name": "update:modelValue",
+        "type": "[files: T[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求更新受控文件列表；宿主可接受或拒绝"
+      },
+      {
+        "name": "change",
+        "type": "[files: T[]]",
+        "required": false,
+        "default": "",
+        "description": "已接受变化后的完整列表，保持原有数组参数"
+      },
+      {
+        "name": "success",
+        "type": "[response: unknown, file: T]",
+        "required": false,
+        "default": "",
+        "description": "请求完成：(response,file)"
       },
       {
         "name": "error",
         "type": "[message: string]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "验证或请求错误文字，保持原有字符串参数"
       },
       {
         "name": "select",
         "type": "[files: File[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "通过检查并已被列表接受的原始 File 数组"
+      },
+      {
+        "name": "progress",
+        "type": "[percentage: number, file: T]",
+        "required": false,
+        "default": "",
+        "description": "按帧合并的上传进度：(percentage,file)"
+      },
+      {
+        "name": "abort",
+        "type": "[file: T, reason: string]",
+        "required": false,
+        "default": "",
+        "description": "取消排队或上传：(file,reason)"
+      },
+      {
+        "name": "drop",
+        "type": "[event: DragEvent]",
+        "required": false,
+        "default": "",
+        "description": "接收原生文件拖入事件"
+      },
+      {
+        "name": "invalid",
+        "type": "[info: HysUploadInvalid<T>]",
+        "required": false,
+        "default": "",
+        "description": "文件检查失败：reason、file、message、files"
+      },
+      {
+        "name": "paste",
+        "type": "[event: ClipboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "接收含文件的粘贴事件"
       },
       {
         "name": "remove",
-        "type": "[file: HysUploadFile]",
+        "type": "[file: T]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "成功移除的原始文件条目"
+      },
+      {
+        "name": "start",
+        "type": "[file: T]",
+        "required": false,
+        "default": "",
+        "description": "开始请求：(file)"
+      },
+      {
+        "name": "download",
+        "type": "[file: T]",
+        "required": false,
+        "default": "",
+        "description": "请求下载：(file)"
+      },
+      {
+        "name": "preview",
+        "type": "[file: T]",
+        "required": false,
+        "default": "",
+        "description": "请求预览：(file)"
+      },
+      {
+        "name": "update:fileList",
+        "type": "[files: T[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新受控文件列表；宿主可接受或拒绝"
+      },
+      {
+        "name": "fileChange",
+        "type": "[change: HysUploadChange<T>]",
+        "required": false,
+        "default": "",
+        "description": "已接受变化的 {type,files,changed}，移除项不包含于 changed"
       },
       {
         "name": "exceed",
         "type": "[files: File[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "本次超过数量限制的 File 数组"
+      },
+      {
+        "name": "uploadError",
+        "type": "[error: HysUploadError, file: T]",
+        "required": false,
+        "default": "",
+        "description": "请求失败：(HysUploadError,file)，包含 kind/status/response 等"
+      },
+      {
+        "name": "removeError",
+        "type": "[error: Error, file: T]",
+        "required": false,
+        "default": "",
+        "description": "移除检查失败：(Error,file)"
       }
     ],
     "slots": [
       {
         "name": "default",
-        "type": "{}",
+        "type": "HysUploadSlotContext<T>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "选择区域内容；接收 files/busy/disabled/uploading/queued/open/submit/abort/clear"
+      },
+      {
+        "name": "trigger",
+        "type": "HysUploadSlotContext<T>",
+        "required": false,
+        "default": "",
+        "description": "替换选择入口，优先于 default；接收同样的操作上下文"
+      },
+      {
+        "name": "tip",
+        "type": "HysUploadSlotContext<T>",
+        "required": false,
+        "default": "",
+        "description": "选择区域下方说明"
+      },
+      {
+        "name": "toolbar",
+        "type": "HysUploadSlotContext<T>",
+        "required": false,
+        "default": "",
+        "description": "文件计数与批量操作区"
       },
       {
         "name": "file",
-        "type": "{ file: { uid: string; name: string; size: number; raw: { readonly lastModified: number; readonly name: string; readonly webkitRelativePath: string; readonly size: number; readonly type: string; arrayBuffer: () => Promise<ArrayBuffer>; bytes: () => Promise<Uint8Array<ArrayBuffer>>; slice: (start?: number | undefined, end?: number | undefined, contentType?: string | undefined) => Blob; stream: () => ReadableStream<Uint8Array<ArrayBuffer>>; text: () => Promise<string>; }; }; }",
+        "type": "HysUploadFileContext<T>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "替换文件名称，接收 file/status/percentage/thumbnail/busy/queued/actions"
+      },
+      {
+        "name": "item",
+        "type": "HysUploadFileContext<T>",
+        "required": false,
+        "default": "",
+        "description": "替换完整文件行，接收 file 上下文及 actions"
+      },
+      {
+        "name": "empty",
+        "type": "HysUploadSlotContext<T>",
+        "required": false,
+        "default": "",
+        "description": "空文件列表内容"
+      },
+      {
+        "name": "progress",
+        "type": "HysUploadFileContext<T>",
+        "required": false,
+        "default": "",
+        "description": "上传中的进度内容，接收 file 上下文"
+      },
+      {
+        "name": "preview",
+        "type": "{ file: T; url: string; close: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "自定义预览正文，接收 file/url/close"
       }
     ],
     "exposed": [
       {
-        "name": "clearFiles",
-        "type": "() => void",
-        "required": false,
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
         "default": "",
-        "description": ""
+        "description": "组件根元素"
+      },
+      {
+        "name": "input",
+        "type": "HTMLInputElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "原生文件选择器元素"
+      },
+      {
+        "name": "files",
+        "type": "readonly T[]",
+        "required": true,
+        "default": "",
+        "description": "当前有效文件列表"
+      },
+      {
+        "name": "busy",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "正在进行选择检查"
+      },
+      {
+        "name": "uploading",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "正在准备或请求的文件数"
+      },
+      {
+        "name": "queued",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "等待提交的队列数量"
       },
       {
         "name": "open",
-        "type": "() => void",
-        "required": false,
+        "type": "(event?: Event) => void",
+        "required": true,
         "default": "",
-        "description": "控制浮层显示"
+        "description": "打开原生文件选择器，禁用/只读/加载时无效"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": true,
+        "default": "",
+        "description": "聚焦可用的选择区域或自定义入口"
+      },
+      {
+        "name": "addFiles",
+        "type": "(files: readonly File[]) => Promise<T[]>",
+        "required": true,
+        "default": "",
+        "description": "异步检查并添加 File 数组，返回已接受条目"
+      },
+      {
+        "name": "getFiles",
+        "type": "() => T[]",
+        "required": true,
+        "default": "",
+        "description": "获取当前列表的浅副本"
+      },
+      {
+        "name": "clearFiles",
+        "type": "(statuses?: readonly HysUploadStatus[]) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "取消并清理全部或指定状态的文件，不运行 beforeRemove，返回是否接受"
+      },
+      {
+        "name": "remove",
+        "type": "(file: T | string) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "异步检查并移除 uid 或条目，返回是否成功"
+      },
+      {
+        "name": "submit",
+        "type": "(file?: T | string) => Promise<number>",
+        "required": true,
+        "default": "",
+        "description": "提交 ready / error 文件或指定 uid，返回入队数量"
+      },
+      {
+        "name": "retry",
+        "type": "(file: T | string) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "重新验证并提交指定文件，返回是否成功入队"
+      },
+      {
+        "name": "abort",
+        "type": "(file?: T | string) => number",
+        "required": true,
+        "default": "",
+        "description": "取消全部或指定任务，恢复 ready，返回取消数量"
+      },
+      {
+        "name": "preview",
+        "type": "(file: T | string) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "预览指定条目或 uid，返回是否显示"
+      },
+      {
+        "name": "download",
+        "type": "(file: T | string) => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "下载指定条目或 uid，返回是否处理"
       }
     ]
   },
