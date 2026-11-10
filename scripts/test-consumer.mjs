@@ -293,6 +293,17 @@ fs.copyFileSync(path.join(root,'scripts/consumer-tag-color.vue'),path.join(dir,'
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport TagColorFixture from './tag-color-fixture.vue'\nconst tagColorHost=document.createElement('section');tagColorHost.id='tag-color-fixture';document.body.append(tagColorHost);createApp(TagColorFixture).mount(tagColorHost)\n")
 fs.copyFileSync(path.join(root,'scripts/consumer-virtual-table.vue'),path.join(dir,'virtual-table-fixture.vue'))
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport VirtualTableFixture from './virtual-table-fixture.vue'\nconst virtualTableHost=document.createElement('section');virtualTableHost.id='virtual-table-fixture';document.body.append(virtualTableHost);createApp(VirtualTableFixture).mount(virtualTableHost)\n")
+fs.appendFileSync(path.join(dir,'main.ts'),`\nimport type {GridColumn,HysDataGridInstance,HysDataGridLoader,HysDataGridProps} from 'hys-ui'
+type Invoice = {id: number; amount: number}
+const gridColumn: GridColumn<Invoice> = {key:'amount',label:'Amount',sortMethod:(a,b)=>a.amount-b.amount}
+const gridLoader: HysDataGridLoader<Invoice> = (query,{signal}) => {
+  signal.throwIfAborted()
+  return {rows:[{id:query.page,amount:1}],total:1}
+}
+const gridProps: HysDataGridProps<Invoice> = {rows:[],columns:[gridColumn],loadRows:gridLoader,rowKey:row=>row.id}
+function gridSelection(grid: HysDataGridInstance) { return grid.getSelection() }
+void [gridProps,gridSelection]
+`)
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

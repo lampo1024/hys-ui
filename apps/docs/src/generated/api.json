@@ -5854,51 +5854,91 @@
   "HysDataGrid": {
     "props": [
       {
-        "name": "popupTransition",
-        "type": "HysPopupTransition | undefined",
-        "required": false,
-        "default": "scale",
-        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
-        "global": false
-      },
-      {
-        "name": "popupTransitionDuration",
-        "type": "number | undefined",
-        "required": false,
-        "default": "160",
-        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
-        "global": false
-      },
-      {
         "name": "columns",
-        "type": "GridColumn[]",
+        "type": "readonly GridColumn<T>[]",
         "required": true,
         "default": "",
-        "description": "列定义",
+        "description": "列定义，支持字段路径或取值函数，以及排序、筛选、宽度和汇总配置",
         "global": false
       },
       {
         "name": "rows",
-        "type": "Row[]",
+        "type": "readonly T[]",
         "required": true,
         "default": "",
-        "description": "行数据，由使用方提供",
+        "description": "本地数据或宿主提供的当前页记录",
         "global": false
       },
       {
         "name": "rowKey",
-        "type": "string | undefined",
+        "type": "string | ((row: T, index: number) => HysDataGridKey) | undefined",
         "required": false,
         "default": "\"id\"",
-        "description": "",
+        "description": "唯一行键字段路径或函数，数字与字符串键分别处理",
+        "global": false
+      },
+      {
+        "name": "page",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "初始或外部同步页码，从 1 开始",
         "global": false
       },
       {
         "name": "pageSize",
         "type": "number | undefined",
         "required": false,
-        "default": "10",
-        "description": "每页条数",
+        "default": "",
+        "description": "每页记录数，默认 10",
+        "global": false
+      },
+      {
+        "name": "query",
+        "type": "HysDataGridQuery | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控查询，配合 v-model:query 使用，包含分页、搜索、排序和筛选",
+        "global": false
+      },
+      {
+        "name": "defaultQuery",
+        "type": "Partial<HysDataGridQuery> | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始查询，可提供部分字段",
+        "global": false
+      },
+      {
+        "name": "immediateQuery",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "挂载时发送一次当前查询",
+        "global": false
+      },
+      {
+        "name": "serverMode",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "由宿主监听 queryChange 并提供当前页数据",
+        "global": false
+      },
+      {
+        "name": "loadRows",
+        "type": "HysDataGridLoader<T> | undefined",
+        "required": false,
+        "default": "",
+        "description": "组件管理的远程加载函数，接收查询与 AbortSignal，返回 rows 和 total",
+        "global": false
+      },
+      {
+        "name": "totalRows",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "远程记录总数，可用于首次加载前的分页",
         "global": false
       },
       {
@@ -5915,6 +5955,46 @@
         "required": false,
         "default": "true",
         "description": "",
+        "global": false
+      },
+      {
+        "name": "rowSelectable",
+        "type": "((row: T, index: number) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按原始记录和数据索引判断能否选择",
+        "global": false
+      },
+      {
+        "name": "selectedRowKeys",
+        "type": "readonly HysDataGridKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控的选中键列表",
+        "global": false
+      },
+      {
+        "name": "defaultSelectedRowKeys",
+        "type": "readonly HysDataGridKey[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始选中键",
+        "global": false
+      },
+      {
+        "name": "reserveSelection",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "数据替换后保留键，默认远程模式保留",
+        "global": false
+      },
+      {
+        "name": "selectionType",
+        "type": "\"checkbox\" | \"radio\" | undefined",
+        "required": false,
+        "default": "\"checkbox\"",
+        "description": "checkbox 多选或 radio 单选",
         "global": false
       },
       {
@@ -5935,34 +6015,10 @@
       },
       {
         "name": "density",
-        "type": "\"normal\" | \"compact\" | \"comfortable\" | undefined",
+        "type": "\"compact\" | \"normal\" | \"comfortable\" | undefined",
         "required": false,
         "default": "\"normal\"",
         "description": "",
-        "global": false
-      },
-      {
-        "name": "serverMode",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "启用外部数据分页，通过事件请求新数据",
-        "global": false
-      },
-      {
-        "name": "totalRows",
-        "type": "number | undefined",
-        "required": false,
-        "default": "",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "page",
-        "type": "number | undefined",
-        "required": false,
-        "default": "",
-        "description": "当前页，从 1 开始",
         "global": false
       },
       {
@@ -5982,6 +6038,22 @@
         "global": false
       },
       {
+        "name": "maxHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "表格滚动区域最大高度，数字以像素计",
+        "global": false
+      },
+      {
+        "name": "scrollToTopOnQuery",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "接受新查询后滚动到表格顶部",
+        "global": false
+      },
+      {
         "name": "groupable",
         "type": "boolean | undefined",
         "required": false,
@@ -5995,6 +6067,14 @@
         "required": false,
         "default": "false",
         "description": "",
+        "global": false
+      },
+      {
+        "name": "summaryMethod",
+        "type": "((column: GridColumn<T>, rows: readonly T[]) => string | number) | undefined",
+        "required": false,
+        "default": "",
+        "description": "接收列定义及参与汇总的原始记录，返回文字或数值",
         "global": false
       },
       {
@@ -6020,22 +6100,52 @@
         "default": "false",
         "description": "允许编辑",
         "global": false
+      },
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
       }
     ],
     "events": [
       {
+        "name": "loadError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "当前远程请求失败时发出"
+      },
+      {
         "name": "selectionChange",
-        "type": "[keys: (string | number)[]]",
+        "type": "[keys: HysDataGridKey[]]",
+        "required": false,
+        "default": "",
+        "description": "选中键生效后发出"
+      },
+      {
+        "name": "rowClick",
+        "type": "[row: T]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
-        "name": "rowClick",
-        "type": "[row: Row]",
+        "name": "update:selectedRowKeys",
+        "type": "[keys: HysDataGridKey[]]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求更新选中键"
       },
       {
         "name": "columnsChange",
@@ -6046,7 +6156,7 @@
       },
       {
         "name": "sortChange",
-        "type": "[sort: Sort]",
+        "type": "[sort: HysDataGridSort | null]",
         "required": false,
         "default": "",
         "description": ""
@@ -6059,13 +6169,6 @@
         "description": ""
       },
       {
-        "name": "queryChange",
-        "type": "[query: { page: number; pageSize: number; sort: SortRule[]; search: string; filters: Record<string, string>; }]",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
-      {
         "name": "pageSizeChange",
         "type": "[size: number]",
         "required": false,
@@ -6073,21 +6176,56 @@
         "description": ""
       },
       {
+        "name": "update:query",
+        "type": "[query: HysDataGridQuery]",
+        "required": false,
+        "default": "",
+        "description": "请求更新查询，由宿主接受后生效"
+      },
+      {
+        "name": "queryChange",
+        "type": "[query: HysDataGridQuery]",
+        "required": false,
+        "default": "",
+        "description": "有效查询变化时发出，供外部请求数据"
+      },
+      {
         "name": "cellEdit",
-        "type": "[payload: { row: Row; rowKey: string | number; column: string; value: string; }]",
+        "type": "[payload: { row: T; rowKey: HysDataGridKey; column: string; value: string; }]",
         "required": false,
         "default": "",
         "description": ""
       },
       {
         "name": "batchEdit",
-        "type": "[payload: { keys: (string | number)[]; column: string; value: string; }]",
+        "type": "[payload: { keys: HysDataGridKey[]; column: string; value: string; }]",
         "required": false,
         "default": "",
         "description": ""
       }
     ],
     "slots": [
+      {
+        "name": "empty",
+        "type": "{ query: HysDataGridQuery; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "loading",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "显示加载状态"
+      },
+      {
+        "name": "error",
+        "type": "{ error: unknown; retry: () => void; }",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
       {
         "name": "[column.key]",
         "type": "{ row: Record<string, unknown>; value: unknown; index?: number }",
@@ -6102,7 +6240,70 @@
         "type": "() => void",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "恢复默认列顺序、显隐与宽度"
+      },
+      {
+        "name": "getQuery",
+        "type": "() => HysDataGridQuery",
+        "required": false,
+        "default": "",
+        "description": "返回当前有效查询的副本"
+      },
+      {
+        "name": "setQuery",
+        "type": "(query: Partial<HysDataGridQuery>) => void",
+        "required": false,
+        "default": "",
+        "description": "更新查询中的指定字段"
+      },
+      {
+        "name": "resetQuery",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "恢复初始查询"
+      },
+      {
+        "name": "reload",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "重新加载当前查询"
+      },
+      {
+        "name": "getSelection",
+        "type": "() => HysDataGridKey[]",
+        "required": false,
+        "default": "",
+        "description": "返回选中键的副本"
+      },
+      {
+        "name": "clearSelection",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "清空选择"
+      },
+      {
+        "name": "toggleRowSelection",
+        "type": "(key: HysDataGridKey, checked?: boolean) => void",
+        "required": false,
+        "default": "",
+        "description": "按行键切换或设置选择"
+      },
+      {
+        "name": "scrollTo",
+        "type": "(options: ScrollToOptions) => void",
+        "required": false,
+        "default": "",
+        "description": "滚动表格区域"
+      },
+      {
+        "name": "scrollToRow",
+        "type": "(key: HysDataGridKey) => boolean",
+        "required": false,
+        "default": "",
+        "description": "定位当前页的指定行，找到时返回 true"
       }
     ]
   },
@@ -18323,6 +18524,13 @@
         "description": "行点击，保留首个行对象，另提供 index 与原生事件"
       },
       {
+        "name": "update:selectedRowKeys",
+        "type": "[keys: HysTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新对应受控状态，可配合 v-model 使用"
+      },
+      {
         "name": "sortChange",
         "type": "[sort: HysTableSort | null, sorts: HysTableSort[]]",
         "required": false,
@@ -18337,18 +18545,18 @@
         "description": "请求页码"
       },
       {
-        "name": "queryChange",
-        "type": "[query: HysTableQuery<T>]",
-        "required": false,
-        "default": "",
-        "description": "请求查询：action、page、pageSize、sorts、filters、currentData"
-      },
-      {
         "name": "pageSizeChange",
         "type": "[size: number]",
         "required": false,
         "default": "",
         "description": "请求页大小"
+      },
+      {
+        "name": "queryChange",
+        "type": "[query: HysTableQuery<T>]",
+        "required": false,
+        "default": "",
+        "description": "请求查询：action、page、pageSize、sorts、filters、currentData"
       },
       {
         "name": "update:page",
@@ -18461,13 +18669,6 @@
         "required": false,
         "default": "",
         "description": "请求应用筛选条件"
-      },
-      {
-        "name": "update:selectedRowKeys",
-        "type": "[keys: HysTableKey[]]",
-        "required": false,
-        "default": "",
-        "description": "请求更新对应受控状态，可配合 v-model 使用"
       },
       {
         "name": "selectInvert",
@@ -24782,6 +24983,13 @@
         "description": "点击数据行返回原始记录、当前排序后的索引和鼠标事件"
       },
       {
+        "name": "update:selectedRowKeys",
+        "type": "[keys: HysVirtualTableKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新选中键"
+      },
+      {
         "name": "sortChange",
         "type": "[sort: HysVirtualTableSort | null]",
         "required": false,
@@ -24801,13 +25009,6 @@
         "required": false,
         "default": "",
         "description": "点击单元格返回值、原始记录、列及索引"
-      },
-      {
-        "name": "update:selectedRowKeys",
-        "type": "[keys: HysVirtualTableKey[]]",
-        "required": false,
-        "default": "",
-        "description": "请求更新选中键"
       },
       {
         "name": "update:currentRowKey",

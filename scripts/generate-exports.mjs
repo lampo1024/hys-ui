@@ -32,6 +32,7 @@ code+="export type {HysTimelineKey,HysTimelineMode,HysTimelinePosition,HysTimeli
 code+="export type {HysTagInputReason,HysTagInputAddContext,HysTagInputInvalid,HysTagInputProps,HysTagInputSlotContext,HysTagInputTagContext,HysTagInputSlots,HysTagInputInstance} from './composables/tagInput'\n"
 code+="export type {HysColorFormat,HysColor,HysColorPickerProps,HysColorPickerContext,HysColorPickerSlots,HysColorPickerInstance} from './composables/color'\n"
 code+="export type {HysVirtualTableKey,HysVirtualTableAlign,HysVirtualTableSort,HysVirtualTableCell,HysVirtualTableColumn,HysVirtualTableRange,HysVirtualTableScroll,HysVirtualTableProps,HysVirtualTableInstance} from './composables/virtualTable'\n"
+code+="export type {GridColumn,HysDataGridKey,HysDataGridSort,HysDataGridQuery,HysDataGridProps,HysDataGridResult,HysDataGridLoader,HysDataGridInstance} from './composables/dataGrid'\n"
 fs.writeFileSync(root+'index.ts',code)
 
 fs.appendFileSync(root+'index.ts',"export type {HysPopupTransition,HysPopupMotionProps} from './motion/popup'\n")

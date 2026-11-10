@@ -661,6 +661,12 @@
       "Dynamic": "动态记录与稳定标识",
       "States": "空记录与长内容"
     },
+    "HysDataGrid": {
+      "Controlled": "受控查询与自定义筛选",
+      "Selection": "单选、多选与保留选择",
+      "Resize": "固定表头与列宽调整",
+      "Server": "远程加载、取消与重试"
+    },
     "HysVirtualTable": {
       "Basic": "万行任务与快速定位",
       "Configure": "视口尺寸与外观",

@@ -331,6 +331,79 @@ for(const name of fs.readdirSync(dir).sort()){
  applyFeedbackApi(name,api[name],root)
  applyTagColorApi(name,api[name],root)
  applyVirtualTableApi(name,api[name],root)
+ if (name === "HysDataGrid") {
+   const file = ts.createSourceFile(
+     "dataGrid.ts",
+     fs.readFileSync(
+       path.join(root, "packages/ui/src/composables/dataGrid.ts"),
+       "utf8",
+     ),
+     ts.ScriptTarget.Latest,
+     true,
+   );
+   const instance = file.statements.find(
+     (statement) =>
+       ts.isInterfaceDeclaration(statement) &&
+       statement.name.text === "HysDataGridInstance",
+   );
+   if (instance)
+     api[name].exposed = instance.members
+       .filter(ts.isMethodSignature)
+       .map((method) => ({
+         name: method.name.getText(file),
+         type: `(${method.parameters.map((parameter) => parameter.getText(file)).join(", ")}) => ${method.type.getText(file)}`,
+         required: false,
+         default: "",
+         description: "",
+       }));
+   const props = {
+     columns: "列定义，支持字段路径或取值函数，以及排序、筛选、宽度和汇总配置",
+     rows: "本地数据或宿主提供的当前页记录",
+     rowKey: "唯一行键字段路径或函数，数字与字符串键分别处理",
+     page: "初始或外部同步页码，从 1 开始",
+     pageSize: "每页记录数，默认 10",
+     query: "受控查询，配合 v-model:query 使用，包含分页、搜索、排序和筛选",
+     defaultQuery: "非受控初始查询，可提供部分字段",
+     immediateQuery: "挂载时发送一次当前查询",
+     serverMode: "由宿主监听 queryChange 并提供当前页数据",
+     loadRows:
+       "组件管理的远程加载函数，接收查询与 AbortSignal，返回 rows 和 total",
+     totalRows: "远程记录总数，可用于首次加载前的分页",
+     rowSelectable: "按原始记录和数据索引判断能否选择",
+     selectedRowKeys: "受控的选中键列表",
+     defaultSelectedRowKeys: "非受控初始选中键",
+     reserveSelection: "数据替换后保留键，默认远程模式保留",
+     selectionType: "checkbox 多选或 radio 单选",
+     maxHeight: "表格滚动区域最大高度，数字以像素计",
+     scrollToTopOnQuery: "接受新查询后滚动到表格顶部",
+     summaryMethod: "接收列定义及参与汇总的原始记录，返回文字或数值",
+   };
+   const events = {
+     "update:query": "请求更新查询，由宿主接受后生效",
+     queryChange: "有效查询变化时发出，供外部请求数据",
+     "update:selectedRowKeys": "请求更新选中键",
+     selectionChange: "选中键生效后发出",
+     loadError: "当前远程请求失败时发出",
+   };
+   const methods = {
+     resetColumns: "恢复默认列顺序、显隐与宽度",
+     getQuery: "返回当前有效查询的副本",
+     setQuery: "更新查询中的指定字段",
+     resetQuery: "恢复初始查询",
+     reload: "重新加载当前查询",
+     getSelection: "返回选中键的副本",
+     clearSelection: "清空选择",
+     toggleRowSelection: "按行键切换或设置选择",
+     scrollTo: "滚动表格区域",
+     scrollToRow: "定位当前页的指定行，找到时返回 true",
+   };
+   for (const prop of api[name].props)
+     prop.description = props[prop.name] || prop.description;
+   for (const event of api[name].events)
+     event.description = events[event.name] || event.description;
+   for (const method of api[name].exposed)
+     method.description = methods[method.name] || method.description;
+ }
  for(const prop of api[name].props){if(prop.name==='popupTransition'){prop.default='scale';prop.description=descriptions[prop.name]}if(prop.name==='popupTransitionDuration'){prop.default='160';prop.description=descriptions[prop.name]}}
  if(['HysTable','HysDataGrid'].includes(name))api[name].slots.push({name:'[column.key]',type:'{ row: Record<string, unknown>; value: unknown; index?: number }',required:false,default:'',description:'与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。'})
 }

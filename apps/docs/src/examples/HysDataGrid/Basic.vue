@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { HysDataGrid, type GridColumn } from 'hys-ui';
+import { HysDataGrid, type GridColumn, type HysDataGridInstance } from 'hys-ui';
 import { HysSelect } from 'hys-ui';
 import { HysButton } from 'hys-ui';
 import { HysBadge } from 'hys-ui';
 import { HysProgress } from 'hys-ui';
-const grid = ref<InstanceType<typeof HysDataGrid>>();
+const grid = ref<HysDataGridInstance>();
 const columns: GridColumn[] = [
     { key: 'id', label: '编号', width: 120, pinned: 'left' },
     { key: 'name', label: '任务名称', width: 260 },
