@@ -62,9 +62,9 @@ const users = [
   grid-template-columns: repeat(2, minmax(0, 240px));
   gap: 16px;
   padding: 20px;
-  border: 1px solid var(--hys-ui-theme-border);
+  border: 1px solid var(--docs-border, var(--hys-ui-border, #dce3ee));
   border-radius: 10px;
-  background: var(--hys-ui-theme-surface-alt);
+  background: var(--docs-bg, var(--hys-ui-surface-alt, #f7f9fd));
 }
 .popup-motion-controls label {
   display: grid;
@@ -73,11 +73,11 @@ const users = [
 }
 .popup-motion-controls label > span {
   font-size: 13px;
-  color: var(--hys-ui-theme-muted);
+  color: var(--docs-muted, var(--hys-ui-muted, #74829b));
 }
 .popup-demo-target {
   padding: 24px;
-  border: 1px dashed var(--hys-ui-theme-border);
+  border: 1px dashed var(--docs-border, var(--hys-ui-border, #dce3ee));
   border-radius: 8px;
   text-align: center;
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends HysSelectModelValue = string">
-import type { HysPopupMotionProps } from '../../motion/popup';
+import type { HysPopupMotionProps } from "../../motion/popup";
 
-import PopupMotion from '../../motion/PopupMotion';
+import PopupMotion from "../../motion/PopupMotion";
 
 import {
   computed,
@@ -40,68 +40,74 @@ import {
 } from "../../composables/selectOptions";
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
-  defineProps<HysPopupMotionProps & {
-    modelValue?: T;
-    defaultValue?: T;
-    options?: HysSelectDataOption[];
-    fieldNames?: HysSelectFieldNames;
-    valueKey?: string;
-    disabled?: boolean;
-    readonly?: boolean;
-    ariaLabel?: string;
-    placeholder?: string;
-    multiple?: boolean;
-    filterable?: boolean;
-    clearable?: boolean;
-    emptyValues?: readonly unknown[];
-    clearValue?: HysSelectValue | null;
-    fallbackOption?: false | ((value: HysSelectValue) => HysSelectOption);
-    multipleLimit?: number;
-    maxTagCount?: number;
-    maxTagTextLength?: number;
-    removable?: boolean;
-    clearSearchAfterSelect?: boolean;
-    allowCreate?: boolean;
-    createOption?: (label: string) => HysSelectOption | false | null;
-    tokenSeparators?: string[];
-    clearCreatedOnClear?: boolean;
-    loading?: boolean;
-    remote?: boolean;
-    remoteMethod?: (
-      query: string,
-      context: HysSelectSearchContext,
-    ) => void | HysSelectDataOption[] | Promise<void | HysSelectDataOption[]>;
-    debounce?: number;
-    searchValue?: string;
-    filterMethod?: (query: string, option: HysSelectOption) => boolean;
-    filterSort?: (a: HysSelectOption, b: HysSelectOption) => number;
-    open?: boolean;
-    defaultOpen?: boolean;
-    showOnFocus?: boolean;
-    retainSearch?: boolean;
-    defaultActiveFirst?: boolean;
-    keyboard?: boolean;
-    popupMatchWidth?: boolean;
-    popupWidth?: number | string;
-    placement?: Placement;
-    appendTo?: string | HTMLElement | false;
-    popupClass?: string;
-    popupStyle?: CSSProperties;
-    listHeight?: number;
-    virtual?: boolean;
-    itemHeight?: number;
-    overscan?: number;
-    emptyText?: string;
-    noMatchText?: string;
-    loadingText?: string;
-    size?: "sm" | "md" | "lg";
-    status?: "error" | "warning" | "success";
-    showArrow?: boolean;
-    showCheckmark?: boolean;
-    bordered?: boolean;
-    autofocus?: boolean;
-    name?: string;
-  }>(),
+  defineProps<
+    HysPopupMotionProps & {
+      modelValue?: T;
+      defaultValue?: T;
+      options?: HysSelectDataOption[];
+      fieldNames?: HysSelectFieldNames;
+      valueKey?: string;
+      disabled?: boolean;
+      readonly?: boolean;
+      ariaLabel?: string;
+      placeholder?: string;
+      multiple?: boolean;
+      showSelectAll?: boolean;
+      selectAllScope?: "filtered" | "all";
+      selectAllText?: string;
+      deselectAllText?: string;
+      filterable?: boolean;
+      clearable?: boolean;
+      emptyValues?: readonly unknown[];
+      clearValue?: HysSelectValue | null;
+      fallbackOption?: false | ((value: HysSelectValue) => HysSelectOption);
+      multipleLimit?: number;
+      maxTagCount?: number;
+      maxTagTextLength?: number;
+      removable?: boolean;
+      clearSearchAfterSelect?: boolean;
+      allowCreate?: boolean;
+      createOption?: (label: string) => HysSelectOption | false | null;
+      tokenSeparators?: string[];
+      clearCreatedOnClear?: boolean;
+      loading?: boolean;
+      remote?: boolean;
+      remoteMethod?: (
+        query: string,
+        context: HysSelectSearchContext,
+      ) => void | HysSelectDataOption[] | Promise<void | HysSelectDataOption[]>;
+      debounce?: number;
+      searchValue?: string;
+      filterMethod?: (query: string, option: HysSelectOption) => boolean;
+      filterSort?: (a: HysSelectOption, b: HysSelectOption) => number;
+      open?: boolean;
+      defaultOpen?: boolean;
+      showOnFocus?: boolean;
+      retainSearch?: boolean;
+      defaultActiveFirst?: boolean;
+      keyboard?: boolean;
+      popupMatchWidth?: boolean;
+      popupWidth?: number | string;
+      placement?: Placement;
+      appendTo?: string | HTMLElement | false;
+      popupClass?: string;
+      popupStyle?: CSSProperties;
+      listHeight?: number;
+      virtual?: boolean;
+      itemHeight?: number;
+      overscan?: number;
+      emptyText?: string;
+      noMatchText?: string;
+      loadingText?: string;
+      size?: "sm" | "md" | "lg";
+      status?: "error" | "warning" | "success";
+      showArrow?: boolean;
+      showCheckmark?: boolean;
+      bordered?: boolean;
+      autofocus?: boolean;
+      name?: string;
+    }
+  >(),
   {
     options: () => [],
     fieldNames: () => ({}),
@@ -110,6 +116,11 @@ const props = withDefaults(
     emptyValues: () => ["", null, undefined],
     clearValue: "",
     multipleLimit: 0,
+    maxTagCount: 3,
+    showSelectAll: true,
+    selectAllScope: "filtered",
+    selectAllText: "全选",
+    deselectAllText: "全不选",
     removable: true,
     clearSearchAfterSelect: false,
     clearCreatedOnClear: true,
@@ -134,6 +145,8 @@ const emit = defineEmits<{
   "update:modelValue": [value: T];
   change: [value: T, options: HysSelectOption | HysSelectOption[] | undefined];
   clear: [];
+  selectAll: [value: T, added: HysSelectOption[]];
+  deselectAll: [value: T, removed: HysSelectOption[]];
   "update:open": [open: boolean];
   visibleChange: [open: boolean];
   "update:searchValue": [query: string];
@@ -350,6 +363,46 @@ const filteredRows = computed<HysSelectRow[]>(() => {
   }
   return rows;
 });
+const bulkShown = computed(() => multiple.value && props.showSelectAll);
+const bulkOptions = computed(() => {
+  const options =
+    props.selectAllScope === "all"
+      ? [...sourceOptions.value, ...created.value]
+      : filteredRows.value.flatMap((row) =>
+          row.option && !row.created ? [row.option] : [],
+        );
+  const seen = new Set<string>();
+  return options.filter((option) => {
+    const key = keyOf(option.value);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return !option.disabled;
+  });
+});
+const bulkBlocked = computed(
+    () =>
+      controlDisabled.value ||
+      props.readonly ||
+      busy.value ||
+      !!remoteError.value,
+  ),
+  bulkMissing = computed(() =>
+    bulkOptions.value.some(
+      (option) => !selectedKeys.value.has(keyOf(option.value)),
+    ),
+  ),
+  bulkSelected = computed(() => {
+    const keys = new Set(
+      bulkOptions.value.map((option) => keyOf(option.value)),
+    );
+    return values.value.filter((value) => {
+      const option = optionCache.value.get(keyOf(value));
+      return (
+        !option?.disabled &&
+        (props.selectAllScope === "all" || keys.has(keyOf(value)))
+      );
+    });
+  });
 const optionCount = computed(
     () => filteredRows.value.filter((row) => row.option).length,
   ),
@@ -437,6 +490,9 @@ const {
   get placement() {
     return props.placement;
   },
+  get closeOnTab() {
+    return !bulkShown.value;
+  },
   matchWidth: () => (props.popupMatchWidth ? true : "min"),
   width: () => virtualWidth.value,
   requestOpen: (next) => {
@@ -514,6 +570,94 @@ function update(value: HysSelectModelValue) {
   });
   emit("update:modelValue", value as T);
   emit("change", value as T, multiple.value ? options : options[0]);
+}
+function settleBulkFocus() {
+  const focused = document.activeElement as HTMLButtonElement | null;
+  void nextTick(() => {
+    if (focused && panel.value?.contains(focused) && focused.disabled)
+      (panelControls()[0] ?? trigger.value)?.focus();
+  });
+}
+function selectAll() {
+  if (!multiple.value || bulkBlocked.value) return 0;
+  const next = [...values.value],
+    added: HysSelectOption[] = [],
+    keys = new Set(selectedKeys.value),
+    limit = props.multipleLimit > 0 ? props.multipleLimit : Infinity;
+  for (const option of bulkOptions.value) {
+    const key = keyOf(option.value);
+    if (keys.has(key)) continue;
+    if (next.length >= limit) break;
+    keys.add(key);
+    next.push(option.value);
+    added.push(option);
+  }
+  if (!added.length) return 0;
+  update(next);
+  settleBulkFocus();
+  emit("selectAll", next as T, added);
+  return added.length;
+}
+function deselectAll() {
+  if (!multiple.value || bulkBlocked.value) return 0;
+  const keys = new Set(bulkSelected.value.map(keyOf));
+  if (!keys.size) return 0;
+  const next = values.value.filter((value) => !keys.has(keyOf(value))),
+    removed = values.value
+      .filter((value) => keys.has(keyOf(value)))
+      .map(
+        (value) =>
+          optionCache.value.get(keyOf(value)) ??
+          fallback(value) ?? { value, label: String(value) },
+      );
+  update(next);
+  settleBulkFocus();
+  emit("deselectAll", next as T, removed);
+  return keys.size;
+}
+const focusableSelector =
+  'a[href],button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),[tabindex]:not([tabindex="-1"])';
+function panelControls() {
+  return Array.from(
+    panel.value?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
+  ).filter(
+    (el) =>
+      el.tabIndex >= 0 && el.getClientRects().length && !el.closest("[inert]"),
+  );
+}
+function bulkTab(event: KeyboardEvent) {
+  const controls = panelControls(),
+    focused = document.activeElement,
+    index = controls.indexOf(focused as HTMLElement);
+  const next =
+    focused === trigger.value
+      ? !event.shiftKey
+        ? controls[0]
+        : undefined
+      : controls[index + (event.shiftKey ? -1 : 1)];
+  if (next) {
+    event.preventDefault();
+    next.focus();
+    return;
+  }
+  if (panel.value?.contains(focused)) {
+    event.preventDefault();
+    const all = Array.from(
+      document.querySelectorAll<HTMLElement>(focusableSelector),
+    ).filter(
+      (el) =>
+        !panel.value?.contains(el) &&
+        el.tabIndex >= 0 &&
+        el.getClientRects().length &&
+        !el.closest("[inert]"),
+    );
+    const origin = all.indexOf(trigger.value!),
+      outside = all
+        .slice(origin + 1)
+        .find((el) => !trigger.value?.parentElement?.contains(el));
+    close();
+    (event.shiftKey ? trigger.value : (outside ?? trigger.value))?.focus();
+  } else close();
 }
 function setQuery(text: string) {
   draft.value = text;
@@ -740,6 +884,10 @@ async function keyboard(event: KeyboardEvent) {
     event.keyCode === 229
   )
     return;
+  if (event.key === "Tab" && dropdownOpen.value && bulkShown.value) {
+    bulkTab(event);
+    return;
+  }
   if (
     (event.target as HTMLElement).closest(
       ".hys-ui-select-tag button,.hys-ui-select-clear",
@@ -848,6 +996,9 @@ function focused(event: FocusEvent) {
     void openDropdown();
 }
 function blurred(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null;
+  if (next && (trigger.value?.contains(next) || panel.value?.contains(next)))
+    return;
   void nextTick(() => {
     const target = document.activeElement;
     if (
@@ -856,6 +1007,7 @@ function blurred(event: FocusEvent) {
       !panel.value?.contains(target)
     ) {
       logicalFocus = false;
+      if (bulkShown.value) close();
       emit("blur", event);
     }
   });
@@ -999,6 +1151,8 @@ defineExpose({
     void revealActive();
   },
   retry,
+  selectAll,
+  deselectAll,
   selected,
   query,
   isOpen: dropdownOpen,
@@ -1147,201 +1301,296 @@ defineExpose({
       :to="appendTo === false ? 'body' : appendTo"
       :disabled="appendTo === false"
     >
-      <PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="actualPlacement"><div
-        v-if="dropdownOpen"
-        ref="panel"
-        v-bind="hysRootAttrs"
-        class="hys-ui-select-options hys-ui-floating-surface"
-        :class="['hys-ui-select-popup-' + controlSize, popupClass]"
-        :data-size="controlSize"
-        :data-placement="actualPlacement"
-        :style="panelStyle"
-        @keydown="keyboard"
-        @focusin="focused"
-        @focusout="blurred"
-      >
-        <div v-if="$slots.header" class="hys-ui-select-header">
-          <slot
-            name="header"
-            :query="query"
-            :selected="selected"
-            :close="() => close()"
-          />
-        </div>
-        <input
-          v-if="searchable"
-          ref="searchInput"
-          :value="draft"
-          class="hys-ui-select-search"
-          placeholder="搜索选项…"
-          aria-label="搜索选项"
-          :aria-controls="id"
-          :aria-activedescendant="activeId"
-          aria-autocomplete="list"
-          @input="searchEvent"
-          @compositionstart="composing = true"
-          @compositionend="compositionEnd"
-        />
-        <div
-          :id="id"
-          ref="viewport"
-          role="listbox"
-          :aria-label="ariaLabel || fieldLabel || '可选项'"
-          :aria-multiselectable="multiple || undefined"
-          :aria-busy="busy || undefined"
-          class="hys-ui-select-list"
-          :style="{
-            maxHeight: 'min(' + safeHeight + 'px, 45dvh)',
-          }"
-          @scroll="scrolled"
+      <PopupMotion
+        :popup-transition="props.popupTransition"
+        :popup-transition-duration="props.popupTransitionDuration"
+        :placement="actualPlacement"
+        ><div
+          v-if="dropdownOpen"
+          ref="panel"
+          v-bind="hysRootAttrs"
+          class="hys-ui-select-options hys-ui-floating-surface"
+          :class="['hys-ui-select-popup-' + controlSize, popupClass]"
+          :data-size="controlSize"
+          :data-placement="actualPlacement"
+          :style="panelStyle"
+          @keydown="keyboard"
+          @focusin="focused"
+          @focusout="blurred"
         >
-          <p v-if="busy" class="hys-ui-floating-empty" role="status">
-            <slot name="loading">{{ loadingText }}</slot>
-          </p>
-          <div
-            v-else-if="remoteError"
-            class="hys-ui-floating-empty"
-            role="status"
-          >
-            <slot name="error" :error="remoteError" :retry="retry"
-              >加载失败，<button
-                type="button"
-                class="hys-ui-select-retry"
-                @click="retry"
-              >
-                重试
-              </button></slot
-            >
+          <div v-if="$slots.header" class="hys-ui-select-header">
+            <slot
+              name="header"
+              :query="query"
+              :selected="selected"
+              :close="() => close()"
+            />
           </div>
-          <template v-else-if="filteredRows.length"
-            ><div
-              :style="
-                effectiveVirtual
-                  ? {
-                      height: filteredRows.length * rowStride + 'px',
-                      position: 'relative',
-                    }
-                  : undefined
+          <input
+            v-if="searchable"
+            ref="searchInput"
+            :value="draft"
+            class="hys-ui-select-search"
+            placeholder="搜索选项…"
+            aria-label="搜索选项"
+            :aria-controls="id"
+            :aria-activedescendant="activeId"
+            aria-autocomplete="list"
+            @input="searchEvent"
+            @compositionstart="composing = true"
+            @compositionend="compositionEnd"
+          />
+          <div
+            v-if="bulkShown"
+            class="hys-ui-select-bulk"
+            role="group"
+            aria-label="批量选择"
+          >
+            <span
+              class="hys-ui-select-bulk-count"
+              aria-live="polite"
+              :title="
+                selectAllScope === 'filtered'
+                  ? '批量操作仅作用于当前结果；禁用项保持不变'
+                  : '批量操作所有已加载选项；禁用项保持不变'
               "
-              role="presentation"
+              >{{
+                selectAllScope === "filtered" && query ? "当前结果 · " : ""
+              }}已选 {{ values.length
+              }}{{ multipleLimit > 0 ? " / " + multipleLimit : "" }}</span
             >
-              <div
+            <button
+              type="button"
+              class="hys-ui-select-bulk-action"
+              :disabled="bulkBlocked || !bulkMissing || atLimit"
+              :aria-label="
+                selectAllText +
+                (selectAllScope === 'filtered' ? '当前结果' : '全部选项')
+              "
+              @click="selectAll"
+            >
+              {{ selectAllText }}
+            </button>
+            <button
+              type="button"
+              class="hys-ui-select-bulk-action"
+              :disabled="bulkBlocked || !bulkSelected.length"
+              :aria-label="
+                deselectAllText +
+                (selectAllScope === 'filtered' ? '当前结果' : '全部选项')
+              "
+              @click="deselectAll"
+            >
+              {{ deselectAllText }}
+            </button>
+          </div>
+          <div
+            :id="id"
+            ref="viewport"
+            role="listbox"
+            :aria-label="ariaLabel || fieldLabel || '可选项'"
+            :aria-multiselectable="multiple || undefined"
+            :aria-busy="busy || undefined"
+            class="hys-ui-select-list"
+            :style="{
+              maxHeight: 'min(' + safeHeight + 'px, 45dvh)',
+            }"
+            @scroll="scrolled"
+          >
+            <p v-if="busy" class="hys-ui-floating-empty" role="status">
+              <slot name="loading">{{ loadingText }}</slot>
+            </p>
+            <div
+              v-else-if="remoteError"
+              class="hys-ui-floating-empty"
+              role="status"
+            >
+              <slot name="error" :error="remoteError" :retry="retry"
+                >加载失败，<button
+                  type="button"
+                  class="hys-ui-select-retry"
+                  @click="retry"
+                >
+                  重试
+                </button></slot
+              >
+            </div>
+            <template v-else-if="filteredRows.length"
+              ><div
                 :style="
                   effectiveVirtual
                     ? {
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        transform: 'translateY(' + start * rowStride + 'px)',
+                        height: filteredRows.length * rowStride + 'px',
+                        position: 'relative',
                       }
                     : undefined
                 "
                 role="presentation"
               >
-                <template v-for="row in visibleRows" :key="row.key"
-                  ><div
-                    v-if="!row.option"
-                    class="hys-ui-select-group"
-                    :style="
-                      effectiveVirtual
-                        ? { height: rowStride + 'px' }
-                        : undefined
-                    "
-                    role="presentation"
-                  >
-                    <slot name="group" :label="row.group">{{ row.group }}</slot>
-                  </div>
-                  <button
-                    v-else
-                    :id="id + '-' + row.index"
-                    type="button"
-                    role="option"
-                    tabindex="-1"
-                    class="hys-ui-select-option"
-                    :class="{
-                      'hys-ui-selected': selectedKeys.has(
-                        keyOf(row.option.value),
-                      ),
-                      'hys-ui-active':
-                        activeKey === row.key && !blocked(row.option),
-                      'hys-ui-select-created': row.created,
-                    }"
-                    :style="
-                      effectiveVirtual
-                        ? {
-                            height:
-                              'calc(var(--hys-ui-select-stride) - var(--hys-ui-select-option-gap))',
-                            minHeight: 0,
-                          }
-                        : undefined
-                    "
-                    :data-active="activeKey === row.key"
-                    :aria-label="
-                      row.created
-                        ? '创建 ' + row.option.label
-                        : row.option.label
-                    "
-                    :aria-description="row.group"
-                    :aria-selected="selectedKeys.has(keyOf(row.option.value))"
-                    :aria-setsize="optionCount"
-                    :aria-posinset="row.index + 1"
-                    :disabled="blocked(row.option)"
-                    @pointerenter="
-                      !blocked(row.option) && (activeKey = row.key)
-                    "
-                    @click="choose(row)"
-                  >
-                    <span
-                      class="hys-ui-select-option-label"
-                      :title="row.option.label"
-                      ><slot
-                        name="option"
-                        :option="row.option"
-                        :selected="selectedKeys.has(keyOf(row.option.value))"
-                        :created="!!row.created"
-                        ><span
-                          v-if="row.created"
-                          class="hys-ui-select-create-label"
-                          ><Plus :size="iconSize" />创建
-                          {{ row.option.label }}</span
-                        ><template v-else>{{
-                          row.option.label
-                        }}</template></slot
-                      ></span
-                    ><slot
-                      v-if="
-                        showCheckmark &&
-                        selectedKeys.has(keyOf(row.option.value))
+                <div
+                  :style="
+                    effectiveVirtual
+                      ? {
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          transform: 'translateY(' + start * rowStride + 'px)',
+                        }
+                      : undefined
+                  "
+                  role="presentation"
+                >
+                  <template v-for="row in visibleRows" :key="row.key"
+                    ><div
+                      v-if="!row.option"
+                      class="hys-ui-select-group"
+                      :style="
+                        effectiveVirtual
+                          ? { height: rowStride + 'px' }
+                          : undefined
                       "
-                      name="selected-icon"
-                      :option="row.option"
-                      ><Check :size="iconSize - 1" aria-hidden="true"
-                    /></slot>
-                  </button>
-                </template>
-              </div></div
-          ></template>
-          <p v-else class="hys-ui-floating-empty">
-            <slot name="empty" :query="query">{{
-              query ? noMatchText : emptyText
-            }}</slot>
-          </p>
-        </div>
-        <div v-if="$slots.footer" class="hys-ui-select-footer">
-          <slot
-            name="footer"
-            :query="query"
-            :selected="selected"
-            :close="() => close()"
-          />
-        </div>
-      </div></PopupMotion>
+                      role="presentation"
+                    >
+                      <slot name="group" :label="row.group">{{
+                        row.group
+                      }}</slot>
+                    </div>
+                    <button
+                      v-else
+                      :id="id + '-' + row.index"
+                      type="button"
+                      role="option"
+                      tabindex="-1"
+                      class="hys-ui-select-option"
+                      :class="{
+                        'hys-ui-selected': selectedKeys.has(
+                          keyOf(row.option.value),
+                        ),
+                        'hys-ui-active':
+                          activeKey === row.key && !blocked(row.option),
+                        'hys-ui-select-created': row.created,
+                      }"
+                      :style="
+                        effectiveVirtual
+                          ? {
+                              height:
+                                'calc(var(--hys-ui-select-stride) - var(--hys-ui-select-option-gap))',
+                              minHeight: 0,
+                            }
+                          : undefined
+                      "
+                      :data-active="activeKey === row.key"
+                      :aria-label="
+                        row.created
+                          ? '创建 ' + row.option.label
+                          : row.option.label
+                      "
+                      :aria-description="row.group"
+                      :aria-selected="selectedKeys.has(keyOf(row.option.value))"
+                      :aria-setsize="optionCount"
+                      :aria-posinset="row.index + 1"
+                      :disabled="blocked(row.option)"
+                      @pointerenter="
+                        !blocked(row.option) && (activeKey = row.key)
+                      "
+                      @click="choose(row)"
+                    >
+                      <span
+                        class="hys-ui-select-option-label"
+                        :title="row.option.label"
+                        ><slot
+                          name="option"
+                          :option="row.option"
+                          :selected="selectedKeys.has(keyOf(row.option.value))"
+                          :created="!!row.created"
+                          ><span
+                            v-if="row.created"
+                            class="hys-ui-select-create-label"
+                            ><Plus :size="iconSize" />创建
+                            {{ row.option.label }}</span
+                          ><template v-else>{{
+                            row.option.label
+                          }}</template></slot
+                        ></span
+                      ><slot
+                        v-if="
+                          showCheckmark &&
+                          selectedKeys.has(keyOf(row.option.value))
+                        "
+                        name="selected-icon"
+                        :option="row.option"
+                        ><Check :size="iconSize - 1" aria-hidden="true"
+                      /></slot>
+                    </button>
+                  </template>
+                </div></div
+            ></template>
+            <p v-else class="hys-ui-floating-empty">
+              <slot name="empty" :query="query">{{
+                query ? noMatchText : emptyText
+              }}</slot>
+            </p>
+          </div>
+          <div v-if="$slots.footer" class="hys-ui-select-footer">
+            <slot
+              name="footer"
+              :query="query"
+              :selected="selected"
+              :close="() => close()"
+            />
+          </div></div
+      ></PopupMotion>
     </Teleport>
   </div>
 </template>
 
 <style scoped>
+.hys-ui-select-bulk {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 4px 2px 7px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  font-size: 0.85em;
+  line-height: 1.4;
+  min-width: 0;
+  white-space: nowrap;
+}
+.hys-ui-select-bulk-count {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+}
+.hys-ui-select-bulk-action {
+  flex: none;
+  height: 26px;
+  min-width: 0;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font: inherit;
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hys-ui-select-bulk-action:hover:not(:disabled) {
+  background: var(--hys-ui-primary-soft, var(--hys-ui-theme-primary-soft));
+}
+.hys-ui-select-bulk-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.hys-ui-select-bulk-action:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+}
+
 .hys-ui-select-wrap {
   position: relative;
   min-width: 0;

@@ -306,7 +306,8 @@
       "Motion": "月份切换动画"
     },
     "HysSelect": {
-      "ManyOptions": "多选项与内部滚动"
+      "ManyOptions": "多选项与内部滚动",
+      "Bulk": "多选全选与批量取消"
     },
     "HysTable": {
       "Basic": "基础表格与列配置",

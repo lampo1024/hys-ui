@@ -32,6 +32,8 @@ export interface HysSelectInstance {
   close: () => void;
   scrollTo: (value: HysSelectValue) => void;
   retry: () => void;
+  selectAll: () => number;
+  deselectAll: () => number;
   selected: HysSelectOption[];
   query: string;
   isOpen: boolean;

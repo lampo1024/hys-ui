@@ -12774,6 +12774,38 @@
         "global": false
       },
       {
+        "name": "showSelectAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "多选浮层显示紧凑批量操作区，默认 true；单选不显示",
+        "global": false
+      },
+      {
+        "name": "selectAllScope",
+        "type": "\"all\" | \"filtered\" | undefined",
+        "required": false,
+        "default": "\"filtered\"",
+        "description": "filtered（默认）只操作当前筛选/已加载结果；all 选择所有已加载项并清空全部可操作已选值；禁用项始终保留",
+        "global": false
+      },
+      {
+        "name": "selectAllText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"全选\"",
+        "description": "全选按钮文字，默认 全选",
+        "global": false
+      },
+      {
+        "name": "deselectAllText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"全不选\"",
+        "description": "全不选按钮文字，默认 全不选",
+        "global": false
+      },
+      {
         "name": "filterable",
         "type": "boolean | undefined",
         "required": false,
@@ -12825,8 +12857,8 @@
         "name": "maxTagCount",
         "type": "number | undefined",
         "required": false,
-        "default": "",
-        "description": "多选最多展示的标签数，其余以计数折叠",
+        "default": "3",
+        "description": "多选默认最多展示 3 个标签，其余以计数折叠；Infinity 展示全部",
         "global": false
       },
       {
@@ -13243,6 +13275,20 @@
         "description": "批量输入超出上限或创建失败：value、limit/create"
       },
       {
+        "name": "selectAll",
+        "type": "[value: T, added: HysSelectOption[]]",
+        "required": false,
+        "default": "",
+        "description": "批量操作实际改变值时触发：完整新值、增加或移除的选项；update:modelValue/change 各触发一次，不逐项触发 select/deselect"
+      },
+      {
+        "name": "deselectAll",
+        "type": "[value: T, removed: HysSelectOption[]]",
+        "required": false,
+        "default": "",
+        "description": "批量操作实际改变值时触发：完整新值、增加或移除的选项；update:modelValue/change 各触发一次，不逐项触发 select/deselect"
+      },
+      {
         "name": "deselect",
         "type": "[value: HysSelectValue, option: HysSelectOption]",
         "required": false,
@@ -13413,6 +13459,20 @@
         "required": true,
         "default": "",
         "description": "立即重试当前远程搜索"
+      },
+      {
+        "name": "selectAll",
+        "type": "() => number",
+        "required": true,
+        "default": "",
+        "description": "按 selectAllScope 批量选择或取消，返回实际操作数量；受禁用、只读、加载与数量上限约束"
+      },
+      {
+        "name": "deselectAll",
+        "type": "() => number",
+        "required": true,
+        "default": "",
+        "description": "按 selectAllScope 批量选择或取消，返回实际操作数量；受禁用、只读、加载与数量上限约束"
       },
       {
         "name": "selected",
@@ -15490,6 +15550,13 @@
         "description": "请求更新对应受控状态，可配合 v-model 使用"
       },
       {
+        "name": "selectAll",
+        "type": "[rows: T[], checked: boolean]",
+        "required": false,
+        "default": "",
+        "description": "接受全选/取消：行数组、选中状态"
+      },
+      {
         "name": "rowDblclick",
         "type": "[row: T, index: number, event: MouseEvent]",
         "required": false,
@@ -15586,13 +15653,6 @@
         "required": false,
         "default": "",
         "description": "请求更新对应受控状态，可配合 v-model 使用"
-      },
-      {
-        "name": "selectAll",
-        "type": "[rows: T[], checked: boolean]",
-        "required": false,
-        "default": "",
-        "description": "接受全选/取消：行数组、选中状态"
       },
       {
         "name": "selectInvert",

@@ -210,6 +210,12 @@ const motion:HysPopupMotionProps={popupTransition:transition,popupTransitionDura
 export const popupChecks=[h(HysSelect,{options:[],...motion}),h(HysAutocomplete,{...motion}),h(HysDatePicker,{...motion}),h(HysDateRangePicker,{...motion}),h(HysTooltip,{text:'Help',...motion}),h(HysPopover,{...motion}),h(HysAvatarGroup,{options:[],...motion}),h(HysTable,{rows:[],columns:[],...motion}),h(HysGantt,{items:[],...motion}),h(HysTreeSelect,{nodes:[],...motion}),h(HysCascader,{options:[],...motion})]
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {popupChecks} from './popup-motion-types'\nvoid popupChecks\n")
+fs.writeFileSync(path.join(dir,'select-bulk-types.ts'),`import {h} from 'vue'
+import {HysSelect,type HysSelectInstance,type HysSelectOption} from 'hys-ui'
+export const batchCheck=h(HysSelect<string[]>,{modelValue:[],options:[],multiple:true,showSelectAll:true,selectAllScope:'filtered',selectAllText:'选择全部',deselectAllText:'取消全部',onSelectAll:(value:string[],added:HysSelectOption[])=>[value,added],onDeselectAll:(value:string[],removed:HysSelectOption[])=>[value,removed]})
+export function batchMethods(api:HysSelectInstance):number{return api.selectAll()+api.deselectAll()}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {batchCheck} from './select-bulk-types'\nvoid batchCheck\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

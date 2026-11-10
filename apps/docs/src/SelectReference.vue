@@ -38,6 +38,7 @@ const rows = [
 ];
 </script>
 <template>
+  <section class="notes"><h2>多选批量操作</h2><p>多选浮层默认显示一行紧凑的“全选 / 全不选”工具栏，不占输入框空间。多选默认最多展示 3 个标签，其余折叠为 +N，可通过 maxTagCount 调整（Infinity 展示全部）。默认只作用于当前筛选结果，包含列表内尚未滚动到的选项；禁用项保持原值。全选遵守 multipleLimit，已选值和顺序会保留，到达上限后停止追加。</p><p><code>selectAllScope="all"</code> 可选择全部已加载选项，并在全不选时清除所有可操作的已选值；远程数据不会自动请求尚未加载的项目。<code>:show-select-all="false"</code> 隐藏工具栏。批量操作保留搜索词，不会创建待确认的新选项。</p><p><code>selectAll()</code> / <code>deselectAll()</code> 返回实际增减数量。每次操作只发出一次 update:modelValue、change 以及对应批量事件，不会逐项触发 select / deselect。Tab 可进入批量操作区，Enter 或空格执行；Esc 关闭浮层。</p></section>
   <section class="notes"><h2>多选项与浮层高度</h2><p>列表默认最高 240px，可通过 listHeight 调整（有效范围 80–800px）；同时限制在视口高度的 45% 内。整个浮层最高占视口的 60%，搜索、头部和底部保持固定，选项在列表内滚动。短列表按实际内容收缩，不预留空白。方向键和实例 scrollTo 可定位后面的选项，大数据默认启用虚拟渲染。</p></section>
   <section class="notes">
     <h2>值类型与实例</h2>
