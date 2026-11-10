@@ -698,7 +698,7 @@ export const catalog=[
     "label": "空状态",
     "slug": "hys-empty",
     "category": "反馈浮层",
-    "description": "空状态的独立交互示例、配置场景与类型参考。",
+    "description": "展示友好的空状态、图片回退与下一步操作。",
     "notes": [
       "通过下面的交互示例体验组件，配置区可即时调整属性。",
       "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"

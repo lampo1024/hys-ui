@@ -1,13 +1,80 @@
 <script setup lang="ts">
-import { HysEmpty } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysInput as DemoInput, HysNumberInput as DemoNumber } from 'hys-ui';
-const demoConfig = demoReactive<{
-    title: string;
-    description: string;
-    imageSize: number;
-}>({ "title": "暂无数据", "description": "当前没有符合条件的内容", "imageSize": 48 });
+import { reactive } from "vue";
+import {
+  HysEmpty,
+  HysInput,
+  HysSelect,
+  HysNumberInput,
+  HysCheckbox,
+  type HysEmptyIllustration,
+} from "hys-ui";
+const config = reactive({
+  title: "暂无内容",
+  description: "试试调整条件，或创建一条新记录。",
+  illustration: "inbox" as HysEmptyIllustration,
+  size: "md" as "sm" | "md" | "lg",
+  imageSize: 72,
+  showTitle: true,
+  showDescription: true,
+  showImage: true,
+});
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>标题</span><code>title</code></span><DemoInput v-model="demoConfig.title"/></label>
-<label class="demo-field"><span class="demo-control-label"><span>描述</span><code>description</code></span><DemoInput v-model="demoConfig.description"/></label>
-<label class="demo-field">imageSize<DemoNumber v-model="demoConfig.imageSize" :show-controls="false"/></label></div></section></div><div class="demo-content"><HysEmpty v-bind="demoConfig"  /></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div class="demo-stack">
+    <div class="demo-controls">
+      <section class="demo-control-section">
+        <h3>内容与外观</h3>
+        <div class="demo-control-fields">
+          <label class="demo-field"
+            >标题<HysInput v-model="config.title" /></label
+          ><label class="demo-field"
+            >说明<HysInput v-model="config.description" /></label
+          ><label class="demo-field"
+            >插图<HysSelect
+              v-model="config.illustration"
+              :options="
+                ['inbox', 'simple', 'default'].map((value) => ({
+                  label: value,
+                  value,
+                }))
+              " /></label
+          ><label class="demo-field"
+            >尺寸<HysSelect
+              v-model="config.size"
+              :options="
+                ['sm', 'md', 'lg'].map((value) => ({ label: value, value }))
+              " /></label
+          ><label class="demo-field"
+            >图片尺寸<HysNumberInput
+              v-model="config.imageSize"
+              :min="0"
+              :max="200"
+              :step="8"
+          /></label>
+        </div>
+      </section>
+      <section class="demo-control-section">
+        <h3>显示区域</h3>
+        <div class="demo-control-toggles">
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.showTitle" label="显示标题" />
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.showDescription" label="显示说明" />
+          </div>
+          <div class="demo-control-toggle">
+            <HysCheckbox v-model="config.showImage" label="显示图片" />
+          </div>
+        </div>
+      </section>
+    </div>
+    <HysEmpty
+      :title="config.showTitle ? config.title : false"
+      :description="config.showDescription ? config.description : false"
+      :image="config.showImage ? undefined : false"
+      :illustration="config.illustration"
+      :size="config.size"
+      :image-size="config.imageSize"
+    />
+  </div>
+</template>

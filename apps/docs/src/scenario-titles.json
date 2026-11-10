@@ -627,6 +627,39 @@
       "Accessibility": "辅助技术与任务说明",
       "Lifecycle": "缓存页面与动效恢复",
       "States": "边界数值与紧凑布局"
+    },
+    "HysAlert": {
+      "Basic": "基础提示与状态",
+      "Configure": "外观与关闭配置",
+      "Appearance": "浅色、深色与横幅",
+      "Content": "自定义内容与操作区",
+      "Controlled": "受控显示与关闭请求",
+      "Async": "异步关闭检查与取消",
+      "Motion": "退出动画与空间收起",
+      "Accessibility": "播报语义与键盘焦点",
+      "Lifecycle": "缓存页面与检查清理",
+      "States": "禁用关闭与长内容"
+    },
+    "HysEmpty": {
+      "Basic": "基础空态与引导操作",
+      "Configure": "内容与区域配置",
+      "Illustrations": "内置图标与插图",
+      "Image": "图片加载、失败与重试",
+      "Content": "自定义内容与操作",
+      "Accessibility": "图片说明与状态播报",
+      "States": "紧凑布局与区域隐藏"
+    },
+    "HysTimeline": {
+      "Basic": "基础记录与时间戳",
+      "Configure": "布局与节点配置",
+      "Layout": "左右、交错与响应式",
+      "Nodes": "节点、图标与加载",
+      "Timestamps": "独立标签与时间位置",
+      "Pending": "后续节点与反转",
+      "Custom": "卡片内容与节点模板",
+      "Mapping": "业务字段与原始数据",
+      "Dynamic": "动态记录与稳定标识",
+      "States": "空记录与长内容"
     }
   }
 }

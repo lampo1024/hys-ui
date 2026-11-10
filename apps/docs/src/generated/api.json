@@ -180,10 +180,10 @@
     "props": [
       {
         "name": "tone",
-        "type": "\"info\" | \"success\" | \"warning\" | \"danger\" | undefined",
+        "type": "HysAlertTone | undefined",
         "required": false,
-        "default": "\"info\"",
-        "description": "",
+        "default": "info（banner 时 warning）",
+        "description": "info / primary / success / warning / danger 语义类型；横幅未指定时为 warning",
         "global": false
       },
       {
@@ -191,7 +191,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "标题",
+        "description": "提示标题；title 插槽优先",
         "global": false
       },
       {
@@ -199,7 +199,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "补充说明；默认插槽优先于 description 插槽",
         "global": false
       },
       {
@@ -207,15 +207,15 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "显示关闭按钮；实例 close 不受此项限制",
         "global": false
       },
       {
         "name": "showIcon",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
-        "description": "",
+        "default": "false（banner 时 true）",
+        "description": "显示语义图标；未指定时跟随 banner",
         "global": false
       },
       {
@@ -223,51 +223,278 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "内容与操作区居中排列",
         "global": false
       },
       {
         "name": "visible",
         "type": "boolean | undefined",
         "required": false,
-        "default": "undefined",
-        "description": "",
+        "default": "未设置",
+        "description": "受控显示状态，优先于 modelValue；配合 v-model:visible",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "未设置",
+        "description": "受控显示状态；未设置 visible 时生效",
+        "global": false
+      },
+      {
+        "name": "defaultVisible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "非受控初始显示状态，默认 true",
+        "global": false
+      },
+      {
+        "name": "effect",
+        "type": "HysAlertEffect | undefined",
+        "required": false,
+        "default": "\"light\"",
+        "description": "light / dark / outline 外观",
+        "global": false
+      },
+      {
+        "name": "banner",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "横幅布局；未指定 tone/showIcon 时使用 warning 和图标",
+        "global": false
+      },
+      {
+        "name": "bordered",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示轻量边框；outline 始终保留轮廓",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "sm / md / lg 提示条尺寸",
+        "global": false
+      },
+      {
+        "name": "closeText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "以文字替代默认关闭图标；close-icon 插槽优先",
+        "global": false
+      },
+      {
+        "name": "closeLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"关闭提示\"",
+        "description": "关闭操作的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止关闭和实例显示操作，取消正在执行的检查",
+        "global": false
+      },
+      {
+        "name": "beforeClose",
+        "type": "((context: HysAlertCloseContext) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "关闭前检查；接收 reason、event、AbortSignal；false 或异常保留提示",
+        "global": false
+      },
+      {
+        "name": "transition",
+        "type": "HysAlertTransition | undefined",
+        "required": false,
+        "default": "\"fade\"",
+        "description": "fade / slide / collapse / none；collapse 在退出时折叠占用空间",
+        "global": false
+      },
+      {
+        "name": "transitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "180",
+        "description": "进出时长 0–1500ms，默认 180；系统减少动态效果与全局 off 优先",
+        "global": false
+      },
+      {
+        "name": "appear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "首次挂载时使用进入动效",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "提示区域的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "ariaLive",
+        "type": "\"off\" | \"polite\" | \"assertive\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖默认 role 对应的播报策略",
+        "global": false
+      },
+      {
+        "name": "ariaAtomic",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "播报完整提示，默认 true",
         "global": false
       }
     ],
     "events": [
       {
+        "name": "update:modelValue",
+        "type": "[visible: boolean]",
+        "required": false,
+        "default": "",
+        "description": "请求更新显示状态"
+      },
+      {
         "name": "close",
         "type": "[]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "兼容的无参数关闭请求事件；检查通过后发出，宿主仍可拒绝受控更新"
       },
       {
         "name": "update:visible",
-        "type": "[value: boolean]",
+        "type": "[visible: boolean]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "请求更新显示状态"
+      },
+      {
+        "name": "visibleChange",
+        "type": "[visible: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际显示状态变化"
+      },
+      {
+        "name": "closeRequest",
+        "type": "[context: HysAlertCloseContext]",
+        "required": false,
+        "default": "",
+        "description": "开始关闭请求，参数含 reason、event 与 signal；检查前触发"
+      },
+      {
+        "name": "closeError",
+        "type": "[error: Error]",
+        "required": false,
+        "default": "",
+        "description": "有效的关闭检查抛出异常；取消或过期检查不触发"
+      },
+      {
+        "name": "afterClose",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际完成退出后触发；拒绝、重新打开或页面离开不触发"
       }
     ],
     "slots": [
       {
-        "name": "title",
-        "type": "{}",
+        "name": "default",
+        "type": "HysAlertSlotContext",
         "required": false,
         "default": "",
-        "description": "标题"
+        "description": "补充内容；优先于 description，接收 tone/visible/closing/disabled/close"
       },
       {
-        "name": "default",
-        "type": "{}",
+        "name": "title",
+        "type": "HysAlertSlotContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义标题；接收提示条上下文"
+      },
+      {
+        "name": "description",
+        "type": "HysAlertSlotContext",
+        "required": false,
+        "default": "",
+        "description": "说明内容；默认插槽未提供时生效"
+      },
+      {
+        "name": "icon",
+        "type": "HysAlertSlotContext",
+        "required": false,
+        "default": "",
+        "description": "自定义语义图标，需要 showIcon；接收提示条上下文"
+      },
+      {
+        "name": "action",
+        "type": "HysAlertSlotContext",
+        "required": false,
+        "default": "",
+        "description": "操作区；接收 close 和忙碌状态"
+      },
+      {
+        "name": "close-icon",
+        "type": "HysAlertSlotContext",
+        "required": false,
+        "default": "",
+        "description": "替代默认关闭图标或文字"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素；隐藏或离开后可能为空"
+      },
+      {
+        "name": "visible",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前实际显示状态"
+      },
+      {
+        "name": "closing",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "关闭检查是否进行中"
+      },
+      {
+        "name": "close",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "请求关闭；Promise 返回是否接受隐藏，不等待退出动画"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": true,
+        "default": "",
+        "description": "取消过期检查并请求显示；Promise 返回是否接受"
+      }
+    ]
   },
   "HysAnimatedNumber": {
     "props": [
@@ -733,6 +960,13 @@
         "description": "清空按钮或实例 clear 调用后触发"
       },
       {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "建议浮层实际显示状态变化"
+      },
+      {
         "name": "update:open",
         "type": "[open: boolean]",
         "required": false,
@@ -773,13 +1007,6 @@
         "required": false,
         "default": "",
         "description": "非输入法组合状态按下 Enter 的原生事件"
-      },
-      {
-        "name": "visibleChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "建议浮层实际显示状态变化"
       },
       {
         "name": "searchError",
@@ -1602,7 +1829,7 @@
       },
       {
         "name": "effect",
-        "type": "\"dark\" | \"light\" | \"plain\" | undefined",
+        "type": "\"light\" | \"dark\" | \"plain\" | undefined",
         "required": false,
         "default": "\"light\"",
         "description": "light、dark 或 plain 标签外观",
@@ -4899,6 +5126,13 @@
     ],
     "events": [
       {
+        "name": "visibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际显示状态变化：boolean"
+      },
+      {
         "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
@@ -4911,13 +5145,6 @@
         "required": false,
         "default": "",
         "description": "激活叶项目：(value, info)；info 包含原始 item、path、keys、原生事件及请求的勾选/选中状态"
-      },
-      {
-        "name": "visibleChange",
-        "type": "[value: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际显示状态变化：boolean"
       },
       {
         "name": "update:openPath",
@@ -7432,7 +7659,7 @@
       },
       {
         "name": "transition",
-        "type": "false | \"fade\" | \"slide\" | \"slide-fade\" | \"none\" | undefined",
+        "type": "false | \"fade\" | \"slide\" | \"none\" | \"slide-fade\" | undefined",
         "required": false,
         "default": "\"slide\"",
         "description": "slide（默认）、fade、slide-fade、none 或 false",
@@ -7511,11 +7738,19 @@
         "global": false
       },
       {
-        "name": "loading",
-        "type": "boolean | undefined",
+        "name": "closeText",
+        "type": "string | undefined",
         "required": false,
-        "default": "false",
-        "description": "显示加载占位并保留正文；暂停确认",
+        "default": "\"关闭\"",
+        "description": "关闭按钮的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "transitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "240",
+        "description": "进入、退出与布局过渡时长，默认 240ms；0 立即切换",
         "global": false
       },
       {
@@ -7524,6 +7759,14 @@
         "required": false,
         "default": "",
         "description": "抽屉辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载占位并保留正文；暂停确认",
         "global": false
       },
       {
@@ -7583,27 +7826,11 @@
         "global": false
       },
       {
-        "name": "closeText",
-        "type": "string | undefined",
-        "required": false,
-        "default": "\"关闭\"",
-        "description": "关闭按钮的辅助技术名称",
-        "global": false
-      },
-      {
         "name": "fullscreen",
         "type": "boolean | undefined",
         "required": false,
         "default": "undefined",
         "description": "受控全屏状态，支持 v-model:fullscreen",
-        "global": false
-      },
-      {
-        "name": "transitionDuration",
-        "type": "number | undefined",
-        "required": false,
-        "default": "240",
-        "description": "进入、退出与布局过渡时长，默认 240ms；0 立即切换",
         "global": false
       },
       {
@@ -8039,6 +8266,27 @@
         "description": "关闭守卫通过后通知；不代表退出动画结束"
       },
       {
+        "name": "visibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际显示状态变化"
+      },
+      {
+        "name": "closeError",
+        "type": "[error: unknown, context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "关闭守卫失败，接收 error 与 context"
+      },
+      {
+        "name": "afterClose",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "closed 的完成别名"
+      },
+      {
         "name": "open",
         "type": "[]",
         "required": false,
@@ -8058,13 +8306,6 @@
         "required": false,
         "default": "",
         "description": ""
-      },
-      {
-        "name": "visibleChange",
-        "type": "[value: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际显示状态变化"
       },
       {
         "name": "cancel",
@@ -8109,13 +8350,6 @@
         "description": "退出、清理与焦点恢复完成"
       },
       {
-        "name": "afterClose",
-        "type": "[]",
-        "required": false,
-        "default": "",
-        "description": "closed 的完成别名"
-      },
-      {
         "name": "afterOpenChange",
         "type": "[value: boolean]",
         "required": false,
@@ -8128,13 +8362,6 @@
         "required": false,
         "default": "",
         "description": "宿主接受新的全屏状态"
-      },
-      {
-        "name": "closeError",
-        "type": "[error: unknown, context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "关闭守卫失败，接收 error 与 context"
       },
       {
         "name": "confirmError",
@@ -8349,62 +8576,222 @@
     "props": [
       {
         "name": "title",
-        "type": "string | undefined",
+        "type": "string | false | undefined",
         "required": false,
         "default": "\"暂无数据\"",
-        "description": "标题",
+        "description": "空状态标题；false 隐藏整个标题区",
         "global": false
       },
       {
         "name": "description",
-        "type": "string | undefined",
+        "type": "string | false | undefined",
         "required": false,
         "default": "\"当前没有符合条件的内容\"",
-        "description": "",
+        "description": "空状态说明；false 隐藏整个说明区",
         "global": false
       },
       {
         "name": "image",
-        "type": "string | undefined",
+        "type": "string | false | undefined",
         "required": false,
-        "default": "",
-        "description": "",
+        "default": "未设置",
+        "description": "自定义图片 URL；false 隐藏图片区；无效地址或加载失败回退",
         "global": false
       },
       {
         "name": "imageSize",
         "type": "number | undefined",
         "required": false,
-        "default": "48",
-        "description": "",
+        "default": "32（sm）/ 48（md）/ 72（lg）",
+        "description": "图片区宽高，0 隐藏，范围 0–2000px；imageStyle 可分别覆盖",
+        "global": false
+      },
+      {
+        "name": "imageStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "图片区 CSSProperties；支持独立宽高",
+        "global": false
+      },
+      {
+        "name": "imageFit",
+        "type": "\"fill\" | \"none\" | \"cover\" | \"contain\" | \"scale-down\" | undefined",
+        "required": false,
+        "default": "\"contain\"",
+        "description": "图片 contain / cover / fill / none / scale-down 填充策略",
+        "global": false
+      },
+      {
+        "name": "imageAlt",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "有信息含义的图片替代文字；默认装饰性图片",
+        "global": false
+      },
+      {
+        "name": "imageLoading",
+        "type": "\"lazy\" | \"eager\" | undefined",
+        "required": false,
+        "default": "\"eager\"",
+        "description": "原生图片加载策略 eager / lazy",
+        "global": false
+      },
+      {
+        "name": "crossOrigin",
+        "type": "\"\" | \"anonymous\" | \"use-credentials\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生图片跨域策略",
+        "global": false
+      },
+      {
+        "name": "referrerPolicy",
+        "type": "ReferrerPolicy | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生图片来源策略",
+        "global": false
+      },
+      {
+        "name": "illustration",
+        "type": "HysEmptyIllustration | undefined",
+        "required": false,
+        "default": "\"inbox\"",
+        "description": "inbox（兼容默认）、simple 或 default 内置图形",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "sm / md / lg 内容间距和默认图片尺寸",
+        "global": false
+      },
+      {
+        "name": "showImageLoading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "加载过程中显示轻量占位图标",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空状态区域的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "ariaLive",
+        "type": "\"off\" | \"polite\" | \"assertive\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "可选状态播报；默认不创建实时播报区域",
         "global": false
       }
     ],
-    "events": [],
-    "slots": [
+    "events": [
       {
-        "name": "image",
-        "type": "{}",
+        "name": "imageLoad",
+        "type": "[event: Event]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "当前原生图片加载成功的 Event"
+      },
+      {
+        "name": "imageError",
+        "type": "[event: Event]",
+        "required": false,
+        "default": "",
+        "description": "当前原生图片加载失败的 Event；无效 URL 直接回退不触发"
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "HysEmptySlotContext",
+        "required": false,
+        "default": "",
+        "description": "兼容的底部内容；未提供 action 时展示"
+      },
+      {
+        "name": "image",
+        "type": "HysEmptySlotContext",
+        "required": false,
+        "default": "",
+        "description": "替代图片内容；原生图片加载逻辑不再执行"
+      },
+      {
+        "name": "title",
+        "type": "HysEmptySlotContext",
+        "required": false,
+        "default": "",
+        "description": "标题内容"
       },
       {
         "name": "description",
-        "type": "{}",
+        "type": "HysEmptySlotContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "说明内容"
       },
       {
-        "name": "default",
-        "type": "{}",
+        "name": "action",
+        "type": "HysEmptySlotContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "底部操作区；优先于默认插槽"
+      },
+      {
+        "name": "fallback",
+        "type": "HysEmptySlotContext",
+        "required": false,
+        "default": "",
+        "description": "原生图片加载失败后的内容；接收 retryImage"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素；隐藏或离开后可能为空"
+      },
+      {
+        "name": "imageElement",
+        "type": "HTMLImageElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "当前原生图片节点，回退或插槽模式为空"
+      },
+      {
+        "name": "loadingImage",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前图片加载中状态"
+      },
+      {
+        "name": "failedImage",
+        "type": "boolean",
+        "required": true,
+        "default": "",
+        "description": "当前图片错误或无效 URL 状态"
+      },
+      {
+        "name": "retryImage",
+        "type": "() => boolean",
+        "required": true,
+        "default": "",
+        "description": "重新创建当前原生图片；不可重试时返回 false"
+      }
+    ]
   },
   "HysFileManager": {
     "props": [
@@ -11271,6 +11658,27 @@
         "description": "关闭守卫通过后通知；不代表退出动画结束"
       },
       {
+        "name": "visibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际显示状态变化"
+      },
+      {
+        "name": "closeError",
+        "type": "[error: unknown, context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "关闭守卫失败，接收 error 与 context"
+      },
+      {
+        "name": "afterClose",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "closed 的完成别名"
+      },
+      {
         "name": "open",
         "type": "[]",
         "required": false,
@@ -11290,13 +11698,6 @@
         "required": false,
         "default": "",
         "description": ""
-      },
-      {
-        "name": "visibleChange",
-        "type": "[value: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际显示状态变化"
       },
       {
         "name": "cancel",
@@ -11341,25 +11742,11 @@
         "description": "退出、清理与焦点恢复完成"
       },
       {
-        "name": "afterClose",
-        "type": "[]",
-        "required": false,
-        "default": "",
-        "description": "closed 的完成别名"
-      },
-      {
         "name": "fullscreenChange",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": "宿主接受新的全屏状态"
-      },
-      {
-        "name": "closeError",
-        "type": "[error: unknown, context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "关闭守卫失败，接收 error 与 context"
       },
       {
         "name": "confirmError",
@@ -12641,7 +13028,7 @@
       },
       {
         "name": "effect",
-        "type": "\"dark\" | \"light\" | undefined",
+        "type": "\"light\" | \"dark\" | undefined",
         "required": false,
         "default": "\"light\"",
         "description": "light 或 dark；浅色跟随当前主题",
@@ -12737,13 +13124,6 @@
         "description": "显示请求别名：boolean"
       },
       {
-        "name": "update:open",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "显示请求：boolean，支持 v-model:open"
-      },
-      {
         "name": "visibleChange",
         "type": "[open: boolean]",
         "required": false,
@@ -12751,18 +13131,25 @@
         "description": "实际展开状态变化：boolean"
       },
       {
-        "name": "hide",
-        "type": "[]",
-        "required": false,
-        "default": "",
-        "description": "实际开始收起"
-      },
-      {
         "name": "show",
         "type": "[]",
         "required": false,
         "default": "",
         "description": "实际开始展开"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "显示请求：boolean，支持 v-model:open"
+      },
+      {
+        "name": "hide",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际开始收起"
       },
       {
         "name": "opened",
@@ -15195,6 +15582,13 @@
         "description": ""
       },
       {
+        "name": "visibleChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际浮层状态变化；update:open 表示请求状态"
+      },
+      {
         "name": "update:open",
         "type": "[open: boolean]",
         "required": false,
@@ -15221,13 +15615,6 @@
         "required": false,
         "default": "",
         "description": "焦点离开触发器和浮层后触发"
-      },
-      {
-        "name": "visibleChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际浮层状态变化；update:open 表示请求状态"
       },
       {
         "name": "searchError",
@@ -18504,6 +18891,14 @@
         "global": false
       },
       {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术使用的控件名称",
+        "global": false
+      },
+      {
         "name": "defaultValue",
         "type": "string | number | null | undefined",
         "required": false,
@@ -18549,14 +18944,6 @@
         "required": false,
         "default": "",
         "description": "独立标签，自动关联内部输入 ID",
-        "global": false
-      },
-      {
-        "name": "ariaLabel",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "辅助技术使用的控件名称",
         "global": false
       },
       {
@@ -18930,10 +19317,10 @@
     "props": [
       {
         "name": "items",
-        "type": "{ title: string; time?: string | undefined; description?: string | undefined; status?: \"done\" | \"current\" | \"pending\" | undefined; color?: string | undefined; }[]",
+        "type": "readonly T[]",
         "required": true,
         "default": "",
-        "description": "展示项目数据",
+        "description": "时间线原始记录；默认读取 title/time/description/status/color 等字段",
         "global": false
       },
       {
@@ -18941,15 +19328,135 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "反转显示记录，不修改源数组；默认不反转 pending 位置",
         "global": false
       },
       {
         "name": "pending",
+        "type": "string | boolean | undefined",
+        "required": false,
+        "default": "未设置",
+        "description": "末尾待办文字或 true 加载节点；false 同时隐藏 pending 插槽",
+        "global": false
+      },
+      {
+        "name": "mode",
+        "type": "HysTimelineMode | undefined",
+        "required": false,
+        "default": "\"left\"",
+        "description": "left / right / alternate / alternate-reverse；表示轴线位置或内容交替顺序",
+        "global": false
+      },
+      {
+        "name": "itemKey",
+        "type": "string | ((item: T, index: number) => HysTimelineKey) | undefined",
+        "required": false,
+        "default": "",
+        "description": "稳定唯一编号的路径或 (item,sourceIndex) 回调；默认 id/key，无编号时按对象身份保留子内容",
+        "global": false
+      },
+      {
+        "name": "fieldNames",
+        "type": "Partial<Record<keyof HysTimelineItem, string>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认字段到业务字段的映射，支持点号路径",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "HysTimelineSize | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "sm / md / lg 字号、节点与间距",
+        "global": false
+      },
+      {
+        "name": "hollow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认空心节点；单项 hollow 优先",
+        "global": false
+      },
+      {
+        "name": "showTime",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示时间；单项 hideTime 可隐藏",
+        "global": false
+      },
+      {
+        "name": "timePlacement",
+        "type": "\"top\" | \"bottom\" | undefined",
+        "required": false,
+        "default": "\"bottom\"",
+        "description": "时间位于标题 top / bottom；单项 timePlacement 优先",
+        "global": false
+      },
+      {
+        "name": "responsive",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "容器不宽于 480px 时将左右内容合并到单侧；不依赖窗口宽度",
+        "global": false
+      },
+      {
+        "name": "lineStyle",
+        "type": "\"dashed\" | \"solid\" | \"dotted\" | undefined",
+        "required": false,
+        "default": "\"solid\"",
+        "description": "连接线 solid / dashed / dotted",
+        "global": false
+      },
+      {
+        "name": "lineColor",
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "自定义连接线颜色",
+        "global": false
+      },
+      {
+        "name": "pendingPosition",
+        "type": "\"start\" | \"end\" | undefined",
+        "required": false,
+        "default": "\"end\"",
+        "description": "待办节点位于 start / end，独立于 reverse",
+        "global": false
+      },
+      {
+        "name": "pendingLoading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "pending=true 时 true",
+        "description": "待办节点显示加载图标；未指定时 pending=true 开启",
+        "global": false
+      },
+      {
+        "name": "pendingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"加载中…\"",
+        "description": "pending=true 的默认文字",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "无记录且无待办时的可选文字；默认空白",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "有序时间线的辅助技术名称",
         "global": false
       }
     ],
@@ -18957,13 +19464,84 @@
     "slots": [
       {
         "name": "item",
-        "type": "{ item: { title: string; time?: string | undefined; description?: string | undefined; status?: \"done\" | \"current\" | \"pending\" | undefined; color?: string | undefined; }; index: number; }",
+        "type": "HysTimelineItemContext<T>",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "整个记录内容；保留原始 item，index 是显示序号，sourceIndex 是源数组序号"
+      },
+      {
+        "name": "title",
+        "type": "HysTimelineItemContext<T>",
+        "required": false,
+        "default": "",
+        "description": "标题内容"
+      },
+      {
+        "name": "description",
+        "type": "HysTimelineItemContext<T>",
+        "required": false,
+        "default": "",
+        "description": "说明内容"
+      },
+      {
+        "name": "time",
+        "type": "HysTimelineItemContext<T>",
+        "required": false,
+        "default": "",
+        "description": "时间内容；仍遵守 showTime / hideTime"
+      },
+      {
+        "name": "label",
+        "type": "HysTimelineItemContext<T>",
+        "required": false,
+        "default": "",
+        "description": "轴线对侧标签"
+      },
+      {
+        "name": "dot",
+        "type": "HysTimelineItemContext<T>",
+        "required": false,
+        "default": "",
+        "description": "自定义节点；接收原始记录及归一化上下文"
+      },
+      {
+        "name": "pending",
+        "type": "HysTimelinePendingContext",
+        "required": false,
+        "default": "",
+        "description": "待办内容；接收 pending 和 loading"
+      },
+      {
+        "name": "pending-dot",
+        "type": "HysTimelinePendingContext",
+        "required": false,
+        "default": "",
+        "description": "待办节点图标；接收 pending 和 loading"
+      },
+      {
+        "name": "empty",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "无记录和待办时的内容"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLOListElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素；隐藏或离开后可能为空"
+      },
+      {
+        "name": "getItems",
+        "type": "() => T[]",
+        "required": true,
+        "default": "",
+        "description": "按当前显示顺序返回原始记录数组副本，不包含待办节点"
+      }
+    ]
   },
   "HysToast": {
     "props": [
@@ -19369,7 +19947,7 @@
       },
       {
         "name": "effect",
-        "type": "\"dark\" | \"light\" | undefined",
+        "type": "\"light\" | \"dark\" | undefined",
         "required": false,
         "default": "\"dark\"",
         "description": "light 或 dark；浅色跟随当前主题",
@@ -19465,13 +20043,6 @@
         "description": "显示请求别名：boolean"
       },
       {
-        "name": "update:open",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "显示请求：boolean，支持 v-model:open"
-      },
-      {
         "name": "visibleChange",
         "type": "[open: boolean]",
         "required": false,
@@ -19479,18 +20050,25 @@
         "description": "实际展开状态变化：boolean"
       },
       {
-        "name": "hide",
-        "type": "[]",
-        "required": false,
-        "default": "",
-        "description": "实际开始收起"
-      },
-      {
         "name": "show",
         "type": "[]",
         "required": false,
         "default": "",
         "description": "实际开始展开"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "显示请求：boolean，支持 v-model:open"
+      },
+      {
+        "name": "hide",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际开始收起"
       },
       {
         "name": "opened",

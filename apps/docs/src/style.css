@@ -32,3 +32,5 @@
 .doc-toc>a{padding:4px 8px;margin-left:-9px;border-radius:0 5px 5px 0}.doc-toc>a.toc-active{color:var(--docs-nav-active-text);background:var(--docs-nav-active-bg);box-shadow:inset 2px 0 0 var(--docs-nav-active-text);font-weight:600}
 
 .demo-content.progress-examples{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:24px}
+
+.feedback-demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:20px;align-items:start;min-width:0}.feedback-demo-grid>*{min-width:0;max-width:100%}
