@@ -464,7 +464,7 @@ test("DataGrid resize previews per frame, persists on release, and discards canc
     assert.equal(handle.getAttribute("aria-valuenow"), "150");
     assert.equal(writes.length, 1);
     const search = a.find('[aria-label="搜索表格"]');
-    search.addEventListener("keydown", event => event.stopPropagation());
+    search.addEventListener("keydown", (event) => event.stopPropagation());
     pointer(handle, "pointerdown", 150);
     pointer(window, "pointermove", 175);
     await fire(search, "keydown", { key: "Escape" });
@@ -478,4 +478,28 @@ test("DataGrid resize previews per frame, persists on release, and discards canc
   } finally {
     globalThis.localStorage = previous;
   }
+});
+
+test("DataGrid groups equal structured values without merging different records or empty values", async () => {
+  const a = await mount(ui.HysDataGrid, {
+    columns: [{ key: "group", label: "分类" }],
+    rows: [
+      { id: 1, group: { team: "A" } },
+      { id: 2, group: { team: "B" } },
+      { id: 3, group: { team: "A" } },
+      { id: 4, group: null },
+      { id: 5, group: "" },
+    ],
+    groupable: true,
+  });
+  await fire(a.find('[aria-label="按列分组"]'), "click");
+  await pause(10);
+  const option = [...document.querySelectorAll('[role="option"]')].find(
+    (node) => node.textContent.trim() === "分类",
+  );
+  await fire(option, "click");
+  const groups = a.all(".hys-ui-pf-grid-group-row");
+  assert.equal(groups.length, 4);
+  assert.match(groups[0].textContent, /\(2\)/);
+  assert.equal(a.all("[data-grid-row]").length, 5);
 });

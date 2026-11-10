@@ -350,6 +350,13 @@ const groupOptions = computed(() =>
 type DisplayRow =
   | { kind: "row"; key: string; item: GridTreeRow<T>; pageIndex: number }
   | { kind: "group"; key: string; label: string; count: number };
+function groupKey(value: unknown, label: string) {
+  try {
+    return "group:" + JSON.stringify(value ?? null);
+  } catch {
+    return "group:" + typeof value + ":" + label;
+  }
+}
 const displayRows = computed<DisplayRow[]>(() => {
   const items = pageRows.value.map((item, pageIndex) => ({
     kind: "row" as const,
@@ -363,9 +370,7 @@ const displayRows = computed<DisplayRow[]>(() => {
   for (const item of items) {
     const value = gridValue(item.item.row, column);
     const label = value == null || value === "" ? "（空）" : String(value);
-    const key =
-      "group:" +
-      (value == null || value === "" ? "empty" : typeof value + ":" + label);
+    const key = groupKey(value, label);
     const bucket = buckets.get(key);
     if (bucket) bucket.rows.push(item);
     else buckets.set(key, { label, rows: [item] });
