@@ -79,7 +79,7 @@ task.update({ type: 'success', message: '上传完成', duration: 2000 })
 
 ## 发布
 
-根工作区和文档应用为私有，npm 包名为 `hys-ui`，版本 `0.1.1`，MIT 公开发布。
+根工作区和文档应用为私有，npm 包名为 `hys-ui`，版本 `0.2.0`，MIT 公开发布。
 
 ```bash
 npm run pack:ui
