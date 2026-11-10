@@ -192,6 +192,17 @@ export const weeklyDate=h(HysDatePicker<readonly string[]>,{type:'weeks',modelVa
 export async function operateDate(api:HysDatePickerInstance<Date|null>){await api.setValue(new Date());await api.showMonth('2026-11-01');api.setMode('month');await api.confirm();api.cancel();return api.draft}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {dateChecks} from './date-picker-types'\nvoid dateChecks\n")
+fs.writeFileSync(path.join(dir,'modal-types.ts'),`import {h,ref} from 'vue'
+import {HysModal,createHysModal,useHysModal,type HysModalProps,type HysModalInstance,type HysModalActionContext,type HysModalOptions,type HysModalResult,type HysModalSlotContext} from 'hys-ui'
+const instance=ref<HysModalInstance>()
+export const modalChecks=h(HysModal,{ref:instance,defaultOpen:true,footer:true,draggable:true,resizable:true,confirmOnCtrlEnter:true,initialFocus:'cancel',beforeConfirm:async({signal}:HysModalActionContext)=>!signal.aborted,beforeClose:(reason:'mask'|'escape'|'button')=>reason!=='mask',onOk:(context:HysModalActionContext)=>void context.signal,onDragEnd:(position,info)=>void [position.x,info.cancelled]},{footer:({confirm,busy}:HysModalSlotContext)=>h('button',{disabled:busy,onClick:confirm},'Save')})
+export const modalProps:HysModalProps={modelValue:true,dragEffect:'glow',size:'2xl',headerSize:'sm',footerSize:'lg',opacity:.95,maskOpacity:.4,transition:{name:'fade'},bodyStyle:{padding:'24px'},okButtonProps:{variant:'danger'},beforeClose:async(reason,context)=>reason==='confirm'||!context.signal.aborted}
+export function actualModal(actual:InstanceType<typeof HysModal>):HysModalInstance{return actual}
+export async function operateModal(api:HysModalInstance){api.resetPosition();api.setPosition({x:10,y:20});api.setSize({width:600,height:400});await api.setFullscreen(true);await api.confirm();return api.dimensions}
+export function scopedDialogs(){const dialogs=useHysModal(),options:HysModalOptions={title:'Confirm',content:()=>h('p','Content'),onOk:async({signal})=>!signal.aborted};return dialogs.confirm(options)}
+export async function standaloneDialogs(){const dialogs=createHysModal({theme:'blue',motion:'off',defaults:{width:600}}),item=dialogs.info('Ready');item.update({content:'Done'});item.destroy();const result:HysModalResult=await item.closed;dialogs.dispose();return result.action}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {modalChecks} from './modal-types'\nvoid modalChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

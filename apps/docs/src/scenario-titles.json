@@ -480,6 +480,30 @@
       "Methods": "实例方法与范围定位",
       "States": "绑定类型与受限状态",
       "Weeks": "周范围与完整覆盖日期"
+    },
+    "HysModal": {
+      "Basic": "基础弹窗与操作结果",
+      "Configure": "布局与交互配置",
+      "Async": "异步确认与失败重试",
+      "Form": "表单校验与快捷提交",
+      "Guard": "未保存修改与关闭拦截",
+      "DragResize": "拖动位置与调整尺寸",
+      "Layout": "居中、顶部与全屏布局",
+      "Overflow": "长内容与固定操作区",
+      "Custom": "自定义标题与操作内容",
+      "Lifecycle": "挂载策略与生命周期",
+      "Nested": "嵌套弹窗与内部浮层",
+      "Service": "调用式弹窗与结果等待",
+      "ServiceUpdate": "动态更新与任务进度",
+      "Focus": "初始焦点与键盘导航",
+      "Motion": "切换动效与时长",
+      "States": "加载、受限与背景交互",
+      "Appearance": "弹窗与遮罩透明度",
+      "Performance": "长列表与流畅拖动",
+      "Sizes": "内置尺寸与宽屏布局",
+      "Sections": "标题区与操作区尺寸",
+      "PreviewDrag": "预览定位与释放动画",
+      "Recovery": "越界保护与平滑复位"
     }
   }
 }

@@ -700,7 +700,7 @@ export const catalog=[
     "label": "对话框",
     "slug": "hys-modal",
     "category": "反馈浮层",
-    "description": "对话框的独立交互示例、配置场景与类型参考。",
+    "description": "用于确认、表单与内容展示，支持异步操作、关闭拦截、拖拽调整和调用式弹窗。",
     "notes": [
       "打开时限制焦点范围并锁定背景滚动，关闭后恢复触发控件焦点。"
     ]

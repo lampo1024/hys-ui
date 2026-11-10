@@ -1934,7 +1934,7 @@ defineExpose({
   width: 100%;
   overflow: auto;
   position: relative;
-  overscroll-behavior: contain;
+  overscroll-behavior: contain auto;
 }
 .hys-ui-table-scroll:focus-visible {
   outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));

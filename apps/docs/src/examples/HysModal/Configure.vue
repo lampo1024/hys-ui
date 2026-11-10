@@ -1,20 +1,84 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysButton, HysModal } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysSelect as DemoSelect } from 'hys-ui';
-const open = ref(false);
-const demoConfig = demoReactive<{
-    closeOnMask: boolean;
-    closeOnEscape: boolean;
-    showClose: boolean;
-    destroyOnClose: boolean;
-    fullscreen: boolean;
-    placement: "left" | "right" | "top" | "bottom";
-}>({ "closeOnMask": true, "closeOnEscape": true, "showClose": true, "destroyOnClose": true, "fullscreen": false, "placement": "right" });
+import { reactive, ref } from "vue";
+import {
+  HysButton,
+  HysCheckbox,
+  HysModal,
+  HysNumberInput,
+  HysSelect,
+  type HysModalSizeName,
+} from "hys-ui";
+const open = ref(false),
+  customWidth = ref(false);
+const config = reactive({
+  width: 560,
+  size: "md" as HysModalSizeName,
+  closeOnMask: true,
+  closeOnEscape: true,
+  showClose: true,
+  showFullscreen: true,
+  draggable: true,
+  resizable: false,
+});
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>展示方向</span><code>placement</code></span><DemoSelect :model-value="demoConfig.placement" @update:model-value="demoConfig.placement=$event as typeof demoConfig.placement" :options='[{"label":"left","value":"left"},{"label":"right","value":"right"},{"label":"top","value":"top"},{"label":"bottom","value":"bottom"}]'/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.closeOnMask" label="closeOnMask"/><small>点击遮罩关闭</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.closeOnEscape" label="closeOnEscape"/><small>按 Esc 关闭</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.showClose" label="showClose"/><small>显示关闭按钮</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.destroyOnClose" label="destroyOnClose"/><small>关闭后销毁内容</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.fullscreen" label="fullscreen"/><small>全屏展示</small></div></div></section></div><div class="demo-content"><HysButton @click="open=true">打开弹窗</HysButton><HysModal v-bind="demoConfig" :open="open" title="操作确认" @close="open=false"><p>支持遮罩、Escape、焦点管理和底部插槽。</p><template #footer><HysButton @click="open=false">确认</HysButton></template></HysModal></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<template>
+  <div class="demo-controls">
+    <section class="demo-control-section">
+      <h3>布局与尺寸</h3>
+      <div class="demo-control-fields">
+        <label class="demo-field"
+          ><span>弹窗宽度</span
+          ><HysNumberInput
+            v-model="config.width"
+            :min="320"
+            :max="1000"
+            :step="40"
+        /></label>
+        <label class="demo-field"
+          ><span>内容尺寸</span
+          ><HysSelect
+            v-model="config.size"
+            :options="[
+              { label: '超小 · 360px', value: 'xs' },
+              { label: '小尺寸 · 440px', value: 'sm' },
+              { label: '标准', value: 'md' },
+              { label: '大尺寸 · 720px', value: 'lg' },
+              { label: '超大 · 960px', value: 'xl' },
+              { label: '宽屏 · 1200px', value: '2xl' },
+              { label: '铺满宽度', value: 'full' },
+            ]"
+        /></label>
+      </div>
+    </section>
+    <section class="demo-control-section">
+      <h3>交互行为</h3>
+      <div class="demo-control-toggles">
+        <HysCheckbox
+          v-model="config.closeOnMask"
+          label="点击遮罩关闭"
+        /><HysCheckbox v-model="config.closeOnEscape" label="按 Esc 关闭" />
+        <HysCheckbox
+          v-model="config.showClose"
+          label="显示关闭入口"
+        /><HysCheckbox v-model="config.showFullscreen" label="允许全屏" />
+        <HysCheckbox v-model="config.draggable" label="手柄拖拽" /><HysCheckbox
+          v-model="config.resizable"
+          label="调整尺寸"
+        />
+      </div>
+    </section>
+  </div>
+  <div class="demo-content">
+    <HysButton @click="open = true">预览配置弹窗</HysButton>
+  </div>
+  <HysModal
+    v-model:open="open"
+    v-bind="config"
+    :width="customWidth ? config.width : undefined"
+    title="交互配置预览"
+    footer
+    ><p>
+      可拖动标题左侧手柄移动位置，使用右上角图标切换全屏，或从右下角调整尺寸。
+    </p></HysModal
+  >
+</template>

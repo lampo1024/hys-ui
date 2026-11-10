@@ -1,5 +1,8 @@
 import {
   ref,
+  computed,
+  shallowRef,
+  inject,
   nextTick,
   onBeforeUnmount,
   onDeactivated,
@@ -7,7 +10,7 @@ import {
   type Ref,
 } from "vue";
 import { useHysControlState } from "./formContext";
-import { registerOverlay } from "./overlayManager";
+import { registerOverlay, overlayOwnerKey } from "./overlayManager";
 export type Placement =
   "bottom-start" | "bottom-end" | "top-start" | "top-end" | "right" | "left";
 export interface FloatingAnchor {
@@ -30,7 +33,9 @@ export function useFloating(
   } = {},
 ) {
   const { disabled } = useHysControlState({});
+  const ownerVisible = inject(overlayOwnerKey, undefined);
   const open = ref(false);
+  const registration = shallowRef<ReturnType<typeof registerOverlay>>();
   const restoringFocus = ref(false);
   const style = ref<Record<string, string>>({
     position: "fixed",
@@ -175,6 +180,7 @@ export function useFloating(
     cancelAnimationFrame(raf);
     unregister?.();
     unregister = undefined;
+    registration.value = undefined;
     isTop = undefined;
   }
   function close(restore = false, force = false) {
@@ -194,7 +200,7 @@ export function useFloating(
     }
   }
   async function show(force = false) {
-    if (disabled.value) return;
+    if (disabled.value || ownerVisible?.value === false) return;
     if (open.value) {
       schedule();
       return;
@@ -211,6 +217,7 @@ export function useFloating(
     await nextTick();
     if (token !== generation || !open.value) return;
     const entry = registerOverlay("floating", () => close(true));
+    registration.value = entry;
     unregister = entry.unregister;
     isTop = entry.isTop;
     update();
@@ -232,13 +239,23 @@ export function useFloating(
     { flush: "sync" },
   );
   onDeactivated(() => close(false, true));
+  watch(
+    () => ownerVisible?.value,
+    (value) => {
+      if (value === false) close(false, true);
+    },
+    { flush: "sync" },
+  );
   onBeforeUnmount(() => {
     generation++;
     detach();
   });
   return {
     open,
-    style,
+    style: computed(() => ({
+      ...style.value,
+      zIndex: String(registration.value?.zIndex.value ?? 1200),
+    })),
     placement,
     update,
     show,
