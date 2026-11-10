@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   nextTick,
@@ -720,7 +722,7 @@ defineExpose({
       {{ error }}
     </p>
     <Teleport :to="appendTo || 'body'" :disabled="inline || appendTo === false"
-      ><div
+      ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floating.placement.value" :disabled="inline"><div
         v-if="visible"
         :id="id + '-panel'"
         ref="panel"
@@ -928,7 +930,7 @@ defineExpose({
             </div></slot
           >
         </footer>
-      </div></Teleport
+      </div></PopupMotion></Teleport
     >
   </div>
 </template>

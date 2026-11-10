@@ -1,4 +1,8 @@
 <script setup lang="ts" generic="T extends HysSelectModelValue = string">
+import type { HysPopupMotionProps } from '../../motion/popup';
+
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   inject,
@@ -36,7 +40,7 @@ import {
 } from "../../composables/selectOptions";
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
-  defineProps<{
+  defineProps<HysPopupMotionProps & {
     modelValue?: T;
     defaultValue?: T;
     options?: HysSelectDataOption[];
@@ -1143,7 +1147,7 @@ defineExpose({
       :to="appendTo === false ? 'body' : appendTo"
       :disabled="appendTo === false"
     >
-      <div
+      <PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="actualPlacement"><div
         v-if="dropdownOpen"
         ref="panel"
         v-bind="hysRootAttrs"
@@ -1332,7 +1336,7 @@ defineExpose({
             :close="() => close()"
           />
         </div>
-      </div>
+      </div></PopupMotion>
     </Teleport>
   </div>
 </template>

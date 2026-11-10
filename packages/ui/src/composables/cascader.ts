@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import type { CSSProperties, VNodeChild } from "vue";
 import { treeField, treeKey, type HysTreeKey } from "./tree";
 import type { Placement } from "./useFloating";
@@ -80,6 +81,8 @@ export interface HysCascaderProps<
   N extends object = HysCascaderNode,
   V extends HysCascaderValue = HysCascaderValue,
 > {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   options: readonly N[];
   modelValue?: V;
   defaultValue?: V;

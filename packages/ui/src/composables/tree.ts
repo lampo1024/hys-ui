@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import type { CSSProperties, VNodeChild } from "vue";
 export type HysTreeKey = string | number;
 export type HysTreeValue = HysTreeKey | readonly HysTreeKey[] | null;
@@ -110,6 +111,8 @@ export interface HysTreeProps<
   N extends object = TreeNode,
   V extends HysTreeValue = HysTreeValue,
 > {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   nodes: readonly N[];
   modelValue?: V;
   defaultValue?: V;

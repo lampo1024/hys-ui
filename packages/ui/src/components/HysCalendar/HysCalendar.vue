@@ -1,4 +1,8 @@
 <script setup lang="ts" generic="T extends HysCalendarValue = string">
+import type { HysPopupMotionProps } from '../../motion/popup';
+
+import PopupMotion from '../../motion/PopupMotion';
+
 import { computed, nextTick, onDeactivated, ref, useId, watch } from "vue";
 import {
   ChevronLeft,
@@ -35,7 +39,7 @@ import {
   type CalendarEvent,
 } from "../../composables/calendar";
 const props = withDefaults(
-  defineProps<{
+  defineProps<HysPopupMotionProps & {
     modelValue?: T;
     defaultValue?: T;
     valueType?: "string" | "date";
@@ -399,7 +403,7 @@ const maxEvents = computed(() =>
 const anchor = ref<HTMLElement>(),
   popup = ref<HTMLElement>(),
   moreCell = ref<HysCalendarCell>();
-const { open, style, show, close } = useFloating(anchor, popup, {
+const {placement: popupPlacement, open, style, show, close } = useFloating(anchor, popup, {
   placement: "bottom-start",
   width: () => 320,
   closeOnTab: true,
@@ -1020,7 +1024,7 @@ defineExpose({
       />
     </footer>
     <Teleport to="body"
-      ><div
+      ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="popupPlacement"><div
         v-if="open && moreCell"
         :id="id + '-events'"
         ref="popup"
@@ -1063,7 +1067,7 @@ defineExpose({
             >
           </button>
         </div>
-      </div></Teleport
+      </div></PopupMotion></Teleport
     >
   </section>
 </template>

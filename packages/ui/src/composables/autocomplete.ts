@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import type { Component, CSSProperties } from "vue";
 import type { Placement } from "./useFloating";
 import type { HysInputProps } from "./textInput";
@@ -33,6 +34,8 @@ export type HysAutocompleteFetch = (
   | readonly HysAutocompleteDataOption[]
   | Promise<void | readonly HysAutocompleteDataOption[]>;
 export interface HysAutocompleteProps {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   modelValue?: string;
   defaultValue?: string;
   options?: readonly HysAutocompleteDataOption[];

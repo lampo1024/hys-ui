@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import {
   computed,
   onActivated,
@@ -67,6 +68,8 @@ export interface HysAvatarGroupInstance {
   close: () => void;
 }
 export interface HysAvatarGroupProps {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   options?: readonly HysAvatarOption[];
   size?: HysAvatarSize;
   shape?: "circle" | "square";

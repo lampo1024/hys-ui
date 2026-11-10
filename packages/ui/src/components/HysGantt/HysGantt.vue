@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import type { HysPopupMotionProps } from '../../motion/popup';
+
+import PopupMotion from '../../motion/PopupMotion';
+
 import { useHysRootAttrs } from "../../config";
 const hysRootAttrs = useHysRootAttrs();
 
@@ -71,7 +75,7 @@ export interface GanttItem {
 }
 type Scale = "day" | "week" | "month";
 const props = withDefaults(
-  defineProps<{
+  defineProps<HysPopupMotionProps & {
     items: GanttItem[];
     modelValue?: string | number | null;
     scale?: Scale;
@@ -1840,7 +1844,7 @@ ${entry.task.start} → ${entry.task.end}
       </div>
     </div>
     <Teleport to="body">
-      <div
+      <PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="picker.placement.value"><div
         v-if="picker.open.value"
         ref="pickerPanel"
         v-bind="hysRootAttrs"
@@ -1966,7 +1970,7 @@ ${entry.task.start} → ${entry.task.end}
         <p v-if="pickerNotice" class="hys-ui-pg-picker-notice" role="status">
           {{ pickerNotice }}
         </p>
-      </div>
+      </div></PopupMotion>
     </Teleport>
   </section>
 </template>

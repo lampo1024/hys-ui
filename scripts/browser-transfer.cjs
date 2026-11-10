@@ -360,6 +360,8 @@ async (page) => {
       e.classList.contains("hys-ui-is-drop-target"),
     ),
   );
+  check('Drag target has one border with no inset duplicate',await pane('selection','right').evaluate(el=>{const css=getComputedStyle(el);return css.borderTopWidth==='1px'&&css.borderRightWidth==='1px'&&css.borderBottomWidth==='1px'&&css.borderLeftWidth==='1px'&&css.boxShadow==='none'}));
+  await pane('selection','right').screenshot({path:'output/playwright/transfer-single-drop-border.png'});
   await page.locator('a[href="/components/hys-select"]').click();
   await page.locator("#scene-basic .hys-ui-select").first().waitFor();
   check(

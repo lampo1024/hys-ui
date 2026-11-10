@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import type { CSSProperties, VNodeChild } from "vue";
 import type { Placement } from "./useFloating";
 import {
@@ -106,6 +107,8 @@ export interface HysDatePickerLocale {
 export interface HysDatePickerProps<
   V extends HysDatePickerValue = HysDatePickerValue,
 > {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   modelValue?: V;
   defaultValue?: V;
   clearValue?: V;

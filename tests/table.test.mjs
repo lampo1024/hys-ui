@@ -1260,7 +1260,7 @@ test("Controlled filter visibility honors host rejection of open and close reque
     key = ref(null);
   const app = createApp({
     setup: () => () =>
-      h(ui.HysTable, { rows, columns, ref: table, filterColumnKey: key.value }),
+      h(ui.HysTable, { rows, columns, ref: table, filterColumnKey: key.value, popupTransition: "none" }),
   });
   app.mount(host);
   await settle();

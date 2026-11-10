@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PopupMotion from '../../motion/PopupMotion';
+import {popupSize,type HysPopupMotionProps} from '../../motion/popup';
 import {
   nextTick,
   onActivated,
@@ -9,7 +11,8 @@ import {
   type CSSProperties,
 } from "vue";
 import { useHysRootAttrs } from "../../config";
-const props = defineProps<{
+const props = defineProps<HysPopupMotionProps & {
+  visible: boolean;
   id: string;
   anchor?: HTMLElement;
   container?: HTMLElement;
@@ -56,7 +59,7 @@ function update() {
   frame = undefined;
   const anchor = props.anchor,
     bubble = panel.value;
-  if (!active.value || !anchor?.isConnected || !bubble) return;
+  if (!props.visible || !active.value || !anchor?.isConnected || !bubble) return;
   const viewport = window.visualViewport;
   const left = viewport?.offsetLeft ?? 0,
     top = viewport?.offsetTop ?? 0;
@@ -107,7 +110,7 @@ function update() {
     return;
   }
   bubble.style.maxWidth = Math.max(1, width - padding * 2) + "px";
-  const p = measured ?? bubble.getBoundingClientRect();
+  const p = measured ?? popupSize(bubble);
   const room = {
     top: a.top - top - gap - padding,
     bottom: bottom - a.bottom - gap - padding,
@@ -143,7 +146,7 @@ function update() {
   };
 }
 function schedule() {
-  if (active.value && frame === undefined)
+  if (props.visible && active.value && frame === undefined)
     frame = requestAnimationFrame(update);
 }
 function follow() {
@@ -168,7 +171,7 @@ function stop() {
 }
 function attach() {
   stop();
-  if (!active.value || !props.anchor || !panel.value) return;
+  if (!props.visible || !active.value || !props.anchor || !panel.value) return;
   environment();
   window.addEventListener("scroll", schedule, true);
   window.addEventListener("resize", resized);
@@ -223,7 +226,7 @@ function attach() {
   schedule();
 }
 watch(
-  () => [props.anchor, props.container, panel.value, active.value],
+  () => [props.anchor, props.container, panel.value, active.value, props.visible],
   attach,
   { flush: "post" },
 );
@@ -247,9 +250,9 @@ onDeactivated(() => {
 onBeforeUnmount(stop);
 </script>
 <template>
-  <Teleport to="body">
+  <Teleport to="body"><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="resolvedPlacement">
     <span
-      v-if="active"
+      v-if="active && visible"
       :id="id"
       ref="panel"
       v-bind="hysRootAttrs"
@@ -259,7 +262,7 @@ onBeforeUnmount(stop);
       :style="style"
       ><slot
     /></span>
-  </Teleport>
+  </PopupMotion></Teleport>
 </template>
 <style scoped>
 .hys-ui-slider-tooltip {

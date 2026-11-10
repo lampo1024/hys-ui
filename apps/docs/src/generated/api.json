@@ -303,6 +303,22 @@
   "HysAutocomplete": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "string | undefined",
         "required": false,
@@ -1304,6 +1320,22 @@
         "global": false
       },
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "options",
         "type": "readonly HysAvatarOption[] | undefined",
         "required": false,
@@ -1954,6 +1986,22 @@
   },
   "HysCalendar": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "modelValue",
         "type": "T | undefined",
@@ -2693,6 +2741,22 @@
   },
   "HysCascader": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "options",
         "type": "readonly N[]",
@@ -4264,6 +4328,22 @@
   "HysColorPicker": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "string",
         "required": true,
@@ -4342,6 +4422,22 @@
   "HysCommandPalette": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "actions",
         "type": "Action[]",
         "required": true,
@@ -4394,6 +4490,22 @@
   },
   "HysContextMenu": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "items",
         "type": "{ label: string; value: string; disabled?: boolean | undefined; type?: \"item\" | \"divider\" | undefined; }[]",
@@ -4463,6 +4575,22 @@
   },
   "HysDataGrid": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "columns",
         "type": "GridColumn[]",
@@ -4702,6 +4830,22 @@
   },
   "HysDatePicker": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "modelValue",
         "type": "V | undefined",
@@ -5588,6 +5732,22 @@
   },
   "HysDateRangePicker": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "modelValue",
         "type": "V | undefined",
@@ -7766,6 +7926,22 @@
   "HysGantt": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "items",
         "type": "GanttItem[]",
         "required": true,
@@ -8738,6 +8914,22 @@
   },
   "HysMention": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "users",
         "type": "{ id: string; name: string; disabled?: boolean | undefined; }[]",
@@ -10768,6 +10960,22 @@
   "HysPopover": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "placement",
         "type": "Placement | undefined",
         "required": false,
@@ -12470,6 +12678,22 @@
   "HysSelect": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "T | undefined",
         "required": false,
@@ -13396,6 +13620,22 @@
   },
   "HysSlider": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "modelValue",
         "type": "T | undefined",
@@ -14429,6 +14669,22 @@
   },
   "HysTable": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "locale",
         "type": "Partial<HysTableLocale> | undefined",
@@ -16861,6 +17117,22 @@
   "HysTooltip": {
     "props": [
       {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
+      {
         "name": "text",
         "type": "string | undefined",
         "required": false,
@@ -16930,6 +17202,22 @@
   },
   "HysTour": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "steps",
         "type": "{ title: string; description: string; }[]",
@@ -17650,6 +17938,22 @@
   },
   "HysTree": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "nodes",
         "type": "readonly N[]",
@@ -18564,6 +18868,22 @@
   },
   "HysTreeSelect": {
     "props": [
+      {
+        "name": "popupTransition",
+        "type": "HysPopupTransition | undefined",
+        "required": false,
+        "default": "scale",
+        "description": "浮层展开与收起动画：scale（默认）、fade、slide、slide-fade、none；遵循全局动效和系统减少动态效果设置",
+        "global": false
+      },
+      {
+        "name": "popupTransitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "160",
+        "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
+        "global": false
+      },
       {
         "name": "modelValue",
         "type": "V | undefined",

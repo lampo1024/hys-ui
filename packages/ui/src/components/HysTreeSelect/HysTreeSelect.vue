@@ -6,6 +6,8 @@
     N extends object = HysTreeSelectNode
   "
 >
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   nextTick,
@@ -580,7 +582,7 @@ defineExpose({
     <Teleport
       :to="appendTo === false ? 'body' : appendTo"
       :disabled="appendTo === false"
-      ><div
+      ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floating.placement.value"><div
         v-if="open"
         ref="panel"
         v-bind="rootAttrs"
@@ -668,7 +670,7 @@ defineExpose({
             :close="() => close(true)"
           />
         </footer></div
-    ></Teleport>
+    ></PopupMotion></Teleport>
   </div>
 </template>
 <style scoped>

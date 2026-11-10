@@ -1,4 +1,6 @@
 <script lang="ts">
+import PopupMotion from '../../motion/PopupMotion';
+
 export type { HysTableColumn } from "../../composables/table";
 </script>
 <script setup lang="ts" generic="T extends object = Record<string, unknown>">
@@ -1836,7 +1838,7 @@ defineExpose({
     <Teleport
       :to="appendFilterTo || 'body'"
       :disabled="appendFilterTo === false"
-      ><div
+      ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floatingFilter.placement.value"><div
         v-if="filterOpen && filterColumn"
         :id="id + '-filter'"
         ref="filterPanel"
@@ -1889,10 +1891,10 @@ defineExpose({
             }}</HysButton>
           </div></slot
         >
-      </div></Teleport
+      </div></PopupMotion></Teleport
     >
     <Teleport to="body"
-      ><div
+      ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floatingTip.placement.value"><div
         v-if="tipOpen && tipContext"
         :id="id + '-tooltip'"
         ref="tipPanel"
@@ -1906,7 +1908,7 @@ defineExpose({
         <slot name="tooltip" v-bind="tipContext"
           ><RenderContent :value="tipContent"
         /></slot></div
-    ></Teleport>
+    ></PopupMotion></Teleport>
   </div>
 </template>
 

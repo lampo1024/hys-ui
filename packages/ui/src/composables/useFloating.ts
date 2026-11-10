@@ -10,6 +10,7 @@ import {
   type Ref,
 } from "vue";
 import { useHysControlState } from "./formContext";
+import { popupSize } from "../motion/popup";
 import { registerOverlay, overlayOwnerKey } from "./overlayManager";
 export type Placement =
   "bottom-start" | "bottom-end" | "top-start" | "top-end" | "right" | "left";
@@ -83,7 +84,7 @@ export function useFloating(
       panel.value.style.minWidth = `${matchedWidth}px`;
       panel.value.style.maxWidth = `calc(100vw - ${pad * 2}px)`;
     }
-    const p = panel.value.getBoundingClientRect();
+    const p = popupSize(panel.value);
     const w = Math.min(p.width, Math.max(0, vw - 2 * pad)),
       h = Math.min(p.height, Math.max(0, vh - 2 * pad));
     let place = options.placement ?? "bottom-start";

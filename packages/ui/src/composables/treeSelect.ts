@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import type { CSSProperties, VNodeChild } from "vue";
 import {
   treeAssign,
@@ -61,6 +62,8 @@ export interface HysTreeSelectProps<
   N extends object = HysTreeSelectNode,
   V extends HysTreeSelectValue = HysTreeSelectValue,
 > {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   modelValue?: V;
   defaultValue?: V;
   nodes: readonly N[];

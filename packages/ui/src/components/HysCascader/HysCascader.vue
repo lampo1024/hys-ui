@@ -6,6 +6,8 @@
     N extends object = HysCascaderNode
   "
 >
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   nextTick,
@@ -789,7 +791,7 @@ defineExpose({
       :to="appendTo === false || inline ? 'body' : appendTo"
       :disabled="appendTo === false || inline"
     >
-      <div
+      <PopupMotion :disabled="inline" :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floating.placement.value"><div
         v-if="menuVisible"
         :id="id + '-panel'"
         ref="panel"
@@ -998,7 +1000,7 @@ defineExpose({
             ></slot
           >
         </footer>
-      </div>
+      </div></PopupMotion>
     </Teleport>
   </div>
 </template>

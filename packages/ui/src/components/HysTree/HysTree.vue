@@ -9,6 +9,8 @@
       : HysTreeKey
   "
 >
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   nextTick,
@@ -952,15 +954,12 @@ defineExpose({
         }}</slot>
       </div>
     </div>
-    <Teleport to="body"
-      ><template v-if="menu"
-        ><div
+    <Teleport to="body"><div v-if="menu"
           v-bind="attrs"
           class="hys-ui-tree-menu-backdrop"
           @click="closeMenu()"
           @contextmenu.prevent="closeMenu()"
-        />
-        <div
+        /><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" @inactive="closeMenu"><div v-if="menu"
           ref="menuPanel"
           v-bind="attrs"
           class="hys-ui-tree-context"
@@ -997,8 +996,7 @@ defineExpose({
               words.close
             }}</HysButton></slot
           >
-        </div></template
-      ></Teleport
+        </div></PopupMotion></Teleport
     >
   </div>
 </template>

@@ -1,4 +1,8 @@
 <script setup lang="ts" generic="T extends HysSliderValue = number">
+import type { HysPopupMotionProps } from '../../motion/popup';
+
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   inject,
@@ -35,7 +39,7 @@ import type {
 import { useHysRootAttrs } from "../../config";
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
-  defineProps<{
+  defineProps<HysPopupMotionProps & {
     modelValue?: T;
     defaultValue?: T;
     range?: boolean;
@@ -806,8 +810,8 @@ defineExpose({
                 :index="index"
                 :dragging="dragging && dragIndex === index"
             /></span>
-            <SliderTooltip
-              v-if="tooltipShown(index, item)"
+            <SliderTooltip :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration"
+              :visible="tooltipShown(index, item)"
               :id="controlId + '-tooltip-' + index"
               :anchor="thumbs[index]"
               :container="root"

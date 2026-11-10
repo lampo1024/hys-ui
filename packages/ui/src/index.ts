@@ -122,3 +122,4 @@ export type {HysDatePickerWeek,HysDateScalar,HysDatePickerValue,HysDateRangeValu
 export type {HysModalDragEffect,HysModalSectionSize,HysModalSizeName,HysModalBeforeClose,HysModalCloseReason,HysModalType,HysModalInitialFocus,HysModalActionContext,HysModalPosition,HysModalSize,HysModalProps,HysModalSlotContext,HysModalSlots,HysModalInstance} from './composables/modal'
 export {useHysModal,createHysModal} from './composables/useHysModal'
 export type {HysModalResult,HysModalOptions,HysModalHandle,HysModalConfig,HysModalApi,HysModalService,HysModalServiceConfig} from './composables/useHysModal'
+export type {HysPopupTransition,HysPopupMotionProps} from './motion/popup'

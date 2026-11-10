@@ -203,6 +203,13 @@ export function scopedDialogs(){const dialogs=useHysModal(),options:HysModalOpti
 export async function standaloneDialogs(){const dialogs=createHysModal({theme:'blue',motion:'off',defaults:{width:600}}),item=dialogs.info('Ready');item.update({content:'Done'});item.destroy();const result:HysModalResult=await item.closed;dialogs.dispose();return result.action}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {modalChecks} from './modal-types'\nvoid modalChecks\n")
+fs.writeFileSync(path.join(dir,'popup-motion-types.ts'),`import {h} from 'vue'
+import {HysSelect,HysAutocomplete,HysDatePicker,HysDateRangePicker,HysTooltip,HysPopover,HysAvatarGroup,HysTable,HysGantt,HysTreeSelect,HysCascader,type HysPopupMotionProps,type HysPopupTransition} from 'hys-ui'
+const transition:HysPopupTransition='slide-fade'
+const motion:HysPopupMotionProps={popupTransition:transition,popupTransitionDuration:240}
+export const popupChecks=[h(HysSelect,{options:[],...motion}),h(HysAutocomplete,{...motion}),h(HysDatePicker,{...motion}),h(HysDateRangePicker,{...motion}),h(HysTooltip,{text:'Help',...motion}),h(HysPopover,{...motion}),h(HysAvatarGroup,{options:[],...motion}),h(HysTable,{rows:[],columns:[],...motion}),h(HysGantt,{items:[],...motion}),h(HysTreeSelect,{nodes:[],...motion}),h(HysCascader,{options:[],...motion})]
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {popupChecks} from './popup-motion-types'\nvoid popupChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

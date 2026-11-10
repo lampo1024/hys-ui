@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import type { HysPopupMotionProps } from '../../motion/popup';
+
+import PopupMotion from '../../motion/PopupMotion';
+
 import {useHysControlState} from '../../composables/formContext'
 
 import {useHysRootAttrs} from '../../config'
@@ -8,12 +12,12 @@ import {computed, ref, watch} from 'vue'
 import {Check, ChevronDown} from 'lucide-vue-next'
 import {useFloating} from '../../composables/useFloating'
 
-const props = defineProps<{modelValue:string; disabled?:boolean; label?:string;presets?:string[];clearable?:boolean}>()
+const props = defineProps<HysPopupMotionProps & {modelValue:string; disabled?:boolean; label?:string;presets?:string[];clearable?:boolean}>()
 const {disabled:controlDisabled}=useHysControlState(props)
 
 const emit = defineEmits<{'update:modelValue':[value:string]}>()
 const trigger = ref<HTMLElement>(), panel = ref<HTMLElement>()
-const {open, style, show, close} = useFloating(trigger, panel)
+const {placement: popupPlacement, open, style, show, close} = useFloating(trigger, panel)
 const hue = ref(0), saturation = ref(0), brightness = ref(0)
 const draft = ref(props.modelValue)
 const valid = computed(() => !draft.value || /^#[0-9a-f]{6}$/i.test(draft.value))
@@ -121,7 +125,7 @@ watch(()=>controlDisabled.value,value=>{if(value)close()})
   </div>
   <small v-if="!valid" class="hys-ui-pf-color-error" role="alert">请输入 #RRGGBB 格式</small>
   <Teleport to="body">
-   <div v-bind="hysRootAttrs" v-if="open" ref="panel" class="hys-ui-v4-menu hys-ui-pf-color-panel" :style="style" role="dialog" :aria-label="label||'选择颜色'">
+   <PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="popupPlacement"><div v-bind="hysRootAttrs" v-if="open" ref="panel" class="hys-ui-v4-menu hys-ui-pf-color-panel" :style="style" role="dialog" :aria-label="label||'选择颜色'">
     <header><strong>选择颜色</strong><code>{{color.toUpperCase()}}</code></header>
     <div class="hys-ui-pf-color-palette" role="slider" tabindex="0" aria-label="饱和度与亮度" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(saturation)" :aria-valuetext="'饱和度 '+Math.round(saturation)+'%，亮度 '+Math.round(brightness)+'%'" :style="{backgroundColor:'hsl('+hue+',100%,50%)'}" @pointerdown="start($event,'palette')" @pointermove="drag($event,'palette')" @pointerup="end" @pointercancel="end" @keydown="keyboard($event,'palette')">
      <span class="hys-ui-pf-color-cursor" :style="{left:saturation+'%',top:(100-brightness)+'%',background:color}"/>
@@ -133,7 +137,7 @@ watch(()=>controlDisabled.value,value=>{if(value)close()})
      <button v-for="value in (props.presets||defaultPresets)" :key="value" type="button" :aria-label="value" :aria-pressed="color===value" :style="{background:value}" @click="preset(value)"><Check v-if="color===value" :size="13" :style="{color:value==='#ffffff'?'#172a4d':'white'}" aria-hidden="true"/></button>
     </div>
     <button v-if="clearable&&!controlDisabled&&modelValue" type="button" class="hys-ui-color-clear" @click="emit('update:modelValue','');close(true)">清空颜色</button><footer><span>方向键微调 · Shift 加速</span><button type="button" @click="close(true)">完成</button></footer>
-   </div>
+   </div></PopupMotion>
   </Teleport>
  </div>
 </template>

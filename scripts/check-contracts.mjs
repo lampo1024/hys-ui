@@ -30,4 +30,5 @@ assert.deepEqual(Object.keys(JSON.parse(read('apps/docs/src/component-capabiliti
 assert.equal(pkg.name,'hys-ui');assert.equal(pkg.license,'MIT');assert.equal(pkg.publishConfig.access,'public')
 assert(!pkg.dependencies.vue&&!pkg.dependencies['vue-router'])
 for(const name of ['HysModal','HysDrawer','HysPopover','HysTooltip'])assert(read(`${dir}/${name}/${name}.vue`).includes('Teleport'))
+for(const name of ["HysSelect","HysAutocomplete","HysTreeSelect","HysCascader","HysDatePicker","HysDateRangePicker","HysColorPicker","HysMention","HysPopover","HysTooltip","HysContextMenu","HysAvatarGroup","HysCalendar","HysGantt","HysTable","HysDataGrid","HysTree","HysSlider","HysCommandPalette","HysTour"]){const props=api[name].props.map(p=>p.name);assert(props.includes('popupTransition')&&props.includes('popupTransitionDuration'),name+' missing popup motion API');assert(fs.existsSync(path.join(root,'apps/docs/src/examples',name,'PopupMotion.vue')),name+' missing popup motion example')}
 console.log('PASS: component exports, dedicated pages, scenario coverage, source-backed API, style isolation and package contracts')

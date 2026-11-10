@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PopupMotion from '../../motion/PopupMotion';
+
 import {
   computed,
   inject,
@@ -758,7 +760,7 @@ defineExpose({
     ></slot>
   </div>
   <Teleport :to="appendTo || 'body'" :disabled="appendTo === false">
-    <div
+    <PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floating.placement.value"><div
       v-if="isOpen"
       :id="id + '-panel'"
       ref="panel"
@@ -874,7 +876,7 @@ defineExpose({
           :clear="clear"
         />
       </div>
-    </div>
+    </div></PopupMotion>
   </Teleport>
 </template>
 <style scoped>

@@ -1,3 +1,4 @@
+import type { HysPopupTransition } from '../motion/popup';
 import type { CSSProperties, HTMLAttributes, VNodeChild } from "vue";
 import type { Placement } from "./useFloating";
 export type HysTableKey = string | number;
@@ -171,6 +172,8 @@ export interface HysTableLocale {
   }>;
 }
 export interface HysTableProps<T extends object> {
+  popupTransition?: HysPopupTransition;
+  popupTransitionDuration?: number;
   locale?: Partial<HysTableLocale>;
   columns: readonly HysTableColumn<T>[];
   rows: readonly T[];

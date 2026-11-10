@@ -70,7 +70,8 @@
     "Sizes": "控件尺寸",
     "Length": "长度限制与计数",
     "Graphemes": "可见字符与自定义计数",
-    "Range": "范围选择与边界"
+    "Range": "范围选择与边界",
+    "PopupMotion": "浮层展开与收起动效"
   },
   "components": {
     "HysInput": {

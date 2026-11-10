@@ -241,7 +241,7 @@
 .hys-ui-pf-transfer .hys-ui-v4-option[draggable="true"]:active{cursor:grabbing}
 .hys-ui-pf-transfer .hys-ui-pf-transfer-grip{margin-left:auto;flex-shrink:0;color:var(--hys-ui-muted,var(--hys-ui-theme-muted));opacity:.45}
 .hys-ui-pf-transfer .hys-ui-is-dragging{opacity:.4}
-.hys-ui-pf-transfer .hys-ui-v4-pane.hys-ui-is-drop-target{border-color:var(--hys-ui-primary,var(--hys-ui-theme-primary));box-shadow:inset 0 0 0 1px var(--hys-ui-primary,var(--hys-ui-theme-primary));background:var(--hys-ui-primary-soft,var(--hys-ui-theme-primary-soft))}
+.hys-ui-pf-transfer .hys-ui-v4-pane.hys-ui-is-drop-target{border-color:var(--hys-ui-primary,var(--hys-ui-theme-primary));box-shadow:none;background:var(--hys-ui-primary-soft,var(--hys-ui-theme-primary-soft))}
 .hys-ui-pf-transfer .hys-ui-v4-pane.hys-ui-is-drop-target .hys-ui-pf-transfer-header{background:var(--hys-ui-primary-soft,var(--hys-ui-theme-primary-soft));color:var(--hys-ui-primary,var(--hys-ui-theme-primary))}
 .hys-ui-pf-transfer-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
@@ -262,3 +262,21 @@
 :where([data-hys-ui][data-hys-motion="off"],[data-hys-ui][data-hys-motion="off"] *){animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:0s!important;transition-delay:0s!important}
 @media(prefers-reduced-motion:reduce){:where([data-hys-ui],[data-hys-ui] *){animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:0s!important;transition-delay:0s!important}}
 :where([data-hys-ui] .lucide){flex-shrink:0;vertical-align:middle;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* Shared popup motion; only opacity/transform animate, positioning stays layout based. */
+.hys-ui-popup-motion{transform-origin:var(--hys-ui-popup-origin,top center)}
+.hys-ui-popup-motion.hys-ui-popup-scale-enter-active,.hys-ui-popup-motion.hys-ui-popup-scale-leave-active,.hys-ui-popup-motion.hys-ui-popup-fade-enter-active,.hys-ui-popup-motion.hys-ui-popup-fade-leave-active,.hys-ui-popup-motion.hys-ui-popup-slide-enter-active,.hys-ui-popup-motion.hys-ui-popup-slide-leave-active,.hys-ui-popup-motion.hys-ui-popup-slide-fade-enter-active,.hys-ui-popup-motion.hys-ui-popup-slide-fade-leave-active{transition:opacity var(--hys-ui-popup-duration,160ms) ease,transform var(--hys-ui-popup-duration,160ms) cubic-bezier(.22,1,.36,1)!important;will-change:opacity,transform}
+.hys-ui-popup-motion.hys-ui-popup-scale-enter-from,.hys-ui-popup-motion.hys-ui-popup-scale-leave-to{opacity:0!important;transform:scale(.96)!important}
+.hys-ui-popup-motion.hys-ui-popup-fade-enter-from,.hys-ui-popup-motion.hys-ui-popup-fade-leave-to{opacity:0!important}
+.hys-ui-popup-motion.hys-ui-popup-slide-enter-from,.hys-ui-popup-motion.hys-ui-popup-slide-leave-to{opacity:0!important;transform:translate(var(--hys-ui-popup-x,0px),var(--hys-ui-popup-y,-6px))!important}
+.hys-ui-popup-motion.hys-ui-popup-slide-fade-enter-from,.hys-ui-popup-motion.hys-ui-popup-slide-fade-leave-to{opacity:0!important;transform:translate(var(--hys-ui-popup-x,0px),var(--hys-ui-popup-y,-6px)) scale(.98)!important}
+.hys-ui-popup-motion[class*="-leave-active"]{pointer-events:none!important}
+:where([data-hys-motion="off"]).hys-ui-popup-motion.hys-ui-popup-motion{transition-duration:0s!important;transition-delay:0s!important}
+@media(prefers-reduced-motion:reduce){.hys-ui-popup-motion.hys-ui-popup-motion{transition-duration:0s!important;transition-delay:0s!important}}
+
+/* Dialog backdrops fade in place; only the command surface moves. */
+.hys-ui-popup-motion.hys-ui-popup-backdrop{transform:none!important}
+.hys-ui-popup-backdrop[class*="-enter-active"]>.hys-ui-v4-dialog,.hys-ui-popup-backdrop[class*="-leave-active"]>.hys-ui-v4-dialog{transition:transform var(--hys-ui-popup-duration,160ms) cubic-bezier(.22,1,.36,1);will-change:transform}
+.hys-ui-popup-backdrop.hys-ui-popup-scale-enter-from>.hys-ui-v4-dialog,.hys-ui-popup-backdrop.hys-ui-popup-scale-leave-to>.hys-ui-v4-dialog{transform:scale(.96)}
+.hys-ui-popup-backdrop.hys-ui-popup-slide-enter-from>.hys-ui-v4-dialog,.hys-ui-popup-backdrop.hys-ui-popup-slide-leave-to>.hys-ui-v4-dialog{transform:translateY(-6px)}
+.hys-ui-popup-backdrop.hys-ui-popup-slide-fade-enter-from>.hys-ui-v4-dialog,.hys-ui-popup-backdrop.hys-ui-popup-slide-fade-leave-to>.hys-ui-v4-dialog{transform:translateY(-6px) scale(.98)}

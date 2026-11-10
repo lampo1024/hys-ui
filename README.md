@@ -39,6 +39,20 @@ provideHysConfig({ theme, motion: 'subtle' })
 
 可以使用 `--hys-ui-primary`、`--hys-ui-surface`、`--hys-ui-text`、`--hys-ui-border`、`--hys-ui-font-family` 等公开变量覆盖组件外观。组件类名与变量采用独立前缀，没有 body/html 全局重置。
 
+
+浮层组件统一通过 `popupTransition` 设置展开与收起动效：`scale`（默认柔和缩放）、`fade`（淡入淡出）、`slide`（轻移）、`slide-fade`（轻移缩放）、`none`（关闭）。`popupTransitionDuration` 设置时长，默认 160ms，设为 0 立即切换。该配置适用于选择、日期、自动补全、提及、颜色、提示、菜单，以及表格、树形、头像组、日历事件和甘特图关系等浮层。Modal、Drawer 和 Toast 保留各自的动画配置。
+
+```vue
+<HysSelect
+  v-model="value"
+  :options="options"
+  popup-transition="slide-fade"
+  :popup-transition-duration="200"
+/>
+```
+
+系统减少动态效果和 `motion: 'off'` 优先于局部设置；内嵌日期面板不播放浮层动效。动画仅改变透明度和合成层变换，关闭时立即停止交互，退出完成后移除内容。
+
 ## 开发与文档
 
 ```bash

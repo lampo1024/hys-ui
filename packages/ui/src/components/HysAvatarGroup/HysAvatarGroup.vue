@@ -1,4 +1,6 @@
 <script lang="ts">
+import PopupMotion from '../../motion/PopupMotion';
+import type { HysPopupTransition } from '../../motion/popup';
 import {
   Comment,
   Fragment,
@@ -49,6 +51,8 @@ export default defineComponent({
   name: "HysAvatarGroup",
   inheritAttrs: false,
   props: {
+    popupTransition: String as PropType<HysPopupTransition>,
+    popupTransitionDuration: Number,
     options: Array as PropType<readonly HysAvatarOption[]>,
     size: [Number, String, Object] as PropType<HysAvatarSize>,
     shape: String as PropType<"circle" | "square">,
@@ -288,9 +292,7 @@ export default defineComponent({
               ],
             ),
           );
-        const popup =
-          floating.open.value && hidden.length && props.showOverflow
-            ? h(Teleport, { to: "body" }, [
+        const popup = h(Teleport, { to: "body" }, [h(PopupMotion, {popupTransition:props.popupTransition,popupTransitionDuration:props.popupTransitionDuration,placement:floating.placement.value}, {default:()=>floating.open.value && hidden.length && props.showOverflow ?
                 h(
                   "div",
                   {
@@ -325,9 +327,7 @@ export default defineComponent({
                         ],
                       ),
                     ),
-                ),
-              ])
-            : null;
+                ):null})]);
         return h(
           "div",
           mergeProps(hysRootAttrs.value, attrs, {
