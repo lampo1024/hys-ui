@@ -685,9 +685,11 @@ export const catalog=[
     "label": "抽屉",
     "slug": "hys-drawer",
     "category": "反馈浮层",
-    "description": "抽屉的独立交互示例、配置场景与类型参考。",
+    "description": "支持异步操作、容器布局、嵌套与边缘缩放的抽屉。",
     "notes": [
-      "支持 Escape 与遮罩关闭，页面缓存停用时清理全局监听。"
+      "保留原有 :open / @close 用法，同时支持 v-model:open、v-model 和非受控 defaultOpen。close 表示通过守卫的关闭请求；closed 表示退出完成。",
+      "beforeClose / beforeConfirm 接收 AbortSignal。宿主关闭、离开缓存页面或变更回调会撤销过期操作；异步函数应配合 signal 清理自己的资源。",
+      "resizable 从靠近页面中心的边缘调整尺寸，按帧预览并在释放时提交 resizeValue；受控拒绝会恢复原尺寸。contained 需要有定位的父容器。"
     ]
   },
   {

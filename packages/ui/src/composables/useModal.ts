@@ -23,6 +23,7 @@ export function useModal(
   props: HysModalProps,
   dialog: Ref<HTMLElement | undefined>,
   emit: (name: string, ...args: any[]) => void,
+  options: { interaction?: boolean } = {},
 ) {
   const model = useChoiceModel(
       {
@@ -86,7 +87,11 @@ export function useModal(
     shown,
     fullscreen,
     emit,
-    { beforeStart: cancelLayoutMotion, motion: () => motion.value },
+    {
+      beforeStart: cancelLayoutMotion,
+      motion: () => motion.value,
+      enabled: options.interaction !== false,
+    },
   );
   const alpha = (value: number) =>
     Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;

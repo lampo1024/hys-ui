@@ -22,7 +22,11 @@ export function useModalInteraction(
   visible: Readonly<Ref<boolean>>,
   fullscreen: Readonly<Ref<boolean>>,
   emit: (name: string, ...args: any[]) => void,
-  options: { beforeStart?: () => void; motion?: () => boolean } = {},
+  options: {
+    beforeStart?: () => void;
+    motion?: () => boolean;
+    enabled?: boolean;
+  } = {},
 ) {
   const position = shallowRef<HysModalPosition>({ x: 0, y: 0 }),
     dimensions = shallowRef<HysModalSize>(),
@@ -609,6 +613,7 @@ export function useModalInteraction(
   }
   function clampViewport() {
     if (
+      options.enabled === false ||
       !live ||
       !visible.value ||
       fullscreen.value ||
@@ -671,7 +676,10 @@ export function useModalInteraction(
       ) ?? []),
     ];
   }
-  onMounted(() => window.addEventListener("resize", resizeViewport));
+  onMounted(() => {
+    if (options.enabled !== false)
+      window.addEventListener("resize", resizeViewport);
+  });
   onDeactivated(cleanup);
   onBeforeUnmount(cleanup);
   return {
@@ -697,7 +705,8 @@ export function useModalInteraction(
     clampViewport,
     activate() {
       live = true;
-      window.addEventListener("resize", resizeViewport);
+      if (options.enabled !== false)
+        window.addEventListener("resize", resizeViewport);
     },
   };
 }

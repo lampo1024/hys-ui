@@ -236,6 +236,15 @@ function selected(value:string,info:HysMenuSelectInfo<{label:string;value:string
 function mapped(value:HysMenuKey,info:HysMenuSelectInfo<{code:number;title:string}>){void [value,info.item.code]}
 </script><template><HysContextMenu ref="menu" :items="items" @select="selected"><HysButton>Actions</HysButton></HysContextMenu><HysContextMenu :items="raw" :field-names="{value:'code',label:'title'}" @select="mapped"><HysButton>Mapped actions</HysButton></HysContextMenu></template>`)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport MenuFixture from './menu-fixture.vue'\nvoid MenuFixture\n")
+fs.writeFileSync(path.join(dir,'drawer-types.ts'),`import {h,ref} from 'vue'
+import {HysDrawer,type HysDrawerProps,type HysDrawerInstance,type HysDrawerPlacement,type HysDrawerBeforeClose,type HysDrawerActionContext,type HysDrawerResizeInfo} from 'hys-ui'
+const placement:HysDrawerPlacement='left',guard:HysDrawerBeforeClose=(reason:'mask'|'escape'|'button')=>reason!=='escape'
+const props:HysDrawerProps={placement,size:'lg',width:560,footer:true,contained:true,appendTo:false,resizable:{minSize:'25%',maxSize:800,step:10},push:{distance:120},transition:'slide-fade',beforeClose:guard,beforeConfirm:async(context:HysDrawerActionContext)=>!context.signal.aborted}
+export const drawerChecks=h(HysDrawer,{...props,ref:ref<HysDrawerInstance>(),onResizeEnd:(size:number,info:HysDrawerResizeInfo)=>void [size,info.accepted],onClose:()=>{}})
+export function actualDrawer(instance:InstanceType<typeof HysDrawer>):HysDrawerInstance{return instance}
+export async function operateDrawer(instance:HysDrawerInstance){await instance.show();await instance.resizeTo('65%');await instance.resetSize();await instance.toggleFullscreen();await instance.setFullscreen(false);await instance.close('api');return instance.body}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {drawerChecks} from './drawer-types'\nvoid drawerChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

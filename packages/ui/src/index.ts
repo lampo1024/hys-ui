@@ -125,4 +125,5 @@ export type {HysModalDragEffect,HysModalSectionSize,HysModalSizeName,HysModalBef
 export {useHysModal,createHysModal} from './composables/useHysModal'
 export type {HysModalResult,HysModalOptions,HysModalHandle,HysModalConfig,HysModalApi,HysModalService,HysModalServiceConfig} from './composables/useHysModal'
 export type {HysMenuKey,HysContextMenuTrigger,HysContextMenuItem,HysMenuFieldNames,HysMenuSelectInfo,HysMenuShowOptions,HysContextMenuProps,HysContextMenuInstance,HysMenuItemContext,HysContextMenuSlots} from './composables/menu'
+export type {HysDrawerProps,HysDrawerBeforeClose,HysDrawerPlacement,HysDrawerSizeName,HysDrawerCloseReason,HysDrawerActionContext,HysDrawerInitialFocus,HysDrawerSectionSize,HysDrawerResizeOptions,HysDrawerResizeInfo,HysDrawerPushOptions,HysDrawerSlotContext,HysDrawerSlots,HysDrawerInstance} from './composables/drawer'
 export type {HysPopupTransition,HysPopupMotionProps} from './motion/popup'

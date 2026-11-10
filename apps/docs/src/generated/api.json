@@ -7343,35 +7343,363 @@
   "HysDrawer": {
     "props": [
       {
-        "name": "open",
-        "type": "boolean",
-        "required": true,
+        "name": "beforeClose",
+        "type": "((reason: HysModalCloseReason, context: HysModalActionContext) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
         "default": "",
-        "description": "控制浮层显示",
+        "description": "所有交互关闭入口的守卫 (reason,context)；外部状态变化不调用",
+        "global": false
+      },
+      {
+        "name": "beforeConfirm",
+        "type": "((context: HysModalActionContext) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "确认守卫 (context)；支持 Promise、false 拦截与失败重试",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "HysDrawerPlacement | undefined",
+        "required": false,
+        "default": "\"right\"",
+        "description": "left / right（默认）/ top / bottom，进入和退出动画同步方向",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "number | (string & {}) | HysDrawerSizeName | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "xs / sm / md（默认 520px）/ lg / xl / full，或数值、CSS 长度；width/height 优先",
+        "global": false
+      },
+      {
+        "name": "drawerClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加到抽屉面板的类名",
+        "global": false
+      },
+      {
+        "name": "drawerStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "面板装饰样式，尺寸由组件维护",
+        "global": false
+      },
+      {
+        "name": "overlayStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "外层容器样式，层级由组件维护",
+        "global": false
+      },
+      {
+        "name": "bodyTabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "正文滚动区 tabindex，默认 0，便于键盘滚动",
+        "global": false
+      },
+      {
+        "name": "contained",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用定位父容器的空间；默认不全局锁定滚动或约束焦点，通常与 appendTo=false 一起使用",
+        "global": false
+      },
+      {
+        "name": "withHeader",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示标题区域，默认 true；false 时保留独立关闭入口",
+        "global": false
+      },
+      {
+        "name": "autofocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "打开时自动聚焦，默认 true；false 优先于 initialFocus",
+        "global": false
+      },
+      {
+        "name": "transition",
+        "type": "false | \"fade\" | \"slide\" | \"slide-fade\" | \"none\" | undefined",
+        "required": false,
+        "default": "\"slide\"",
+        "description": "slide（默认）、fade、slide-fade、none 或 false",
+        "global": false
+      },
+      {
+        "name": "push",
+        "type": "boolean | HysDrawerPushOptions | undefined",
+        "required": false,
+        "default": "",
+        "description": "外层抽屉在子抽屉打开时推移；默认 false，true 为 160px，或 {distance} 像素/CSS 长度",
+        "global": false
+      },
+      {
+        "name": "resizable",
+        "type": "boolean | HysDrawerResizeOptions | undefined",
+        "required": false,
+        "default": "",
+        "description": "启用内侧边缘缩放，默认 false；可传 {minSize,maxSize,step}，长度支持像素或百分比，默认 160px 至容器上限、键盘步长 10px",
+        "global": false
+      },
+      {
+        "name": "resizeValue",
+        "type": "number | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控缩放后的像素长度；null 跟随 width/height/size，释放时提交一次",
+        "global": false
+      },
+      {
+        "name": "defaultResizeValue",
+        "type": "number | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控初始缩放长度，默认 null 跟随尺寸参数",
+        "global": false
+      },
+      {
+        "name": "resetSizeOnClose",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "关闭后还原非受控缩放尺寸，默认 true；受控值始终由宿主管理",
+        "global": false
+      },
+      {
+        "name": "resizeText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "边缘缩放手柄的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控显示别名，支持 v-model",
         "global": false
       },
       {
         "name": "title",
-        "type": "string",
-        "required": true,
-        "default": "",
-        "description": "标题",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "默认标题及辅助技术名称",
         "global": false
       },
       {
-        "name": "width",
+        "name": "description",
         "type": "string | undefined",
         "required": false,
-        "default": "\"520px\"",
-        "description": "",
+        "default": "",
+        "description": "正文前的说明，同时关联 aria-describedby",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载占位并保留正文；暂停确认",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "抽屉辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控显示值，优先于 modelValue；保留 :open / @close 用法",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始显示状态",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "挂载目标，默认 body；false 保留原地，定位范围由 contained 决定",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"正在加载…\"",
+        "description": "默认加载说明",
+        "global": false
+      },
+      {
+        "name": "errorText",
+        "type": "string | ((error: unknown, action: \"close\" | \"confirm\") => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义失败文字或 (error,action) 格式器，默认安全通用提示",
+        "global": false
+      },
+      {
+        "name": "footer",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "true 使用内置取消/确认，false 隐藏；未提供时仅在存在 footer 插槽时显示",
+        "global": false
+      },
+      {
+        "name": "role",
+        "type": "\"dialog\" | \"alertdialog\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "dialog 或重要提示使用 alertdialog",
+        "global": false
+      },
+      {
+        "name": "closeText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"关闭\"",
+        "description": "关闭按钮的辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "fullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控全屏状态，支持 v-model:fullscreen",
+        "global": false
+      },
+      {
+        "name": "transitionDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "240",
+        "description": "进入、退出与布局过渡时长，默认 240ms；0 立即切换",
+        "global": false
+      },
+      {
+        "name": "bodyStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "正文样式",
+        "global": false
+      },
+      {
+        "name": "headerStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题样式",
+        "global": false
+      },
+      {
+        "name": "footerStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "操作区样式",
+        "global": false
+      },
+      {
+        "name": "bodyClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "正文区域类名",
+        "global": false
+      },
+      {
+        "name": "headerClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题区域类名",
+        "global": false
+      },
+      {
+        "name": "footerClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "底部区域类名",
         "global": false
       },
       {
         "name": "height",
-        "type": "string | undefined",
+        "type": "string | number | undefined",
         "required": false,
         "default": "",
-        "description": "顶部、底部抽屉高度；未设置时使用 width",
+        "description": "顶部/底部的高度，数值像素或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "横向宽度，数值像素或 CSS 长度；纵向未传 height 时使用此值",
+        "global": false
+      },
+      {
+        "name": "opacity",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "抽屉背景透明度 0–1，默认 1；不影响文字与控件，越界值会限制",
+        "global": false
+      },
+      {
+        "name": "maskOpacity",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "遮罩透明度 0–1；未传使用默认样式，modal=false 时不显示遮罩",
+        "global": false
+      },
+      {
+        "name": "defaultFullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始全屏状态",
+        "global": false
+      },
+      {
+        "name": "showFullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示全屏与还原操作",
         "global": false
       },
       {
@@ -7379,7 +7707,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "点击遮罩是否关闭",
+        "description": "完整点击遮罩手势关闭；从正文拖到遮罩不会关闭",
         "global": false
       },
       {
@@ -7387,7 +7715,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "Escape 关闭最上层抽屉，默认 true；拖动中先撤销本次手势",
         "global": false
       },
       {
@@ -7395,7 +7723,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "显示右上角关闭按钮",
         "global": false
       },
       {
@@ -7403,87 +7731,617 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "退出完成后销毁内容，默认 true",
         "global": false
       },
       {
-        "name": "fullscreen",
+        "name": "forceRender",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "提前挂载并保留内容，优先于 destroyOnClose",
         "global": false
       },
       {
-        "name": "placement",
-        "type": "\"right\" | \"left\" | \"top\" | \"bottom\" | undefined",
+        "name": "modal",
+        "type": "boolean | undefined",
         "required": false,
-        "default": "\"right\"",
-        "description": "",
+        "default": "true",
+        "description": "显示遮罩，默认 true",
         "global": false
       },
       {
-        "name": "beforeClose",
-        "type": "((reason: \"button\" | \"mask\" | \"escape\") => boolean | void | Promise<boolean | void>) | undefined",
+        "name": "modalPenetrable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "modal=false 时允许操作背景，默认解除滚动锁和焦点限制",
+        "global": false
+      },
+      {
+        "name": "lockScroll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "锁定背景滚动并补偿滚动条；默认模态时开启",
+        "global": false
+      },
+      {
+        "name": "trapFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "在抽屉内循环键盘焦点；默认模态时开启",
+        "global": false
+      },
+      {
+        "name": "restoreFocus",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "关闭后恢复打开前的焦点，默认 true",
+        "global": false
+      },
+      {
+        "name": "initialFocus",
+        "type": "HysModalInitialFocus | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "auto / dialog / confirm / cancel / 选择器 / 元素 / false",
+        "global": false
+      },
+      {
+        "name": "openDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "打开延迟毫秒；状态改变取消等待",
+        "global": false
+      },
+      {
+        "name": "closeDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "关闭延迟毫秒；重新打开取消等待",
+        "global": false
+      },
+      {
+        "name": "zIndex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "层级起点；嵌套层与内部浮层始终高于当前层",
+        "global": false
+      },
+      {
+        "name": "headerSize",
+        "type": "HysModalSectionSize | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "标题区 sm / md / lg，默认 md",
+        "global": false
+      },
+      {
+        "name": "footerSize",
+        "type": "HysModalSectionSize | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "底部区及内置按钮 sm / md / lg，默认 md",
+        "global": false
+      },
+      {
+        "name": "headerHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "标题区最小高度，数值像素或 CSS 长度；内容可自然撑开",
+        "global": false
+      },
+      {
+        "name": "footerHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "操作区最小高度，内容可自然撑开",
+        "global": false
+      },
+      {
+        "name": "titleFontSize",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认标题字号，数值像素或 CSS 长度，优先于 headerSize",
+        "global": false
+      },
+      {
+        "name": "overlayClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "外层容器的附加类名",
+        "global": false
+      },
+      {
+        "name": "maskStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立遮罩样式，不影响面板与正文",
+        "global": false
+      },
+      {
+        "name": "ariaLabelledby",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联自定义标题元素 id",
+        "global": false
+      },
+      {
+        "name": "ariaDescribedby",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联说明元素 id",
+        "global": false
+      },
+      {
+        "name": "headerAriaLevel",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2",
+        "description": "默认标题级别 1–6，默认 2",
+        "global": false
+      },
+      {
+        "name": "fullscreenText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"全屏\"",
+        "description": "全屏操作名称",
+        "global": false
+      },
+      {
+        "name": "restoreText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"还原\"",
+        "description": "还原操作名称",
+        "global": false
+      },
+      {
+        "name": "footerAlign",
+        "type": "\"center\" | \"start\" | \"end\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "底部操作 start / center / end，默认 end",
+        "global": false
+      },
+      {
+        "name": "showCancel",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "内置操作区显示取消按钮，默认 true",
+        "global": false
+      },
+      {
+        "name": "okText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"确定\"",
+        "description": "内置确认文字，默认 确定",
+        "global": false
+      },
+      {
+        "name": "cancelText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"取消\"",
+        "description": "内置取消文字，默认 取消",
+        "global": false
+      },
+      {
+        "name": "okVariant",
+        "type": "HysButtonVariant | undefined",
+        "required": false,
+        "default": "",
+        "description": "确认按钮外观，默认 primary，危险操作可用 danger",
+        "global": false
+      },
+      {
+        "name": "okButtonProps",
+        "type": "HysButtonProps | undefined",
+        "required": false,
+        "default": "",
+        "description": "内置确认按钮配置，组件等待/禁用状态优先",
+        "global": false
+      },
+      {
+        "name": "cancelButtonProps",
+        "type": "HysButtonProps | undefined",
+        "required": false,
+        "default": "",
+        "description": "内置取消按钮配置",
+        "global": false
+      },
+      {
+        "name": "confirmLoading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "外部确认等待状态，不代替 beforeConfirm 的 Promise",
+        "global": false
+      },
+      {
+        "name": "confirmDisabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止确认按钮及实例/快捷键确认",
+        "global": false
+      },
+      {
+        "name": "cancelDisabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止取消按钮及实例 cancel，不影响其他关闭入口",
+        "global": false
+      },
+      {
+        "name": "closeWhileConfirming",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "确认等待时允许取消，旧任务信号会被中止",
+        "global": false
+      },
+      {
+        "name": "showError",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示守卫错误提示，默认 true",
+        "global": false
+      },
+      {
+        "name": "confirmOnCtrlEnter",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "Ctrl / Cmd + Enter 快捷确认，跳过输入法组合",
+        "global": false
+      },
+      {
+        "name": "closeOnConfirm",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "确认后请求关闭，默认 true，false 允许重复操作",
         "global": false
       }
     ],
     "events": [
       {
+        "name": "update:modelValue",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
         "name": "close",
         "type": "[]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "关闭守卫通过后通知；不代表退出动画结束"
       },
       {
-        "name": "closeError",
-        "type": "[error: unknown]",
+        "name": "open",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "开始打开"
+      },
+      {
+        "name": "resize",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": "缩放预览：像素长度；指针事件按动画帧合并"
+      },
+      {
+        "name": "update:open",
+        "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": ""
+      },
+      {
+        "name": "visibleChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际显示状态变化"
+      },
+      {
+        "name": "cancel",
+        "type": "[context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "取消/关闭守卫通过，接收操作原因和信号"
+      },
+      {
+        "name": "ok",
+        "type": "[context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "确认守卫通过，接收操作上下文"
+      },
+      {
+        "name": "update:fullscreen",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": ""
+      },
+      {
+        "name": "update:resizeValue",
+        "type": "[value: number | null]",
+        "required": false,
+        "default": "",
+        "description": "释放缩放或实例调用后请求新像素长度，null 还原参数布局"
+      },
+      {
+        "name": "opened",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "进入完成"
+      },
+      {
+        "name": "closed",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "退出、清理与焦点恢复完成"
+      },
+      {
+        "name": "afterClose",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "closed 的完成别名"
+      },
+      {
+        "name": "afterOpenChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "进入或退出完成：boolean；opened/closed 的合并通知"
+      },
+      {
+        "name": "fullscreenChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受新的全屏状态"
+      },
+      {
+        "name": "closeError",
+        "type": "[error: unknown, context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "关闭守卫失败，接收 error 与 context"
+      },
+      {
+        "name": "confirmError",
+        "type": "[error: unknown, context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "确认守卫失败，接收 error 与 context"
+      },
+      {
+        "name": "openAutoFocus",
+        "type": "[event: Event]",
+        "required": false,
+        "default": "",
+        "description": "打开自动聚焦前的可取消 Event"
+      },
+      {
+        "name": "closeAutoFocus",
+        "type": "[event: Event]",
+        "required": false,
+        "default": "",
+        "description": "恢复焦点前的可取消 Event"
+      },
+      {
+        "name": "resizeStart",
+        "type": "[size: number]",
+        "required": false,
+        "default": "",
+        "description": "开始缩放：原始像素长度"
+      },
+      {
+        "name": "resizeEnd",
+        "type": "[size: number, info: HysDrawerResizeInfo]",
+        "required": false,
+        "default": "",
+        "description": "缩放结束：(像素长度, {placement,cancelled,accepted})，宿主拒绝时恢复原值"
       }
     ],
     "slots": [
       {
-        "name": "header",
-        "type": "{}",
+        "name": "default",
+        "type": "HysDrawerSlotContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "正文，接收 close/cancel/confirm、busy、error、titleId、fullscreen、resizing、size、resetSize、pushed 等上下文"
       },
       {
-        "name": "default",
-        "type": "{}",
+        "name": "header",
+        "type": "HysDrawerSlotContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义标题内容；将 titleId 绑定到实际标题，关闭与额外操作仍保留"
+      },
+      {
+        "name": "title",
+        "type": "HysDrawerSlotContext",
+        "required": false,
+        "default": "",
+        "description": "默认标题内部内容，保留外层标题及关联 ID"
+      },
+      {
+        "name": "extra",
+        "type": "HysDrawerSlotContext",
+        "required": false,
+        "default": "",
+        "description": "标题右侧的额外操作，接收完整上下文"
       },
       {
         "name": "footer",
-        "type": "{ close: (reason?: \"button\" | \"mask\" | \"escape\") => Promise<void>; closing: boolean; }",
+        "type": "HysDrawerSlotContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "自定义固定操作区，优先于内置按钮"
+      },
+      {
+        "name": "loading",
+        "type": "HysDrawerSlotContext",
+        "required": false,
+        "default": "",
+        "description": "加载状态内容"
+      },
+      {
+        "name": "close-icon",
+        "type": "HysDrawerSlotContext",
+        "required": false,
+        "default": "",
+        "description": "关闭按钮图标"
+      },
+      {
+        "name": "fullscreen-icon",
+        "type": "HysDrawerSlotContext",
+        "required": false,
+        "default": "",
+        "description": "全屏/还原图标"
       }
     ],
     "exposed": [
-      {
-        "name": "close",
-        "type": "(reason?: \"button\" | \"mask\" | \"escape\") => Promise<void>",
-        "required": false,
-        "default": "",
-        "description": ""
-      },
       {
         "name": "element",
         "type": "HTMLElement | undefined",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际抽屉面板"
+      },
+      {
+        "name": "body",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立滚动的正文元素"
+      },
+      {
+        "name": "closing",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": "关闭守卫或退出中"
+      },
+      {
+        "name": "confirming",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": "确认处理中"
+      },
+      {
+        "name": "resizing",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": "是否正在进行指针缩放"
+      },
+      {
+        "name": "pushed",
+        "type": "boolean",
+        "required": false,
+        "default": "false",
+        "description": "子抽屉导致当前抽屉推移的状态"
+      },
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "聚焦首个可用元素"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求展开，返回是否接受"
+      },
+      {
+        "name": "close",
+        "type": "(reasonOrEvent?: Event | HysModalCloseReason, event?: Event | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "按原因请求关闭，原有 close() 调用保持可用"
+      },
+      {
+        "name": "hide",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "以 api 原因请求关闭"
+      },
+      {
+        "name": "cancel",
+        "type": "(event?: Event | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "以 cancel 原因请求关闭"
+      },
+      {
+        "name": "confirm",
+        "type": "(event?: Event | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求确认，返回 Promise<boolean>"
+      },
+      {
+        "name": "setFullscreen",
+        "type": "(value: boolean) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求全屏状态"
+      },
+      {
+        "name": "toggleFullscreen",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "切换全屏并遵守受控状态"
+      },
+      {
+        "name": "resizeTo",
+        "type": "(value: string | number) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求调整像素/百分比长度，遵守边界与受控模型，返回 Promise<boolean>"
+      },
+      {
+        "name": "resetSize",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求清除缩放值并跟随参数长度；受控模式发送 null 请求"
       }
     ]
   },
@@ -10462,13 +11320,6 @@
         "description": "确认守卫通过，接收操作上下文"
       },
       {
-        "name": "closeError",
-        "type": "[error: unknown, context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "关闭守卫失败，接收 error 与 context"
-      },
-      {
         "name": "update:fullscreen",
         "type": "[value: boolean]",
         "required": false,
@@ -10504,6 +11355,13 @@
         "description": "宿主接受新的全屏状态"
       },
       {
+        "name": "closeError",
+        "type": "[error: unknown, context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "关闭守卫失败，接收 error 与 context"
+      },
+      {
         "name": "confirmError",
         "type": "[error: unknown, context: HysModalActionContext]",
         "required": false,
@@ -10525,20 +11383,6 @@
         "description": "恢复焦点前的可取消 Event"
       },
       {
-        "name": "dragStart",
-        "type": "[position: HysModalPosition]",
-        "required": false,
-        "default": "",
-        "description": "标题开始移动，接收位置"
-      },
-      {
-        "name": "dragEnd",
-        "type": "[position: HysModalPosition, info: { cancelled: boolean; }]",
-        "required": false,
-        "default": "",
-        "description": "移动结束：position、{cancelled}"
-      },
-      {
         "name": "resizeStart",
         "type": "[size: HysModalSize]",
         "required": false,
@@ -10551,6 +11395,20 @@
         "required": false,
         "default": "",
         "description": "尺寸调整结束：size、{cancelled}"
+      },
+      {
+        "name": "dragStart",
+        "type": "[position: HysModalPosition]",
+        "required": false,
+        "default": "",
+        "description": "标题开始移动，接收位置"
+      },
+      {
+        "name": "dragEnd",
+        "type": "[position: HysModalPosition, info: { cancelled: boolean; }]",
+        "required": false,
+        "default": "",
+        "description": "移动结束：position、{cancelled}"
       }
     ],
     "slots": [

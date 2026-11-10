@@ -533,6 +533,27 @@
       "Truncate": "尺寸与长文本",
       "Custom": "自定义内容与导航操作",
       "States": "禁用与边界状态"
+    },
+    "HysDrawer": {
+      "Basic": "基础抽屉与关闭",
+      "Configure": "方向与交互配置",
+      "Sizes": "内置尺寸与自定义长度",
+      "Sections": "标题区与操作区布局",
+      "Overflow": "长内容与固定操作区",
+      "Async": "异步保存与失败重试",
+      "Form": "表单校验与快捷提交",
+      "Guard": "未保存修改与关闭拦截",
+      "Controlled": "受控显示与原有事件",
+      "Lifecycle": "内容挂载与生命周期",
+      "Contained": "容器内展示",
+      "Nested": "嵌套抽屉与平滑推移",
+      "Resize": "边缘缩放与受控尺寸",
+      "Layout": "全屏切换与还原",
+      "Appearance": "背景透明度与穿透",
+      "Focus": "焦点与键盘导航",
+      "Custom": "自定义标题与操作",
+      "Motion": "方向动画与时长",
+      "States": "加载与受限状态"
     }
   }
 }
