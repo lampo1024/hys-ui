@@ -274,6 +274,19 @@ void methods
 async function transformUpload(raw:File){return new File([await raw.text()," converted"],"converted.txt",{type:"text/plain"})}
 </script><template><HysUpload ref="api" v-model:file-list="local" v-bind="props" @change="changed" @file-change="detailed"><template #trigger="{disabled,open}"><HysButton :disabled="disabled" @click.stop="open">Choose</HysButton></template><template #item="{file,actions}"><HysButton @click="actions.remove()">{{file.raw.name}}</HysButton></template></HysUpload><HysUpload v-model:file-list="remote" :before-remove="file=>file.uid!=='locked'"/><HysUpload v-model:file-list="business" :create-file="createFile"><template #file="{file}">{{file.documentId}}</template></HysUpload><HysUpload aria-label="Protocol upload" action="/upload-protocol" method="PUT" name="attachment" :headers="{'X-Upload-Test':'consumer'}" :data="{tags:['one','two'],document:7}" :before-upload="transformUpload" /></template>`)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport UploadFixture from './upload-fixture.vue'\nconst uploadHost=document.createElement('section');uploadHost.id='upload-fixture';document.body.append(uploadHost);createApp(UploadFixture).mount(uploadHost)\n")
+fs.writeFileSync(path.join(dir,'progress-fixture.vue'),`<script setup lang="ts">
+import {h,ref} from 'vue'
+import {HysProgress,HysButton,provideHysConfig,type HysProgressProps,type HysProgressInstance,type HysProgressColor,type HysProgressGradient,type HysProgressColorStop,type HysProgressLabelContext,type HysMotion} from 'hys-ui'
+const value=ref(42),motion=ref<HysMotion>('subtle'),api=ref<HysProgressInstance>()
+provideHysConfig({theme:'green',motion})
+const gradient:HysProgressGradient={from:'#06b6d4',to:'#8b5cf6',direction:90,stops:[{offset:50,color:'#3867f5'}]}
+const thresholds:readonly HysProgressColorStop[]=[{value:30,color:'red'},{value:100,color:'green'}]
+const strategy:HysProgressColor=(value:number)=>value>50?'green':'orange'
+const config:HysProgressProps={value:50,type:'dashboard',success:{value:20,color:gradient},gapPosition:'left',steps:12,strokeLinecap:'butt',ariaValueText:(context:HysProgressLabelContext)=>context.value+' percent',format:(value,success)=>h('strong',success+' of '+value)}
+function actual(instance:InstanceType<typeof HysProgress>):HysProgressInstance{return instance}
+void [thresholds,strategy,config,actual]
+</script><template><div style="display:grid;gap:20px;max-width:500px;padding:20px"><HysButton @click="value=value===42?78:42">Update progress</HysButton><HysButton @click="motion=motion==='off'?'subtle':'off'">Toggle progress motion</HysButton><HysProgress ref="api" :value="value" :success="{value:20}" :color="gradient" aria-label="Installed line"/><HysProgress :value="value" type="circle" :color="gradient" aria-label="Installed circle"><template #default="{value,successValue}">{{value.toFixed(0)}} / {{successValue}}</template></HysProgress><HysProgress :value="value" type="dashboard" :steps="12" aria-label="Installed dashboard"/><HysProgress :value="0" indeterminate aria-label="Installed waiting" :format="()=>'Working'"/></div></template>`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport ProgressFixture from './progress-fixture.vue'\nconst progressHost=document.createElement('section');progressHost.id='progress-fixture';document.body.append(progressHost);createApp(ProgressFixture).mount(progressHost)\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

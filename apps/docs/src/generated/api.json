@@ -12875,7 +12875,7 @@
         "type": "number",
         "required": true,
         "default": "",
-        "description": "显示或计算用数值",
+        "description": "必填百分比，范围 0–100；非有限数值归零",
         "global": false
       },
       {
@@ -12883,55 +12883,55 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "true",
-        "description": "",
+        "description": "显示文字与图标，默认 true",
         "global": false
       },
       {
         "name": "color",
-        "type": "string | undefined",
+        "type": "HysProgressColor | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "颜色、百分比回调、阈值数组、字符串调色板或渐变配置；详见颜色与渐变示例",
         "global": false
       },
       {
         "name": "status",
-        "type": "\"success\" | \"warning\" | \"error\" | \"normal\" | undefined",
+        "type": "HysProgressStatus | undefined",
         "required": false,
         "default": "\"normal\"",
-        "description": "",
+        "description": "normal / active / success / warning / error，默认 normal；不根据数值自动切换",
         "global": false
       },
       {
         "name": "strokeWidth",
         "type": "number | undefined",
         "required": false,
-        "default": "7",
-        "description": "",
+        "default": "7（md）",
+        "description": "轨道粗细：线形为 px，环形按 100×100 坐标；未指定时跟随 size",
         "global": false
       },
       {
         "name": "type",
-        "type": "\"circle\" | \"line\" | undefined",
+        "type": "HysProgressType | undefined",
         "required": false,
         "default": "\"line\"",
-        "description": "",
+        "description": "line / circle / dashboard；默认 line",
         "global": false
       },
       {
         "name": "width",
-        "type": "number | undefined",
+        "type": "string | number | undefined",
         "required": false,
-        "default": "100",
-        "description": "",
+        "default": "100（md，环形）",
+        "description": "环形宽度，数字为 px 或 CSS 长度；未指定时跟随 size",
         "global": false
       },
       {
         "name": "format",
-        "type": "((value: number) => string) | undefined",
+        "type": "((value: number, successValue: number) => VNodeChild) | undefined",
         "required": false,
         "default": "",
-        "description": "",
+        "description": "格式化 (value, successValue)，支持文字或 VNode；default 插槽优先",
         "global": false
       },
       {
@@ -12939,7 +12939,159 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "",
+        "description": "未知总量模式，省略 aria-valuenow，使用连续轨道",
+        "global": false
+      },
+      {
+        "name": "size",
+        "type": "HysProgressSize | undefined",
+        "required": false,
+        "default": "\"md\"",
+        "description": "sm / md / lg，统一默认粗细、环形宽度与文字；默认 md",
+        "global": false
+      },
+      {
+        "name": "textInside",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "文字放在线形轨道内，未指定粗细时自动增加高度；显式轨道过细时放到外侧",
+        "global": false
+      },
+      {
+        "name": "textColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖文字颜色，不影响轨道",
+        "global": false
+      },
+      {
+        "name": "precision",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认文字的小数位数，0–6；不设置时保留原有数值精度",
+        "global": false
+      },
+      {
+        "name": "showStatusIcon",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示可用的状态图标或 icon 插槽，默认 false；保留百分比文字",
+        "global": false
+      },
+      {
+        "name": "trailColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "未完成的轨道颜色",
+        "global": false
+      },
+      {
+        "name": "strokeLinecap",
+        "type": "HysProgressLinecap | undefined",
+        "required": false,
+        "default": "\"round\"",
+        "description": "round / butt / square，默认 round",
+        "global": false
+      },
+      {
+        "name": "success",
+        "type": "HysProgressSuccess | undefined",
+        "required": false,
+        "default": "",
+        "description": "已确认部分 {value,color?}，限制到整体进度之内",
+        "global": false
+      },
+      {
+        "name": "steps",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "分段数量，0 使用连续轨道，最大 200；三种形状均支持",
+        "global": false
+      },
+      {
+        "name": "stepGap",
+        "type": "number | undefined",
+        "required": false,
+        "default": "3",
+        "description": "分段间隙，线形 px、环形 SVG 单位；圆角会补偿端点长度，过密时自动收窄",
+        "global": false
+      },
+      {
+        "name": "gapDegree",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0（circle）/ 75（dashboard）",
+        "description": "环形缺口角度 0–295；circle 默认 0，dashboard 默认 75",
+        "global": false
+      },
+      {
+        "name": "gapPosition",
+        "type": "HysProgressGapPosition | undefined",
+        "required": false,
+        "default": "\"bottom\"",
+        "description": "缺口位置 top / right / bottom / left，默认 bottom",
+        "global": false
+      },
+      {
+        "name": "striped",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "线形使用条纹填充",
+        "global": false
+      },
+      {
+        "name": "stripedFlow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "条纹流动；配合 striped 使用",
+        "global": false
+      },
+      {
+        "name": "animated",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "启用数值过渡与循环动效，默认 true；系统减少动态效果和全局 off 优先",
+        "global": false
+      },
+      {
+        "name": "duration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "250",
+        "description": "数值过渡时长，0–5000ms，默认 250",
+        "global": false
+      },
+      {
+        "name": "flowDuration",
+        "type": "number | undefined",
+        "required": false,
+        "default": "1300",
+        "description": "循环动效时长，0–30000ms，默认 1300；0 停止循环",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术名称",
+        "global": false
+      },
+      {
+        "name": "ariaValueText",
+        "type": "string | ((context: HysProgressLabelContext) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "辅助技术进度说明，字符串或 (context)=>string，默认百分比；未知总量为 处理中",
         "global": false
       }
     ],
@@ -12947,13 +13099,49 @@
     "slots": [
       {
         "name": "default",
-        "type": "{ value: number; }",
+        "type": "HysProgressLabelContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "进度文字：value / successValue / status / indeterminate；showLabel=false 时不渲染"
+      },
+      {
+        "name": "icon",
+        "type": "HysProgressLabelContext",
+        "required": false,
+        "default": "",
+        "description": "自定义状态图标，接收同样的上下文，需开启 showStatusIcon"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": true,
+        "default": "",
+        "description": "组件根元素"
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "当前归一后的百分比"
+      },
+      {
+        "name": "successValue",
+        "type": "number",
+        "required": true,
+        "default": "",
+        "description": "当前归一并限制后的已确认百分比"
+      },
+      {
+        "name": "status",
+        "type": "HysProgressStatus",
+        "required": true,
+        "default": "",
+        "description": "当前有效状态"
+      }
+    ]
   },
   "HysRadio": {
     "props": [

@@ -610,6 +610,23 @@
       "Lifecycle": "缓存页面与任务清理",
       "States": "禁用、只读与加载",
       "Request": "请求参数与自定义进度"
+    },
+    "HysProgress": {
+      "Basic": "基础进度与数值",
+      "Configure": "外观与行为配置",
+      "Shapes": "环形、仪表盘与缺口",
+      "Colors": "固定、函数与阈值颜色",
+      "Gradient": "渐变颜色与中间色标",
+      "Success": "已提交与已确认进度",
+      "Steps": "分段进度与多色轨道",
+      "Labels": "内置文字、格式与插槽",
+      "Statuses": "状态颜色与图标",
+      "Sizes": "尺寸与轨道粗细",
+      "Motion": "数值过渡与进行中动效",
+      "Indeterminate": "未知总量与等待",
+      "Accessibility": "辅助技术与任务说明",
+      "Lifecycle": "缓存页面与动效恢复",
+      "States": "边界数值与紧凑布局"
     }
   }
 }

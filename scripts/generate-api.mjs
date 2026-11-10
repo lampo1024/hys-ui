@@ -315,6 +315,16 @@ for(const name of fs.readdirSync(dir).sort()){
   const slots={default:'选择区域内容；接收 files/busy/disabled/uploading/queued/open/submit/abort/clear',trigger:'替换选择入口，优先于 default；接收同样的操作上下文',tip:'选择区域下方说明',toolbar:'文件计数与批量操作区',file:'替换文件名称，接收 file/status/percentage/thumbnail/busy/queued/actions',item:'替换完整文件行，接收 file 上下文及 actions',empty:'空文件列表内容',progress:'上传中的进度内容，接收 file 上下文',preview:'自定义预览正文，接收 file/url/close'}
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
+ if(name==='HysProgress'){
+  const file=ts.createSourceFile('progress.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/progress.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(s=>ts.isInterfaceDeclaration(s)&&s.name.text==='HysProgressInstance')
+  if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
+  const props={value:'必填百分比，范围 0–100；非有限数值归零',type:'line / circle / dashboard；默认 line',status:'normal / active / success / warning / error，默认 normal；不根据数值自动切换',color:'颜色、百分比回调、阈值数组、字符串调色板或渐变配置；详见颜色与渐变示例',showLabel:'显示文字与图标，默认 true',format:'格式化 (value, successValue)，支持文字或 VNode；default 插槽优先',indeterminate:'未知总量模式，省略 aria-valuenow，使用连续轨道',strokeWidth:'轨道粗细：线形为 px，环形按 100×100 坐标；未指定时跟随 size',width:'环形宽度，数字为 px 或 CSS 长度；未指定时跟随 size',size:'sm / md / lg，统一默认粗细、环形宽度与文字；默认 md',textInside:'文字放在线形轨道内，未指定粗细时自动增加高度；显式轨道过细时放到外侧',textColor:'覆盖文字颜色，不影响轨道',precision:'默认文字的小数位数，0–6；不设置时保留原有数值精度',showStatusIcon:'显示可用的状态图标或 icon 插槽，默认 false；保留百分比文字',trailColor:'未完成的轨道颜色',strokeLinecap:'round / butt / square，默认 round',success:'已确认部分 {value,color?}，限制到整体进度之内',steps:'分段数量，0 使用连续轨道，最大 200；三种形状均支持',stepGap:'分段间隙，线形 px、环形 SVG 单位；圆角会补偿端点长度，过密时自动收窄',gapDegree:'环形缺口角度 0–295；circle 默认 0，dashboard 默认 75',gapPosition:'缺口位置 top / right / bottom / left，默认 bottom',striped:'线形使用条纹填充',stripedFlow:'条纹流动；配合 striped 使用',animated:'启用数值过渡与循环动效，默认 true；系统减少动态效果和全局 off 优先',duration:'数值过渡时长，0–5000ms，默认 250',flowDuration:'循环动效时长，0–30000ms，默认 1300；0 停止循环',ariaLabel:'辅助技术名称',ariaValueText:'辅助技术进度说明，字符串或 (context)=>string，默认百分比；未知总量为 处理中'}
+  const defaults={strokeWidth:'7（md）',width:'100（md，环形）',gapDegree:'0（circle）/ 75（dashboard）'}
+  for(const prop of api[name].props){prop.description=props[prop.name]||prop.description;if(prop.name in defaults)prop.default=defaults[prop.name]}
+  const methods={element:'组件根元素',value:'当前归一后的百分比',successValue:'当前归一并限制后的已确认百分比',status:'当前有效状态'}
+  for(const method of api[name].exposed)method.description=methods[method.name]||method.description
+  for(const slot of api[name].slots)slot.description=slot.name==='default'?'进度文字：value / successValue / status / indeterminate；showLabel=false 时不渲染':slot.name==='icon'?'自定义状态图标，接收同样的上下文，需开启 showStatusIcon':slot.description
+ }
  for(const prop of api[name].props){if(prop.name==='popupTransition'){prop.default='scale';prop.description=descriptions[prop.name]}if(prop.name==='popupTransitionDuration'){prop.default='160';prop.description=descriptions[prop.name]}}
  if(['HysTable','HysDataGrid','HysVirtualTable'].includes(name))api[name].slots.push({name:'[column.key]',type:'{ row: Record<string, unknown>; value: unknown; index?: number }',required:false,default:'',description:'与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。'})
 }

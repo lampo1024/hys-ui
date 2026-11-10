@@ -514,7 +514,7 @@ export const catalog=[
     "label": "进度条",
     "slug": "hys-progress",
     "category": "数据展示",
-    "description": "进度条的独立交互示例、配置场景与类型参考。",
+    "description": "展示操作进度、部分成功、分段步骤与未知总量。",
     "notes": [
       "通过下面的交互示例体验组件，配置区可即时调整属性。",
       "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
