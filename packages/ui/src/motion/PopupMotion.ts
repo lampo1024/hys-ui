@@ -100,19 +100,23 @@ export default defineComponent({
         "--hys-ui-popup-origin",
         place.startsWith("top")
           ? "bottom center"
-          : place === "left"
+          : place.startsWith("left")
             ? "right center"
-            : place === "right"
+            : place.startsWith("right")
               ? "left center"
               : "top center",
       );
       element.style.setProperty(
         "--hys-ui-popup-x",
-        place === "left" ? "6px" : place === "right" ? "-6px" : "0px",
+        place.startsWith("left")
+          ? "6px"
+          : place.startsWith("right")
+            ? "-6px"
+            : "0px",
       );
       element.style.setProperty(
         "--hys-ui-popup-y",
-        place === "left" || place === "right"
+        place.startsWith("left") || place.startsWith("right")
           ? "0px"
           : place.startsWith("top")
             ? "6px"

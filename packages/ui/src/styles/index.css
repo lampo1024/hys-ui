@@ -105,7 +105,7 @@
 .hys-ui-popover-trigger{display:inline-flex;align-items:center;cursor:pointer}
 .hys-ui-popover-trigger:focus-visible,.hys-ui-select:focus-visible{outline:2px solid var(--hys-ui-primary,var(--hys-ui-theme-primary));outline-offset:3px}
 .hys-ui-popover-panel.hys-ui-floating-surface{right:auto;top:auto;left:auto;min-width:210px;max-width:min(360px,calc(100vw - 20px))}
-.hys-ui-tooltip-bubble.hys-ui-floating-tooltip{bottom:auto;left:auto;top:auto;transform:none;opacity:1;white-space:normal;max-width:min(320px,calc(100vw - 20px));pointer-events:none;z-index:1300!important}
+.hys-ui-tooltip-bubble.hys-ui-floating-tooltip{bottom:auto;left:auto;top:auto;transform:none;opacity:1;white-space:normal;max-width:min(320px,calc(100vw - 20px));pointer-events:none;z-index:1300}
 .hys-ui-modal:focus,.hys-ui-drawer:focus{outline:none}
 .hys-ui-modal{overscroll-behavior:contain}.hys-ui-drawer{max-width:100vw;overscroll-behavior:contain}
 @media(max-width:600px){.hys-ui-overlay{padding:10px}.hys-ui-modal{max-height:calc(100dvh - 20px)}.hys-ui-dialog-head,.hys-ui-dialog-body,.hys-ui-dialog-foot{padding:16px}.hys-ui-drawer{width:min(100vw,520px)!important}}

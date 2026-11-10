@@ -621,6 +621,10 @@ test("Resize requests are cancelled if their start event closes the owner", asyn
   assert.equal(document.documentElement.style.cursor, "");
 });
 
+test("Drawer guards keep a Function runtime prop while preserving their public callback type", () => {
+  assert([ui.HysDrawer.props.beforeClose.type].flat().includes(Function));
+});
+
 test("Percentage resize bounds account for the actual root width and scrollbar gutters", async () => {
   rootWidth = 950;
   const a = await mount({ open: true, resizable: true });

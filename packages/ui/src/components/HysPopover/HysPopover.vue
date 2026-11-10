@@ -1,19 +1,98 @@
 <script setup lang="ts">
-import type { HysPopupMotionProps } from '../../motion/popup';
-
-import PopupMotion from '../../motion/PopupMotion';
-
-import {useHysRootAttrs} from '../../config'
-const hysRootAttrs=useHysRootAttrs()
-import {ref,watch,onBeforeUnmount,onDeactivated} from 'vue';import {useFloating,type Placement} from '../../composables/useFloating'
-const props=withDefaults(defineProps<HysPopupMotionProps & {placement?:Placement;trigger?:'click'|'hover'|'focus';disabled?:boolean;open?:boolean;width?:string;title?:string}>(),{placement:'bottom-end',trigger:'click',open:undefined}),emit=defineEmits<{'update:open':[value:boolean];visibleChange:[value:boolean]}>(),anchor=ref<HTMLElement>(),panel=ref<HTMLElement>()
-const {placement: popupPlacement, open,style,show,close,restoringFocus}=useFloating(anchor,panel,{get placement(){return props.placement},gap:8})
-let timer:ReturnType<typeof setTimeout>|undefined
-function hover(value:boolean){clearTimeout(timer);if(value)request(true);else timer=setTimeout(()=>request(false),100)}
-onBeforeUnmount(()=>clearTimeout(timer));onDeactivated(()=>clearTimeout(timer))
-function request(value:boolean){if(value&&(props.disabled||restoringFocus.value))return;if(props.open!==undefined){emit('update:open',value);return}value?show():close()}
-watch(()=>props.open,value=>{if(value===undefined)return;value&&!props.disabled?show():close()},{immediate:true,flush:'post'});watch(open,value=>{emit('visibleChange',value);if(props.open!==undefined&&props.open!==value)emit('update:open',value)});watch(()=>props.disabled,value=>{if(value)close()})
-defineExpose({show:()=>request(true),hide:()=>request(false)})
+import { useHysRootAttrs } from "../../config";
+import { usePopupSurface } from "../../composables/usePopupSurface";
+import type {
+  HysPopoverProps,
+  HysPopoverSlots,
+} from "../../composables/popupSurface";
+import PopupReference from "../../internal/PopupReference";
+import PopupSurfacePanel from "../../internal/PopupSurfacePanel.vue";
+const props = withDefaults(defineProps<HysPopoverProps>(), {
+  open: undefined,
+  modelValue: undefined,
+  placement: "bottom-end",
+  showDelay: 0,
+  hideDelay: 100,
+  enterable: true,
+  closeOnEscape: true,
+  closeOnOutside: true,
+  autoAdjustOverflow: true,
+  destroyOnHide: true,
+  appendTo: "body",
+  effect: "light",
+});
+const emit = defineEmits<{
+  "update:open": [open: boolean];
+  "update:modelValue": [open: boolean];
+  visibleChange: [open: boolean];
+  openChange: [open: boolean];
+  show: [];
+  hide: [];
+  opened: [];
+  closed: [];
+}>();
+defineSlots<HysPopoverSlots>();
+const skin = useHysRootAttrs(),
+  surface = usePopupSurface(props, "popover", (name, ...args) =>
+    (emit as any)(name, ...args),
+  );
+defineExpose({
+  element: surface.panel,
+  referenceElement: surface.actualReference,
+  open: surface.open,
+  placement: surface.placement,
+  show: surface.show,
+  hide: surface.hide,
+  close: surface.hide,
+  toggle: surface.toggle,
+  updatePosition: surface.updatePosition,
+  focus: surface.focus,
+});
 </script>
-<template><span v-bind="hysRootAttrs" class="hys-ui-popover-wrap" @pointerenter="trigger==='hover'&&hover(true)" @pointerleave="trigger==='hover'&&hover(false)"><span ref="anchor" class="hys-ui-popover-trigger" :tabindex="disabled?-1:0" role="button" :aria-disabled="disabled" :aria-expanded="open" aria-haspopup="dialog" @click="trigger==='click'&&request(!open)" @keydown.enter.prevent="request(!open)" @keydown.space.prevent="request(!open)" @focusin="trigger==='focus'&&request(true)" @focusout="trigger==='focus'&&!panel?.contains($event.relatedTarget as Node)&&request(false)"><slot name="trigger"/></span><Teleport to="body"><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="popupPlacement"><div v-if="open" ref="panel" v-bind="hysRootAttrs" class="hys-ui-popover-panel hys-ui-floating-surface" :style="{...style,width}" role="dialog" @focusout="trigger==='focus'&&!panel?.contains($event.relatedTarget as Node)&&!anchor?.contains($event.relatedTarget as Node)&&request(false)" :aria-label="title||'浮层'" @pointerenter="trigger==='hover'&&request(true)"><strong v-if="title">{{title}}</strong><slot :close="()=>request(false)"/></div></PopupMotion></Teleport></span></template>
-<style scoped></style>
+<template>
+  <span
+    :ref="(el) => (surface.wrapper.value = el as HTMLElement)"
+    v-bind="{ ...skin, ...surface.wrapperAttrs.value }"
+    class="hys-ui-popover-wrap"
+    :class="'hys-ui-popover-trigger'"
+    @pointerenter="surface.pointerEnter"
+    @pointerleave="surface.pointerLeave"
+    @focusin="surface.focusIn"
+    @focusout="surface.focusOut"
+    @click="surface.click"
+    @contextmenu="surface.contextmenu"
+    @keydown="surface.key"
+  >
+    <PopupReference
+      :id="surface.id"
+      :open="surface.open.value"
+      kind="popover"
+      @element="surface.referenceElement.value = $event"
+      ><slot name="trigger" v-bind="surface.scope.value"
+    /></PopupReference>
+    <PopupSurfacePanel
+      :surface="surface"
+      :options="props"
+      kind="popover"
+      :title="title"
+    >
+      <template v-if="$slots.title" #title="scope"
+        ><slot name="title" v-bind="scope" /></template
+      ><template #default="scope"
+        ><slot v-bind="scope">{{ content }}</slot></template
+      >
+    </PopupSurfacePanel>
+  </span>
+</template>
+<style scoped>
+.hys-ui-popover-wrap {
+  display: inline-flex;
+  vertical-align: middle;
+  position: relative;
+}
+.hys-ui-popover-wrap:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+</style>

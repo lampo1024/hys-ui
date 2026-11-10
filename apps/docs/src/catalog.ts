@@ -733,11 +733,8 @@ export const catalog=[
     "label": "气泡浮层",
     "slug": "hys-popover",
     "category": "反馈浮层",
-    "description": "气泡浮层的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "description": "支持轻量操作的气泡浮层，覆盖悬停、焦点、受控显示和键盘导航。",
+    "notes": ["默认点击展开；Tab 可进入内容操作区，Escape 先关闭最上层浮层。","允许鼠标移入内容区；宽度、箭头、颜色、挂载位置和内容保留可独立配置。","触发区域可使用真实控件或外部 reference；自定义组件应转发原生属性与事件。"]
   },
   {
     "name": "HysShortcutHelp",
@@ -781,11 +778,8 @@ export const catalog=[
     "label": "文字提示",
     "slug": "hys-tooltip",
     "category": "反馈浮层",
-    "description": "文字提示的独立交互示例、配置场景与类型参考。",
-    "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
-    ]
+    "description": "可配置触发、受控显示与位置的辅助说明，支持外观、挂载和内容保留。",
+    "notes": ["默认支持悬停与聚焦；可以切换点击、右键、组合或手动模式。","text 与 content 插槽保留原有用法；说明内容默认不接受鼠标，可按需设置 enterable。","open 优先于 modelValue，显示请求由宿主接受；页面离开后清理浮层与监听。"]
   },
   {
     "name": "HysTour",

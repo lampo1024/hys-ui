@@ -7344,7 +7344,7 @@
     "props": [
       {
         "name": "beforeClose",
-        "type": "((reason: HysModalCloseReason, context: HysModalActionContext) => boolean | void | Promise<boolean | void>) | undefined",
+        "type": "HysDrawerBeforeClose | undefined",
         "required": false,
         "default": "",
         "description": "所有交互关闭入口的守卫 (reason,context)；外部状态变化不调用",
@@ -12424,6 +12424,294 @@
   "HysPopover": {
     "props": [
       {
+        "name": "title",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "气泡浮层标题，title 插槽优先",
+        "global": false
+      },
+      {
+        "name": "content",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "气泡浮层正文，默认插槽优先",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控显示，优先于 modelValue；只有宿主接受请求才改变显示",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示别名，支持 v-model",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始展开状态",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止打开，同时继承字段/表单禁用状态；会取消待执行延迟",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "HysPopupTrigger | readonly HysPopupTrigger[] | undefined",
+        "required": false,
+        "default": "'click'",
+        "description": "hover / focus / click / contextmenu / manual 或数组；Tooltip 默认 hover+focus，Popover 默认 click",
+        "global": false
+      },
+      {
+        "name": "triggerKeys",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "['Enter', ' ']",
+        "description": "触发区域的键盘键名，默认 Enter 与空格；不会截获输入控件的编辑按键",
+        "global": false
+      },
+      {
+        "name": "triggerTabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "纯文字触发区域的 tabindex，默认 0；真实控件保留其原生焦点行为",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"bottom-end\"",
+        "description": "top/bottom/left/right 及 start/end 对齐，共十二种位置；保留原有默认位置",
+        "global": false
+      },
+      {
+        "name": "offset",
+        "type": "number | undefined",
+        "required": false,
+        "default": "8",
+        "description": "浮层与参考元素的间距，单位像素；Tooltip 默认 7、Popover 默认 8",
+        "global": false
+      },
+      {
+        "name": "autoAdjustOverflow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "空间不足时自动翻转并限制在视口内，默认 true",
+        "global": false
+      },
+      {
+        "name": "showDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "用户触发展开的延迟，单位毫秒，默认 0；实例调用与外部显示值立即处理",
+        "global": false
+      },
+      {
+        "name": "hideDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "100",
+        "description": "用户移出后的收起延迟，Tooltip 默认 70ms、Popover 默认 100ms",
+        "global": false
+      },
+      {
+        "name": "autoClose",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "展开后的自动关闭时间，单位毫秒；默认 0 不自动关闭，受控宿主可拒绝",
+        "global": false
+      },
+      {
+        "name": "enterable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许鼠标/焦点进入内容，Tooltip 默认 false、Popover 默认 true",
+        "global": false
+      },
+      {
+        "name": "closeOnEscape",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "Escape 请求关闭最上层浮层，默认 true",
+        "global": false
+      },
+      {
+        "name": "closeOnOutside",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "点击外部请求关闭，默认 true",
+        "global": false
+      },
+      {
+        "name": "destroyOnHide",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "关闭后销毁内容，默认 true；false 保留已挂载内容状态",
+        "global": false
+      },
+      {
+        "name": "forceRender",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "首次展开前就挂载隐藏内容，默认 false",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "body（默认）、CSS 选择器、HTMLElement 或 false 原地挂载；局部挂载受到祖先裁剪约束",
+        "global": false
+      },
+      {
+        "name": "reference",
+        "type": "HysPopupReference | (() => HysPopupReference | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立 HTMLElement、虚拟矩形或返回它们的函数；虚拟矩形使用 manual/受控模式",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "内容宽度，支持数值像素或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "maxWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "360px",
+        "description": "最大宽度，同时受视口约束；Tooltip 默认 320px、Popover 默认 360px",
+        "global": false
+      },
+      {
+        "name": "maxHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "calc(100vh - 20px)",
+        "description": "内容滚动区最大高度，同时受视口高度约束",
+        "global": false
+      },
+      {
+        "name": "showArrow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示指向参考区域的箭头，默认 false",
+        "global": false
+      },
+      {
+        "name": "arrowOffset",
+        "type": "number | undefined",
+        "required": false,
+        "default": "10",
+        "description": "箭头距离浮层边缘的最小留白，默认 10px",
+        "global": false
+      },
+      {
+        "name": "effect",
+        "type": "\"dark\" | \"light\" | undefined",
+        "required": false,
+        "default": "\"light\"",
+        "description": "light 或 dark；浅色跟随当前主题",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义内容与箭头背景色",
+        "global": false
+      },
+      {
+        "name": "textColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义内容文字颜色",
+        "global": false
+      },
+      {
+        "name": "overlayClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层定位容器的附加类名",
+        "global": false
+      },
+      {
+        "name": "overlayStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层装饰样式；定位、宽度和层级由组件维护",
+        "global": false
+      },
+      {
+        "name": "contentClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部滚动内容的附加类名",
+        "global": false
+      },
+      {
+        "name": "contentStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部滚动内容样式",
+        "global": false
+      },
+      {
+        "name": "zIndex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层的起始层级，嵌套时遵守共享浮层栈",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层的辅助技术名称",
+        "global": false
+      },
+      {
         "name": "popupTransition",
         "type": "HysPopupTransition | undefined",
         "required": false,
@@ -12438,102 +12726,145 @@
         "default": "160",
         "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
         "global": false
-      },
-      {
-        "name": "placement",
-        "type": "Placement | undefined",
-        "required": false,
-        "default": "\"bottom-end\"",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "trigger",
-        "type": "\"focus\" | \"click\" | \"hover\" | undefined",
-        "required": false,
-        "default": "\"click\"",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "disabled",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "禁止用户操作",
-        "global": false
-      },
-      {
-        "name": "open",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "undefined",
-        "description": "控制浮层显示",
-        "global": false
-      },
-      {
-        "name": "width",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "title",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "标题",
-        "global": false
       }
     ],
     "events": [
       {
-        "name": "update:open",
-        "type": "[value: boolean]",
+        "name": "update:modelValue",
+        "type": "[open: boolean]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "显示请求别名：boolean"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "显示请求：boolean，支持 v-model:open"
       },
       {
         "name": "visibleChange",
-        "type": "[value: boolean]",
+        "type": "[open: boolean]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际展开状态变化：boolean"
+      },
+      {
+        "name": "hide",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际开始收起"
+      },
+      {
+        "name": "show",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际开始展开"
+      },
+      {
+        "name": "opened",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "展开过渡完成"
+      },
+      {
+        "name": "closed",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "收起过渡完成"
+      },
+      {
+        "name": "openChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际展开状态变化的别名：boolean"
       }
     ],
     "slots": [
       {
         "name": "trigger",
-        "type": "{}",
+        "type": "HysPopupSurfaceContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "Popover 触发内容，接收显示上下文"
       },
       {
         "name": "default",
-        "type": "{ close: () => void; }",
+        "type": "HysPopupSurfaceContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "浮层正文；接收 open/show/close/toggle/updatePosition"
+      },
+      {
+        "name": "title",
+        "type": "HysPopupSurfaceContext",
+        "required": false,
+        "default": "",
+        "description": "自定义浮层标题，保留辅助技术标题关联"
       }
     ],
     "exposed": [
       {
-        "name": "show",
-        "type": "() => void",
+        "name": "element",
+        "type": "HTMLElement | undefined",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际浮层 DOM；关闭销毁后为 undefined"
+      },
+      {
+        "name": "referenceElement",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "实际参考元素，可能来自外部 reference"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "立即请求展开，返回 Promise<boolean>"
       },
       {
         "name": "hide",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "立即请求收起，返回 Promise<boolean>"
+      },
+      {
+        "name": "close",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "hide 的别名"
+      },
+      {
+        "name": "toggle",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "切换展开状态，返回 Promise<boolean>"
+      },
+      {
+        "name": "updatePosition",
         "type": "() => void",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "按动画帧合并位置更新，用于自定义布局变化"
+      },
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": "聚焦实际触发控件"
       }
     ]
   },
@@ -18641,6 +18972,286 @@
   "HysTooltip": {
     "props": [
       {
+        "name": "text",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "文字提示，content 插槽优先",
+        "global": false
+      },
+      {
+        "name": "open",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控显示，优先于 modelValue；只有宿主接受请求才改变显示",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "显示别名，支持 v-model",
+        "global": false
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始展开状态",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止打开，同时继承字段/表单禁用状态；会取消待执行延迟",
+        "global": false
+      },
+      {
+        "name": "trigger",
+        "type": "HysPopupTrigger | readonly HysPopupTrigger[] | undefined",
+        "required": false,
+        "default": "['hover', 'focus']",
+        "description": "hover / focus / click / contextmenu / manual 或数组；Tooltip 默认 hover+focus，Popover 默认 click",
+        "global": false
+      },
+      {
+        "name": "triggerKeys",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "['Enter', ' ']",
+        "description": "触发区域的键盘键名，默认 Enter 与空格；不会截获输入控件的编辑按键",
+        "global": false
+      },
+      {
+        "name": "triggerTabindex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "纯文字触发区域的 tabindex，默认 0；真实控件保留其原生焦点行为",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"top-start\"",
+        "description": "top/bottom/left/right 及 start/end 对齐，共十二种位置；保留原有默认位置",
+        "global": false
+      },
+      {
+        "name": "offset",
+        "type": "number | undefined",
+        "required": false,
+        "default": "7",
+        "description": "浮层与参考元素的间距，单位像素；Tooltip 默认 7、Popover 默认 8",
+        "global": false
+      },
+      {
+        "name": "autoAdjustOverflow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "空间不足时自动翻转并限制在视口内，默认 true",
+        "global": false
+      },
+      {
+        "name": "showDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "用户触发展开的延迟，单位毫秒，默认 0；实例调用与外部显示值立即处理",
+        "global": false
+      },
+      {
+        "name": "hideDelay",
+        "type": "number | undefined",
+        "required": false,
+        "default": "70",
+        "description": "用户移出后的收起延迟，Tooltip 默认 70ms、Popover 默认 100ms",
+        "global": false
+      },
+      {
+        "name": "autoClose",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "展开后的自动关闭时间，单位毫秒；默认 0 不自动关闭，受控宿主可拒绝",
+        "global": false
+      },
+      {
+        "name": "enterable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许鼠标/焦点进入内容，Tooltip 默认 false、Popover 默认 true",
+        "global": false
+      },
+      {
+        "name": "closeOnEscape",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "Escape 请求关闭最上层浮层，默认 true",
+        "global": false
+      },
+      {
+        "name": "closeOnOutside",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "点击外部请求关闭，默认 true",
+        "global": false
+      },
+      {
+        "name": "destroyOnHide",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "关闭后销毁内容，默认 true；false 保留已挂载内容状态",
+        "global": false
+      },
+      {
+        "name": "forceRender",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "首次展开前就挂载隐藏内容，默认 false",
+        "global": false
+      },
+      {
+        "name": "appendTo",
+        "type": "string | false | HTMLElement | undefined",
+        "required": false,
+        "default": "\"body\"",
+        "description": "body（默认）、CSS 选择器、HTMLElement 或 false 原地挂载；局部挂载受到祖先裁剪约束",
+        "global": false
+      },
+      {
+        "name": "reference",
+        "type": "HysPopupReference | (() => HysPopupReference | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立 HTMLElement、虚拟矩形或返回它们的函数；虚拟矩形使用 manual/受控模式",
+        "global": false
+      },
+      {
+        "name": "width",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "内容宽度，支持数值像素或 CSS 长度",
+        "global": false
+      },
+      {
+        "name": "maxWidth",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "320px",
+        "description": "最大宽度，同时受视口约束；Tooltip 默认 320px、Popover 默认 360px",
+        "global": false
+      },
+      {
+        "name": "maxHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "calc(100vh - 20px)",
+        "description": "内容滚动区最大高度，同时受视口高度约束",
+        "global": false
+      },
+      {
+        "name": "showArrow",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示指向参考区域的箭头，默认 false",
+        "global": false
+      },
+      {
+        "name": "arrowOffset",
+        "type": "number | undefined",
+        "required": false,
+        "default": "10",
+        "description": "箭头距离浮层边缘的最小留白，默认 10px",
+        "global": false
+      },
+      {
+        "name": "effect",
+        "type": "\"dark\" | \"light\" | undefined",
+        "required": false,
+        "default": "\"dark\"",
+        "description": "light 或 dark；浅色跟随当前主题",
+        "global": false
+      },
+      {
+        "name": "color",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义内容与箭头背景色",
+        "global": false
+      },
+      {
+        "name": "textColor",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义内容文字颜色",
+        "global": false
+      },
+      {
+        "name": "overlayClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层定位容器的附加类名",
+        "global": false
+      },
+      {
+        "name": "overlayStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层装饰样式；定位、宽度和层级由组件维护",
+        "global": false
+      },
+      {
+        "name": "contentClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部滚动内容的附加类名",
+        "global": false
+      },
+      {
+        "name": "contentStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "内部滚动内容样式",
+        "global": false
+      },
+      {
+        "name": "zIndex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层的起始层级，嵌套时遵守共享浮层栈",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层的辅助技术名称",
+        "global": false
+      },
+      {
         "name": "popupTransition",
         "type": "HysPopupTransition | undefined",
         "required": false,
@@ -18655,74 +19266,140 @@
         "default": "160",
         "description": "浮层动画时长，单位毫秒，默认 160；0 立即展开和收起",
         "global": false
-      },
-      {
-        "name": "text",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "placement",
-        "type": "Placement | undefined",
-        "required": false,
-        "default": "\"top-start\"",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "disabled",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "禁止用户操作",
-        "global": false
-      },
-      {
-        "name": "showDelay",
-        "type": "number | undefined",
-        "required": false,
-        "default": "0",
-        "description": "",
-        "global": false
-      },
-      {
-        "name": "hideDelay",
-        "type": "number | undefined",
-        "required": false,
-        "default": "70",
-        "description": "",
-        "global": false
       }
     ],
     "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "显示请求别名：boolean"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "显示请求：boolean，支持 v-model:open"
+      },
       {
         "name": "visibleChange",
         "type": "[open: boolean]",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "实际展开状态变化：boolean"
+      },
+      {
+        "name": "hide",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际开始收起"
+      },
+      {
+        "name": "show",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "实际开始展开"
+      },
+      {
+        "name": "opened",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "展开过渡完成"
+      },
+      {
+        "name": "closed",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "收起过渡完成"
+      },
+      {
+        "name": "openChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际展开状态变化的别名：boolean"
       }
     ],
     "slots": [
       {
         "name": "default",
-        "type": "{}",
+        "type": "HysPopupSurfaceContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "触发内容；原生控件保持单一焦点入口"
       },
       {
         "name": "content",
-        "type": "{}",
+        "type": "HysPopupSurfaceContext",
         "required": false,
         "default": "",
-        "description": ""
+        "description": "Tooltip 自定义说明，接收显示上下文"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "element",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "实际浮层 DOM；关闭销毁后为 undefined"
+      },
+      {
+        "name": "referenceElement",
+        "type": "HTMLElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "实际参考元素，可能来自外部 reference"
+      },
+      {
+        "name": "show",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "立即请求展开，返回 Promise<boolean>"
+      },
+      {
+        "name": "hide",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "立即请求收起，返回 Promise<boolean>"
+      },
+      {
+        "name": "close",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "hide 的别名"
+      },
+      {
+        "name": "toggle",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "切换展开状态，返回 Promise<boolean>"
+      },
+      {
+        "name": "updatePosition",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "按动画帧合并位置更新，用于自定义布局变化"
+      },
+      {
+        "name": "focus",
+        "type": "() => void | undefined",
+        "required": false,
+        "default": "",
+        "description": "聚焦实际触发控件"
+      }
+    ]
   },
   "HysTour": {
     "props": [

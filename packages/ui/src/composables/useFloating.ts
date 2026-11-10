@@ -13,7 +13,26 @@ import { useHysControlState } from "./formContext";
 import { popupSize } from "../motion/popup";
 import { registerOverlay, overlayOwnerKey } from "./overlayManager";
 export type Placement =
-  "bottom-start" | "bottom-end" | "top-start" | "top-end" | "right" | "left";
+  | "top"
+  | "top-start"
+  | "top-end"
+  | "bottom"
+  | "bottom-start"
+  | "bottom-end"
+  | "left"
+  | "left-start"
+  | "left-end"
+  | "right"
+  | "right-start"
+  | "right-end";
+export interface FloatingPosition {
+  anchor: DOMRect;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  placement: Placement;
+}
 export interface FloatingAnchor {
   getBoundingClientRect(): DOMRect;
   contains(node: Node | null): boolean;
@@ -29,8 +48,15 @@ export function useFloating(
     padding?: number;
     matchWidth?: boolean | "min" | (() => boolean | "min");
     width?: () => number | string | undefined;
+    maxWidth?: () => number | string | undefined;
     requestOpen?: (open: boolean, restoreFocus?: boolean) => boolean | void;
     closeOnTab?: boolean;
+    closeOnEscape?: boolean;
+    closeOnOutside?: boolean;
+    autoAdjustOverflow?: boolean;
+    strategy?: "fixed" | "absolute";
+    zIndex?: () => number | undefined;
+    onPosition?: (position: FloatingPosition) => void;
   } = {},
 ) {
   const { disabled } = useHysControlState({});
@@ -45,8 +71,6 @@ export function useFloating(
     visibility: "hidden",
   });
   const placement = ref<Placement>(options.placement ?? "bottom-start");
-  const gap = options.gap ?? 8,
-    pad = options.padding ?? 10;
   let raf = 0,
     unregister: (() => void) | undefined,
     isTop: (() => boolean) | undefined,
@@ -58,22 +82,34 @@ export function useFloating(
       close();
       return;
     }
-    const vw = document.documentElement.clientWidth,
+    const gap = Number.isFinite(options.gap) ? options.gap! : 8,
+      pad = Number.isFinite(options.padding)
+        ? Math.max(0, options.padding!)
+        : 10,
+      vw = document.documentElement.clientWidth,
       vh = document.documentElement.clientHeight;
     const matchedWidth = Math.min(a.width, Math.max(0, vw - 2 * pad));
     const widthMode =
       typeof options.matchWidth === "function"
         ? options.matchWidth()
         : options.matchWidth;
+    const limit = options.maxWidth?.();
+    const maximum =
+      limit !== undefined &&
+      (typeof limit !== "number" || Number.isFinite(limit))
+        ? `min(${typeof limit === "number" ? Math.max(0, limit) + "px" : limit},calc(100vw - ${pad * 2}px))`
+        : `calc(100vw - ${pad * 2}px)`;
     const explicitWidth = options.width?.(),
       cssWidth =
         typeof explicitWidth === "number"
-          ? Math.max(0, explicitWidth) + "px"
+          ? Number.isFinite(explicitWidth)
+            ? Math.max(0, explicitWidth) + "px"
+            : undefined
           : explicitWidth;
     if (cssWidth !== undefined) {
       panel.value.style.width = cssWidth;
       panel.value.style.minWidth = "0";
-      panel.value.style.maxWidth = `calc(100vw - ${pad * 2}px)`;
+      panel.value.style.maxWidth = maximum;
     } else if (widthMode === true) {
       panel.value.style.width = `${matchedWidth}px`;
       panel.value.style.minWidth = "0";
@@ -90,27 +126,65 @@ export function useFloating(
     let place = options.placement ?? "bottom-start";
     const below = vh - a.bottom - gap,
       above = a.top - gap;
-    if (place.startsWith("bottom") && below < h && above > below)
+    const adjust = options.autoAdjustOverflow !== false;
+    if (adjust && place.startsWith("bottom") && below < h && above > below)
       place = place.replace("bottom", "top") as Placement;
-    else if (place.startsWith("top") && above < h && below > above)
+    else if (adjust && place.startsWith("top") && above < h && below > above)
       place = place.replace("top", "bottom") as Placement;
     else if (
-      place === "right" &&
+      adjust &&
+      place.startsWith("right") &&
       vw - a.right - gap < w &&
       a.left > vw - a.right
     )
-      place = "left";
-    else if (place === "left" && a.left - gap < w && vw - a.right > a.left)
-      place = "right";
-    let x = place.endsWith("end") ? a.right - w : a.left;
+      place = place.replace("right", "left") as Placement;
+    else if (
+      adjust &&
+      place.startsWith("left") &&
+      a.left - gap < w &&
+      vw - a.right > a.left
+    )
+      place = place.replace("left", "right") as Placement;
+    let x = place.endsWith("end")
+      ? a.right - w
+      : place.endsWith("start")
+        ? a.left
+        : a.left + (a.width - w) / 2;
     let y = place.startsWith("top") ? a.top - h - gap : a.bottom + gap;
-    if (place === "right" || place === "left") {
-      x = place === "right" ? a.right + gap : a.left - w - gap;
-      y = a.top + (a.height - h) / 2;
+    if (place.startsWith("right") || place.startsWith("left")) {
+      x = place.startsWith("right") ? a.right + gap : a.left - w - gap;
+      y = place.endsWith("start")
+        ? a.top
+        : place.endsWith("end")
+          ? a.bottom - h
+          : a.top + (a.height - h) / 2;
     }
     x = Math.max(pad, Math.min(x, vw - w - pad));
     y = Math.max(pad, Math.min(y, vh - h - pad));
     placement.value = place;
+    options.onPosition?.({
+      anchor: a,
+      width: w,
+      height: h,
+      x,
+      y,
+      placement: place,
+    });
+    if (options.strategy === "absolute") {
+      const parent = panel.value.offsetParent as HTMLElement | null;
+      if (
+        parent &&
+        parent !== document.body &&
+        parent !== document.documentElement
+      ) {
+        const origin = parent.getBoundingClientRect();
+        x += parent.scrollLeft - origin.left - parent.clientLeft;
+        y += parent.scrollTop - origin.top - parent.clientTop;
+      } else {
+        x += window.scrollX;
+        y += window.scrollY;
+      }
+    }
     style.value = {
       ...(cssWidth !== undefined
         ? { width: cssWidth, minWidth: "0" }
@@ -119,12 +193,12 @@ export function useFloating(
           : widthMode === "min"
             ? { width: "max-content", minWidth: `${matchedWidth}px` }
             : {}),
-      position: "fixed",
+      position: options.strategy ?? "fixed",
       left: `${Math.round(x)}px`,
       top: `${Math.round(y)}px`,
       visibility: "visible",
       zIndex: "1200",
-      maxWidth: `calc(100vw - ${pad * 2}px)`,
+      maxWidth: maximum,
       maxHeight: `calc(100vh - ${pad * 2}px)`,
       overflowY: "auto",
       overscrollBehavior: "contain",
@@ -135,7 +209,7 @@ export function useFloating(
     raf = requestAnimationFrame(update);
   }
   function outside(e: PointerEvent) {
-    if (!isTop?.()) return;
+    if (!isTop?.() || options.closeOnOutside === false) return;
     if (
       !anchor.value?.contains(e.target as Node) &&
       !panel.value?.contains(e.target as Node)
@@ -144,7 +218,7 @@ export function useFloating(
   }
   function key(e: KeyboardEvent) {
     if (!open.value || !isTop?.()) return;
-    if (e.key === "Escape") {
+    if (e.key === "Escape" && options.closeOnEscape !== false) {
       e.preventDefault();
       e.stopImmediatePropagation();
       close(true);
@@ -217,7 +291,11 @@ export function useFloating(
     };
     await nextTick();
     if (token !== generation || !open.value) return;
-    const entry = registerOverlay("floating", () => close(true));
+    const entry = registerOverlay(
+      "floating",
+      () => close(true),
+      options.zIndex,
+    );
     registration.value = entry;
     unregister = entry.unregister;
     isTop = entry.isTop;
@@ -263,5 +341,7 @@ export function useFloating(
     close,
     toggle,
     restoringFocus,
+    schedule,
+    isTop: () => isTop?.() ?? false,
   };
 }

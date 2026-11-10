@@ -245,6 +245,17 @@ export function actualDrawer(instance:InstanceType<typeof HysDrawer>):HysDrawerI
 export async function operateDrawer(instance:HysDrawerInstance){await instance.show();await instance.resizeTo('65%');await instance.resetSize();await instance.toggleFullscreen();await instance.setFullscreen(false);await instance.close('api');return instance.body}
 `)
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {drawerChecks} from './drawer-types'\nvoid drawerChecks\n")
+fs.writeFileSync(path.join(dir,'surface-types.ts'),`import {h,ref} from 'vue'
+import {HysTooltip,HysPopover,type HysTooltipProps,type HysPopoverProps,type HysPopupPlacement,type HysPopupTrigger,type HysPopupSurfaceInstance,type HysPopupSurfaceContext,type HysPopupVirtualReference} from 'hys-ui'
+const placement:HysPopupPlacement='left-end',triggers:readonly HysPopupTrigger[]=['hover','focus'],reference:HysPopupVirtualReference={getBoundingClientRect:()=>new DOMRect(100,100,20,20)}
+const props:HysTooltipProps={placement,trigger:triggers,reference,defaultOpen:false,enterable:true,showArrow:true,autoClose:1000,width:240,maxHeight:200,appendTo:false}
+const popover:HysPopoverProps={modelValue:false,title:'Details',content:'Content',width:'20rem',effect:'light',closeOnOutside:false,destroyOnHide:false}
+export const surfaceChecks=[h(HysTooltip,{...props,ref:ref<HysPopupSurfaceInstance>()},{content:({close}:HysPopupSurfaceContext)=>h('span',String(close))}),h(HysPopover,{...popover,onOpenChange:(open:boolean)=>void open})]
+export function actualTooltip(instance:InstanceType<typeof HysTooltip>):HysPopupSurfaceInstance{return instance}
+export function actualPopover(instance:InstanceType<typeof HysPopover>):HysPopupSurfaceInstance{return instance}
+export async function operateSurface(instance:HysPopupSurfaceInstance){await instance.show();await instance.toggle();instance.updatePosition();instance.focus();await instance.close();return instance.placement}
+`)
+fs.appendFileSync(path.join(dir,'main.ts'),"\nimport {surfaceChecks} from './surface-types'\nvoid surfaceChecks\n")
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
 execFileSync(process.execPath,[path.join(root,'node_modules/vue-tsc/bin/vue-tsc.js'),'--noEmit','-p',path.join(dir,'tsconfig.json')],{cwd:dir,stdio:'inherit'})

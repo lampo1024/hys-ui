@@ -554,6 +554,44 @@
       "Custom": "自定义标题与操作",
       "Motion": "方向动画与时长",
       "States": "加载与受限状态"
+    },
+    "HysTooltip": {
+      "Basic": "基础文字提示",
+      "Configure": "触发与显示配置",
+      "Triggers": "触发方式与组合",
+      "Placements": "显示位置与边缘调整",
+      "Controlled": "受控显示与请求拒绝",
+      "Delay": "延迟与自动关闭",
+      "Hover": "移入内容与悬停交互",
+      "Appearance": "主题、颜色与箭头",
+      "Content": "自定义内容与标题",
+      "Reference": "独立触发元素",
+      "Mount": "自定义挂载位置",
+      "Lifecycle": "内容保留与生命周期",
+      "Methods": "实例操作与手动显示",
+      "PopupMotion": "展开与收起动画",
+      "States": "禁用与受限状态",
+      "Sizes": "尺寸约束与长内容滚动",
+      "Input": "输入与选择控件作为触发器"
+    },
+    "HysPopover": {
+      "Basic": "基础气泡浮层",
+      "Configure": "触发与显示配置",
+      "Triggers": "触发方式与组合",
+      "Placements": "显示位置与边缘调整",
+      "Controlled": "受控显示与请求拒绝",
+      "Delay": "延迟与自动关闭",
+      "Hover": "移入内容与悬停交互",
+      "Appearance": "主题、颜色与箭头",
+      "Content": "自定义内容与标题",
+      "Reference": "独立触发元素",
+      "Mount": "自定义挂载位置",
+      "Lifecycle": "内容保留与生命周期",
+      "Methods": "实例操作与手动显示",
+      "PopupMotion": "展开与收起动画",
+      "States": "禁用与受限状态",
+      "Sizes": "尺寸约束与长内容滚动",
+      "Input": "输入与选择控件作为触发器"
     }
   }
 }

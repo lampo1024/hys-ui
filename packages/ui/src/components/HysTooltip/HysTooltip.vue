@@ -1,16 +1,90 @@
 <script setup lang="ts">
-import type { HysPopupMotionProps } from '../../motion/popup';
-
-import PopupMotion from '../../motion/PopupMotion';
-
-import {useHysRootAttrs} from '../../config'
-const hysRootAttrs=useHysRootAttrs()
-import {ref,useId,onBeforeUnmount,onDeactivated,watch} from 'vue';import {useFloating,type Placement} from '../../composables/useFloating'
-const props=withDefaults(defineProps<HysPopupMotionProps & {text?:string;placement?:Placement;disabled?:boolean;showDelay?:number;hideDelay?:number}>(),{placement:'top-start',showDelay:0,hideDelay:70}),emit=defineEmits<{visibleChange:[open:boolean]}>(),trigger=ref<HTMLElement>(),panel=ref<HTMLElement>(),id=useId()
-const {placement: popupPlacement, open,style,show,close,restoringFocus}=useFloating(trigger,panel,{get placement(){return props.placement},gap:7})
-let timer:ReturnType<typeof setTimeout>|undefined
-function enter(){clearTimeout(timer);if(!props.disabled&&!restoringFocus.value)timer=setTimeout(()=>show(),props.showDelay)}function leave(){clearTimeout(timer);timer=setTimeout(()=>close(),props.hideDelay)}function cleanup(){clearTimeout(timer);close()}
-watch(open,value=>emit('visibleChange',value));watch(()=>props.disabled,value=>{if(value)cleanup()});onBeforeUnmount(cleanup);onDeactivated(cleanup)
+import { useHysRootAttrs } from "../../config";
+import { usePopupSurface } from "../../composables/usePopupSurface";
+import type {
+  HysTooltipProps,
+  HysTooltipSlots,
+} from "../../composables/popupSurface";
+import PopupReference from "../../internal/PopupReference";
+import PopupSurfacePanel from "../../internal/PopupSurfacePanel.vue";
+const props = withDefaults(defineProps<HysTooltipProps>(), {
+  open: undefined,
+  modelValue: undefined,
+  placement: "top-start",
+  showDelay: 0,
+  hideDelay: 70,
+  enterable: false,
+  closeOnEscape: true,
+  closeOnOutside: true,
+  autoAdjustOverflow: true,
+  destroyOnHide: true,
+  appendTo: "body",
+  effect: "dark",
+});
+const emit = defineEmits<{
+  "update:open": [open: boolean];
+  "update:modelValue": [open: boolean];
+  visibleChange: [open: boolean];
+  openChange: [open: boolean];
+  show: [];
+  hide: [];
+  opened: [];
+  closed: [];
+}>();
+defineSlots<HysTooltipSlots>();
+const skin = useHysRootAttrs(),
+  surface = usePopupSurface(props, "tooltip", (name, ...args) =>
+    (emit as any)(name, ...args),
+  );
+defineExpose({
+  element: surface.panel,
+  referenceElement: surface.actualReference,
+  open: surface.open,
+  placement: surface.placement,
+  show: surface.show,
+  hide: surface.hide,
+  close: surface.hide,
+  toggle: surface.toggle,
+  updatePosition: surface.updatePosition,
+  focus: surface.focus,
+});
 </script>
-<template><span ref="trigger" v-bind="hysRootAttrs" class="hys-ui-tooltip-wrap" :tabindex="disabled?-1:0" :aria-describedby="open?id:undefined" @pointerenter="enter" @pointerleave="leave" @focusin="enter" @focusout="leave"><slot/></span><Teleport to="body"><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="popupPlacement"><span v-if="open" :id="id" ref="panel" v-bind="hysRootAttrs" class="hys-ui-tooltip-bubble hys-ui-floating-tooltip" role="tooltip" :style="style"><slot name="content">{{text}}</slot></span></PopupMotion></Teleport></template>
-<style scoped></style>
+<template>
+  <span
+    :ref="(el) => (surface.wrapper.value = el as HTMLElement)"
+    v-bind="{ ...skin, ...surface.wrapperAttrs.value }"
+    class="hys-ui-tooltip-wrap"
+    @pointerenter="surface.pointerEnter"
+    @pointerleave="surface.pointerLeave"
+    @focusin="surface.focusIn"
+    @focusout="surface.focusOut"
+    @click="surface.click"
+    @contextmenu="surface.contextmenu"
+    @keydown="surface.key"
+  >
+    <PopupReference
+      :id="surface.id"
+      :open="surface.open.value"
+      kind="tooltip"
+      @element="surface.referenceElement.value = $event"
+      ><slot v-bind="surface.scope.value"
+    /></PopupReference>
+    <PopupSurfacePanel :surface="surface" :options="props" kind="tooltip">
+      <template #default="scope"
+        ><slot name="content" v-bind="scope">{{ text }}</slot></template
+      >
+    </PopupSurfacePanel>
+  </span>
+</template>
+<style scoped>
+.hys-ui-tooltip-wrap {
+  display: inline-flex;
+  vertical-align: middle;
+  position: relative;
+}
+.hys-ui-tooltip-wrap:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+</style>

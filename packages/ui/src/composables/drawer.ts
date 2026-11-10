@@ -12,12 +12,14 @@ export type HysDrawerCloseReason = HysModalCloseReason;
 export type HysDrawerActionContext = HysModalActionContext;
 export type HysDrawerInitialFocus = HysModalInitialFocus;
 export type HysDrawerSectionSize = HysModalSectionSize;
-export type HysDrawerBeforeClose = {
-  invoke(
-    reason: HysDrawerCloseReason,
-    context: HysDrawerActionContext,
-  ): boolean | void | Promise<boolean | void>;
-}["invoke"];
+// Include Function so Vue infers the runtime prop correctly for the bivariant callback.
+export type HysDrawerBeforeClose = Function &
+  {
+    invoke(
+      reason: HysDrawerCloseReason,
+      context: HysDrawerActionContext,
+    ): boolean | void | Promise<boolean | void>;
+  }["invoke"];
 export interface HysDrawerResizeOptions {
   minSize?: number | string;
   maxSize?: number | string;
