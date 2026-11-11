@@ -3,6 +3,7 @@ import { computed, ref, useTemplateRef } from "vue";
 import {
   HysAnimatedNumber,
   HysButton,
+  HysButtonGroup,
   HysChart,
   HysProgress,
   HysSelect,
@@ -45,20 +46,21 @@ const chart = computed(() => [
 </script>
 
 <template>
-  <div class="demo-stack">
-    <div class="demo-control-actions">
-      <HysButton size="sm" @click="target = target === 62 ? 86 : 62"
-        >切换报表数据</HysButton
-      >
-      <label class="demo-field"
-        >播放顺序<HysSelect v-model="timing" :options="modes"
-      /></label>
-      <HysButton size="sm" variant="secondary" @click="group.pause()"
-        >暂停整组</HysButton
-      >
-      <HysButton size="sm" variant="secondary" @click="group.resume()"
-        >继续整组</HysButton
-      >
+  <div class="demo-stack demo-interaction">
+    <div class="demo-preview demo-input-toolbar">
+      <label class="demo-toolbar-field">
+        <span>播放顺序</span>
+        <HysSelect v-model="timing" :options="modes" aria-label="播放顺序" />
+      </label>
+      <HysButton @click="target = target === 62 ? 86 : 62">
+        切换报表数据
+      </HysButton>
+      <div class="demo-toolbar-options">
+        <HysButtonGroup variant="secondary" aria-label="整组播放控制">
+          <HysButton @click="group.pause()">暂停整组</HysButton>
+          <HysButton @click="group.resume()">继续整组</HysButton>
+        </HysButtonGroup>
+      </div>
     </div>
     <div class="metrics">
       <HysAnimatedNumber
@@ -115,5 +117,10 @@ const chart = computed(() => [
   border-radius: 8px;
   font-size: 1.25rem;
   font-weight: 650;
+}
+@container (max-width: 407px) {
+  .metrics > :last-child {
+    grid-column: 1 / -1;
+  }
 }
 </style>

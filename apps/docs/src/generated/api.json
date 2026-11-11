@@ -555,6 +555,54 @@
         "global": false
       },
       {
+        "name": "animation",
+        "type": "HysNumberAnimation | undefined",
+        "required": false,
+        "default": "",
+        "description": "统一效果入口。接受效果名、带参数的配置，或最多 8 层的配置数组，支持运行时切换。",
+        "global": false
+      },
+      {
+        "name": "animationPresets",
+        "type": "Readonly<Record<string, HysNumberAnimation>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "用户预设表。预设可引用其他预设，循环引用自动跳过。",
+        "global": false
+      },
+      {
+        "name": "fallbackAnimation",
+        "type": "HysNumberAnimation | undefined",
+        "required": false,
+        "default": "",
+        "description": "animation 无法解析时使用的备用配置。",
+        "global": false
+      },
+      {
+        "name": "digitAnimations",
+        "type": "Readonly<Record<string, HysNumberAnimation>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按位权覆盖效果。键为 integer:0（个位）、fraction:1（第一位小数）或 *（所有未指定数位）。",
+        "global": false
+      },
+      {
+        "name": "motionIntensity",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "全局效果强度 0–2，默认 1；0 仅保留数值变化。",
+        "global": false
+      },
+      {
+        "name": "animationMotion",
+        "type": "\"off\" | \"full\" | \"simplified\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "full 完整效果，simplified 仅计数，off 立即到达目标。遵循系统减少动效设置。",
+        "global": false
+      },
+      {
         "name": "thresholdEffect",
         "type": "HysNumberEffect | readonly HysNumberEffect[] | undefined",
         "required": false,
@@ -1671,6 +1719,13 @@
         "description": "建议浮层实际显示状态变化"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开输入和浮层区域"
+      },
+      {
         "name": "update:open",
         "type": "[open: boolean]",
         "required": false,
@@ -1699,13 +1754,6 @@
         "description": "焦点进入整个组件"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开输入和浮层区域"
-      },
-      {
         "name": "pressEnter",
         "type": "[event: KeyboardEvent]",
         "required": false,
@@ -1723,7 +1771,7 @@
     "slots": [
       {
         "name": "input",
-        "type": "{ value: string; setValue: (value: string | number | null) => void; inputProps: { disabled: boolean; readonly: boolean; size: \"md\" | \"sm\" | \"lg\"; clearable: boolean | undefined; clearIcon: Component | undefined; placeholder: string | undefined; label: string | undefined; name: string | undefined; status: \"success\" | \"warning\" | \"error\" | undefined; error: string | undefined; bordered: boolean; id: string | undefined; role: string; autocomplete: string; ariaLabel: string; \"aria-autocomplete\": string; \"aria-expanded\": boolean; \"aria-controls\": string | undefined; \"aria-activedescendant\": string | undefined; \"aria-busy\": true | undefined; type?: string | undefined; formatter?: ((value: string, info: HysInputFormatInfo) => string) | undefined; autofocus?: boolean | undefined; inputProps?: InputHTMLAttributes | TextareaHTMLAttributes | undefined; prefixIcon?: Component | undefined; suffixIcon?: Component | undefined; showPassword?: boolean | undefined; showPasswordOn?: \"click\" | \"mousedown\" | undefined; passwordVisible?: boolean | undefined; defaultPasswordVisible?: boolean | undefined; showCount?: boolean | { formatter: (info: HysInputCountInfo) => string; } | undefined; showWordLimit?: boolean | undefined; countPosition?: \"inside\" | \"outside\" | undefined; wordLimitPosition?: \"inside\" | \"outside\" | undefined; countGraphemes?: HysInputCountStrategy | undefined; maxlength?: string | number | undefined; minlength?: string | number | undefined; parser?: ((value: string) => string | number) | undefined; allowInput?: ((value: string) => boolean) | undefined; rows?: number | undefined; autosize?: boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined; resize?: \"none\" | \"both\" | \"horizontal\" | \"vertical\" | undefined; selectOnFocus?: boolean | undefined; round?: boolean | undefined; }; loading: boolean; clear: () => void; }",
+        "type": "{ value: string; setValue: (value: string | number | null) => void; inputProps: { disabled: boolean; readonly: boolean; size: \"md\" | \"sm\" | \"lg\"; clearable: boolean | undefined; clearIcon: Component | undefined; placeholder: string | undefined; label: string | undefined; name: string | undefined; status: \"success\" | \"warning\" | \"error\" | undefined; error: string | undefined; bordered: boolean; id: string | undefined; role: string; autocomplete: string; ariaLabel: string; \"aria-autocomplete\": string; \"aria-expanded\": boolean; \"aria-controls\": string | undefined; \"aria-activedescendant\": string | undefined; \"aria-busy\": true | undefined; type?: string | undefined; formatter?: ((value: string, info: HysInputFormatInfo) => string) | undefined; autofocus?: boolean | undefined; inputProps?: InputHTMLAttributes | TextareaHTMLAttributes | undefined; modelModifiers?: HysInputModelModifiers | undefined; allowClear?: boolean | undefined; addonBefore?: string | undefined; addonAfter?: string | undefined; prefixIcon?: Component | undefined; suffixIcon?: Component | undefined; showPassword?: boolean | undefined; showPasswordOn?: \"click\" | \"mousedown\" | undefined; passwordVisible?: boolean | undefined; defaultPasswordVisible?: boolean | undefined; showCount?: boolean | { formatter: (info: HysInputCountInfo) => string; } | undefined; showWordLimit?: boolean | undefined; countPosition?: \"inside\" | \"outside\" | undefined; wordLimitPosition?: \"inside\" | \"outside\" | undefined; countGraphemes?: HysInputCountStrategy | undefined; maxlength?: string | number | undefined; minlength?: string | number | undefined; parser?: ((value: string) => string | number) | undefined; allowInput?: ((value: string) => boolean) | undefined; rows?: number | undefined; autosize?: boolean | { minRows?: number | undefined; maxRows?: number | undefined; } | undefined; resize?: \"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined; inputStyle?: StyleValue; inputmode?: \"search\" | \"none\" | \"text\" | \"decimal\" | \"tel\" | \"url\" | \"email\" | \"numeric\" | undefined; tabindex?: string | number | undefined; form?: string | undefined; validateEvent?: boolean | undefined; selectOnFocus?: boolean | undefined; round?: boolean | undefined; }; loading: boolean; clear: () => void; }",
         "required": false,
         "default": "",
         "description": "自定义输入，参数为 value、setValue、inputProps、loading、clear"
@@ -2196,18 +2244,10 @@
       },
       {
         "name": "trigger",
-        "type": "\"focus\" | \"click\" | \"hover\" | undefined",
+        "type": "\"click\" | \"hover\" | \"focus\" | undefined",
         "required": false,
         "default": "\"hover\"",
         "description": "成员浮层触发方式：hover、focus 或 click",
-        "global": false
-      },
-      {
-        "name": "placement",
-        "type": "Placement | undefined",
-        "required": false,
-        "default": "\"top-start\"",
-        "description": "成员浮层首选位置，自动避让边缘",
         "global": false
       },
       {
@@ -2216,6 +2256,14 @@
         "required": false,
         "default": "false",
         "description": "使用竖向排列",
+        "global": false
+      },
+      {
+        "name": "placement",
+        "type": "Placement | undefined",
+        "required": false,
+        "default": "\"top-start\"",
+        "description": "成员浮层首选位置，自动避让边缘",
         "global": false
       },
       {
@@ -3019,7 +3067,7 @@
       },
       {
         "name": "type",
-        "type": "\"button\" | \"reset\" | \"submit\" | HysButtonAppearance | undefined",
+        "type": "\"reset\" | \"button\" | \"submit\" | HysButtonAppearance | undefined",
         "required": false,
         "default": "",
         "description": "可指定语义外观或内置配色，也兼容 button、submit、reset 原生类型",
@@ -3027,7 +3075,7 @@
       },
       {
         "name": "nativeType",
-        "type": "\"button\" | \"reset\" | \"submit\" | undefined",
+        "type": "\"reset\" | \"button\" | \"submit\" | undefined",
         "required": false,
         "default": "",
         "description": "控制原生按钮的 button、submit 或 reset 行为，优先于 type 中的原生类型",
@@ -3222,7 +3270,7 @@
       },
       {
         "name": "direction",
-        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | undefined",
         "required": false,
         "default": "\"horizontal\"",
         "description": "按横向或纵向排列按钮，并在连接模式下调整相邻圆角",
@@ -3835,7 +3883,7 @@
       },
       {
         "name": "shadow",
-        "type": "\"hover\" | \"never\" | \"always\" | undefined",
+        "type": "\"hover\" | \"always\" | \"never\" | undefined",
         "required": false,
         "default": "\"never\"",
         "description": "always / hover / never 阴影，默认 never",
@@ -4677,6 +4725,20 @@
         "description": "已接受清空选择"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个控件"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysCascaderChange<N>]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受后的值及路径上下文"
+      },
+      {
         "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
@@ -4698,13 +4760,6 @@
         "description": "焦点进入整个控件"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开整个控件"
-      },
-      {
         "name": "load",
         "type": "[info: { node: N; path: HysTreeKey[]; children: N[]; }]",
         "required": false,
@@ -4717,13 +4772,6 @@
         "required": false,
         "default": "",
         "description": "某一列滚动：level 与原生 event"
-      },
-      {
-        "name": "value-change",
-        "type": "[value: V, info: HysCascaderChange<N>]",
-        "required": false,
-        "default": "",
-        "description": "宿主接受后的值及路径上下文"
       },
       {
         "name": "visible-change",
@@ -5272,18 +5320,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "控件或分组获得焦点的原生事件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开控件或整个分组"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
       }
     ],
     "slots": [
@@ -5527,18 +5575,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "控件或分组获得焦点的原生事件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开控件或整个分组"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
       },
       {
         "name": "reject",
@@ -5959,20 +6007,6 @@
         "description": "实际浮层可见状态变化"
       },
       {
-        "name": "update:open",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "请求显示或收起浮层"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "整个控件获得焦点的 FocusEvent"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
@@ -5985,6 +6019,20 @@
         "required": false,
         "default": "",
         "description": "显式取消预览"
+      },
+      {
+        "name": "update:open",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "请求显示或收起浮层"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件获得焦点的 FocusEvent"
       },
       {
         "name": "invalid",
@@ -7901,6 +7949,20 @@
         "description": "清空已被接受后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个选择器"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysDatePickerChange]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受后的值变化；字段 change 校验同时触发"
+      },
+      {
         "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
@@ -7913,13 +7975,6 @@
         "required": false,
         "default": "",
         "description": "焦点进入整个选择器"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开整个选择器"
       },
       {
         "name": "invalid",
@@ -7941,13 +7996,6 @@
         "required": false,
         "default": "",
         "description": "浏览日期或面板类型变化：(date,view,{index})"
-      },
-      {
-        "name": "value-change",
-        "type": "[value: V, info: HysDatePickerChange]",
-        "required": false,
-        "default": "",
-        "description": "宿主接受后的值变化；字段 change 校验同时触发"
       },
       {
         "name": "visible-change",
@@ -8803,6 +8851,20 @@
         "description": "清空已被接受后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个选择器"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysDatePickerChange]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受后的值变化；字段 change 校验同时触发"
+      },
+      {
         "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
@@ -8815,13 +8877,6 @@
         "required": false,
         "default": "",
         "description": "焦点进入整个选择器"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开整个选择器"
       },
       {
         "name": "invalid",
@@ -8843,13 +8898,6 @@
         "required": false,
         "default": "",
         "description": "浏览日期或面板类型变化：(date,view,{index})"
-      },
-      {
-        "name": "value-change",
-        "type": "[value: V, info: HysDatePickerChange]",
-        "required": false,
-        "default": "",
-        "description": "宿主接受后的值变化；字段 change 校验同时触发"
       },
       {
         "name": "visible-change",
@@ -9130,7 +9178,7 @@
       },
       {
         "name": "direction",
-        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | undefined",
         "required": false,
         "default": "\"horizontal\"",
         "description": "horizontal 或 vertical；垂直模式不显示文字",
@@ -9917,6 +9965,13 @@
         "description": "closed 的完成别名"
       },
       {
+        "name": "cancel",
+        "type": "[context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "取消/关闭守卫通过，接收操作原因和信号"
+      },
+      {
         "name": "open",
         "type": "[]",
         "required": false,
@@ -9936,13 +9991,6 @@
         "required": false,
         "default": "",
         "description": "抽屉请求打开或关闭时返回新的布尔状态，用于 v-model:open"
-      },
-      {
-        "name": "cancel",
-        "type": "[context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "取消/关闭守卫通过，接收操作原因和信号"
       },
       {
         "name": "ok",
@@ -10559,7 +10607,7 @@
       },
       {
         "name": "layout",
-        "type": "\"horizontal\" | \"vertical\" | \"inline\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | \"inline\" | undefined",
         "required": false,
         "default": "",
         "description": "vertical、horizontal 或 inline；未指定时保留 labelPosition / inline 用法",
@@ -10744,18 +10792,18 @@
     ],
     "events": [
       {
-        "name": "invalid",
-        "type": "[result: HysFormValidationResult]",
-        "required": false,
-        "default": "",
-        "description": "提交未通过，参数包含 valid、cancelled、values、errors 和 warnings"
-      },
-      {
         "name": "reset",
         "type": "[names: string[]]",
         "required": false,
         "default": "",
         "description": "完成重置，参数为字段路径列表"
+      },
+      {
+        "name": "invalid",
+        "type": "[result: HysFormValidationResult]",
+        "required": false,
+        "default": "",
+        "description": "提交未通过，参数包含 valid、cancelled、values、errors 和 warnings"
       },
       {
         "name": "submit",
@@ -12145,7 +12193,7 @@
       },
       {
         "name": "inputmode",
-        "type": "\"search\" | \"none\" | \"decimal\" | \"text\" | \"numeric\" | \"tel\" | \"url\" | \"email\" | undefined",
+        "type": "\"search\" | \"none\" | \"text\" | \"decimal\" | \"tel\" | \"url\" | \"email\" | \"numeric\" | undefined",
         "required": false,
         "default": "",
         "description": "原生 inputmode，用于提示移动端键盘布局。",
@@ -12759,7 +12807,7 @@
       },
       {
         "name": "invalidEntity",
-        "type": "\"mark\" | \"text\" | \"remove\" | undefined",
+        "type": "\"text\" | \"mark\" | \"remove\" | undefined",
         "required": false,
         "default": "\"mark\"",
         "description": "失效实体的处理方式。mark 标记，text 降为普通文本，remove 删除",
@@ -12991,7 +13039,7 @@
       },
       {
         "name": "type",
-        "type": "\"textarea\" | \"text\" | \"rich\" | undefined",
+        "type": "\"text\" | \"textarea\" | \"rich\" | undefined",
         "required": false,
         "default": "\"textarea\"",
         "description": "textarea 为多行输入，text 为单行输入，rich 为支持独立实体节点的富文本编辑器",
@@ -13204,6 +13252,13 @@
         "description": "开始处理清空操作时触发，受控宿主仍可决定是否接受更新"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "select",
         "type": "[user: HysMentionUser, prefix: string, option: HysMentionOption]",
         "required": false,
@@ -13216,13 +13271,6 @@
         "required": false,
         "default": "",
         "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
       },
       {
         "name": "loadError",
@@ -14288,6 +14336,13 @@
         "description": "closed 的完成别名"
       },
       {
+        "name": "cancel",
+        "type": "[context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "取消/关闭守卫通过，接收操作原因和信号"
+      },
+      {
         "name": "open",
         "type": "[]",
         "required": false,
@@ -14307,13 +14362,6 @@
         "required": false,
         "default": "",
         "description": "对话框请求展开或关闭时返回布尔状态，用于 v-model:open"
-      },
-      {
-        "name": "cancel",
-        "type": "[context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "取消/关闭守卫通过，接收操作原因和信号"
       },
       {
         "name": "drag",
@@ -14890,7 +14938,7 @@
       },
       {
         "name": "keyboard",
-        "type": "boolean | Partial<Record<\"ArrowUp\" | \"ArrowDown\" | \"Home\" | \"End\" | \"PageUp\" | \"PageDown\", boolean>> | undefined",
+        "type": "boolean | Partial<Record<\"End\" | \"ArrowUp\" | \"ArrowDown\" | \"Home\" | \"PageUp\" | \"PageDown\", boolean>> | undefined",
         "required": false,
         "default": "true",
         "description": "启用键盘步进，或按键分别开关；方向键、Home/End、PageUp/PageDown",
@@ -15000,6 +15048,13 @@
         "description": "执行清空策略后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入失焦的原生事件，未提交草稿会先尝试提交"
+      },
+      {
         "name": "input",
         "type": "[value: T | null]",
         "required": false,
@@ -15012,13 +15067,6 @@
         "required": false,
         "default": "",
         "description": "输入获得焦点的原生事件"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入失焦的原生事件，未提交草稿会先尝试提交"
       },
       {
         "name": "pressEnter",
@@ -16395,18 +16443,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "控件或分组获得焦点的原生事件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开控件或整个分组"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
       }
     ],
     "slots": [
@@ -16650,18 +16698,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "控件或分组获得焦点的原生事件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开控件或整个分组"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
       }
     ],
     "slots": [
@@ -17056,18 +17104,18 @@
         "description": "评分实际清零后触发，未接受或已为空时不触发"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入组件的原生事件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开组件的原生事件"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入组件的原生事件"
       },
       {
         "name": "keydown",
@@ -17309,18 +17357,18 @@
         "description": "编辑内容发生变化时返回新的 HTML 字符串"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
       }
     ],
     "slots": [],
@@ -17494,18 +17542,18 @@
         "description": "清空操作被接受后触发，是否查询空字符串由 searchOnClear 与 trigger 决定"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
       }
     ],
     "slots": [
@@ -17651,7 +17699,7 @@
       },
       {
         "name": "direction",
-        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | undefined",
         "required": false,
         "default": "",
         "description": "horizontal 或 vertical，显式布局方向",
@@ -17770,18 +17818,18 @@
         "description": "一次有效操作请求的新值；宿主可拒绝，实例方法结果反映最终接受情况"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入组件的原生事件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开组件的原生事件"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入组件的原生事件"
       }
     ],
     "slots": [
@@ -18412,6 +18460,13 @@
         "description": "实际浮层状态变化；update:open 表示请求状态"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开触发器和浮层后触发"
+      },
+      {
         "name": "update:open",
         "type": "[open: boolean]",
         "required": false,
@@ -18431,13 +18486,6 @@
         "required": false,
         "default": "",
         "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开触发器和浮层后触发"
       },
       {
         "name": "searchError",
@@ -19186,6 +19234,13 @@
         "description": "接受实际变化后确认；拖动在释放时触发一次，键盘、刻度和数字编辑在提交时触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "滑块失去焦点的原生事件"
+      },
+      {
         "name": "input",
         "type": "[value: T]",
         "required": false,
@@ -19198,13 +19253,6 @@
         "required": false,
         "default": "",
         "description": "滑块获得焦点的原生事件"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "滑块失去焦点的原生事件"
       },
       {
         "name": "dragStart",
@@ -19379,7 +19427,7 @@
       },
       {
         "name": "layout",
-        "type": "\"horizontal\" | \"vertical\" | undefined",
+        "type": "\"vertical\" | \"horizontal\" | undefined",
         "required": false,
         "default": "",
         "description": "布局方向，指定时优先于 vertical。",
@@ -20048,6 +20096,20 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
+        "name": "click",
+        "type": "[value: T, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "点击开关时返回当前值与原生事件；异步结果由 change 表示"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
+      },
+      {
         "name": "error",
         "type": "[error: unknown]",
         "required": false,
@@ -20060,20 +20122,6 @@
         "required": false,
         "default": "",
         "description": "控件或分组获得焦点的原生事件"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开控件或整个分组"
-      },
-      {
-        "name": "click",
-        "type": "[value: T, event: MouseEvent]",
-        "required": false,
-        "default": "",
-        "description": "点击开关时返回当前值与原生事件；异步结果由 change 表示"
       }
     ],
     "slots": [
@@ -21714,7 +21762,7 @@
       },
       {
         "name": "activation",
-        "type": "\"auto\" | \"manual\" | undefined",
+        "type": "\"manual\" | \"auto\" | undefined",
         "required": false,
         "default": "\"auto\"",
         "description": "方向键自动激活，或只移动焦点并等待 Enter/空格确认",
@@ -22257,6 +22305,13 @@
         "description": "完成清空后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件和浮层后的 FocusEvent"
+      },
+      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -22269,13 +22324,6 @@
         "required": false,
         "default": "",
         "description": "整个控件获得焦点的 FocusEvent"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开控件和浮层后的 FocusEvent"
       },
       {
         "name": "compositionend",
@@ -22502,6 +22550,14 @@
         "global": false
       },
       {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表单字段名；格式化输入提交原始文本",
+        "global": false
+      },
+      {
         "name": "status",
         "type": "\"success\" | \"warning\" | \"error\" | undefined",
         "required": false,
@@ -22555,14 +22611,6 @@
         "required": false,
         "default": "",
         "description": "独立标签，自动关联内部输入 ID",
-        "global": false
-      },
-      {
-        "name": "name",
-        "type": "string | undefined",
-        "required": false,
-        "default": "",
-        "description": "原生表单字段名；格式化输入提交原始文本",
         "global": false
       },
       {
@@ -22751,7 +22799,7 @@
       },
       {
         "name": "inputmode",
-        "type": "\"search\" | \"none\" | \"decimal\" | \"text\" | \"numeric\" | \"tel\" | \"url\" | \"email\" | undefined",
+        "type": "\"search\" | \"none\" | \"text\" | \"decimal\" | \"tel\" | \"url\" | \"email\" | \"numeric\" | undefined",
         "required": false,
         "default": "",
         "description": "原生 inputmode，用于提示移动端键盘布局。",
@@ -24599,18 +24647,18 @@
         "description": "搜索请求：side、query；搜索不清除目标或勾选"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个控件"
-      },
-      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点离开整个控件"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个控件"
       },
       {
         "name": "scroll",
@@ -25389,6 +25437,13 @@
         "description": "搜索文字更新请求"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开整个树组件"
+      },
+      {
         "name": "select",
         "type": "[node: N, info: HysTreeSelectInfo<N>]",
         "required": false,
@@ -25401,13 +25456,6 @@
         "required": false,
         "default": "",
         "description": "焦点进入整个树组件"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开整个树组件"
       },
       {
         "name": "load",
@@ -26429,6 +26477,20 @@
         "description": "清空被接受后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开触发器及浮层"
+      },
+      {
+        "name": "value-change",
+        "type": "[value: V, info: HysTreeSelectChange<N>]",
+        "required": false,
+        "default": "",
+        "description": "有效更新被宿主接受后触发"
+      },
+      {
         "name": "update:open",
         "type": "[value: boolean]",
         "required": false,
@@ -26450,13 +26512,6 @@
         "description": "焦点进入整个选择器"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开触发器及浮层"
-      },
-      {
         "name": "load",
         "type": "[info: { node: N; children: readonly N[]; loadedKeys: HysTreeKey[]; }]",
         "required": false,
@@ -26469,13 +26524,6 @@
         "required": false,
         "default": "",
         "description": "选项视口的原始滚动事件"
-      },
-      {
-        "name": "value-change",
-        "type": "[value: V, info: HysTreeSelectChange<N>]",
-        "required": false,
-        "default": "",
-        "description": "有效更新被宿主接受后触发"
       },
       {
         "name": "visible-change",
@@ -27191,6 +27239,20 @@
         "description": "请求完成：(response,file)"
       },
       {
+        "name": "start",
+        "type": "[file: T]",
+        "required": false,
+        "default": "",
+        "description": "开始请求：(file)"
+      },
+      {
+        "name": "progress",
+        "type": "[percentage: number, file: T]",
+        "required": false,
+        "default": "",
+        "description": "按帧合并的上传进度：(percentage,file)"
+      },
+      {
         "name": "error",
         "type": "[message: string]",
         "required": false,
@@ -27203,13 +27265,6 @@
         "required": false,
         "default": "",
         "description": "通过检查并已被列表接受的原始 File 数组"
-      },
-      {
-        "name": "progress",
-        "type": "[percentage: number, file: T]",
-        "required": false,
-        "default": "",
-        "description": "按帧合并的上传进度：(percentage,file)"
       },
       {
         "name": "abort",
@@ -27245,13 +27300,6 @@
         "required": false,
         "default": "",
         "description": "成功移除的原始文件条目"
-      },
-      {
-        "name": "start",
-        "type": "[file: T]",
-        "required": false,
-        "default": "",
-        "description": "开始请求：(file)"
       },
       {
         "name": "download",

@@ -18,8 +18,8 @@ function updateTotal() {
 </script>
 
 <template>
-  <div class="demo-stack">
-    <div class="demo-control-actions">
+  <div class="statistics">
+    <div class="statistic">
       <HysAnimatedNumber
         title="累计结算"
         :value="total"
@@ -32,7 +32,7 @@ function updateTotal() {
         >切换结算金额</HysButton
       >
     </div>
-    <div class="demo-control-actions">
+    <div class="statistic">
       <HysAnimatedNumber
         title="微量测量值"
         :value="tiny"
@@ -47,7 +47,7 @@ function updateTotal() {
         >切换极小数值</HysButton
       >
     </div>
-    <div class="demo-control-actions">
+    <div class="statistic">
       <HysAnimatedNumber
         title="审核倒计时"
         :deadline="deadline"
@@ -63,3 +63,22 @@ function updateTotal() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.statistics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: 12px;
+}
+.statistic {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: start;
+  gap: 14px;
+  min-inline-size: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--docs-border);
+  border-radius: 8px;
+  background: var(--docs-bg);
+}
+</style>

@@ -33,8 +33,16 @@ window.matchMedia = () => ({
 const { createApp, createSSRApp, h, nextTick, reactive, ref } =
   await import("vue");
 const { renderToString } = await import("vue/server-renderer");
-const { HysAnimatedNumber, useHysAnimatedNumber, useHysNumberAnimationGroup } =
-  await import("../packages/ui/dist/index.js");
+const {
+  HysAnimatedNumber,
+  useHysAnimatedNumber,
+  useHysNumberAnimationGroup,
+  hysNumberAnimationCatalog,
+  hysNumberAnimationCategories,
+  createHysNumberSequence,
+  parseHysNumberAnimation,
+  stringifyHysNumberAnimation,
+} = await import("../packages/ui/dist/index.js");
 
 const cleanup = [];
 afterEach(() => {
@@ -77,6 +85,88 @@ async function mount(values, acceptModel = true) {
   await nextTick();
   return { host, props, events, api: vm.value };
 }
+
+test("the expanded catalog has 220 distinct names and portable bounded configurations", () => {
+  assert.equal(hysNumberAnimationCatalog.length, 220);
+  assert.equal(
+    new Set(hysNumberAnimationCatalog.map(({ name }) => name)).size,
+    220,
+  );
+  assert.deepEqual(
+    hysNumberAnimationCategories.map(
+      ({ id }) =>
+        hysNumberAnimationCatalog.filter(({ category }) => category === id)
+          .length,
+    ),
+    [20, 20, 20, 20, 20, 20, 30, 30, 20, 20],
+  );
+  const serialized = stringifyHysNumberAnimation([
+    { name: "drum-roll", cycles: 20, strength: -1 },
+    "highlight",
+  ]);
+  assert.deepEqual(JSON.parse(serialized), [
+    { name: "drum-roll", cycles: 12, strength: 0 },
+    { name: "highlight" },
+  ]);
+  assert.equal(parseHysNumberAnimation(serialized)[1].name, "highlight");
+  assert.throws(() => parseHysNumberAnimation("{"), SyntaxError);
+});
+
+test("animation aliases resolve, cyclic aliases use fallback, and simplified mode preserves the number", async () => {
+  const { props, host, api } = await mount({
+    from: 2,
+    value: 84,
+    trigger: "manual",
+    animation: "example",
+    animationPresets: { example: "ring", ring: "example" },
+    fallbackAnimation: "flip",
+  });
+  assert(host.querySelector('[data-effect="flip"]'));
+  props.animationPresets = { example: ["cube-rotate", "highlight"] };
+  await nextTick();
+  assert(host.querySelector("canvas"));
+  api.seek(0.5);
+  await nextTick();
+  assert.equal(
+    host.querySelector(".hys-number-canvas-text").textContent,
+    api.displayValue,
+  );
+  props.animationMotion = "simplified";
+  await nextTick();
+  assert.equal(host.querySelector("canvas"), null);
+  props.animationMotion = "off";
+  await nextTick();
+  assert.equal(api.displayValue, "84");
+});
+
+test("sequence plans synchronize final times and distinguish row, column and mirrored motion", () => {
+  const options = { duration: 600, interval: 150, columns: 3 };
+  const ending = createHysNumberSequence("synchronized-stop", 6, options);
+  assert.equal(
+    new Set(ending.map(({ delay, duration }) => delay + duration)).size,
+    1,
+  );
+  assert.deepEqual(
+    createHysNumberSequence("row-reveal", 6, options).map(({ delay }) => delay),
+    [0, 0, 0, 150, 150, 150],
+  );
+  assert.deepEqual(
+    createHysNumberSequence("column-reveal", 6, options).map(
+      ({ delay }) => delay,
+    ),
+    [0, 150, 300, 0, 150, 300],
+  );
+  assert.deepEqual(
+    createHysNumberSequence("mirror-transition", 4, options).map(
+      ({ reverse }) => reverse,
+    ),
+    [false, true, false, true],
+  );
+  assert.deepEqual(
+    createHysNumberSequence("random-rearrange", 6, { seed: 29 }),
+    createHysNumberSequence("random-rearrange", 6, { seed: 29 }),
+  );
+});
 
 test("decimal strings animate beyond Number precision and settle on the exact target", async () => {
   const from = "9007199254740993.000000000001",

@@ -1,4 +1,9 @@
 import type { StyleValue, VNodeChild } from "vue";
+import type {
+  HysNumberAnimation,
+  HysNumberAnimationPresets,
+  HysNumberDigitAnimations,
+} from "./numberAnimation";
 
 export type HysNumberValue = number | string;
 export type HysNumberDirection = "up" | "down" | "none";
@@ -211,6 +216,18 @@ export interface HysAnimatedNumberProps
   visibilityThreshold?: number;
   /** 数字动画效果，可传数组组合。默认 count。 */
   effect?: HysNumberEffect | readonly HysNumberEffect[];
+  /** 统一效果入口。接受效果名、带参数的配置，或最多 8 层的配置数组，支持运行时切换。 */
+  animation?: HysNumberAnimation;
+  /** 用户预设表。预设可引用其他预设，循环引用自动跳过。 */
+  animationPresets?: HysNumberAnimationPresets;
+  /** animation 无法解析时使用的备用配置。 */
+  fallbackAnimation?: HysNumberAnimation;
+  /** 按位权覆盖效果。键为 integer:0（个位）、fraction:1（第一位小数）或 *（所有未指定数位）。 */
+  digitAnimations?: HysNumberDigitAnimations;
+  /** 全局效果强度 0–2，默认 1；0 仅保留数值变化。 */
+  motionIntensity?: number;
+  /** full 完整效果，simplified 仅计数，off 立即到达目标。遵循系统减少动效设置。 */
+  animationMotion?: "full" | "simplified" | "off";
   /** 播放区间的差值达到 changeThreshold 时追加的效果，默认 highlight。 */
   thresholdEffect?: HysNumberEffect | readonly HysNumberEffect[];
   /** 滚轮与滑动方向，默认 vertical。 */

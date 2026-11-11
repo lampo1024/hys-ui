@@ -42,20 +42,7 @@ const effect = computed<HysNumberEffect[]>(() =>
 
 <template>
   <div class="demo-stack">
-    <div class="demo-control-fields">
-      <label class="demo-field"
-        >效果<HysSelect v-model="selected" :options="options"
-      /></label>
-      <label class="demo-field"
-        >轴向<HysSelect
-          v-model="axis"
-          :options="[
-            { value: 'vertical', label: '垂直' },
-            { value: 'horizontal', label: '水平' },
-          ]"
-      /></label>
-    </div>
-    <div class="demo-control-actions">
+    <div class="demo-preview">
       <HysAnimatedNumber
         ref="sample"
         trigger="manual"
@@ -75,13 +62,38 @@ const effect = computed<HysNumberEffect[]>(() =>
           letterSpacing: '.07em',
         }"
       />
-      <HysButton size="sm" @click="sample?.restart()">播放效果</HysButton>
-      <HysButton size="sm" variant="secondary" @click="sample?.reverse()"
-        >反向播放</HysButton
-      >
+      <div class="demo-control-actions">
+        <HysButton size="sm" @click="sample?.restart()">播放效果</HysButton>
+        <HysButton size="sm" variant="secondary" @click="sample?.reverse()">
+          反向播放
+        </HysButton>
+      </div>
+    </div>
+    <div class="demo-control-fields effect-fields">
+      <label class="demo-field"
+        >效果<HysSelect v-model="selected" :options="options"
+      /></label>
+      <label class="demo-field"
+        >轴向<HysSelect
+          v-model="axis"
+          :options="[
+            { value: 'vertical', label: '垂直' },
+            { value: 'horizontal', label: '水平' },
+          ]"
+      /></label>
+    </div>
+    <div class="demo-control-actions">
       <HysCheckbox v-model="lowFirst" label="低位先动" />
       <HysCheckbox v-model="combined" label="叠加缩放和高亮" />
       <HysCheckbox v-model="pad" label="补齐四位" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.effect-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+  max-inline-size: 32rem;
+  gap: 12px;
+}
+</style>

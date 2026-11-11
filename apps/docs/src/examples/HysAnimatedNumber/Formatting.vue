@@ -62,7 +62,21 @@ const formatOptions = computed<HysNumberFormatOptions>(() => ({
 
 <template>
   <div class="demo-stack">
-    <div class="demo-control-fields">
+    <div class="demo-preview">
+      <HysAnimatedNumber
+        :key="format"
+        :value="values[format]"
+        v-bind="formatOptions"
+        :value-style="{
+          fontSize: 'clamp(1.25rem, 4vw, 2rem)',
+          fontWeight: 650,
+        }"
+      />
+      <small class="format-source"
+        >原始值 <code>{{ values[format] }}</code></small
+      >
+    </div>
+    <div class="demo-control-fields format-fields">
       <label class="demo-field"
         >格式<HysSelect v-model="format" :options="formats"
       /></label>
@@ -81,19 +95,25 @@ const formatOptions = computed<HysNumberFormatOptions>(() => ({
             asOptions(['half-up', 'half-even', 'floor', 'ceil', 'trunc'])
           "
       /></label>
-    </div>
-    <div class="demo-control-actions">
       <label class="demo-field"
         >小数位<HysNumberInput v-model="precision" :min="0" :max="6"
       /></label>
+    </div>
+    <div class="demo-control-actions">
       <HysCheckbox v-model="trim" label="去掉末尾零" />
       <HysCheckbox v-model="showSign" label="正数显示加号" />
       <HysCheckbox v-model="customSymbols" label="自定义分隔符和币种符号" />
     </div>
-    <HysAnimatedNumber
-      :value="values[format]"
-      v-bind="formatOptions"
-      :value-style="{ fontSize: 'clamp(1.25rem, 4vw, 2rem)', fontWeight: 650 }"
-    />
   </div>
 </template>
+
+<style scoped>
+.format-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+  gap: 12px;
+}
+.format-source {
+  color: var(--docs-text);
+  overflow-wrap: anywhere;
+}
+</style>

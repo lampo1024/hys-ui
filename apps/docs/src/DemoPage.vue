@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed,defineAsyncComponent,onActivated,onDeactivated,onBeforeUnmount,ref,shallowRef,watch} from 'vue'
 import {HysButton,HysBadge,HysTabs} from 'hys-ui'
-import {RotateCcw,Code2} from 'lucide-vue-next'
+import {ArrowDown,ChevronDown,RotateCcw,Code2} from 'lucide-vue-next'
 import scenarioTitles from './scenario-titles.json'
 import apiLoaders from 'virtual:hys-docs-api'
 import type {ComponentApi} from './apiTypes'
@@ -67,19 +67,28 @@ const tableOrder=['Basic','Configure','Layout','Fixed','Sticky','Grouped','Struc
 const surfaceOrder:Record<string,string[]>={HysPagination:["Basic","Configure","Layout","Bounds","Controlled"],HysTooltip:["Basic","Configure","Triggers","Placements","Controlled","Delay","Hover","Appearance","Sizes","Content","Input","Reference","Mount","Lifecycle","Methods","PopupMotion","States"],HysPopover:["Basic","Configure","Triggers","Placements","Controlled","Delay","Hover","Appearance","Sizes","Content","Input","Reference","Mount","Lifecycle","Methods","PopupMotion","States"],HysDrawer:["Basic","Configure","Sizes","Sections","Overflow","Async","Form","Guard","Controlled","Lifecycle","Contained","Nested","Resize","Layout","Appearance","Focus","Custom","Motion","States"],HysContextMenu:["Basic","Configure","Submenus","Checking","Selection","Controlled","Mapping","Custom","Position","Methods","Nested","States"],HysBreadcrumb:["Basic","Configure","Icons","Dropdown","Collapse","Router","Truncate","Custom","States"],HysModal:["Basic","Configure","Sizes","Sections","Async","Form","Guard","Layout","Overflow","DragResize","PreviewDrag","Recovery","Custom","Lifecycle","Nested","Focus","Service","ServiceUpdate","Motion","Appearance","Performance","States"],HysDatePicker:["Basic","Configure","Types","Weeks","WeekMultiple","WeekYear","WeekRules","WeekBounds","Formats","Multiple","Shortcuts","Bounds","Time","Input","Custom","Inline","Controlled","Form","Keyboard","Locale","States"],HysDateRangePicker:["Basic","Configure","Units","Weeks","Dual","Shortcuts","Bounds","Time","Partial","Locked","Custom","Inline","Methods","States"],HysCascader:["Basic","Configure","Hover","Levels","Multiple","Strict","Tags","Mapping","Search","Async","Root","Custom","Inline","Virtual","Controlled","Methods","Form","Keyboard","States"],HysTreeSelect:["Basic","Configure","Expansion","Multiple","Checking","Tags","Mapping","Simple","Labels","Remote","Lazy","Custom","Popup","Virtual","Form","Keyboard","Methods","States"],HysTree:["Basic","Configure","Defaults","Checking","Expansion","Multiple","Filtering","Mapping","Custom","Async","DragDrop","Editing","Virtual","Form","Keyboard","Locale","States"],HysTransfer:["Basic","Configure","Search","Selection","SelectionKeys","Ordering","OneWay","Dragging","Movement","Mapping","Custom","Pagination","Virtual","CustomPanel","Form","Methods","Locale","Disabled","States"],HysBadge:["Basic","Configure","Appearance","Counters","Status","Placement","Selectable"],HysCard:["Basic","Configure","Content","Tabs","Loading"],HysDivider:["Basic","Configure","Styles","Direction"],HysSkeleton:["Basic","Configure","Variants","Repeated","Template","Loading"]}
 function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');if(scene==='PopupMotion')return 95;if(props.name==='HysVirtualTable')return Math.max(0,virtualTableOrder.indexOf(scene));return tagColorOrder[props.name]?Math.max(0,tagColorOrder[props.name].indexOf(scene)):feedbackOrder[props.name]?Math.max(0,feedbackOrder[props.name].indexOf(scene)):surfaceOrder[props.name]?Math.max(0,surfaceOrder[props.name].indexOf(scene)):props.name==='HysTable'?Math.max(0,tableOrder.indexOf(scene)):props.name==='HysCalendar'?Math.max(0,calendarOrder.indexOf(scene)):props.name==='HysGantt'?Math.max(0,ganttOrder.indexOf(scene)):props.name==='HysProgress'?Math.max(0,progressOrder.indexOf(scene)):props.name==='HysUpload'?Math.max(0,uploadOrder.indexOf(scene)):props.name==='HysRating'?Math.max(0,ratingOrder.indexOf(scene)):props.name==='HysSegmented'?Math.max(0,segmentedOrder.indexOf(scene)):['HysCheckbox','HysCheckboxGroup','HysRadio','HysRadioGroup','HysSwitch'].includes(props.name)?Math.max(0,choiceOrder.indexOf(scene)):props.name==='HysAutocomplete'?Math.max(0,autocompleteOrder.indexOf(scene)):props.name==='HysAvatar'||props.name==='HysAvatarGroup'?Math.max(0,avatarOrder.indexOf(scene)):props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
 const buttonOrder=['Basic','Palette','Links','Features','Group','Actions','Async','Color','Form','Configure']
-const animatedNumberOrder=['Basic','Configure','Controls','Effects','Formatting','Statistic','Triggers','Activation','Realtime','Styling','Composition','Dashboard']
+const animatedNumberOrder=['Basic','Configure','Controls','Effects','AnimationCatalog','Formatting','Statistic','Triggers','Activation','Realtime','Styling','Composition','Dashboard']
 function rankExample(path:string) {
  const scene=path.split('/').pop()!.replace('.vue','')
  if(props.name==='HysAnimatedNumber')return animatedNumberOrder.indexOf(scene)
  return props.name==='HysButton' ? buttonOrder.indexOf(scene) : rank(path)
 }
-const scenarios=Object.keys(modules).filter(p=>p.includes('/'+props.name+'/')).sort((a,b)=>rankExample(a)-rankExample(b)||a.localeCompare(b)).map(p=>({path:p,component:defineAsyncComponent(modules[p] as ()=>Promise<any>),version:ref(0),loadSource:sources[p] as ()=>Promise<ExampleSourceData>}))
+const scenarios=Object.keys(modules)
+ .filter(path=>path.includes('/'+props.name+'/'))
+ .sort((a,b)=>rankExample(a)-rankExample(b)||a.localeCompare(b))
+ .map(path=>{
+  const filename=path.split('/').pop()!
+  const scene=filename.replace(/\.vue$/,'')
+  return {path,filename,scene,id:'scene-'+scene.toLowerCase(),component:defineAsyncComponent(modules[path] as ()=>Promise<any>),version:ref(0),loadSource:sources[path] as ()=>Promise<ExampleSourceData>}
+ })
 const articleRoot=ref<HTMLElement>(),tocRoot=ref<HTMLElement>()
-const tocState=useDocToc(articleRoot,tocRoot,()=>[...scenarios.map(s=>'scene-'+s.path.split('/').pop()!.replace('.vue','').toLowerCase()),'api','capabilities','usage'])
+const compactContents=ref<HTMLDetailsElement>()
+const hasCompactContents=computed(()=>['HysAnimatedNumber','HysInput','HysTextarea'].includes(props.name))
+const tocState=useDocToc(articleRoot,tocRoot,()=>[...scenarios.map(s=>s.id),'api','capabilities','usage'])
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
 const titles=computed<Record<string,string>>(()=>({...scenarioTitles.common,...scenarioTitles.components[props.name as keyof typeof scenarioTitles.components]}))
-async function reset(s:typeof scenarios[number]){const scene=s.path.split('/').pop()!.replace('.vue','').toLowerCase(),element=document.getElementById('scene-'+scene);if(element)await clearExamplePasswords(element);if(props.name==='HysDataGrid')localStorage.removeItem('hys-ui-grid:hys-docs-data-grid-'+scene);s.version.value++}
+async function reset(s:typeof scenarios[number]){const element=document.getElementById(s.id);if(element)await clearExamplePasswords(element);if(props.name==='HysDataGrid')localStorage.removeItem('hys-ui-grid:hys-docs-data-grid-'+s.scene.toLowerCase());s.version.value++}
 function jumpToSection(event:MouseEvent){
  if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return
  const link=(event.target as Element).closest<HTMLAnchorElement>('a[href^="#"]')
@@ -87,6 +96,7 @@ function jumpToSection(event:MouseEvent){
  const target=document.getElementById(link.getAttribute('href')!.slice(1))
  if(!target)return
  event.preventDefault()
+ if(compactContents.value?.open)compactContents.value.open=false
  tocState.select(target.id)
  target.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})
  if(event.detail===0){target.tabIndex=-1;target.focus({preventScroll:true})}
@@ -97,11 +107,22 @@ function jumpToSection(event:MouseEvent){
   <div class="doc-eyebrow">{{entry.category}} / COMPONENT</div>
   <header class="doc-heading"><div><h1>{{name}} <span>{{entry.label}}</span></h1><p>{{entry.description}}</p></div><HysBadge tone="blue">Vue 3.5+</HysBadge></header>
   <div class="usage"><Code2 :size="16"/><code>import { {{name}} } from 'hys-ui'</code></div>
-  <Teleport v-if="active" defer to="#docs-toc-host"><aside ref="tocRoot" class="doc-toc" aria-label="页内导航" @click="jumpToSection"><span>本页内容</span><a v-for="scenario in scenarios" :key="scenario.path" :class="{'toc-active':tocState.current.value==='scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()}" :aria-current="tocState.current.value==='scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()?'location':undefined" :href="'#scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()">{{titles[scenario.path.split('/').pop()!.replace('.vue','')]}}</a><a :class="{'toc-active':tocState.current.value==='api'}" :aria-current="tocState.current.value==='api'?'location':undefined" href="#api">API 参考</a><a :class="{'toc-active':tocState.current.value==='capabilities'}" :aria-current="tocState.current.value==='capabilities'?'location':undefined" href="#capabilities">功能说明</a><a :class="{'toc-active':tocState.current.value==='usage'}" :aria-current="tocState.current.value==='usage'?'location':undefined" href="#usage">使用说明</a></aside></Teleport>
-  <section v-for="scenario in scenarios" :id="'scene-'+scenario.path.split('/').pop()!.replace('.vue','').toLowerCase()" :key="scenario.path" class="example-card">
-   <header><div><span class="section-dot"></span><h2>{{titles[scenario.path.split('/').pop()!.replace('.vue','')]}}</h2></div><HysButton v-if="name!=='HysButton'||!/(Features|Color)\.vue$/.test(scenario.path)" variant="ghost" size="sm" @click="reset(scenario)"><RotateCcw :size="14"/>重置</HysButton></header>
+  <nav v-if="hasCompactContents" class="doc-jump" aria-label="页内导航" @click="jumpToSection">
+   <details ref="compactContents" class="doc-jump-examples">
+    <summary>本页示例<ChevronDown :size="14" aria-hidden="true"/></summary>
+    <ul>
+     <li v-for="scenario in scenarios" :key="scenario.id">
+      <a :href="'#'+scenario.id" :aria-current="tocState.current.value===scenario.id?'location':undefined">{{titles[scenario.scene]}}</a>
+     </li>
+    </ul>
+   </details>
+   <a href="#api" class="doc-jump-api">API 参考<ArrowDown :size="14" aria-hidden="true"/></a>
+  </nav>
+  <Teleport v-if="active" defer to="#docs-toc-host"><aside ref="tocRoot" class="doc-toc" aria-label="页内导航" @click="jumpToSection"><span>本页内容</span><a v-for="scenario in scenarios" :key="scenario.id" :class="{'toc-active':tocState.current.value===scenario.id}" :aria-current="tocState.current.value===scenario.id?'location':undefined" :href="'#'+scenario.id">{{titles[scenario.scene]}}</a><a :class="{'toc-active':tocState.current.value==='api'}" :aria-current="tocState.current.value==='api'?'location':undefined" href="#api">API 参考</a><a :class="{'toc-active':tocState.current.value==='capabilities'}" :aria-current="tocState.current.value==='capabilities'?'location':undefined" href="#capabilities">功能说明</a><a :class="{'toc-active':tocState.current.value==='usage'}" :aria-current="tocState.current.value==='usage'?'location':undefined" href="#usage">使用说明</a></aside></Teleport>
+  <section v-for="scenario in scenarios" :id="scenario.id" :key="scenario.path" class="example-card">
+   <header><div><span class="section-dot"></span><h2>{{titles[scenario.scene]}}</h2></div><HysButton v-if="name!=='HysButton'||!/(Features|Color)\.vue$/.test(scenario.path)" variant="ghost" size="sm" @click="reset(scenario)"><RotateCcw :size="14"/>重置</HysButton></header>
    <div class="example-stage"><form v-if="name==='HysInput'" class="demo-input-scope" autocomplete="off" @submit.prevent><component :is="scenario.component" :key="scenario.version.value"/></form><component v-else :is="scenario.component" :key="scenario.version.value"/></div>
-   <ExampleSource :load-source="scenario.loadSource" :filename="scenario.path.split('/').pop()!"/>
+   <ExampleSource :load-source="scenario.loadSource" :filename="scenario.filename"/>
   </section>
   <FormRuleReference v-if="name==='HysForm'||name==='HysFormItem'"/>
   <SelectReference v-if="name==='HysSelect'"/>
@@ -138,6 +159,74 @@ function jumpToSection(event:MouseEvent){
 </template>
 
 <style scoped>
+.doc-jump {
+  position: relative;
+  display: grid;
+  margin: -12px 0 24px;
+}
+.doc-jump-examples {
+  min-width: 0;
+  border: 1px solid var(--docs-border);
+  border-radius: 8px;
+  background: var(--docs-surface);
+}
+.doc-jump summary,
+.doc-jump-api {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.doc-jump summary {
+  justify-content: flex-start;
+  padding-inline-end: 112px;
+  cursor: pointer;
+  list-style: none;
+}
+.doc-jump summary::-webkit-details-marker { display: none; }
+.doc-jump details[open] summary svg { transform: rotate(180deg); }
+.doc-jump-api {
+  position: absolute;
+  inset-block-start: 1px;
+  inset-inline-end: 1px;
+  color: var(--docs-nav-active-text);
+  text-decoration: none;
+}
+.doc-jump ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+  gap: 4px 12px;
+  margin: 0;
+  padding: 8px;
+  max-block-size: min(44dvh, 18rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--docs-border);
+  list-style: none;
+}
+.doc-jump li a {
+  display: block;
+  padding: 8px;
+  border-radius: 5px;
+  color: var(--docs-text);
+  font-size: 12px;
+  text-decoration: none;
+}
+.doc-jump li a:hover,
+.doc-jump li a[aria-current] {
+  color: var(--docs-nav-active-text);
+  background: var(--docs-nav-active-bg);
+}
+.doc-jump a:focus-visible,
+.doc-jump summary:focus-visible {
+  outline: 2px solid var(--docs-nav-active-text);
+  outline-offset: -2px;
+  border-radius: 5px;
+}
+@media (min-width:1500px) { .doc-jump { display: none; } }
 .doc-page-button .usage { margin-bottom: 18px; }
 .doc-page-button .example-card { margin-bottom: 16px; }
 .doc-page-button .example-card > header { min-height: 44px; padding: 6px 16px; }

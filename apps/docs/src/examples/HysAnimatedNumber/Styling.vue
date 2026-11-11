@@ -29,20 +29,27 @@ const formatter = ({ displayValue, direction }: HysAnimatedNumberContext) =>
 </script>
 
 <template>
-  <div class="demo-stack">
-    <div class="demo-control-actions preview-controls">
-      <HysButton size="sm" @click="value = value === 12500 ? 36800 : 12500"
-        >刷新指标</HysButton
-      >
-      <HysCheckbox
-        :model-value="theme === 'dark'"
-        label="深色主题"
-        @update:model-value="theme = $event ? 'dark' : 'blue'"
-      />
-      <label class="demo-field"
-        >渲染方式<HysSelect v-model="rendering" :options="renderers"
-      /></label>
-      <HysCheckbox v-model="announce" label="朗读最终值" />
+  <div class="demo-stack demo-interaction">
+    <div class="demo-preview demo-input-toolbar preview-controls">
+      <label class="demo-toolbar-field">
+        <span>渲染方式</span>
+        <HysSelect
+          v-model="rendering"
+          :options="renderers"
+          aria-label="渲染方式"
+        />
+      </label>
+      <HysButton @click="value = value === 12500 ? 36800 : 12500">
+        刷新指标
+      </HysButton>
+      <div class="demo-toolbar-options">
+        <HysCheckbox
+          :model-value="theme === 'dark'"
+          label="深色主题"
+          @update:model-value="theme = $event ? 'dark' : 'blue'"
+        />
+        <HysCheckbox v-model="announce" label="朗读最终值" />
+      </div>
     </div>
     <div class="themed-preview" :data-dark="theme === 'dark'">
       <HysAnimatedNumber

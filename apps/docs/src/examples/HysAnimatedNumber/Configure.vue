@@ -35,7 +35,7 @@ const options = Object.keys(curves).map((value) => ({ label: value, value }));
 
 <template>
   <div class="demo-stack">
-    <div class="demo-control-fields">
+    <div class="demo-control-fields configuration-fields">
       <label class="demo-field"
         >时长（ms）<HysNumberInput
           v-model="duration"
@@ -62,8 +62,13 @@ const options = Object.keys(curves).map((value) => ({ label: value, value }));
       /></label>
     </div>
     <div class="demo-control-actions">
+      <HysCheckbox v-model="disabled" label="关闭动画" />
+      <HysCheckbox v-model="steps" label="以 20 为步长" />
+    </div>
+    <div class="demo-preview">
       <HysAnimatedNumber
         ref="sample"
+        title="预览数值"
         trigger="manual"
         :from="-48"
         :value="120"
@@ -77,8 +82,13 @@ const options = Object.keys(curves).map((value) => ({ label: value, value }));
         stable-width
       />
       <HysButton size="sm" @click="sample?.restart()">应用配置并播放</HysButton>
-      <HysCheckbox v-model="disabled" label="关闭动画" />
-      <HysCheckbox v-model="steps" label="以 20 为步长" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.configuration-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 100%), 1fr));
+  gap: 12px;
+}
+</style>

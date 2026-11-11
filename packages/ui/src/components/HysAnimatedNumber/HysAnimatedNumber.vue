@@ -31,9 +31,11 @@ import {
   type NumberPresentation,
 } from "../../composables/animatedNumberFormat";
 import { useHysAnimatedNumber } from "../../composables/useHysAnimatedNumber";
+import { resolveNumberAnimation } from "../../composables/numberAnimation";
 import { useNumberCountdown } from "./useNumberCountdown";
 import { useNumberVisuals } from "./useNumberVisuals";
 import NumberDigits from "./NumberDigits/NumberDigits.vue";
+import NumberAnimationCanvas from "./NumberAnimationCanvas/NumberAnimationCanvas.vue";
 
 const props = withDefaults(defineProps<HysAnimatedNumberProps>(), {
   duration: 650,
@@ -93,7 +95,7 @@ const engine = useHysAnimatedNumber(
     queueLimit: props.queueLimit,
     updateInterval: props.updateInterval,
     fps: props.fps,
-    disabled: props.disabled,
+    disabled: props.disabled || props.animationMotion === "off",
     pauseWhenHidden: props.pauseWhenHidden,
     autoPlay: false,
     autoUpdate: false,
@@ -328,6 +330,50 @@ const context = computed<HysAnimatedNumberContext>(() => ({
   remaining: isCountdown.value ? remaining.value : undefined,
   trend: trend.value,
 }));
+const animationPlans = computed(() => {
+  const plans = resolveNumberAnimation(props.animation, props.animationPresets);
+  return plans.length
+    ? plans
+    : resolveNumberAnimation(props.fallbackAnimation, props.animationPresets);
+});
+const digitPlans = computed(() =>
+  Object.fromEntries(
+    Object.entries(props.digitAnimations ?? {}).flatMap(([key, animation]) => {
+      const plans = resolveNumberAnimation(animation, props.animationPresets);
+      return plans.length ? [[key, plans]] : [];
+    }),
+  ),
+);
+const intensity = computed(() => bounded(props.motionIntensity, 1, 0, 2));
+const allowEffects = computed(
+  () =>
+    props.animationMotion !== "simplified" &&
+    props.animationMotion !== "off" &&
+    intensity.value > 0,
+);
+const useCanvas = computed(
+  () =>
+    !isCountdown.value &&
+    allowEffects.value &&
+    !slots.digit &&
+    (animationPlans.value.some(({ entry }) => entry) ||
+      Object.keys(digitPlans.value).length > 0),
+);
+const chosenEffects = computed(() => {
+  if (!allowEffects.value) return [];
+  if (useCanvas.value) return [];
+  const selected = animationPlans.value.flatMap(({ effect, entry }) =>
+    effect
+      ? [effect]
+      : isCountdown.value && entry?.name === "flip-clock"
+        ? ["flip" as const]
+        : [],
+  );
+  if (selected.length) return selected;
+  return typeof props.effect === "string"
+    ? [props.effect]
+    : (props.effect ?? []);
+});
 const {
   from,
   to,
@@ -337,7 +383,15 @@ const {
   visualStyle,
   outgoingStyle,
   sliding,
-} = useNumberVisuals(props, frame, context, motionEnabled, isCountdown);
+} = useNumberVisuals(
+  props,
+  frame,
+  context,
+  motionEnabled,
+  isCountdown,
+  chosenEffects,
+  allowEffects,
+);
 const start = computed(() =>
   isCountdown.value ? current.value : presentation.value.format(from.value),
 );
@@ -493,8 +547,22 @@ defineExpose({
           >{{ start.text }}</span
         >
         <span class="hys-ui-motion-number-content" :style="visualStyle">
+          <NumberAnimationCanvas
+            v-if="useCanvas"
+            :current="current"
+            :start="start"
+            :end="end"
+            :glyphs="presentation.localized"
+            :context="context"
+            :plans="animationPlans"
+            :digit-plans="digitPlans"
+            :intensity="intensity"
+            :motion="motionEnabled"
+            :axis="axis"
+            :theme="skin['data-hys-theme']"
+          />
           <NumberDigits
-            v-if="digitEffect || slots.digit || appearance !== 'plain'"
+            v-else-if="digitEffect || slots.digit || appearance !== 'plain'"
             :current="current"
             :start="start"
             :end="end"

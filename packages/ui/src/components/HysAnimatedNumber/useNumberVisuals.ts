@@ -19,6 +19,8 @@ export function useNumberVisuals(
   context: Readonly<Ref<HysAnimatedNumberContext>>,
   motionEnabled: Readonly<Ref<boolean>>,
   isCountdown: Readonly<Ref<boolean>>,
+  selected: Readonly<Ref<readonly HysNumberEffect[]>>,
+  allowEffects: Readonly<Ref<boolean>>,
 ) {
   const from = computed(() => frame.value.from),
     to = computed(() => frame.value.to);
@@ -28,9 +30,9 @@ export function useNumberVisuals(
       numberTrend(from.value, to.value, props.changeThreshold).significant,
   );
   const effects = computed(() =>
-    significant.value
-      ? [...list(props.thresholdEffect ?? "highlight"), ...list(props.effect)]
-      : list(props.effect),
+    significant.value && allowEffects.value
+      ? [...list(props.thresholdEffect ?? "highlight"), ...selected.value]
+      : selected.value,
   );
   const status = computed(() => frame.value.status);
   const running = computed(
@@ -39,6 +41,7 @@ export function useNumberVisuals(
   const visual = computed(
     () =>
       motionEnabled.value &&
+      allowEffects.value &&
       !isCountdown.value &&
       running.value &&
       frame.value.progress < 1,

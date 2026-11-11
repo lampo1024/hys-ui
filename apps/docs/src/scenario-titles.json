@@ -118,6 +118,7 @@
       "Configure": "时长、延迟与缓动",
       "Controls": "播放控制与进度",
       "Effects": "逐位效果与组合动效",
+      "AnimationCatalog": "扩展动效演示",
       "Formatting": "地区、单位与舍入",
       "Statistic": "高精度金额与翻牌倒计时",
       "Triggers": "播放触发条件",

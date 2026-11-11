@@ -63,8 +63,35 @@ const tokens = [
         <code>stableWidth</code> 为起点和终点预留空间。
       </li>
       <li>
-        <code>effect</code> 可叠加缩放、淡入淡出、高亮等整体效果。数组中第一个逐位效果负责数字位的渲染，阈值效果排在常规效果之前。
-        <code>interpolate</code> 只处理中间帧，返回无效值或抛出错误时回退到内置插值。
+        <code>effect</code>
+        可叠加缩放、淡入淡出、高亮等整体效果。数组中第一个逐位效果负责数字位的渲染，阈值效果排在常规效果之前。
+        <code>interpolate</code>
+        只处理中间帧，返回无效值或抛出错误时回退到内置插值。
+      </li>
+      <li>
+        <code>animation</code> 支持名称、配置或最多 8 层的配置数组，例如
+        <code>[{ name: 'drum-roll', cycles: 3 }, 'highlight']</code
+        >。配置还可指定 <code>strength</code>、<code>axis</code>、<code
+          >seed</code
+        >
+        和以总时长为基准的 <code>stagger</code>。
+        效果与数值使用同一播放进度，暂停、跳转和运行时切换共享该进度。
+      </li>
+      <li>
+        <code>animationPresets</code> 可以定义可复用的名称，例如
+        <code>{ dashboard: ['scan-reveal', 'highlight'] }</code>，再设置
+        <code>animation="dashboard"</code>。 解析不到效果时会尝试
+        <code>fallbackAnimation</code>。<code>digitAnimations</code> 的
+        <code>integer:0</code> 对应个位，<code>fraction:1</code>
+        对应第一位小数，<code>*</code> 匹配未单独配置的数位。
+      </li>
+      <li>
+        <code>hysNumberAnimationCatalog</code> 提供分类、名称和标题。用
+        <code>parseHysNumberAnimation</code> 与
+        <code>stringifyHysNumberAnimation</code> 读写效果配置， 用
+        <code>createHysNumberSequence(name, count, options)</code>
+        取得多实例的延迟、时长与方向。
+        环形进度、排行榜和业务阈值在演示中使用实际数值联动。
       </li>
       <li>
         倒计时按系统时间计算。服务器与客户端以相同初值渲染，挂载后同步剩余时间。<code
