@@ -11808,6 +11808,14 @@
         "global": false
       },
       {
+        "name": "modelModifiers",
+        "type": "HysInputModelModifiers | undefined",
+        "required": false,
+        "default": "",
+        "description": "Vue v-model 修饰符。lazy 延后写入模型，trim 去首尾空白，number 由 Vue 转换数值。",
+        "global": false
+      },
+      {
         "name": "defaultValue",
         "type": "string | number | null | undefined",
         "required": false,
@@ -11883,8 +11891,32 @@
         "name": "clearable",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "undefined",
         "description": "显示可访问的清空按钮；禁用和只读时隐藏",
+        "global": false
+      },
+      {
+        "name": "allowClear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "清空开关别名，clearable 显式设置时优先。",
+        "global": false
+      },
+      {
+        "name": "addonBefore",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入框外侧的附加文字，prepend 插槽优先。",
+        "global": false
+      },
+      {
+        "name": "addonAfter",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入框外侧的附加文字，append 插槽优先。",
         "global": false
       },
       {
@@ -12041,10 +12073,10 @@
       },
       {
         "name": "size",
-        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "type": "HysInputSize | undefined",
         "required": false,
         "default": "继承字段/表单配置或 md",
-        "description": "控件尺寸；显式设置优先于字段与表单尺寸",
+        "description": "sm、md、lg，也接受 small、middle、default、large。未设置时继承表单尺寸",
         "global": false
       },
       {
@@ -12065,7 +12097,7 @@
       },
       {
         "name": "resize",
-        "type": "\"none\" | \"both\" | \"horizontal\" | \"vertical\" | undefined",
+        "type": "\"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined",
         "required": false,
         "default": "\"vertical\"",
         "description": "非自动高度时允许的原生拉伸方向",
@@ -12077,6 +12109,46 @@
         "required": false,
         "default": "",
         "description": "内部原生输入的属性与样式；组件管理的状态优先",
+        "global": false
+      },
+      {
+        "name": "inputStyle",
+        "type": "StyleValue",
+        "required": false,
+        "default": "",
+        "description": "应用到原生输入元素的样式。自动高度启用时由组件管理 height 和 overflowY。",
+        "global": false
+      },
+      {
+        "name": "inputmode",
+        "type": "\"search\" | \"none\" | \"decimal\" | \"text\" | \"numeric\" | \"tel\" | \"url\" | \"email\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生 inputmode，用于提示移动端键盘布局。",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生控件的 Tab 顺序。",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生 form 元素 ID，可提交在表单外的输入。",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否由组件交互触发表单的 change、blur 校验，默认 true。",
         "global": false
       },
       {
@@ -12118,7 +12190,7 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": "输入、清空或组合输入完成后得到的原始字符串，显示格式通过 formatter 单独处理"
+        "description": "发布解析后的原始文本。lazy 在确认或失焦时发布，trim 和 number 由 Vue 处理"
       },
       {
         "name": "change",
@@ -12135,6 +12207,13 @@
         "description": "执行清空操作后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -12147,13 +12226,6 @@
         "required": false,
         "default": "",
         "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
       },
       {
         "name": "pressEnter",
@@ -12182,6 +12254,27 @@
         "required": false,
         "default": "",
         "description": "输入法组合更新"
+      },
+      {
+        "name": "keydown",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "原生控件上的 KeyboardEvent，包含输入法组合状态；preventDefault 可阻止 pressEnter"
+      },
+      {
+        "name": "mouseenter",
+        "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "指针进入组件外层时触发，参数为原生 MouseEvent"
+      },
+      {
+        "name": "mouseleave",
+        "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "指针离开组件外层时触发，参数为原生 MouseEvent"
       },
       {
         "name": "update:passwordVisible",
@@ -12251,6 +12344,13 @@
     ],
     "exposed": [
       {
+        "name": "element",
+        "type": "HTMLInputElement | HTMLTextAreaElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "实际接收输入的原生元素，与 input 一致，挂载前为 undefined"
+      },
+      {
         "name": "input",
         "type": "HTMLInputElement | HTMLTextAreaElement | undefined",
         "required": false,
@@ -12270,6 +12370,13 @@
         "required": false,
         "default": "false",
         "description": "中文等输入法是否处于组合输入阶段"
+      },
+      {
+        "name": "textareaStyle",
+        "type": "HysTextareaStyle",
+        "required": false,
+        "default": "",
+        "description": "自动高度计算出的 height 与 overflowY，未启用时为空对象"
       },
       {
         "name": "focus",
@@ -12298,6 +12405,13 @@
         "required": false,
         "default": "",
         "description": "清空可编辑的当前值，受控模式通过模型更新事件请求空字符串"
+      },
+      {
+        "name": "resizeTextarea",
+        "type": "() => Promise<void>",
+        "required": false,
+        "default": "",
+        "description": "resize 的多行专用名称。开启 autosize 时可在外层布局变化后重新测量"
       },
       {
         "name": "setSelectionRange",
@@ -22341,10 +22455,10 @@
       },
       {
         "name": "size",
-        "type": "\"md\" | \"sm\" | \"lg\" | undefined",
+        "type": "HysInputSize | undefined",
         "required": false,
         "default": "",
-        "description": "调整多行输入的字号与留白，未传时继承表单控件尺寸",
+        "description": "sm、md、lg，也接受 small、middle、default、large。未设置时继承表单尺寸",
         "global": false
       },
       {
@@ -22361,6 +22475,14 @@
         "required": false,
         "default": "",
         "description": "显示格式 (value, {userTyping,input})，不改变原始模型",
+        "global": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"warning\" | \"error\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "显式外观状态；字段错误优先",
         "global": false
       },
       {
@@ -22383,7 +22505,7 @@
         "name": "clearable",
         "type": "boolean | undefined",
         "required": false,
-        "default": "false",
+        "default": "undefined",
         "description": "显示可访问的清空按钮；禁用和只读时隐藏",
         "global": false
       },
@@ -22420,14 +22542,6 @@
         "global": false
       },
       {
-        "name": "status",
-        "type": "\"success\" | \"warning\" | \"error\" | undefined",
-        "required": false,
-        "default": "",
-        "description": "显式外观状态；字段错误优先",
-        "global": false
-      },
-      {
         "name": "error",
         "type": "string | undefined",
         "required": false,
@@ -22449,6 +22563,38 @@
         "required": false,
         "default": "",
         "description": "内部原生输入的属性与样式；组件管理的状态优先",
+        "global": false
+      },
+      {
+        "name": "modelModifiers",
+        "type": "HysInputModelModifiers | undefined",
+        "required": false,
+        "default": "",
+        "description": "Vue v-model 修饰符。lazy 延后写入模型，trim 去首尾空白，number 由 Vue 转换数值。",
+        "global": false
+      },
+      {
+        "name": "allowClear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "清空开关别名，clearable 显式设置时优先。",
+        "global": false
+      },
+      {
+        "name": "addonBefore",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入框外侧的附加文字，prepend 插槽优先。",
+        "global": false
+      },
+      {
+        "name": "addonAfter",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入框外侧的附加文字，append 插槽优先。",
         "global": false
       },
       {
@@ -22565,10 +22711,50 @@
       },
       {
         "name": "resize",
-        "type": "\"none\" | \"both\" | \"horizontal\" | \"vertical\" | undefined",
+        "type": "\"none\" | \"vertical\" | \"horizontal\" | \"both\" | undefined",
         "required": false,
         "default": "\"vertical\"",
         "description": "非自动高度时允许的原生拉伸方向",
+        "global": false
+      },
+      {
+        "name": "inputStyle",
+        "type": "StyleValue",
+        "required": false,
+        "default": "",
+        "description": "应用到原生输入元素的样式。自动高度启用时由组件管理 height 和 overflowY。",
+        "global": false
+      },
+      {
+        "name": "inputmode",
+        "type": "\"search\" | \"none\" | \"decimal\" | \"text\" | \"numeric\" | \"tel\" | \"url\" | \"email\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生 inputmode，用于提示移动端键盘布局。",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生控件的 Tab 顺序。",
+        "global": false
+      },
+      {
+        "name": "form",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "关联的原生 form 元素 ID，可提交在表单外的输入。",
+        "global": false
+      },
+      {
+        "name": "validateEvent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否由组件交互触发表单的 change、blur 校验，默认 true。",
         "global": false
       },
       {
@@ -22594,7 +22780,7 @@
         "type": "[value: string]",
         "required": false,
         "default": "",
-        "description": "编辑、清空或组合输入完成后的原始文本字符串"
+        "description": "发布解析后的原始文本。lazy 在原生 change 或失焦时发布，trim 和 number 由 Vue 处理"
       },
       {
         "name": "change",
@@ -22611,6 +22797,13 @@
         "description": "执行清空操作后触发"
       },
       {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "input",
         "type": "[value: string]",
         "required": false,
@@ -22623,13 +22816,6 @@
         "required": false,
         "default": "",
         "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
-      },
-      {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
       },
       {
         "name": "pressEnter",
@@ -22658,6 +22844,27 @@
         "required": false,
         "default": "",
         "description": "输入法组合更新"
+      },
+      {
+        "name": "keydown",
+        "type": "[event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "原生控件上的 KeyboardEvent，包含输入法组合状态；preventDefault 可阻止 pressEnter"
+      },
+      {
+        "name": "mouseenter",
+        "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "指针进入组件外层时触发，参数为原生 MouseEvent"
+      },
+      {
+        "name": "mouseleave",
+        "type": "[event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "指针离开组件外层时触发，参数为原生 MouseEvent"
       }
     ],
     "slots": [
@@ -22706,6 +22913,13 @@
     ],
     "exposed": [
       {
+        "name": "element",
+        "type": "HTMLTextAreaElement | undefined",
+        "required": false,
+        "default": "",
+        "description": "实际接收输入的原生元素，与 input 一致，挂载前为 undefined"
+      },
+      {
         "name": "input",
         "type": "HTMLTextAreaElement | undefined",
         "required": false,
@@ -22753,6 +22967,20 @@
         "required": false,
         "default": "",
         "description": "清空可编辑的当前值，受控模式通过模型更新事件请求空字符串"
+      },
+      {
+        "name": "resizeTextarea",
+        "type": "() => Promise<void>",
+        "required": false,
+        "default": "",
+        "description": "resize 的多行专用名称。开启 autosize 时可在外层布局变化后重新测量"
+      },
+      {
+        "name": "textareaStyle",
+        "type": "HysTextareaStyle",
+        "required": false,
+        "default": "",
+        "description": "自动高度计算出的 height 与 overflowY，未启用时为空对象"
       },
       {
         "name": "setSelectionRange",

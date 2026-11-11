@@ -21,7 +21,9 @@
         >input</code
       >
       在接受输入后触发，<code>change</code>
-      在原生提交或失焦时触发；清空会触发两者及 clear。
+      在原生提交、单行按 Enter 或失焦后触发。<code>v-model.lazy</code>
+      在这些时机更新模型，多行按 Enter 继续换行。<code>.trim</code>
+      去掉首尾空白，<code>.number</code> 由 Vue 将可解析的值转换为数字。清空会立即更新模型并触发 input、change 和 clear。
     </p>
     <h2>多行输入与实例</h2>
     <p>
@@ -33,8 +35,8 @@
     <p>
       使用 <code>ref&lt;HysInputInstance&gt;()</code> 或
       <code>ref&lt;HysTextareaInstance&gt;()</code> 获取实例，可调用
-      focus、blur、select、clear、resize、setSelectionRange 和 scrollTo。input
-      返回原生输入元素，textarea 在多行模式下返回文本区域。也可导入
+      focus、blur、select、clear、resizeTextarea、setSelectionRange 和 scrollTo。input 和 element
+      返回原生输入元素，textarea 在多行模式下返回文本区域。等待 resizeTextarea() 完成后可读 textareaStyle.height 和 overflowY。也可导入
       HysInputProps、HysTextareaProps、HysInputFormatInfo、HysInputCountInfo 和
       HysInputCountStrategy。
     </p>
@@ -42,7 +44,12 @@
       prefixIcon、suffixIcon、clearIcon 接受 Vue
       图标组件；对应插槽优先。password-icon 接收 visible，count 接收
       value、count、maxLength。class 与 style 作用于组件外层，inputProps
-      可设置内部输入的原生属性与样式；组件管理的值、类型、禁用和长度规则优先。
+      可设置内部输入的原生属性，inputStyle 直接作用于输入元素。inputmode 提示移动端键盘布局，form 通过 ID 关联表单。
+      addonBefore 和 addonAfter 接受附加文字，对应的 prepend 和 append 插槽优先。
+    </p>
+    <p>
+      <code>:validate-event="false"</code> 跳过本控件输入、确认和失焦触发的自动校验。
+      提交表单、主动校验以及宿主程序直接修改模型仍按表单规则处理。
     </p>
   </section>
 </template>

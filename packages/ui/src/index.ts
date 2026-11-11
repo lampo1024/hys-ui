@@ -130,6 +130,7 @@ export type {HysInputProps,HysTextareaProps,HysInputFormatInfo,HysInputCountInfo
 export {useHysToast,createHysToast} from './composables/useHysToast'
 export type {HysToastApi,HysToastOptions,HysToastConfig,HysToastHandle,HysToastServiceConfig,HysToastService} from './composables/useHysToast'
 export type {HysSliderValue,HysSliderStep,HysSliderMarks,HysSliderDragInfo,HysSliderInstance} from './composables/slider'
+export type {HysInputSize,HysInputModelModifiers,HysTextareaStyle} from './composables/textInput'
 export type {HysSelectLabeledValue} from './composables/selectOptions'
 export type {HysAvatarProps,HysAvatarSize,HysAvatarBreakpoint,HysAvatarFit,HysAvatarLoadInfo,HysAvatarOption,HysAvatarInstance,HysAvatarGroupProps,HysAvatarGroupInstance} from './composables/avatar'
 export type {HysAutocompleteProps,HysAutocompleteRow,HysAutocompleteOption,HysAutocompleteItem,HysAutocompleteGroup,HysAutocompleteDataOption,HysAutocompleteContext,HysAutocompleteCallback,HysAutocompleteFetch,HysAutocompleteInstance} from './composables/autocomplete'

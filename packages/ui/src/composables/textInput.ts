@@ -1,6 +1,7 @@
 import type {
   Component,
   InputHTMLAttributes,
+  StyleValue,
   TextareaHTMLAttributes,
 } from "vue";
 export interface HysInputFormatInfo {
@@ -13,8 +14,21 @@ export interface HysInputCountInfo {
   maxLength?: number;
 }
 export type HysInputCountStrategy = boolean | ((value: string) => number);
+export type HysInputSize =
+  "sm" | "md" | "lg" | "small" | "middle" | "default" | "large";
+export interface HysInputModelModifiers {
+  lazy?: boolean;
+  trim?: boolean;
+  number?: boolean;
+}
+export interface HysTextareaStyle {
+  height?: string;
+  overflowY?: "auto" | "hidden";
+}
 export interface HysInputProps {
   modelValue?: string | number | null;
+  /** Vue v-model 修饰符。lazy 延后写入模型，trim 去首尾空白，number 由 Vue 转换数值。 */
+  modelModifiers?: HysInputModelModifiers;
   defaultValue?: string | number | null;
   placeholder?: string;
   type?: string;
@@ -25,6 +39,12 @@ export interface HysInputProps {
   error?: string;
   status?: "error" | "warning" | "success";
   clearable?: boolean;
+  /** 清空开关别名，clearable 显式设置时优先。 */
+  allowClear?: boolean;
+  /** 输入框外侧的附加文字，prepend 插槽优先。 */
+  addonBefore?: string;
+  /** 输入框外侧的附加文字，append 插槽优先。 */
+  addonAfter?: string;
   clearIcon?: Component;
   prefixIcon?: Component;
   suffixIcon?: Component;
@@ -44,25 +64,39 @@ export interface HysInputProps {
   allowInput?: (value: string) => boolean;
   autocomplete?: string;
   name?: string;
-  size?: "sm" | "md" | "lg";
+  size?: HysInputSize;
   rows?: number;
   autosize?: boolean | { minRows?: number; maxRows?: number };
   resize?: "none" | "both" | "horizontal" | "vertical";
   inputProps?: InputHTMLAttributes | TextareaHTMLAttributes;
+  /** 应用到原生输入元素的样式。自动高度启用时由组件管理 height 和 overflowY。 */
+  inputStyle?: StyleValue;
+  /** 原生 inputmode，用于提示移动端键盘布局。 */
+  inputmode?: InputHTMLAttributes["inputmode"];
+  /** 原生控件的 Tab 顺序。 */
+  tabindex?: string | number;
+  /** 关联的原生 form 元素 ID，可提交在表单外的输入。 */
+  form?: string;
+  /** 是否由组件交互触发表单的 change、blur 校验，默认 true。 */
+  validateEvent?: boolean;
   autofocus?: boolean;
   selectOnFocus?: boolean;
   bordered?: boolean;
   round?: boolean;
 }
 export interface HysInputInstance {
+  element: HTMLInputElement | HTMLTextAreaElement | undefined;
   input: HTMLInputElement | HTMLTextAreaElement | undefined;
   textarea: HTMLTextAreaElement | undefined;
   isComposing: boolean;
+  passwordVisible: boolean;
+  textareaStyle: HysTextareaStyle;
   focus: (options?: FocusOptions) => void;
   blur: () => void;
   select: () => void;
   clear: () => void;
   resize: () => Promise<void>;
+  resizeTextarea: () => Promise<void>;
   setSelectionRange: (
     start: number,
     end: number,
@@ -70,9 +104,33 @@ export interface HysInputInstance {
   ) => void;
   scrollTo: (options: ScrollToOptions) => void;
 }
-export type HysTextareaProps = Omit<HysInputProps, 'type' | 'showPassword' | 'showPasswordOn' | 'passwordVisible' | 'defaultPasswordVisible'>
-export interface HysTextareaInstance extends Omit<HysInputInstance, 'input'> {
-  input: HTMLTextAreaElement | undefined
+export type HysTextareaProps = Omit<
+  HysInputProps,
+  | "type"
+  | "showPassword"
+  | "showPasswordOn"
+  | "passwordVisible"
+  | "defaultPasswordVisible"
+>;
+export interface HysTextareaInstance extends Omit<
+  HysInputInstance,
+  "input" | "element" | "passwordVisible"
+> {
+  input: HTMLTextAreaElement | undefined;
+  element: HTMLTextAreaElement | undefined;
+}
+
+export function textInputSize(size?: HysInputSize) {
+  if (size === "small") return "sm";
+  if (size === "middle" || size === "default") return "md";
+  if (size === "large") return "lg";
+  return size;
+}
+
+export function modelText(value: string, modifiers?: HysInputModelModifiers) {
+  const text = modifiers?.trim ? value.trim() : value;
+  const number = modifiers?.number ? parseFloat(text) : NaN;
+  return Number.isNaN(number) ? text : String(number);
 }
 let segmenter:
   { segment: (value: string) => Iterable<{ segment: string }> } | undefined;

@@ -272,6 +272,93 @@ test('Button disabled links cannot navigate; blank links have safe rel and slots
 test('Input forwards native attributes, composition, clear and password visibility',async()=>{const input=await mount(ui.HysInput,{modelValue:'abc',id:'native-field',name:'username',clearable:true,type:'password',showPassword:true});const field=input.find('input');assert.equal(field.id,'native-field');assert.equal(field.name,'username');await fire(field,'compositionstart');field.value='中文';await fire(field,'input');assert(!input.events.input);await fire(field,'compositionend');assert.equal(input.props.modelValue,'中文');await fire(input.find('[aria-label="显示密码"]'),'click');assert.equal(field.type,'text');await fire(input.find('[aria-label="清空输入"]'),'click');assert.equal(input.props.modelValue,'');assert.equal(input.events.clear.length,1)})
 test('Readonly Input never offers a clearing action',async()=>{const input=await mount(ui.HysInput,{modelValue:'fixed',readonly:true,clearable:true});assert(input.find('input').readOnly);assert(!input.find('[aria-label="清空输入"]'))})
 
+test('Input lazy modifiers keep editing separate from the model and commit once on Enter', async () => {
+  const item = await mount(ui.HysInput, {
+    modelValue: 'old', modelModifiers: { lazy: true, trim: true },
+    allowClear: true, addonBefore: 'ID', size: 'large', inputmode: 'numeric', tabindex: 2,
+  });
+  const input = item.vm.element;
+  assert.equal(input.getAttribute('inputmode'), 'numeric');
+  assert.equal(input.tabIndex, 2);
+  assert(item.find('.hys-ui-input-lg'));
+  assert.equal(item.find('.hys-ui-input-addon').textContent, 'ID');
+  input.value = ' 123 ';
+  await fire(input, 'input');
+  assert.equal(item.props.modelValue, 'old');
+  assert.deepEqual(item.events.input, [[' 123 ']]);
+  await fire(input, 'keydown', { key: 'Enter' });
+  await nextTick();
+  assert.equal(item.props.modelValue, '123');
+  assert.equal(input.value, '123');
+  assert.equal(item.events.pressEnter.length, 1);
+  assert.deepEqual(item.events.change, [['123']]);
+  await fire(input, 'change');
+  assert.equal(item.events.change.length, 1);
+  await fire(item.find('[aria-label="清空输入"]'), 'click');
+  assert.equal(item.props.modelValue, '');
+});
+
+test('Textarea lazy input keeps Enter for newlines and forwards raw native form submission', async () => {
+  const form = document.body.appendChild(document.createElement('form'));
+  form.id = 'external-note-form';
+  const item = await mount(ui.HysTextarea, {
+    modelValue: 'before', modelModifiers: { lazy: true }, form: form.id,
+    inputProps: { name: 'note' }, formatter: value => '[' + value + ']',
+    parser: value => value.replace(/^\[|\]$/g, ''),
+  });
+  const input = item.vm.element;
+  input.value = '[line one\nline two]';
+  await fire(input, 'input');
+  await fire(input, 'keydown', { key: 'Enter' });
+  assert.equal(item.props.modelValue, 'before');
+  assert.equal(new window.FormData(form).get('note'), 'before');
+  await fire(input, 'change');
+  await nextTick();
+  assert.equal(item.props.modelValue, 'line one\nline two');
+  assert.equal(new window.FormData(form).get('note'), 'line one\nline two');
+});
+
+test('Textarea exposes applied autosize styles and restores native inputStyle when disabled', async () => {
+  const item = await mount(ui.HysTextarea, {
+    autosize: { minRows: 2, maxRows: 3 },
+    inputStyle: { height: '45px', lineHeight: '20px', padding: '0', border: '0', boxSizing: 'border-box' },
+  });
+  const input = item.vm.element;
+  Object.defineProperty(input, 'scrollHeight', { configurable: true, value: 80 });
+  await item.vm.resizeTextarea();
+  assert.equal(input.style.height, '60px');
+  assert.deepEqual(item.vm.textareaStyle, { height: '60px', overflowY: 'auto' });
+  item.props.autosize = false;
+  await item.vm.resizeTextarea();
+  assert.equal(input.style.height, '45px');
+  assert.deepEqual(item.vm.textareaStyle, {});
+});
+
+test('Input validateEvent suppresses interaction validation while preserving explicit form checks', async () => {
+  const model = reactive({ title: '' }), automatic = ref(false);
+  const checks = [];
+  const form = await mount(ui.HysForm, {
+    model,
+    rules: { title: { trigger: ['change', 'blur'], validator: value => { checks.push(value); return true; } } },
+  }, { default: () => h(ui.HysFormItem, { prop: 'title', label: 'Title' }, () =>
+    h(ui.HysInput, { modelValue: model.title, validateEvent: automatic.value, 'onUpdate:modelValue': value => { model.title = value; } }),
+  ) });
+  const input = form.find('input');
+  input.value = 'first';
+  await fire(input, 'input');
+  await fire(input, 'focusout');
+  assert.equal(model.title, 'first');
+  assert.deepEqual(checks, []);
+  await form.vm.validate();
+  assert.deepEqual(checks, ['first']);
+  automatic.value = true;
+  await nextTick();
+  input.value = 'second';
+  await fire(input, 'input');
+  await pause(5);
+  assert.deepEqual(checks, ['first', 'second']);
+});
+
 test('Input formats displayed text, publishes raw values and keeps native form data unformatted',async()=>{
  const entry=await mount(ui.HysInput,{modelValue:'1234',name:'amount',formatter:value=>value?'$ '+value.replace(/\B(?=(\d{3})+(?!\d))/g,','):'',parser:value=>value.replace(/[$,\s]/g,'')});const control=entry.find('input:not([type="hidden"])');assert.equal(control.value,'$ 1,234');control.value='$ 2,500';await fire(control,'input');assert.equal(entry.props.modelValue,'2500');assert.equal(entry.events.input.at(-1)[0],'2500');assert.equal(entry.find('input[type="hidden"]').value,'2500');assert.equal(control.name,'');await fire(control,'change');await fire(control,'blur');assert.deepEqual(entry.events.change,[['2500']])
 })

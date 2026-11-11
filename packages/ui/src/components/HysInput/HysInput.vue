@@ -21,7 +21,9 @@ import {
 } from "../../composables/formContext";
 import { useHysRootAttrs } from "../../config";
 import {
+  modelText,
   textCount,
+  textInputSize,
   textLimit,
   textLengthLimit,
   type HysInputProps,
@@ -34,6 +36,8 @@ const props = withDefaults(defineProps<HysInputProps>(), {
   resize: "vertical",
   showPasswordOn: "click",
   passwordVisible: undefined,
+  clearable: undefined,
+  validateEvent: true,
   bordered: true,
   countPosition: "inside",
 });
@@ -45,13 +49,23 @@ const emit = defineEmits<{
   focus: [event: FocusEvent];
   blur: [event: FocusEvent];
   pressEnter: [event: KeyboardEvent];
+  keydown: [event: KeyboardEvent];
+  mouseenter: [event: MouseEvent];
+  mouseleave: [event: MouseEvent];
   compositionstart: [event: CompositionEvent];
   compositionupdate: [event: CompositionEvent];
   compositionend: [event: CompositionEvent];
   "update:passwordVisible": [value: boolean];
   passwordVisibleChange: [value: boolean];
 }>();
-const { disabled, size } = useHysControlState(props),
+const { disabled, size } = useHysControlState({
+    get disabled() {
+      return props.disabled;
+    },
+    get size() {
+      return textInputSize(props.size);
+    },
+  }),
   field = inject(fieldKey, undefined),
   form = inject(formKey, undefined);
 const hysRootAttrs = useHysRootAttrs(),
@@ -68,6 +82,7 @@ const localValue = ref(String(props.defaultValue ?? "")),
   );
 const composing = ref(false),
   draft = ref(""),
+  pendingValue = ref<string>(),
   localVisible = ref(props.defaultPasswordVisible),
   passwordVisible = computed(
     () => props.passwordVisible ?? localVisible.value ?? false,
@@ -75,7 +90,8 @@ const composing = ref(false),
 const textarea = computed(() => props.type === "textarea"),
   maxLength = computed(() => textLengthLimit(props.maxlength)),
   minLength = computed(() => textLengthLimit(props.minlength));
-const count = computed(() => textCount(current.value, props.countGraphemes)),
+const rawDraft = computed(() => pendingValue.value ?? current.value);
+const count = computed(() => textCount(rawDraft.value, props.countGraphemes)),
   overLimit = computed(
     () => maxLength.value !== undefined && count.value > maxLength.value,
   );
@@ -106,14 +122,16 @@ const outside = computed(
 const customLength = computed(
   () => !!(props.countGraphemes || props.formatter || props.parser),
 );
+const nativeName = computed(() => props.name ?? props.inputProps?.name);
+const nativeForm = computed(() => props.form ?? props.inputProps?.form);
 const hiddenName = computed(
-  () => !!(props.formatter || props.parser) && !!props.name,
+  () => !!(props.formatter || props.parser) && !!nativeName.value,
 );
 const countText = computed(() => {
   try {
     if (typeof props.showCount === "object")
       return props.showCount.formatter({
-        value: current.value,
+        value: rawDraft.value,
         count: count.value,
         maxLength: maxLength.value,
       });
@@ -154,6 +172,7 @@ function display(value: string) {
   if (input.value && input.value.value !== value) input.value.value = value;
 }
 function restore() {
+  pendingValue.value = undefined;
   display(format(current.value));
 }
 function nativeAttrs() {
@@ -188,15 +207,20 @@ function nativeValidity() {
         : "",
   );
 }
-function publish(value: string) {
+function publish(value: string, emitInput = true) {
   const ticket = ++revision;
-  echo = value;
-  if (props.modelValue === undefined) localValue.value = value;
+  const normalized = modelText(value, props.modelModifiers);
+  const release = props.validateEvent
+    ? undefined
+    : field?.deferChangeValidation?.();
+  echo = normalized;
+  if (props.modelValue === undefined) localValue.value = normalized;
   emit("update:modelValue", value);
-  emit("input", value);
+  if (emitInput) emit("input", value);
   void nextTick(() => {
+    release?.();
     if (ticket !== revision || !live) return;
-    if (current.value !== value) restore();
+    if (current.value !== normalized) restore();
     echo = undefined;
     nativeValidity();
   });
@@ -258,7 +282,12 @@ function edited(event: Event) {
         const next = caret(original, shown, position);
         el.setSelectionRange(next, next);
       } catch {}
-    publish(value);
+    if (props.modelModifiers?.lazy) {
+      pendingValue.value = value;
+      emit("input", value);
+    } else {
+      publish(value);
+    }
   } catch {
     const previous = accepted;
     display(previous);
@@ -276,6 +305,7 @@ function clear() {
   if (!live || disabled.value || props.readonly) return;
   composing.value = false;
   skipInput = undefined;
+  pendingValue.value = undefined;
   display(format(""));
   publish("");
   lastChanged = "";
@@ -284,6 +314,12 @@ function clear() {
   input.value?.focus();
 }
 async function changed() {
+  if (!live || disabled.value || props.readonly || composing.value) return;
+  if (pendingValue.value !== undefined) {
+    const value = pendingValue.value;
+    pendingValue.value = undefined;
+    publish(value, false);
+  }
   await nextTick();
   if (!live || disabled.value || props.readonly || composing.value) return;
   restore();
@@ -292,6 +328,19 @@ async function changed() {
     lastChanged = current.value;
     emit("change", current.value);
   }
+}
+function onKeydown(event: KeyboardEvent) {
+  emit("keydown", event);
+  if (
+    event.key !== "Enter" ||
+    event.defaultPrevented ||
+    event.isComposing ||
+    composing.value ||
+    event.keyCode === 229
+  )
+    return;
+  if (!textarea.value) void changed();
+  emit("pressEnter", event);
 }
 function compositionEnd(event: CompositionEvent) {
   if (!composing.value) return;
@@ -356,7 +405,7 @@ function passwordKey(event: KeyboardEvent) {
     setPassword(!passwordVisible.value);
   }
 }
-const resize = useTextareaSize(input, props, size, draft);
+const { resize, textareaStyle } = useTextareaSize(input, props, size, draft);
 function cleanup() {
   endPassword();
   live = false;
@@ -380,7 +429,7 @@ watch(
   { flush: "sync" },
 );
 watch(
-  () => [props.formatter, props.parser, props.type],
+  () => [props.formatter, props.parser, props.type, props.modelModifiers?.lazy],
   () => {
     composing.value = false;
     restore();
@@ -428,11 +477,14 @@ onActivated(() => {
 onDeactivated(cleanup);
 onBeforeUnmount(cleanup);
 defineExpose({
+  element: input,
   input,
   textarea: computed(() =>
     textarea.value ? (input.value as HTMLTextAreaElement) : undefined,
   ),
   isComposing: composing,
+  passwordVisible,
+  textareaStyle,
   focus: (options?: FocusOptions) => {
     if (!disabled.value) input.value?.focus(options);
   },
@@ -440,6 +492,7 @@ defineExpose({
   select: () => input.value?.select(),
   clear,
   resize,
+  resizeTextarea: resize,
   setSelectionRange: (
     start: number,
     end: number,
@@ -462,6 +515,9 @@ defineExpose({
       { 'hys-ui-input-disabled': disabled, 'hys-ui-input-textarea': textarea },
     ]"
     :style="attrs.style as CSSProperties"
+    :data-hys-ui-validate-event="validateEvent ? undefined : 'off'"
+    @mouseenter="emit('mouseenter', $event)"
+    @mouseleave="emit('mouseleave', $event)"
   >
     <label v-if="label" class="hys-ui-input-label" :for="inputId">{{
       label
@@ -469,12 +525,12 @@ defineExpose({
     <div
       class="hys-ui-input-group"
       :class="{
-        'hys-ui-input-has-prepend': $slots.prepend,
-        'hys-ui-input-has-append': $slots.append,
+        'hys-ui-input-has-prepend': $slots.prepend || addonBefore,
+        'hys-ui-input-has-append': $slots.append || addonAfter,
       }"
     >
-      <div v-if="$slots.prepend" class="hys-ui-input-addon">
-        <slot name="prepend" />
+      <div v-if="$slots.prepend || addonBefore" class="hys-ui-input-addon">
+        <slot name="prepend">{{ addonBefore }}</slot>
       </div>
       <div
         class="hys-ui-input-shell"
@@ -526,11 +582,16 @@ defineExpose({
           :maxlength="customLength ? undefined : maxLength"
           :minlength="customLength ? undefined : minLength"
           :autocomplete="autocomplete ?? inputProps?.autocomplete"
-          :name="hiddenName ? undefined : (name ?? inputProps?.name)"
+          :inputmode="inputmode ?? inputProps?.inputmode"
+          :tabindex="tabindex ?? inputProps?.tabindex"
+          :form="nativeForm"
+          :name="hiddenName ? undefined : nativeName"
           :rows="textarea ? rows : undefined"
           :style="[
             inputProps?.style,
+            inputStyle,
             textarea ? { resize: autosize ? 'none' : props.resize } : undefined,
+            textareaStyle,
           ]"
           @input="edited"
           @compositionstart="
@@ -549,12 +610,7 @@ defineExpose({
             changed();
             emit('blur', $event);
           "
-          @keydown.enter="
-            !$event.isComposing &&
-            !composing &&
-            $event.keyCode !== 229 &&
-            emit('pressEnter', $event)
-          "
+          @keydown="onKeydown"
         />
         <span
           v-if="$slots.prefix || prefixIcon"
@@ -564,7 +620,9 @@ defineExpose({
         ></span>
         <div class="hys-ui-input-trailing">
           <button
-            v-if="clearable && current && !disabled && !readonly"
+            v-if="
+              (clearable ?? allowClear) && rawDraft && !disabled && !readonly
+            "
             type="button"
             class="hys-ui-input-action"
             aria-label="清空输入"
@@ -608,7 +666,7 @@ defineExpose({
             :class="{ 'hys-ui-input-count-error': overLimit }"
             ><slot
               name="count"
-              :value="current"
+              :value="rawDraft"
               :count="count"
               :max-length="maxLength"
               >{{ countText }}</slot
@@ -616,14 +674,15 @@ defineExpose({
           >
         </div>
       </div>
-      <div v-if="$slots.append" class="hys-ui-input-addon">
-        <slot name="append" />
+      <div v-if="$slots.append || addonAfter" class="hys-ui-input-addon">
+        <slot name="append">{{ addonAfter }}</slot>
       </div>
     </div>
     <input
       v-if="hiddenName"
       type="hidden"
-      :name="name"
+      :name="nativeName"
+      :form="nativeForm"
       :value="current"
       :disabled="disabled"
     />
@@ -634,7 +693,7 @@ defineExpose({
       :class="{ 'hys-ui-input-count-error': overLimit }"
       ><slot
         name="count"
-        :value="current"
+        :value="rawDraft"
         :count="count"
         :max-length="maxLength"
         >{{ countText }}</slot

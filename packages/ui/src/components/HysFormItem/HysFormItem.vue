@@ -394,7 +394,11 @@ function sync() {
   else element.removeAttribute("aria-describedby");
 }
 function blur(event: FocusEvent) {
-  if ((event.target as HTMLElement).closest(".hys-ui-ent-field") !== root.value)
+  const target = event.target as HTMLElement;
+  if (
+    target.closest(".hys-ui-ent-field") !== root.value ||
+    target.closest('[data-hys-ui-validate-event="off"]')
+  )
     return;
   const next = event.relatedTarget as Node | null;
   if (next && root.value?.contains(next)) return;
@@ -409,6 +413,11 @@ function blur(event: FocusEvent) {
     }
   }
   void validate("blur");
+}
+function nativeChange(event: Event) {
+  const target = event.target as HTMLElement;
+  if (!form?.model.value && target.closest(".hys-ui-ent-field") === root.value &&
+      !target.closest('[data-hys-ui-validate-event="off"]')) void validate("change");
 }
 const field: HysFormField = {
   path,
@@ -571,7 +580,7 @@ defineExpose({
     :data-field-path="path || undefined"
     :data-validation-status="status"
     :aria-busy="status === 'validating' || undefined"
-    @change="!form?.model.value && validate('change')"
+    @change="nativeChange"
     @focusout="blur"
   >
     <component

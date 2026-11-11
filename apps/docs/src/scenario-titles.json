@@ -133,11 +133,15 @@
     "HysInput": {
       "Basic": "基础输入",
       "Affixes": "前后缀与附加内容",
-      "Methods": "事件与实例方法"
+      "Methods": "事件与实例方法",
+      "NativeControls": "原生配置与附加文字",
+      "ModelCommit": "模型修饰符与提交时机"
     },
     "HysTextarea": {
       "Basic": "基础多行输入",
-      "Graphemes": "可见字符与长度限制"
+      "Graphemes": "可见字符与长度限制",
+      "ModelCommit": "多行草稿与原生表单",
+      "Validation": "控制表单校验时机"
     },
     "HysSlider": {
       "Basic": "基础滑动",
