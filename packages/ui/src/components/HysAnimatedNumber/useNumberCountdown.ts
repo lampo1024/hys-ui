@@ -7,6 +7,10 @@ import {
   ref,
   watch,
 } from "vue";
+import {
+  listenVisibility,
+  unlistenVisibility,
+} from "../../composables/animatedNumberTiming";
 
 const units = { D: 86400000, H: 3600000, m: 60000, s: 1000, S: 1 } as const;
 const timeToken = /^(DD?|HH?|mm?|ss?|SSS)$/;
@@ -14,6 +18,7 @@ const timeToken = /^(DD?|HH?|mm?|ss?|SSS)$/;
 export function useNumberCountdown(
   deadline: () => number | Date | undefined,
   format: () => string,
+  pauseWhenHidden: () => boolean,
   onChange: (remaining: number) => void,
   onFinish: () => void,
 ) {
@@ -35,7 +40,8 @@ export function useNumberCountdown(
   function tick() {
     clearTimeout(timer);
     const time = end.value;
-    if (!active || time === undefined) return;
+    if (!active || time === undefined || (pauseWhenHidden() && document.hidden))
+      return;
     remaining.value = Math.max(
       0,
       Math.min(Number.MAX_SAFE_INTEGER, time - Date.now()),
@@ -60,10 +66,12 @@ export function useNumberCountdown(
   function start() {
     if (active) return;
     active = true;
+    listenVisibility(tick);
     tick();
   }
   function stop() {
     active = false;
+    unlistenVisibility(tick);
     clearTimeout(timer);
   }
   watch(end, () => {
@@ -72,6 +80,7 @@ export function useNumberCountdown(
     tick();
   });
   watch(milliseconds, tick);
+  watch(pauseWhenHidden, tick);
   onMounted(start);
   onActivated(start);
   onDeactivated(stop);

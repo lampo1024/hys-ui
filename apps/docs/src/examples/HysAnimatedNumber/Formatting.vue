@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import {
   HysAnimatedNumber,
   HysCheckbox,
+  HysNumberInput,
   HysSelect,
   type HysNumberFormat,
   type HysNumberFormatOptions,
@@ -15,6 +16,8 @@ const rounding = ref<HysNumberRounding>("half-up");
 const compact = ref<"none" | "short" | "zh" | "custom">("none");
 const trim = ref(false);
 const showSign = ref(false);
+const precision = ref(2);
+const customSymbols = ref(false);
 const asOptions = (values: string[]) =>
   values.map((value) => ({ label: value, value }));
 const formats = [
@@ -40,7 +43,7 @@ const formatOptions = computed<HysNumberFormatOptions>(() => ({
   numberFormat: format.value,
   locale: locale.value,
   rounding: rounding.value,
-  precision: 2,
+  precision: precision.value,
   trimZeros: trim.value,
   currency:
     locale.value === "de-DE" ? "EUR" : locale.value === "en-US" ? "USD" : "CNY",
@@ -51,6 +54,9 @@ const formatOptions = computed<HysNumberFormatOptions>(() => ({
         ? unitRule
         : compact.value,
   signDisplay: showSign.value ? "always" : "auto",
+  groupSeparator: customSymbols.value ? " " : undefined,
+  decimalSeparator: customSymbols.value ? "·" : undefined,
+  currencySymbol: customSymbols.value ? "¤" : undefined,
 }));
 </script>
 
@@ -77,13 +83,16 @@ const formatOptions = computed<HysNumberFormatOptions>(() => ({
       /></label>
     </div>
     <div class="demo-control-actions">
+      <label class="demo-field"
+        >小数位<HysNumberInput v-model="precision" :min="0" :max="6"
+      /></label>
       <HysCheckbox v-model="trim" label="去掉末尾零" />
       <HysCheckbox v-model="showSign" label="正数显示加号" />
+      <HysCheckbox v-model="customSymbols" label="自定义分隔符和币种符号" />
     </div>
     <HysAnimatedNumber
       :value="values[format]"
       v-bind="formatOptions"
-      :disabled="format === 'scientific'"
       :value-style="{ fontSize: 'clamp(1.25rem, 4vw, 2rem)', fontWeight: 650 }"
     />
   </div>

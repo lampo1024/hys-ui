@@ -22,7 +22,7 @@ import {
 import {
   bounded,
   numberDirection,
-  numberInterpolation,
+  createNumberInterpolator,
   numberValue,
 } from "./animatedNumberFormat";
 import type {
@@ -109,7 +109,7 @@ export function useHysAnimatedNumber(
           ? current.from
           : progress === 1
             ? current.to
-            : current.interpolate(eased),
+            : current.interpolate(progress, eased),
     };
   }
 
@@ -146,7 +146,7 @@ export function useHysAnimatedNumber(
       loops,
       duration: time,
       elapsed: -delay,
-      interpolate: numberInterpolation(from, to),
+      interpolate: createNumberInterpolator(from, to, options().interpolate),
       easing: makeEasing(options().easing),
       alternate: options().alternate ?? false,
       started: false,
@@ -260,7 +260,7 @@ export function useHysAnimatedNumber(
       settings.immediate ||
       instant() ||
       !current.duration ||
-      (frame.value.direction === "none" && (from !== to || count === Infinity))
+      (frame.value.direction === "none" && from !== to)
     ) {
       finishAnimation();
     } else {

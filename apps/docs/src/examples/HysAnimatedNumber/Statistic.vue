@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { HysAnimatedNumber, HysButton } from "hys-ui";
 
 const total = ref("9007199254740993.105");
+const tiny = ref("1.125e-92");
 const deadline = ref(Date.now() + 15000);
 const ended = ref(false);
 function restart() {
@@ -29,6 +30,21 @@ function updateTotal() {
       />
       <HysButton size="sm" variant="secondary" @click="updateTotal"
         >切换结算金额</HysButton
+      >
+    </div>
+    <div class="demo-control-actions">
+      <HysAnimatedNumber
+        title="微量测量值"
+        :value="tiny"
+        number-format="scientific"
+        :precision="3"
+        stable-width
+      />
+      <HysButton
+        size="sm"
+        variant="secondary"
+        @click="tiny = tiny === '1.125e-92' ? '9.975e-92' : '1.125e-92'"
+        >切换极小数值</HysButton
       >
     </div>
     <div class="demo-control-actions">

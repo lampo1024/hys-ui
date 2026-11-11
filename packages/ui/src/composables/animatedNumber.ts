@@ -15,7 +15,7 @@ export type HysNumberEasing =
   | ((progress: number) => number);
 export type HysNumberInterrupt = "retarget" | "restart" | "queue" | "snap";
 export type HysNumberTrigger =
-  "mount" | "update" | "manual" | "click" | "hover" | "visible";
+  "mount" | "activate" | "update" | "manual" | "click" | "hover" | "visible";
 export type HysNumberEffect =
   | "count"
   | "odometer"
@@ -23,6 +23,7 @@ export type HysNumberEffect =
   | "flip"
   | "slot"
   | "random"
+  | "scramble"
   | "fade"
   | "scale"
   | "bounce"
@@ -38,6 +39,15 @@ export type HysNumberRounding =
   "half-up" | "half-even" | "floor" | "ceil" | "trunc";
 export type HysNumberFormat = "decimal" | "percent" | "currency" | "scientific";
 
+export interface HysNumberInterpolationContext {
+  from: HysNumberValue;
+  to: HysNumberValue;
+  progress: number;
+  easedProgress: number;
+  /** 内置插值计算的当前值，字符串模式保留十进制精度。 */
+  defaultValue: HysNumberValue;
+}
+
 export interface HysNumberAnimationOptions {
   /** 目标值。十进制字符串可保留超出 Number 安全范围的精度。 */
   value?: HysNumberValue;
@@ -51,6 +61,8 @@ export interface HysNumberAnimationOptions {
   speed?: number;
   /** 缓动名称、四元组 [x1, y1, x2, y2] 或返回进度的函数。默认 ease-out。 */
   easing?: HysNumberEasing;
+  /** 替换中间帧数值。接收起止值、原始进度、缓动进度和内置插值，首尾始终精确。 */
+  interpolate?: (context: HysNumberInterpolationContext) => HysNumberValue;
   /** true 无限循环，正整数表示总轮数，默认 1。 */
   loop?: boolean | number;
   /** 循环轮次交替方向。 */
@@ -199,6 +211,8 @@ export interface HysAnimatedNumberProps
   visibilityThreshold?: number;
   /** 数字动画效果，可传数组组合。默认 count。 */
   effect?: HysNumberEffect | readonly HysNumberEffect[];
+  /** 播放区间的差值达到 changeThreshold 时追加的效果，默认 highlight。 */
+  thresholdEffect?: HysNumberEffect | readonly HysNumberEffect[];
   /** 滚轮与滑动方向，默认 vertical。 */
   axis?: "vertical" | "horizontal";
   /** 逐位启动间隔，单位毫秒。 */
@@ -211,6 +225,8 @@ export interface HysAnimatedNumberProps
   animationStyle?: (context: HysAnimatedNumberContext) => StyleValue;
   /** 为起点和终点文本预留宽度，并保留当前内容的自然宽度。 */
   stableWidth?: boolean;
+  /** plain 常规数字、panel 逐位面板、display 大屏数字。默认 plain。 */
+  appearance?: "plain" | "panel" | "display";
   /** 启用正负值的语义配色。 */
   colorBySign?: boolean;
   /** 按最近一次目标值增减配色，优先于 colorBySign。 */

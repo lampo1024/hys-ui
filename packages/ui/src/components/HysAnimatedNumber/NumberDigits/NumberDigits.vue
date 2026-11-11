@@ -7,6 +7,7 @@ import type {
 } from "../../../composables/animatedNumber";
 import {
   createDigitTracks,
+  digitCount,
   digitMotion,
   numberTokens,
 } from "../../../composables/animatedNumberDigits";
@@ -30,20 +31,35 @@ const props = defineProps<{
   motion: boolean;
   timer?: boolean;
   accessible?: boolean;
+  split?: boolean;
 }>();
 const slots = defineSlots<{
   digit?: (scope: HysNumberDigitContext) => unknown;
 }>();
+const inFlight = computed(
+  () =>
+    props.motion &&
+    !props.timer &&
+    props.context.progress < 1 &&
+    ["delayed", "playing", "paused"].includes(props.context.status),
+);
+const visibilityEffect = computed(
+  () => props.effect === "appear" || props.effect === "disappear",
+);
+const endpointLayout = computed(() =>
+  digitCount(props.start.parts) > digitCount(props.end.parts)
+    ? props.start
+    : props.end,
+);
 const tokens = computed(() => {
-  const count = props.current.parts.reduce(
-    (total, { type, value }) =>
-      total +
-      (type === "integer" || type === "fraction" ? [...value].length : 0),
-    0,
-  );
+  const layout =
+    inFlight.value && visibilityEffect.value && !slots.digit
+      ? endpointLayout.value
+      : props.current;
   return numberTokens(
-    props.current.parts,
-    count <= 48 && (!!props.effect || !!slots.digit),
+    layout.parts,
+    digitCount(layout.parts) <= 48 &&
+      (!!props.effect || !!slots.digit || props.split),
   );
 });
 const tracks = computed(
@@ -74,18 +90,11 @@ const cells = computed(() => {
       stagger || props.digitDuration !== undefined
         ? bounded((p * total - delay) / timing, 0, 0, 1)
         : bounded(props.context.easedProgress, p, 0, 1);
-    const stopped = ["idle", "stopped", "finished"].includes(
-      props.context.status,
-    );
+    const path =
+      inFlight.value && tracks.value ? tracks.value(token) : undefined;
     const track =
-      props.motion && !stopped && phase < 1 && props.effect && tracks.value
-        ? digitMotion(
-            props.effect,
-            tracks.value(token),
-            phase,
-            digitIndex,
-            props.glyphs,
-          )
+      path && (phase < 1 || visibilityEffect.value) && props.effect
+        ? digitMotion(props.effect, path, phase, digitIndex, props.glyphs)
         : undefined;
     const context: HysNumberDigitContext = {
       ...props.context,
@@ -98,6 +107,10 @@ const cells = computed(() => {
     return {
       token,
       context,
+      face:
+        path && phase === 1 && path.toPresent
+          ? props.glyphs[path.destination]
+          : token.text,
       track: track?.changed ? track : undefined,
       style: track
         ? {
@@ -122,7 +135,7 @@ const cells = computed(() => {
     :data-timer-motion="timer && motion && effect ? '' : undefined"
   >
     <template
-      v-for="{ token, context: digit, track, style } in cells"
+      v-for="{ token, context: digit, face, track, style } in cells"
       :key="token.key"
     >
       <span v-if="digit" class="hys-ui-motion-number-digit" :style="style">
@@ -139,7 +152,7 @@ const cells = computed(() => {
           v-else
           :key="timer ? token.text : undefined"
           class="hys-number-face hys-number-timer-face"
-          >{{ token.text }}</span
+          >{{ face }}</span
         >
       </span>
       <span
@@ -170,6 +183,7 @@ const cells = computed(() => {
   border: var(--hys-number-digit-border, none);
   background: var(--hys-number-digit-bg, transparent);
   min-inline-size: var(--hys-number-digit-width, 0);
+  margin-inline: var(--hys-number-digit-gap, 0);
   text-align: center;
   perspective: 2em;
 }
@@ -177,24 +191,46 @@ const cells = computed(() => {
   grid-area: 1 / 1;
   backface-visibility: hidden;
 }
-:is([data-effect="odometer"], [data-effect="wheel"], [data-effect="slot"])
+:is(
+    [data-effect="odometer"],
+    [data-effect="wheel"],
+    [data-effect="slot"],
+    [data-effect="scramble"]
+  )
   .hys-number-face-first {
   transform: translateY(
     calc(-100% * var(--number-phase) * var(--number-direction))
   );
 }
-:is([data-effect="odometer"], [data-effect="wheel"], [data-effect="slot"])
+:is(
+    [data-effect="odometer"],
+    [data-effect="wheel"],
+    [data-effect="slot"],
+    [data-effect="scramble"]
+  )
   .hys-number-face-second {
   transform: translateY(
     calc(100% * (1 - var(--number-phase)) * var(--number-direction))
   );
 }
-[data-axis="horizontal"] .hys-number-face-first {
+[data-axis="horizontal"]:is(
+    [data-effect="odometer"],
+    [data-effect="wheel"],
+    [data-effect="slot"],
+    [data-effect="scramble"]
+  )
+  .hys-number-face-first {
   transform: translateX(
     calc(-100% * var(--number-phase) * var(--number-direction))
   );
 }
-[data-axis="horizontal"] .hys-number-face-second {
+[data-axis="horizontal"]:is(
+    [data-effect="odometer"],
+    [data-effect="wheel"],
+    [data-effect="slot"],
+    [data-effect="scramble"]
+  )
+  .hys-number-face-second {
   transform: translateX(
     calc(100% * (1 - var(--number-phase)) * var(--number-direction))
   );
@@ -202,6 +238,11 @@ const cells = computed(() => {
 [data-effect="flip"] .hys-ui-motion-number-digit {
   background: var(--hys-number-digit-bg, var(--hys-ui-theme-primary-soft));
   border-radius: var(--hys-number-digit-radius, 0.15em);
+  background-image: linear-gradient(
+    transparent 49%,
+    color-mix(in srgb, currentColor 18%, transparent) 50%,
+    transparent 51%
+  );
 }
 [data-effect="flip"] .hys-number-face-first {
   transform: rotateX(

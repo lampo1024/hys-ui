@@ -69,6 +69,7 @@ onBeforeUnmount(() => clearInterval(timer));
       :queue-limit="5"
       :fps="30"
       :change-threshold="35"
+      :threshold-effect="['highlight', 'flash']"
       color-by-direction
       stable-width
       :value-style="{ fontSize: '2rem', fontWeight: 650 }"

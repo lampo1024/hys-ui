@@ -2,6 +2,7 @@
 const tokens = [
   ["--hys-number-font", "数值字号、粗细、字体与行高，接受 font 简写"],
   ["--hys-number-width / --hys-number-align", "数值区域宽度与整体对齐方式"],
+  ["--hys-number-justify", "固定宽度区域内的数值内容对齐"],
   ["--hys-number-positive / --hys-number-negative", "增减方向或正负值的语义色"],
   ["--hys-number-color / --hys-number-bg", "数字前景与背景色"],
   ["--hys-number-shadow / --hys-number-stroke", "数字阴影、发光和描边"],
@@ -16,6 +17,10 @@ const tokens = [
   [
     "--hys-number-digit-border / --hys-number-digit-radius",
     "单个数字位的边框和圆角",
+  ],
+  [
+    "--hys-number-digit-gap / --hys-number-text-gradient",
+    "数字位间距与 display 面板的字面渐变",
   ],
   [
     "--hys-number-prefix-color / --hys-number-suffix-color / --hys-number-unit-color",
@@ -41,7 +46,9 @@ const tokens = [
         是当前帧，<code>displayValue</code> 包含格式化单位，前后缀单独渲染。
       </li>
       <li>
-        <code>duration</code>、<code>delay</code>、<code>easing</code>
+        <code>duration</code>、<code>delay</code>、<code>easing</code>、<code
+          >interpolate</code
+        >
         与循环配置在新一轮播放时读取。<code>speed</code>、<code>fps</code>
         和数字格式可以在播放中修改。
       </li>
@@ -51,9 +58,13 @@ const tokens = [
         <code>resume()</code> 从该位置继续。
       </li>
       <li>
-        逐位效果只作用于前 48 位以内的数字显示，长数值以普通文本展示。可以用
+        数值达到 49 位时会回退为整段文本。可以用
         <code>minimumIntegerDigits</code> 补齐位数，并用
         <code>stableWidth</code> 为起点和终点预留空间。
+      </li>
+      <li>
+        <code>effect</code> 可叠加缩放、淡入淡出、高亮等整体效果。数组中第一个逐位效果负责数字位的渲染，阈值效果排在常规效果之前。
+        <code>interpolate</code> 只处理中间帧，返回无效值或抛出错误时回退到内置插值。
       </li>
       <li>
         倒计时按系统时间计算。服务器与客户端以相同初值渲染，挂载后同步剩余时间。<code
@@ -63,9 +74,24 @@ const tokens = [
         <code>end</code>。
       </li>
       <li>
+        页面隐藏时默认停止倒计时刷新，恢复后按截止时间同步剩余量。设置
+        <code>:pause-when-hidden="false"</code> 可继续刷新。
+      </li>
+      <li>
         <code>useHysAnimatedNumber(() =&gt; ({ value, from, duration }))</code>
         可在 Vue setup 中驱动图表或自定义视图。其 <code>frame</code> 为只读
         Ref，第二参数可接收 <code>(event, frame)</code>。
+      </li>
+      <li>
+        <code
+          >useHysNumberAnimationGroup(() =&gt; [first.value, second.value,
+          chart])</code
+        >
+        接受组件实例和独立动画，可统一暂停、继续、反向和跳转。
+      </li>
+      <li>
+        <code>trigger="activate"</code> 在组件从 KeepAlive 恢复时播放。组合
+        <code>['mount', 'activate']</code> 可同时在首次进入和重新进入时播放。
       </li>
     </ul>
     <details>

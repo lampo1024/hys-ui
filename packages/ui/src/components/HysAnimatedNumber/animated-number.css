@@ -24,6 +24,7 @@
   max-inline-size: 100%;
   inline-size: var(--hys-number-width, auto);
   align-items: baseline;
+  justify-content: var(--hys-number-justify, start);
   gap: var(--hys-number-affix-gap, 0.2em);
   font: var(--hys-number-font, inherit);
   font-variant-numeric: tabular-nums;
@@ -46,7 +47,18 @@
   );
 }
 .hys-ui-motion-number-layout {
+  position: relative;
   min-inline-size: 0;
+}
+.hys-number-sliding {
+  overflow: clip;
+}
+.hys-ui-motion-number-outgoing {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  pointer-events: none;
+  overflow-wrap: anywhere;
 }
 .hys-number-stable {
   display: inline-grid;
@@ -84,6 +96,29 @@
 }
 .hys-ui-motion-number-unit {
   color: var(--hys-number-unit-color, inherit);
+}
+[data-appearance="panel"],
+[data-appearance="display"] {
+  --hys-number-digit-width: 0.78em;
+  --hys-number-digit-gap: 0.035em;
+  --hys-number-digit-bg: var(--hys-ui-theme-primary-soft);
+  --hys-number-digit-border: 1px solid var(--hys-ui-theme-border);
+  --hys-number-digit-radius: 0.13em;
+}
+[data-appearance="display"] {
+  --hys-number-font:
+    750 clamp(1.45rem, 5vw, 3.1rem) / 1.25 ui-monospace, monospace;
+  --hys-number-shadow: 0 0.035em 0.045em
+    color-mix(in srgb, var(--hys-ui-theme-primary) 25%, transparent);
+}
+[data-appearance="display"] :deep(.hys-number-face) {
+  color: transparent;
+  background-image: var(
+    --hys-number-text-gradient,
+    linear-gradient(var(--hys-ui-theme-text), var(--hys-ui-theme-primary))
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
 }
 :deep(.hys-ui-motion-number-separator) {
   color: var(--hys-number-separator-color, inherit);

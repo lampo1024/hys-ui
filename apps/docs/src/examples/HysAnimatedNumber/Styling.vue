@@ -4,6 +4,7 @@ import {
   HysAnimatedNumber,
   HysButton,
   HysCheckbox,
+  HysSelect,
   provideHysConfig,
   type HysAnimatedNumberContext,
   type HysTheme,
@@ -11,18 +12,25 @@ import {
 import { Activity } from "lucide-vue-next";
 
 const theme = ref<HysTheme>("blue");
-const custom = ref(false);
+const rendering = ref("default");
+const renderers = [
+  { value: "default", label: "内置翻牌" },
+  { value: "digit", label: "自定义数字位" },
+  { value: "formatter", label: "自定义格式器" },
+];
 const announce = ref(false);
 const value = ref(12500);
 provideHysConfig({ theme });
 const animationStyle = ({ progress }: HysAnimatedNumberContext) => ({
   textShadow: `0 0 ${Math.sin(progress * Math.PI) * 0.5}em var(--hys-ui-theme-primary)`,
 });
+const formatter = ({ displayValue, direction }: HysAnimatedNumberContext) =>
+  displayValue + (direction === "up" ? " ↑" : direction === "down" ? " ↓" : "");
 </script>
 
 <template>
   <div class="demo-stack">
-    <div class="demo-control-actions">
+    <div class="demo-control-actions preview-controls">
       <HysButton size="sm" @click="value = value === 12500 ? 36800 : 12500"
         >刷新指标</HysButton
       >
@@ -31,7 +39,9 @@ const animationStyle = ({ progress }: HysAnimatedNumberContext) => ({
         label="深色主题"
         @update:model-value="theme = $event ? 'dark' : 'blue'"
       />
-      <HysCheckbox v-model="custom" label="自定义逐位渲染" />
+      <label class="demo-field"
+        >渲染方式<HysSelect v-model="rendering" :options="renderers"
+      /></label>
       <HysCheckbox v-model="announce" label="朗读最终值" />
     </div>
     <div class="themed-preview" :data-dark="theme === 'dark'">
@@ -42,6 +52,7 @@ const animationStyle = ({ progress }: HysAnimatedNumberContext) => ({
         :precision="2"
         unit="人"
         :effect="['flip', 'gradient']"
+        :formatter="rendering === 'formatter' ? formatter : undefined"
         :animation-style="animationStyle"
         :announce="announce"
         :duration="1100"
@@ -49,7 +60,7 @@ const animationStyle = ({ progress }: HysAnimatedNumberContext) => ({
         stable-width
       >
         <template #prefix><Activity :size="18" aria-hidden="true" /></template>
-        <template v-if="custom" #digit="{ digit, position }">
+        <template v-if="rendering === 'digit'" #digit="{ digit, position }">
           <strong
             class="custom-digit"
             :class="{ 'digit-tenths': position === 1 }"
@@ -65,6 +76,13 @@ const animationStyle = ({ progress }: HysAnimatedNumberContext) => ({
 </template>
 
 <style scoped>
+.preview-controls {
+  --hys-ui-text: var(--docs-text, #172744);
+  --hys-ui-muted: var(--docs-muted, #65728a);
+  --hys-ui-surface: var(--docs-surface, #fff);
+  --hys-ui-border: var(--docs-border, #e6ebf4);
+  --hys-ui-primary: #3168f5;
+}
 .themed-preview {
   padding: 1rem;
   border: 1px solid var(--docs-border);

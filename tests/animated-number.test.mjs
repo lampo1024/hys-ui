@@ -33,7 +33,7 @@ window.matchMedia = () => ({
 const { createApp, createSSRApp, h, nextTick, reactive, ref } =
   await import("vue");
 const { renderToString } = await import("vue/server-renderer");
-const { HysAnimatedNumber, useHysAnimatedNumber } =
+const { HysAnimatedNumber, useHysAnimatedNumber, useHysNumberAnimationGroup } =
   await import("../packages/ui/dist/index.js");
 
 const cleanup = [];
@@ -102,6 +102,94 @@ test("decimal strings animate beyond Number precision and settle on the exact ta
   assert.equal(api.displayValue, value);
   assert.equal(events.end.length, 1);
   assert.equal(events.end[0].status, "finished");
+});
+
+test("custom interpolation can replace intermediate values and falls back on failure", async () => {
+  const { api } = await mount({
+    from: 0,
+    value: 100,
+    duration: 100,
+    easing: "linear",
+    interpolate: ({ progress }) => {
+      if (progress > 0.5) throw Error("Invalid custom frame");
+      return 35;
+    },
+  });
+  assert.equal(api.frame.value, 0);
+  api.seek(0.5);
+  assert.equal(api.frame.value, 35);
+  api.seek(0.75);
+  assert.equal(api.frame.value, 75);
+  api.finishAnimation();
+  assert.equal(api.frame.value, 100);
+});
+
+test("threshold effects compose enter and exit layers without exposing the outgoing number", async () => {
+  const { api, host } = await mount({
+    from: 10,
+    value: 100,
+    duration: 100,
+    easing: "linear",
+    changeThreshold: 60,
+    thresholdEffect: ["fade", "slide"],
+    axis: "horizontal",
+  });
+  api.seek(0.5);
+  await nextTick();
+  const outgoing = host.querySelector(".hys-ui-motion-number-outgoing");
+  assert.equal(outgoing.textContent, "10");
+  assert.equal(outgoing.getAttribute("aria-hidden"), "true");
+  assert.equal(outgoing.style.opacity, "0.5");
+  assert.equal(outgoing.style.transform, "translateX(-50%)");
+  assert.equal(api.displayValue, "55");
+  api.finishAnimation();
+  await nextTick();
+  assert.equal(host.querySelector(".hys-ui-motion-number-outgoing"), null);
+  assert.equal(host.textContent, "100");
+});
+
+test("digit appearance preserves absent places and deterministic scramble settles at the exact target", async () => {
+  const { api, host, props } = await mount({
+    from: 9,
+    value: 12,
+    duration: 100,
+    effect: "appear",
+  });
+  assert.equal(host.querySelector(".hys-number-face-first").textContent, "");
+  api.seek(0.4);
+  props.effect = "scramble";
+  await nextTick();
+  const first = host.querySelector(".hys-number-digits").textContent;
+  api.seek(0.6);
+  await nextTick();
+  api.seek(0.4);
+  await nextTick();
+  assert.equal(host.querySelector(".hys-number-digits").textContent, first);
+  api.finishAnimation();
+  await nextTick();
+  assert.equal(
+    host.querySelector(".hys-number-digits").getAttribute("aria-label"),
+    "12",
+  );
+  assert.equal(host.textContent, "12");
+});
+
+test("a finished digit stays at its destination while the overall timeline continues", async () => {
+  const { api, host } = await mount({
+    from: 10,
+    value: 90,
+    effect: "slot",
+    duration: 100,
+    digitDuration: 30,
+    easing: "linear",
+  });
+  api.seek(0.5);
+  await nextTick();
+  assert.equal(api.displayValue, "50");
+  assert.equal(host.textContent, "90");
+  api.seek(0.75);
+  await nextTick();
+  assert.equal(host.textContent, "90");
 });
 
 test("seeking, reversing twice and retargeting preserve the current frame", async () => {
@@ -285,6 +373,49 @@ test("the composable shares one request across instances and releases it when st
   assert.equal(requests.size, 0);
 });
 
+test("group controls synchronize many independent animations without per-instance frame requests", async () => {
+  const members = [];
+  const app = createApp({
+    setup() {
+      for (let index = 1; index <= 64; index++) {
+        members.push(
+          useHysAnimatedNumber({
+            from: 0,
+            value: index * 4,
+            duration: 100,
+            easing: "linear",
+          }),
+        );
+      }
+      return () => null;
+    },
+  });
+  app.mount(document.body.appendChild(document.createElement("div")));
+  cleanup.push(() => app.unmount());
+  const group = useHysNumberAnimationGroup(() => [
+    null,
+    ...members,
+    members[0],
+  ]);
+  await tick();
+  await tick(25);
+  group.pause();
+  assert.equal(requests.size, 0);
+  assert(members.every((item, index) => item.frame.value.value === index + 1));
+  group.seek(0.5);
+  assert(
+    members.every((item, index) => item.frame.value.value === (index + 1) * 2),
+  );
+  group.resume();
+  assert.equal(requests.size, 1);
+  await tick();
+  await tick(50);
+  assert(
+    members.every((item, index) => item.frame.value.value === (index + 1) * 4),
+  );
+  assert.equal(requests.size, 0);
+});
+
 test("countdown hydrates an identical initial view before syncing to the wall clock", async () => {
   const deadline = Date.now() + 10000;
   const view = () =>
@@ -301,4 +432,24 @@ test("countdown hydrates an identical initial view before syncing to the wall cl
   await nextTick();
   assert.match(host.textContent, /^00:(?:0[1-9]|10)$/);
   assert.deepEqual(warnings, []);
+});
+
+test("hidden countdowns reconcile the real deadline once on visibility return", async (t) => {
+  let clock = 1000;
+  t.mock.method(Date, "now", () => clock);
+  const { api, events } = await mount({ deadline: 4000 });
+  assert.equal(api.remaining, 3000);
+  Object.defineProperty(document, "hidden", {
+    configurable: true,
+    value: true,
+  });
+  document.dispatchEvent(new Event("visibilitychange"));
+  clock = 4500;
+  assert.equal(api.remaining, 3000);
+  assert.equal(events.finish, undefined);
+  delete document.hidden;
+  document.dispatchEvent(new Event("visibilitychange"));
+  document.dispatchEvent(new Event("visibilitychange"));
+  assert.equal(api.remaining, 0);
+  assert.equal(events.finish.length, 1);
 });

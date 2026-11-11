@@ -1,5 +1,5 @@
 import type { HysNumberEasing, HysNumberValue } from "./animatedNumber";
-import type { numberInterpolation } from "./animatedNumberFormat";
+import type { createNumberInterpolator } from "./animatedNumberFormat";
 
 type Tick = (now: number) => void;
 const subscribers = new Set<Tick>();
@@ -106,7 +106,7 @@ export function makeEasing(easing: HysNumberEasing = "ease-out") {
 export interface Run {
   from: HysNumberValue;
   to: HysNumberValue;
-  interpolate: ReturnType<typeof numberInterpolation>;
+  interpolate: ReturnType<typeof createNumberInterpolator>;
   easing: ReturnType<typeof makeEasing>;
   duration: number;
   elapsed: number;

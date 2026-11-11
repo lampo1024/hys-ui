@@ -8,6 +8,7 @@ import {
   HysSelect,
   type HysAnimatedNumberInstance,
   type HysNumberEasing,
+  type HysNumberInterpolationContext,
 } from "hys-ui";
 
 const sample = useTemplateRef<HysAnimatedNumberInstance>("sample");
@@ -15,6 +16,9 @@ const duration = ref(900);
 const delay = ref(120);
 const speed = ref(1);
 const disabled = ref(false);
+const steps = ref(false);
+const stepInterpolator = ({ defaultValue }: HysNumberInterpolationContext) =>
+  Math.round(Number(defaultValue) / 20) * 20;
 const curve = ref("ease-out");
 const curves: Record<string, HysNumberEasing> = {
   linear: "linear",
@@ -67,12 +71,14 @@ const options = Object.keys(curves).map((value) => ({ label: value, value }));
         :delay="delay"
         :speed="speed"
         :easing="curves[curve]"
+        :interpolate="steps ? stepInterpolator : undefined"
         :disabled="disabled"
         :value-style="{ fontSize: '2rem', fontWeight: 650 }"
         stable-width
       />
       <HysButton size="sm" @click="sample?.restart()">应用配置并播放</HysButton>
       <HysCheckbox v-model="disabled" label="关闭动画" />
+      <HysCheckbox v-model="steps" label="以 20 为步长" />
     </div>
   </div>
 </template>

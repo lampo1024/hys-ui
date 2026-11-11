@@ -7,6 +7,7 @@ import {
   type Decimal,
 } from "./numberInput";
 import type {
+  HysNumberAnimationOptions,
   HysNumberDirection,
   HysNumberFormatOptions,
   HysNumberRounding,
@@ -67,6 +68,26 @@ export function numberInterpolation(from: HysNumberValue, to: HysNumberValue) {
     if (stringMode) return text;
     const numeric = Number(text);
     return Number.isFinite(numeric) ? numeric : text;
+  };
+}
+
+export function createNumberInterpolator(
+  from: HysNumberValue,
+  to: HysNumberValue,
+  custom: HysNumberAnimationOptions["interpolate"],
+) {
+  const interpolate = numberInterpolation(from, to);
+  if (!custom)
+    return (_progress: number, easedProgress: number) =>
+      interpolate(easedProgress);
+  return (progress: number, easedProgress: number): HysNumberValue => {
+    const defaultValue = interpolate(easedProgress);
+    try {
+      const value = custom({ from, to, progress, easedProgress, defaultValue });
+      return decimal(value) ? value : defaultValue;
+    } catch {
+      return defaultValue;
+    }
   };
 }
 

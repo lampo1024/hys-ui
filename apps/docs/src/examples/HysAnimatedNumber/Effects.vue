@@ -14,20 +14,22 @@ const selected = ref<HysNumberEffect>("odometer");
 const axis = ref<"vertical" | "horizontal">("vertical");
 const lowFirst = ref(false);
 const combined = ref(false);
+const pad = ref(true);
 const options: { value: HysNumberEffect; label: string }[] = [
   { value: "count", label: "数值插值" },
   { value: "odometer", label: "里程表进退位" },
   { value: "wheel", label: "滚轮" },
   { value: "flip", label: "翻牌" },
   { value: "slot", label: "老虎机" },
-  { value: "random", label: "随机定格" },
+  { value: "random", label: "随机跳动" },
+  { value: "scramble", label: "随机滚轮定格" },
   { value: "appear", label: "逐位出现" },
   { value: "disappear", label: "逐位消失" },
-  { value: "fade", label: "淡入" },
+  { value: "fade", label: "淡入淡出" },
   { value: "scale", label: "缩放" },
   { value: "bounce", label: "弹跳" },
   { value: "spring", label: "弹性" },
-  { value: "slide", label: "滑动" },
+  { value: "slide", label: "滑入滑出" },
   { value: "blur", label: "模糊" },
   { value: "flash", label: "闪烁" },
   { value: "highlight", label: "高亮" },
@@ -65,7 +67,7 @@ const effect = computed<HysNumberEffect[]>(() =>
         :stagger="90"
         :digit-duration="1250"
         :digit-order="lowFirst ? 'low-to-high' : 'high-to-low'"
-        :minimum-integer-digits="4"
+        :minimum-integer-digits="pad ? 4 : 1"
         stable-width
         :value-style="{
           fontSize: 'clamp(1.8rem, 5vw, 3rem)',
@@ -79,6 +81,7 @@ const effect = computed<HysNumberEffect[]>(() =>
       >
       <HysCheckbox v-model="lowFirst" label="低位先动" />
       <HysCheckbox v-model="combined" label="叠加缩放和高亮" />
+      <HysCheckbox v-model="pad" label="补齐四位" />
     </div>
   </div>
 </template>

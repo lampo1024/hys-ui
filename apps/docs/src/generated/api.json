@@ -555,6 +555,14 @@
         "global": false
       },
       {
+        "name": "thresholdEffect",
+        "type": "HysNumberEffect | readonly HysNumberEffect[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "播放区间的差值达到 changeThreshold 时追加的效果，默认 highlight。",
+        "global": false
+      },
+      {
         "name": "axis",
         "type": "\"vertical\" | \"horizontal\" | undefined",
         "required": false,
@@ -600,6 +608,14 @@
         "required": false,
         "default": "false",
         "description": "为起点和终点文本预留宽度，并保留当前内容的自然宽度。",
+        "global": false
+      },
+      {
+        "name": "appearance",
+        "type": "\"plain\" | \"panel\" | \"display\" | undefined",
+        "required": false,
+        "default": "\"plain\"",
+        "description": "plain 常规数字、panel 逐位面板、display 大屏数字。默认 plain。",
         "global": false
       },
       {
@@ -736,6 +752,14 @@
         "required": false,
         "default": "",
         "description": "缓动名称、四元组 [x1, y1, x2, y2] 或返回进度的函数。默认 ease-out。",
+        "global": false
+      },
+      {
+        "name": "interpolate",
+        "type": "((context: HysNumberInterpolationContext) => HysNumberValue) | undefined",
+        "required": false,
+        "default": "",
+        "description": "替换中间帧数值。接收起止值、原始进度、缓动进度和内置插值，首尾始终精确。",
         "global": false
       },
       {
@@ -985,13 +1009,6 @@
         "description": "动画采样或 seek 后触发，frame.value 是当前的原始数值"
       },
       {
-        "name": "progress",
-        "type": "[frame: HysNumberFrame]",
-        "required": false,
-        "default": "",
-        "description": "与 update 同一帧触发，progress 是 0–1 的线性时间比例，easedProgress 是缓动结果"
-      },
-      {
         "name": "pause",
         "type": "[frame: HysNumberFrame]",
         "required": false,
@@ -1032,6 +1049,13 @@
         "required": false,
         "default": "",
         "description": "延迟结束后开始当前轮，参数为 HysNumberFrame"
+      },
+      {
+        "name": "progress",
+        "type": "[frame: HysNumberFrame]",
+        "required": false,
+        "default": "",
+        "description": "与 update 同一帧触发，progress 是 0–1 的线性时间比例，easedProgress 是缓动结果"
       },
       {
         "name": "end",

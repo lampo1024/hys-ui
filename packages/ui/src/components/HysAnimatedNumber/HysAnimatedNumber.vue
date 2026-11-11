@@ -30,9 +30,9 @@ import {
   numberValue,
   type NumberPresentation,
 } from "../../composables/animatedNumberFormat";
-import { digitEffects } from "../../composables/animatedNumberDigits";
 import { useHysAnimatedNumber } from "../../composables/useHysAnimatedNumber";
 import { useNumberCountdown } from "./useNumberCountdown";
+import { useNumberVisuals } from "./useNumberVisuals";
 import NumberDigits from "./NumberDigits/NumberDigits.vue";
 
 const props = withDefaults(defineProps<HysAnimatedNumberProps>(), {
@@ -41,6 +41,7 @@ const props = withDefaults(defineProps<HysAnimatedNumberProps>(), {
   visibleOnce: true,
   pauseWhenHidden: true,
   canPlay: true,
+  appearance: "plain",
   grouping: undefined,
 });
 const emit = defineEmits<{
@@ -85,6 +86,7 @@ const engine = useHysAnimatedNumber(
     delay: props.delay,
     speed: props.speed,
     easing: props.easing,
+    interpolate: props.interpolate,
     loop: props.loop,
     alternate: props.alternate,
     interrupt: props.interrupt,
@@ -132,6 +134,7 @@ const {
 } = useNumberCountdown(
   () => props.deadline,
   () => props.format,
+  () => props.pauseWhenHidden,
   (remaining) => emit("change", remaining),
   () => {
     emit("finish");
@@ -150,9 +153,13 @@ const hasTrigger = (trigger: HysNumberTrigger) =>
   triggers.value.includes(trigger) && !triggers.value.includes("manual");
 const canTrigger = (trigger: HysNumberTrigger) => {
   if (!hasTrigger(trigger) || isCountdown.value) return false;
-  return typeof props.canPlay === "function"
-    ? props.canPlay(trigger, target.value)
-    : props.canPlay !== false;
+  try {
+    return typeof props.canPlay === "function"
+      ? props.canPlay(trigger, target.value)
+      : props.canPlay !== false;
+  } catch {
+    return false;
+  }
 };
 
 let observer: IntersectionObserver | undefined;
@@ -163,7 +170,12 @@ let active = false,
 const observing = ref(false);
 function triggered(trigger: HysNumberTrigger) {
   if (!canTrigger(trigger)) return false;
-  if (frame.value.to === target.value) restart();
+  if (
+    trigger === "activate" ||
+    trigger === "visible" ||
+    frame.value.to === target.value
+  )
+    restart();
   else engine.updateTarget(target.value);
   pending = false;
   return true;
@@ -277,35 +289,36 @@ onMounted(() => {
   if (props.from !== undefined && canTrigger("mount") && !hasTrigger("visible"))
     restart();
 });
-onActivated(activate);
+onActivated(() => {
+  if (active) return;
+  activate();
+  triggered("activate");
+});
 onDeactivated(deactivate);
 onBeforeUnmount(deactivate);
 
-const effects = computed(() =>
-  typeof props.effect === "string" ? [props.effect] : (props.effect ?? []),
-);
-const digitEffect = computed(() =>
-  effects.value.find((effect) => digitEffects.includes(effect)),
-);
-const current = computed<NumberPresentation>(() => {
-  if (!isCountdown.value) return presentation.value.format(frame.value.value);
-  return {
-    text: timeParts.value.map(({ text }) => text).join(""),
-    unit: "",
-    parts: timeParts.value.map(({ text, numeric }) => ({
-      type: numeric ? "integer" : "literal",
-      value: text,
-    })),
-  };
+const current = computed<NumberPresentation>((previous) => {
+  const next: NumberPresentation = isCountdown.value
+    ? {
+        text: timeParts.value.map(({ text }) => text).join(""),
+        unit: "",
+        parts: timeParts.value.map(({ text, numeric }) => ({
+          type: numeric ? "integer" : "literal",
+          value: text,
+        })),
+      }
+    : presentation.value.format(frame.value.value);
+  return previous?.text === next.text &&
+    previous.unit === next.unit &&
+    previous.parts.length === next.parts.length &&
+    previous.parts.every(
+      (part, index) =>
+        part.type === next.parts[index].type &&
+        part.value === next.parts[index].value,
+    )
+    ? previous
+    : next;
 });
-const start = computed(() =>
-  isCountdown.value
-    ? current.value
-    : presentation.value.format(frame.value.from),
-);
-const end = computed(() =>
-  isCountdown.value ? current.value : presentation.value.format(frame.value.to),
-);
 const displayValue = computed(() => current.value.text);
 const context = computed<HysAnimatedNumberContext>(() => ({
   ...frame.value,
@@ -315,8 +328,24 @@ const context = computed<HysAnimatedNumberContext>(() => ({
   remaining: isCountdown.value ? remaining.value : undefined,
   trend: trend.value,
 }));
+const {
+  from,
+  to,
+  status,
+  running,
+  digitEffect,
+  visualStyle,
+  outgoingStyle,
+  sliding,
+} = useNumberVisuals(props, frame, context, motionEnabled, isCountdown);
+const start = computed(() =>
+  isCountdown.value ? current.value : presentation.value.format(from.value),
+);
+const end = computed(() =>
+  isCountdown.value ? current.value : presentation.value.format(to.value),
+);
 const direction = computed(() =>
-  trend.value.direction === "none"
+  running.value || trend.value.direction === "none"
     ? frame.value.direction
     : trend.value.direction,
 );
@@ -329,65 +358,25 @@ const tone = computed(() => {
     return units > 0n ? "up" : units < 0n ? "down" : undefined;
   }
 });
-const visualStyle = computed(() => {
-  if (
-    !motionEnabled.value ||
-    isCountdown.value ||
-    !["playing", "paused"].includes(frame.value.status)
-  )
-    return;
-  if (
-    !props.animationStyle &&
-    !trend.value.significant &&
-    !effects.value.some(
-      (effect) => effect !== "count" && !digitEffects.includes(effect),
-    )
-  )
-    return;
-  const p = frame.value.progress,
-    pulse = Math.sin(Math.PI * p);
-  const translation = effects.value.includes("slide")
-    ? 0.35 * (1 - p) * (frame.value.direction === "down" ? -1 : 1)
-    : 0;
-  const scale =
-    1 -
-    (effects.value.includes("scale") ? 0.18 * (1 - p) : 0) +
-    (effects.value.includes("spring")
-      ? 0.24 * Math.sin(4 * Math.PI * p) * (1 - p)
-      : 0);
-  const bounce = effects.value.includes("bounce")
-    ? -0.27 * Math.abs(Math.sin(3 * Math.PI * p)) * (1 - p)
-    : 0;
-  const fade = effects.value.includes("fade") ? 0.28 + 0.72 * p : 1;
-  const flash = effects.value.includes("flash")
-    ? 1 - 0.35 * Math.abs(Math.sin(4 * Math.PI * p)) * (1 - p)
-    : 1;
-  const highlight =
-    effects.value.includes("highlight") || trend.value.significant ? pulse : 0;
-  let custom;
-  try {
-    custom = props.animationStyle?.(context.value);
-  } catch {
-    // A faulty style callback leaves the built-in effect intact.
-  }
-  return [
-    {
-      transform: `translate(${props.axis === "horizontal" ? translation : 0}em, ${(props.axis === "horizontal" ? 0 : translation) + bounce}em) scale(${scale})`,
-      opacity: fade * flash,
-      filter: effects.value.includes("blur")
-        ? `blur(${0.12 * (1 - p)}em)`
-        : undefined,
-      "--hys-number-highlight": highlight,
-      "--hys-number-gradient": effects.value.includes("gradient") ? pulse : 0,
-    },
-    custom,
-  ];
-});
 const animatedGlyphs = computed(
   () => !!digitEffect.value && motionEnabled.value && !milliseconds.value,
 );
+const formattedOverride = computed(() => {
+  if (!props.formatter || slots.formatter || slots.default) return;
+  try {
+    return { value: props.formatter(context.value) };
+  } catch {
+    return;
+  }
+});
 const customContent = computed(
-  () => !!(slots.formatter || slots.default || props.formatter || slots.digit),
+  () =>
+    !!(
+      slots.formatter ||
+      slots.default ||
+      formattedOverride.value ||
+      slots.digit
+    ),
 );
 const showAccessibleText = computed(
   () => animatedGlyphs.value && !customContent.value && !isCountdown.value,
@@ -447,7 +436,8 @@ defineExpose({
     class="hys-ui-motion-number"
     :data-tone="tone"
     :data-direction="direction"
-    :data-status="isCountdown ? undefined : frame.status"
+    :data-status="isCountdown ? undefined : status"
+    :data-appearance="appearance"
     :role="interactive && hasTrigger('click') ? 'button' : undefined"
     :tabindex="interactive ? 0 : undefined"
     @click="triggered('click')"
@@ -470,76 +460,89 @@ defineExpose({
         v-if="prefix || slots.prefix"
         class="hys-ui-motion-number-affix hys-ui-motion-number-prefix"
       >
-        <slot name="prefix" v-bind="context">{{ prefix }}</slot>
+        <slot v-if="slots.prefix" name="prefix" v-bind="context" />
+        <template v-else>{{ prefix }}</template>
       </span>
-      <slot name="formatter" v-bind="context">
-        <slot v-bind="context">
-          <RenderContent v-if="formatter" :value="formatter(context)" />
-          <span
-            v-else
-            class="hys-ui-motion-number-layout"
-            :class="{ 'hys-number-stable': stableWidth }"
+      <slot v-if="slots.formatter" name="formatter" v-bind="context" />
+      <slot v-else-if="slots.default" v-bind="context" />
+      <RenderContent
+        v-else-if="formattedOverride"
+        :value="formattedOverride.value"
+      />
+      <span
+        v-else
+        class="hys-ui-motion-number-layout"
+        :class="{
+          'hys-number-stable': stableWidth,
+          'hys-number-sliding': sliding,
+        }"
+      >
+        <template v-if="stableWidth && !isCountdown">
+          <span class="hys-number-measure" aria-hidden="true">{{
+            start.text
+          }}</span>
+          <span class="hys-number-measure" aria-hidden="true">{{
+            end.text
+          }}</span>
+        </template>
+        <span
+          v-if="outgoingStyle"
+          class="hys-ui-motion-number-outgoing"
+          aria-hidden="true"
+          :style="outgoingStyle"
+          >{{ start.text }}</span
+        >
+        <span class="hys-ui-motion-number-content" :style="visualStyle">
+          <NumberDigits
+            v-if="digitEffect || slots.digit || appearance !== 'plain'"
+            :current="current"
+            :start="start"
+            :end="end"
+            :glyphs="presentation.localized"
+            :context="context"
+            :effect="digitEffect"
+            :axis="axis"
+            :order="digitOrder"
+            :stagger="stagger"
+            :duration="duration"
+            :digit-duration="digitDuration"
+            :motion="animatedGlyphs"
+            :timer="isCountdown"
+            :accessible="showAccessibleText"
+            :split="appearance !== 'plain'"
           >
-            <template v-if="stableWidth && !isCountdown">
-              <span class="hys-number-measure" aria-hidden="true">{{
-                start.text
-              }}</span>
-              <span class="hys-number-measure" aria-hidden="true">{{
-                end.text
-              }}</span>
-            </template>
-            <span class="hys-ui-motion-number-content" :style="visualStyle">
-              <NumberDigits
-                v-if="digitEffect || slots.digit"
-                :current="current"
-                :start="start"
-                :end="end"
-                :glyphs="presentation.localized"
-                :context="context"
-                :effect="digitEffect"
-                :axis="axis"
-                :order="digitOrder"
-                :stagger="stagger"
-                :duration="duration"
-                :digit-duration="digitDuration"
-                :motion="animatedGlyphs"
-                :timer="isCountdown"
-                :accessible="showAccessibleText"
-              >
-                <template v-if="slots.digit" #digit="digit"
-                  ><slot name="digit" v-bind="digit"
-                /></template>
-              </NumberDigits>
-              <template v-else>
-                <span
-                  v-for="({ type, value }, index) in current.parts"
-                  :key="index"
-                  :class="{
-                    'hys-ui-motion-number-separator':
-                      type === 'group' || type === 'decimal',
-                  }"
-                  >{{ value }}</span
-                >
-              </template>
-              <span
-                v-if="context.unit || slots.unit"
-                class="hys-ui-motion-number-unit"
-                ><slot name="unit" v-bind="context">{{
-                  context.unit
-                }}</slot></span
-              >
-            </span>
-          </span>
-        </slot>
-      </slot>
+            <template v-if="slots.digit" #digit="digit"
+              ><slot name="digit" v-bind="digit"
+            /></template>
+          </NumberDigits>
+          <template v-else>
+            <span
+              v-for="({ type, value }, index) in current.parts"
+              :key="index"
+              :class="{
+                'hys-ui-motion-number-separator':
+                  type === 'group' || type === 'decimal',
+              }"
+              >{{ value }}</span
+            >
+          </template>
+          <span
+            v-if="current.unit || slots.unit"
+            class="hys-ui-motion-number-unit"
+            ><slot v-if="slots.unit" name="unit" v-bind="context" />
+            <template v-else>{{ current.unit }}</template></span
+          >
+        </span>
+      </span>
       <span
         v-if="suffix || slots.suffix"
         class="hys-ui-motion-number-affix hys-ui-motion-number-suffix"
       >
-        <slot name="suffix" v-bind="context">{{ suffix }}</slot>
+        <slot v-if="slots.suffix" name="suffix" v-bind="context" />
+        <template v-else>{{ suffix }}</template>
       </span>
     </span>
-    <slot name="trend" v-bind="trend" />
+    <slot v-if="slots.trend" name="trend" v-bind="trend" />
     <span
       v-if="announce"
       class="hys-number-live"
