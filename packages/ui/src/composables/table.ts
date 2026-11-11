@@ -1,5 +1,5 @@
 import type { HysPopupTransition } from '../motion/popup';
-import type { CSSProperties, HTMLAttributes, VNodeChild } from "vue";
+import type { Component, CSSProperties, HTMLAttributes, VNodeChild } from "vue";
 import type { Placement } from "./useFloating";
 export type HysTableKey = string | number;
 export type HysTableDirection = "asc" | "desc";
@@ -20,6 +20,22 @@ export interface HysTableSelectionColumn {
   fixed?: boolean | "left" | "right";
   align?: "left" | "center" | "right";
 }
+export interface HysTableRowSelectionOptions {
+  range?: boolean;
+  /** 只允许指定行绕过行级选择限制。 */
+  ignoreSelectable?: boolean;
+}
+export interface HysTableSelectionAction<T extends object = Record<string, unknown>> {
+  key: string;
+  label: string;
+  disabled?: boolean;
+  select: (context: {
+    rows: readonly T[];
+    keys: readonly HysTableKey[];
+    selectedKeys: readonly HysTableKey[];
+    setSelected: (keys: readonly HysTableKey[]) => Promise<boolean>;
+  }) => void | Promise<void>;
+}
 export interface HysTableFilterConfirmOptions {
   closeDropdown?: boolean;
 }
@@ -30,11 +46,25 @@ export interface HysTableScrollRowOptions {
   behavior?: ScrollBehavior;
   block?: "start" | "center" | "end" | "nearest";
 }
+export interface HysTableStickyOptions {
+  offsetHeader?: number;
+  offsetScroll?: number;
+  getContainer?: () => HTMLElement | Window | null | undefined;
+}
 export interface HysTableFilter {
   label: string;
   value: HysTableFilterValue;
   disabled?: boolean;
   children?: readonly HysTableFilter[];
+}
+export interface HysTableFilterDropdownContext<T extends object = Record<string, unknown>> {
+  column: HysTableColumn<T>;
+  open: boolean;
+  values: readonly HysTableFilterValue[];
+  setValues: (values: readonly HysTableFilterValue[]) => void;
+  confirm: (options?: HysTableFilterConfirmOptions) => void;
+  clear: (options?: HysTableFilterResetOptions) => void;
+  close: () => void;
 }
 export type HysTableElementAttrs = HTMLAttributes & Record<string, unknown>;
 export type HysTablePaginationPosition =
@@ -53,6 +83,28 @@ export interface HysTableCellContext<
   rowIndex: number;
   columnIndex: number;
 }
+export interface HysTableOverflowTooltipOptions {
+  placement?: Placement;
+  effect?: "light" | "dark";
+  maxWidth?: number | string;
+  offset?: number;
+  hideDelay?: number;
+  enterable?: boolean;
+}
+export interface HysTableComponents {
+  table?: Component;
+  header?: {
+    wrapper?: Component;
+    row?: Component;
+    cell?: Component;
+  };
+  body?: {
+    wrapper?: Component;
+    row?: Component;
+    cell?: Component;
+    rowHeaderCell?: Component;
+  };
+}
 export interface HysTableColumn<T extends object = any> {
   key: string;
   label: string;
@@ -65,6 +117,10 @@ export interface HysTableColumn<T extends object = any> {
   fixed?: boolean | "left" | "right";
   align?: "left" | "center" | "right";
   headerAlign?: "left" | "center" | "right";
+  /** 合并同一层、同一固定区域内相邻的叶列表头。0 隐藏标题。 */
+  headerColSpan?: number;
+  /** 表头插槽未提供内容时渲染列标题。 */
+  renderHeader?: (column: HysTableColumn<T>, sorts: readonly HysTableSort[]) => VNodeChild;
   sortable?: boolean | "custom";
   sorter?: (a: T, b: T) => number;
   sortBy?:
@@ -73,6 +129,9 @@ export interface HysTableColumn<T extends object = any> {
     | readonly (string | ((row: T) => unknown))[];
   sortOrders?: readonly (HysTableDirection | null)[];
   defaultSortOrder?: HysTableDirection;
+  /** 受控排序方向，null 清除该列排序。表格级 sort 和 sorts 优先。 */
+  sortOrder?: HysTableDirection | null;
+  showSorterTooltip?: boolean | HysTableOverflowTooltipOptions;
   sortPriority?: number;
   filters?: readonly HysTableFilter[];
   filterable?: boolean;
@@ -80,6 +139,14 @@ export interface HysTableColumn<T extends object = any> {
   filterMode?: "menu" | "tree";
   filterSearch?: boolean | ((query: string, option: HysTableFilter) => boolean);
   defaultFilterValue?: readonly HysTableFilterValue[];
+  /** 受控筛选值，空数组清除该列筛选。表格级 filters 优先。 */
+  filteredValue?: readonly HysTableFilterValue[];
+  filtered?: boolean;
+  filterDropdownOpen?: boolean;
+  onFilterDropdownOpenChange?: (open: boolean) => void;
+  filterPlacement?: Placement;
+  renderFilterIcon?: (context: { column: HysTableColumn<T>; filtered: boolean; open: boolean }) => VNodeChild;
+  renderFilterDropdown?: (context: HysTableFilterDropdownContext<T>) => VNodeChild;
   filterResetToDefault?: boolean;
   filterMethod?: (
     value: HysTableFilterValue,
@@ -92,8 +159,8 @@ export interface HysTableColumn<T extends object = any> {
     value: unknown,
     index: number,
   ) => VNodeChild;
-  ellipsis?: boolean;
-  showOverflowTooltip?: boolean;
+  ellipsis?: boolean | { showTitle?: boolean };
+  showOverflowTooltip?: boolean | HysTableOverflowTooltipOptions;
   tooltipFormatter?: (context: HysTableCellContext<T>) => VNodeChild;
   className?: string;
   headerClassName?: string;
@@ -115,12 +182,20 @@ export interface HysTablePagination {
   position?: readonly HysTablePaginationPosition[];
   page?: number;
   pageSize?: number;
+  defaultPage?: number;
+  defaultPageSize?: number;
   total?: number;
+  /** 服务端分页的总页数，可在总记录数未知时使用。 */
+  pageCount?: number;
   pageSizeOptions?: number[];
   showSizeChanger?: boolean;
   showQuickJumper?: boolean;
   showTotal?: boolean;
   compact?: boolean;
+  layout?: string;
+  size?: "sm" | "md" | "lg";
+  responsive?: boolean;
+  siblingCount?: number;
   hideOnSinglePage?: boolean;
 }
 export interface HysTableQuery<T extends object = Record<string, unknown>> {
@@ -155,6 +230,8 @@ export interface HysTableLocale {
   resizeColumn: string;
   sortAsc: string;
   sortDesc: string;
+  sortClear?: string;
+  stickyScrollLabel?: string;
   filterSearch?: string;
   noFilterMatch?: string;
   invertSelection?: string;
@@ -165,6 +242,9 @@ export interface HysTableLocale {
     perPage: string;
     jump: string;
     page: string;
+    pageItem: string;
+    navigation: string;
+    confirm: string;
     first: string;
     previous: string;
     next: string;
@@ -177,9 +257,13 @@ export interface HysTableProps<T extends object> {
   locale?: Partial<HysTableLocale>;
   columns: readonly HysTableColumn<T>[];
   rows: readonly T[];
+  /** 替换表格的结构组件。自定义组件需转发属性与默认插槽，并保留原生表格元素。 */
+  components?: HysTableComponents;
   rowKey?: string | ((row: T) => HysTableKey);
   emptyText?: string;
   loading?: boolean;
+  /** replace 用加载行替换数据，overlay 保留当前行并覆盖加载提示。 */
+  loadingMode?: "replace" | "overlay";
   disabled?: boolean;
   striped?: boolean;
   bordered?: boolean;
@@ -189,9 +273,15 @@ export interface HysTableProps<T extends object> {
   height?: number | string;
   maxHeight?: number | string;
   stickyHeader?: boolean;
+  /** 随页面或自定义容器滚动固定表头和水平滚动条。 */
+  sticky?: boolean | HysTableStickyOptions;
   showHeader?: boolean;
   fit?: boolean;
+  /** 表格横向最小宽度，用于控制滚动区域内的列布局。 */
+  scrollWidth?: number | string;
   scrollbarAlwaysOn?: boolean;
+  /** 使用浏览器默认的滚动条样式。 */
+  nativeScrollbar?: boolean;
   scrollbarTabindex?: number | string;
   headerRowClassName?:
     string | ((columns: readonly HysTableColumn<T>[], level: number) => string);
@@ -225,7 +315,7 @@ export interface HysTableProps<T extends object> {
   reserveSelection?: boolean;
   checkStrictly?: boolean;
   selectOnIndeterminate?: boolean;
-  selectionActions?: boolean;
+  selectionActions?: boolean | readonly HysTableSelectionAction<T>[];
   rangeSelection?: boolean;
   hideSelectAll?: boolean;
   selectionColumn?: HysTableSelectionColumn;
@@ -240,11 +330,15 @@ export interface HysTableProps<T extends object> {
   defaultSort?: HysTableSort | readonly HysTableSort[] | null;
   multiSort?: boolean;
   sortOrders?: readonly (HysTableDirection | null)[];
+  /** 悬停或聚焦列标题时提示下一次排序操作。 */
+  showSorterTooltip?: boolean | HysTableOverflowTooltipOptions;
   filters?: HysTableFilters;
   defaultFilters?: HysTableFilters;
   filterColumnKey?: string | null;
   filterPlacement?: Placement;
   appendFilterTo?: string | HTMLElement | false;
+  /** 根据触发元素指定排序、溢出与筛选浮层的挂载目标。 */
+  getPopupContainer?: (trigger: HTMLElement) => HTMLElement | string | false | undefined;
   pagination?: boolean | HysTablePagination;
   page?: number;
   pageSize?: number;
@@ -270,6 +364,10 @@ export interface HysTableProps<T extends object> {
     context: HysTableLoadContext,
   ) => readonly T[] | Promise<readonly T[]>;
   showSummary?: boolean;
+  /** 汇总全部筛选结果，或仅汇总当前页实际显示的行。 */
+  summaryScope?: "filtered" | "page";
+  /** 将汇总行固定在表格滚动区域底部。 */
+  stickySummary?: boolean;
   sumText?: string;
   summaryMethod?: (context: {
     columns: readonly HysTableColumn<T>[];
@@ -281,8 +379,11 @@ export interface HysTableProps<T extends object> {
     | { rowspan?: number; colspan?: number }
     | readonly [number, number]
     | undefined;
-  showOverflowTooltip?: boolean;
+  /** 默认溢出提示，列可覆盖配置或设置 false 关闭。 */
+  showOverflowTooltip?: boolean | HysTableOverflowTooltipOptions;
   tooltipFormatter?: (context: HysTableCellContext<T>) => VNodeChild;
+  /** 在列格式化后统一处理默认单元格内容。 */
+  transformCellText?: (context: HysTableCellContext<T> & { text: VNodeChild }) => VNodeChild;
   resizable?: boolean;
   columnWidths?: Readonly<Record<string, number>>;
   allowDragLastColumn?: boolean;
@@ -301,7 +402,7 @@ export interface HysTableInstance<T extends object = Record<string, unknown>> {
   toggleRowSelection: (
     row: T | HysTableKey,
     selected?: boolean,
-    range?: boolean,
+    options?: boolean | HysTableRowSelectionOptions,
   ) => Promise<boolean>;
   toggleAllSelection: (selected?: boolean) => Promise<boolean>;
   invertSelection: () => Promise<boolean>;
@@ -350,6 +451,7 @@ export interface TableHeader<T extends object> {
   leaves: HysTableColumn<T>[];
   colspan: number;
   rowspan: number;
+  blank?: boolean;
   fixed?: "left" | "right";
 }
 export const tableToken = (key: HysTableKey) => typeof key + ":" + key;
@@ -463,7 +565,36 @@ export function tableColumns<T extends object>(
     }
   }
   visit(ordered, 0);
-  return { leaves: leaves(ordered), headers };
+  const leafColumns = leaves(ordered);
+  const positions = new Map(leafColumns.map((column, index) => [column.key, index]));
+  const mergedHeaders = headers.map((row) => {
+    const result: TableHeader<T>[] = [];
+    for (let index = 0; index < row.length; index++) {
+      const header = row[index];
+      const span = header.column.headerColSpan;
+      if (span === 0) {
+        result.push({ ...header, blank: true });
+        continue;
+      }
+      if (span === undefined || !Number.isSafeInteger(span) || span <= 1 || header.column.children) {
+        result.push(header);
+        continue;
+      }
+      const merged = [...header.leaves];
+      const start = positions.get(merged[0].key)!;
+      while (merged.length < span) {
+        const next = row[index + 1];
+        if (!next || next.column.children || next.column.type && next.column.type !== "default" ||
+            next.fixed !== header.fixed || next.rowspan !== header.rowspan ||
+            positions.get(next.column.key) !== start + merged.length) break;
+        merged.push(next.column);
+        index++;
+      }
+      result.push({ ...header, leaves: merged, colspan: merged.length });
+    }
+    return result;
+  });
+  return { leaves: leafColumns, headers: mergedHeaders };
 }
 export function tableCompare<T extends object>(
   sorts: readonly HysTableSort[],

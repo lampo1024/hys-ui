@@ -140,6 +140,8 @@ export function useDialog(
         target.focus({ preventScroll: true });
     });
   }
+  if (typeof document === "undefined")
+    return { active, zIndex, focus: focusFirst };
   watch(
     visible,
     async (value) => {

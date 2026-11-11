@@ -147,7 +147,6 @@
 .hys-ui-icon-action, .hys-ui-btn { transition-property: background-color, color, border-color, box-shadow, opacity, transform; transition-duration: var(--hys-ui-motion-fast); transition-timing-function: var(--hys-ui-motion-ease); }
 @media (hover: hover) and (pointer: fine) {
   .hys-ui-icon-action:not(:disabled):hover { transform: translateX(2px); }
-  .hys-ui-btn:not(:disabled):hover { transform: translateY(-1px); }
   .hys-ui-btn:not(:disabled):active { transform: scale(.985); }
 }
 @media (prefers-reduced-motion: reduce) { }

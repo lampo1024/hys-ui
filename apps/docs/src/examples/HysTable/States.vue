@@ -46,19 +46,22 @@ const columns: HysTableColumn<Person>[] = [
   },
 ];
 const empty = ref(false),
-  loading = ref(false);
+  loading = ref(false),
+  overlay = ref(false);
 </script>
 <template>
   <div>
     <div class="demo-control-actions">
       <HysCheckbox v-model="empty">空数据</HysCheckbox
       ><HysCheckbox v-model="loading">加载中</HysCheckbox>
+      <HysCheckbox v-model="overlay">保留数据并显示加载遮罩</HysCheckbox>
     </div>
     <div class="demo-content" style="margin-top: 16px">
       <HysTable
         :rows="empty ? [] : rows.slice(0, 4)"
         :columns="columns"
         :loading="loading"
+        :loading-mode="overlay ? 'overlay' : 'replace'"
         :row-class-name="(row) => (row.active ? '' : 'table-row-away')"
         ><template #empty
           ><div class="table-empty">

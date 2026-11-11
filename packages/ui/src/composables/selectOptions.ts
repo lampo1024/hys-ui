@@ -2,6 +2,13 @@ import { toRaw } from "vue";
 export type HysSelectValue =
   string | number | boolean | Record<string, unknown>;
 export type HysSelectModelValue = HysSelectValue | HysSelectValue[] | null;
+export type HysSelectLabeledValue = { value: HysSelectValue; label: string };
+export function isSelectLabeledValue(value: HysSelectValue): value is HysSelectLabeledValue {
+  if (typeof value !== "object" || typeof value.label !== "string" || !Object.hasOwn(value, "value")) return false;
+  const raw = value.value;
+  return typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean"
+    || (raw !== null && typeof raw === "object" && !Array.isArray(raw));
+}
 export interface HysSelectOption {
   label: string;
   value: HysSelectValue;

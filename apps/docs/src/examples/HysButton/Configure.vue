@@ -1,34 +1,101 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysButton } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysCheckbox as DemoCheckbox, HysSelect as DemoSelect } from 'hys-ui';
-const message = ref('');
-const demoConfig = demoReactive<{
-    size: "md" | "sm" | "lg";
-    disabled: boolean;
-    loading: boolean;
-    plain: boolean;
-    round: boolean;
-    circle: boolean;
-    block: boolean;
-    dashed: boolean;
-    iconPosition: "left" | "right";
-    type: "button" | "submit" | "reset";
-    nativeType: "button" | "submit" | "reset";
-    autofocus: boolean;
-    focusable: boolean;
-}>({ "size": "md", "disabled": false, "loading": false, "plain": false, "round": false, "circle": false, "block": false, "dashed": false, "iconPosition": "left", "type": "button", "nativeType": "button", "autofocus": false, "focusable": true });
+import { reactive, ref } from "vue";
+import { Send } from "lucide-vue-next";
+import { HysButton, HysCheckbox, HysSelect, type HysButtonVariant } from "hys-ui";
+
+const settings = reactive({
+  type: "primary" as HysButtonVariant,
+  size: "default" as "small" | "default" | "large",
+  shape: "default" as "default" | "round" | "circle",
+  plain: false,
+  loading: false,
+  disabled: false,
+});
+const clicked = ref(false);
+const appearances = [
+  { label: "语义外观", options: [
+    { label: "主要", value: "primary" },
+    { label: "次要", value: "secondary" },
+    { label: "成功", value: "success" },
+    { label: "警告", value: "warning" },
+    { label: "危险", value: "danger" },
+    { label: "信息", value: "info" },
+    { label: "幽灵", value: "ghost" },
+    { label: "文字", value: "text" },
+    { label: "链接", value: "link" },
+  ] },
+  { label: "内置配色", options: [
+    { label: "石板灰", value: "slate" },
+    { label: "钴蓝", value: "blue" },
+    { label: "靛蓝", value: "indigo" },
+    { label: "紫罗兰", value: "purple" },
+    { label: "湖青", value: "cyan" },
+    { label: "青绿", value: "teal" },
+    { label: "翡翠绿", value: "green" },
+    { label: "青柠", value: "lime" },
+    { label: "琥珀", value: "amber" },
+    { label: "柑橘", value: "orange" },
+    { label: "朱红", value: "red" },
+    { label: "玫红", value: "pink" },
+  ] },
+];
+const sizes = [
+  { label: "小", value: "small" },
+  { label: "默认", value: "default" },
+  { label: "大", value: "large" },
+];
+const shapes = [
+  { label: "默认", value: "default" },
+  { label: "圆角", value: "round" },
+  { label: "圆形", value: "circle" },
+];
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>尺寸</span><code>size</code></span><DemoSelect :model-value="demoConfig.size" @update:model-value="demoConfig.size=$event as typeof demoConfig.size" :options='[{"label":"md","value":"md"},{"label":"sm","value":"sm"},{"label":"lg","value":"lg"}]'/></label>
-<label class="demo-field"><span class="demo-control-label"><span>图标位置</span><code>iconPosition</code></span><DemoSelect :model-value="demoConfig.iconPosition" @update:model-value="demoConfig.iconPosition=$event as typeof demoConfig.iconPosition" :options='[{"label":"left","value":"left"},{"label":"right","value":"right"}]'/></label>
-<label class="demo-field"><span class="demo-control-label"><span>类型</span><code>type</code></span><DemoSelect :model-value="demoConfig.type" @update:model-value="demoConfig.type=$event as typeof demoConfig.type" :options='[{"label":"button","value":"button"},{"label":"submit","value":"submit"},{"label":"reset","value":"reset"}]'/></label>
-<label class="demo-field"><span class="demo-control-label"><span>原生按钮类型</span><code>nativeType</code></span><DemoSelect :model-value="demoConfig.nativeType" @update:model-value="demoConfig.nativeType=$event as typeof demoConfig.nativeType" :options='[{"label":"button","value":"button"},{"label":"submit","value":"submit"},{"label":"reset","value":"reset"}]'/></label></div></section><section class="demo-control-section"><h3>状态与行为</h3><div class="demo-control-toggles"><div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.plain" label="plain"/><small>浅色样式</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.round" label="round"/><small>圆角外观</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.circle" label="circle"/><small>圆形外观</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.block" label="block"/><small>铺满宽度</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.dashed" label="dashed"/><small>虚线边框</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.autofocus" label="autofocus"/><small>自动聚焦</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.focusable" label="focusable"/><small>允许聚焦</small></div></div></section></div><div class="demo-content"><div class="demo-row"><HysButton v-bind="demoConfig" v-for="variant in (['primary','secondary','ghost','danger'] as const)" :key="variant" :variant="variant" @click="message=variant+' 已点击'">{{variant}}</HysButton><HysButton disabled>禁用</HysButton><HysButton loading>加载中</HysButton></div><output aria-live="polite">{{message}}</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+
+<template>
+  <div class="button-playground">
+    <div class="button-playground-controls">
+      <div class="button-playground-fields">
+        <label>外观与配色<HysSelect v-model="settings.type" :options="appearances" size="sm" aria-label="按钮外观" /></label>
+        <label>尺寸<HysSelect v-model="settings.size" :options="sizes" size="sm" aria-label="按钮尺寸" /></label>
+        <label>形状<HysSelect v-model="settings.shape" :options="shapes" size="sm" aria-label="按钮形状" /></label>
+      </div>
+      <div class="button-playground-flags">
+        <HysCheckbox v-model="settings.plain" label="朴素" />
+        <HysCheckbox v-model="settings.loading" label="加载" />
+        <HysCheckbox v-model="settings.disabled" label="禁用" />
+      </div>
+    </div>
+    <div class="button-playground-preview">
+      <HysButton v-bind="settings" :icon="Send" aria-label="发送预览" @click="clicked = true">
+        {{ settings.shape === 'circle' ? '' : '发送' }}
+      </HysButton>
+      <small v-if="clicked" role="status">已触发点击</small>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.button-playground {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.45fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.button-playground-controls { display: grid; gap: 12px; align-content: center; }
+.button-playground-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.button-playground-fields label { display: grid; gap: 6px; font-size: 12px; min-width: 0; }
+.button-playground-flags { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.button-playground-preview {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 100px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+}
+@media (max-width: 680px) {
+  .button-playground { grid-template-columns: minmax(0, 1fr); }
+}
+</style>

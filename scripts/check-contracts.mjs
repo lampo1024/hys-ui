@@ -15,6 +15,8 @@ for(const name of names){
  assert(!/\bUi[A-Z]/.test(s),name+' contains an old component name')
  assert(!/from ['"][^'"]*(vue-router|\/data\/|\/pages\/|\/types['"])/.test(s),name+' has an application dependency')
  assert(entry.includes(`default as ${name}`),name+' is not exported')
+ for(const [section,rows] of Object.entries(api[name]))for(const row of rows)
+  assert(row.description?.trim()&&!row.description.includes('详见类型签名'),`${name}.${section}.${row.name} needs a concrete API description`)
  assert(routes.includes(`name:'${name}'`),name+' has no dedicated route')
  assert(fs.existsSync(path.join(root,`apps/docs/src/pages/${name}Page.vue`)))
  const examples=fs.readdirSync(path.join(root,'apps/docs/src/examples',name)).filter(x=>x.endsWith('.vue'))

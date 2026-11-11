@@ -2,7 +2,8 @@
 import { ref } from "vue";
 import { HysTable, HysSelect, HysCheckbox, type HysTableColumn } from "hys-ui";
 const layout = ref<"auto" | "fixed">("fixed"),
-  scroll = ref(false);
+  scroll = ref(false),
+  wide = ref(false);
 const options = [
   { label: "固定布局", value: "fixed" },
   { label: "按内容布局", value: "auto" },
@@ -37,12 +38,14 @@ const rows = [
         aria-label="表格布局模式"
         style="width: 180px"
       /><HysCheckbox v-model="scroll">始终显示纵向滚动条</HysCheckbox>
+      <HysCheckbox v-model="wide">设置 900px 横向滚动宽度</HysCheckbox>
     </div>
     <div class="demo-content">
       <HysTable
         :rows="rows"
         :columns="columns"
         :table-layout="layout"
+        :scroll-width="wide ? 900 : undefined"
         :scrollbar-always-on="scroll"
         header-row-class-name="table-demo-header"
         :header-row-style="{
@@ -51,8 +54,7 @@ const rows = [
       />
     </div>
     <p class="scenario-note">
-      固定布局保持列宽稳定，自动布局允许内容参与宽度计算。headerRowClassName /
-      headerRowStyle 定制整个表头行；交互调整列宽后使用固定布局。
+      固定布局保持列宽稳定，自动布局允许内容参与宽度计算。scrollWidth 可增大表格最小宽度，内容超出时在表格内横向滚动。
     </p>
   </div>
 </template>

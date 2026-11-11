@@ -53,10 +53,22 @@ export const catalog=[
     "label": "按钮",
     "slug": "hys-button",
     "category": "基础组件",
-    "description": "按钮的独立交互示例、配置场景与类型参考。",
+    "description": "用于导航、表单提交、异步操作与工具栏切换。",
     "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "外观使用 variant 或语义 type，原生表单行为使用 native-type。",
+      "按钮组的尺寸和外观可由组内按钮覆盖。"
+    ]
+  },
+  {
+    "name": "HysButtonGroup",
+    "shortName": "ButtonGroup",
+    "label": "按钮组",
+    "slug": "hys-button-group",
+    "category": "基础组件",
+    "description": "组合相关操作，统一尺寸、外观和禁用状态。",
+    "notes": [
+      "按钮可覆盖组内默认尺寸或外观。",
+      "连接布局支持水平和垂直方向，分隔布局可设置间距和换行。"
     ]
   },
   {

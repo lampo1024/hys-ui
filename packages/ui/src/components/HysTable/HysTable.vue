@@ -21,6 +21,7 @@ import {
   type CSSProperties,
   type VNodeChild,
   type FunctionalComponent,
+  type ComponentPublicInstance,
 } from "vue";
 import {
   ChevronDown,
@@ -39,6 +40,7 @@ import HysTableFilterOptions from "./HysTableFilterOptions.vue";
 import { useHysRootAttrs } from "../../config";
 import { useFloating } from "../../composables/useFloating";
 import { useTable } from "../../composables/useTable";
+import { useTableSticky } from "../../composables/useTableSticky";
 import {
   tableColumns,
   tableBreakpoint,
@@ -59,6 +61,8 @@ import {
   type HysTableFilterConfirmOptions,
   type HysTableFilterResetOptions,
   type HysTableScrollRowOptions,
+  type HysTableOverflowTooltipOptions,
+  type HysTableSelectionAction,
 } from "../../composables/table";
 const props = withDefaults(defineProps<HysTableProps<T>>(), {
   rowKey: "id",
@@ -68,6 +72,7 @@ const props = withDefaults(defineProps<HysTableProps<T>>(), {
   fit: true,
   selectable: undefined,
   stickyHeader: undefined,
+  nativeScrollbar: undefined,
   selectionType: "checkbox",
   checkStrictly: true,
   selectOnIndeterminate: true,
@@ -76,7 +81,9 @@ const props = withDefaults(defineProps<HysTableProps<T>>(), {
   hasChildrenKey: "hasChildren",
   indent: 18,
   sumText: "合计",
+  summaryScope: "filtered",
   tableLayout: "fixed",
+  loadingMode: "replace",
   scrollbarTabindex: 0,
   showExpandColumn: true,
   allowDragLastColumn: true,
@@ -100,8 +107,9 @@ const emit = defineEmits<{
   "update:selectedRowKeys": [keys: HysTableKey[]];
   selectionChange: [rows: T[], keys: HysTableKey[]];
   select: [rows: T[], row: T, checked: boolean];
-  selectAll: [rows: T[], checked: boolean];
+  selectAll: [rows: T[], checked: boolean, changedRows: T[]];
   selectInvert: [rows: T[], keys: HysTableKey[]];
+  selectNone: [];
   selectRange: [rows: T[], rangeRows: T[], checked: boolean];
   "update:currentRowKey": [key: HysTableKey | null];
   currentChange: [row: T | undefined, previous: T | undefined];
@@ -126,8 +134,15 @@ const attrs = useHysRootAttrs(),
   slots = useSlots(),
   element = ref<HTMLElement>(),
   viewport = ref<HTMLElement>(),
-  table = ref<HTMLTableElement>(),
+  tableRoot = ref<HTMLTableElement | ComponentPublicInstance>(),
+  tableHeadRoot = ref<HTMLTableSectionElement | ComponentPublicInstance>(),
   id = useId();
+function nativeElement<E extends HTMLElement>(value: E | ComponentPublicInstance | undefined): E | undefined {
+  const root = value && "$el" in value ? value.$el : value;
+  return root?.nodeType === 1 ? root as E : undefined;
+}
+const table = computed(() => nativeElement(tableRoot.value));
+const tableHead = computed(() => nativeElement(tableHeadRoot.value));
 const containerWidth = ref(1024),
   measured = shallowRef<Record<string, number>>({}),
   localWidths = ref<Record<string, number>>({}),
@@ -151,6 +166,8 @@ const words = computed(() => ({
   resizeColumn: "调整{label}列宽",
   sortAsc: "{label}升序",
   sortDesc: "{label}降序",
+  sortClear: "取消{label}排序",
+  stickyScrollLabel: "表格横向滚动条",
   filterSearch: "搜索筛选项",
   noFilterMatch: "暂无匹配的筛选项",
   invertSelection: "反选当前页",
@@ -257,7 +274,8 @@ const {
   filters,
   page,
   pageSize,
-  total,
+  pageCount,
+  paginationTotal,
   currentKey,
   pending,
   loadErrors,
@@ -272,7 +290,7 @@ const explicitExpand = computed(() =>
 const paginationPositions = computed(() => {
   if (
     !props.pagination ||
-    (model.pagination.value.hideOnSinglePage && total.value <= pageSize.value)
+    (model.pagination.value.hideOnSinglePage && pageCount.value <= 1)
   )
     return [];
   const valid = [
@@ -290,11 +308,16 @@ const paginationPositions = computed(() => {
 const paginationProps = computed(() => ({
   page: page.value,
   pageSize: pageSize.value,
-  total: total.value,
+  total: paginationTotal.value,
+  pageCount: pageCount.value,
   showSizeChanger: model.pagination.value.showSizeChanger ?? true,
   showQuickJumper: model.pagination.value.showQuickJumper ?? false,
   showTotal: model.pagination.value.showTotal ?? true,
   compact: model.pagination.value.compact,
+  layout: model.pagination.value.layout,
+  size: model.pagination.value.size,
+  responsive: model.pagination.value.responsive,
+  siblingCount: model.pagination.value.siblingCount,
   labels: words.value.paginationLabels,
   pageSizeOptions: model.pagination.value.pageSizeOptions,
   disabled: busy.value,
@@ -344,11 +367,15 @@ function selectRow(node: TableNode<T>, checked: boolean) {
   selectionShift = false;
   void model.toggleRowSelection(node.key, checked, range);
 }
-const sticky = computed(
+const stickyHeaderActive = computed(
   () =>
     props.stickyHeader ??
-    (props.height !== undefined || props.maxHeight !== undefined),
+    (!!props.sticky || props.height !== undefined || props.maxHeight !== undefined),
 );
+const {
+  headerTop, bar: stickyBar, scrollbar: stickyBarElement,
+  syncScrollbar, scrollViewport, scrollbarHeight,
+} = useTableSticky(viewport, tableHead, () => props.sticky);
 const widths = computed(() => props.columnWidths ?? localWidths.value);
 function widthOf(column: HysTableColumn<T>) {
   const value =
@@ -423,6 +450,17 @@ const length = (value: string | number | undefined) =>
       ? value + "px"
       : undefined
     : value;
+const tableMinWidth = computed(() => {
+  const width = length(props.scrollWidth);
+  const minimum = minTableWidth.value + "px";
+  return width && width !== "max-content" ? `max(${minimum}, ${width})` : minimum;
+});
+const tableWidth = computed(() => {
+  if (pixelLayout.value || resizeBase.value || Object.keys(props.columnWidths ?? {}).length)
+    return minTableWidth.value + "px";
+  if (props.scrollWidth === "max-content") return "max-content";
+  return props.fit ? "100%" : minTableWidth.value + "px";
+});
 const seenDetails = ref(new Set<string>());
 watch(
   expandedKeys,
@@ -493,9 +531,12 @@ function text(value: unknown): string {
   }
 }
 function formatted(ctx: HysTableCellContext<T>) {
-  return ctx.column.formatter
+  const content = ctx.column.formatter
     ? ctx.column.formatter(ctx.row, ctx.column, ctx.value, ctx.rowIndex)
     : text(ctx.value);
+  return props.transformCellText
+    ? props.transformCellText({ ...ctx, text: content })
+    : content;
 }
 function rowClick(node: TableNode<T>, index: number, event: MouseEvent) {
   if (busy.value) return;
@@ -563,8 +604,14 @@ const spans = computed(() => {
 });
 const span = (i: number, j: number) =>
   spans.value.get(i + ":" + j) ?? { rowspan: 1, colspan: 1 };
+const pageRows = computed(() => display.value.map((node) => node.row));
+const summaryRows = computed(() =>
+  props.summaryScope === "page"
+    ? pageRows.value
+    : model.filteredRows.value,
+);
 const summaries = computed(() => {
-  const rows = model.filteredRows.value,
+  const rows = summaryRows.value,
     custom = props.summaryMethod?.({ columns: layout.value.leaves, rows });
   return layout.value.leaves.map((c, index) =>
     custom
@@ -578,29 +625,48 @@ const summaries = computed(() => {
           : "",
   );
 });
+function summaryCellAttrs(column: HysTableColumn<T>) {
+  return {
+    "data-column-key": column.key,
+    style: { ...fixedStyle(column), textAlign: column.align },
+  };
+}
 const filterAnchor = ref<HTMLElement>(),
   filterPanel = ref<HTMLElement>(),
   filterColumn = shallowRef<HysTableColumn<T>>(),
   filterDraft = ref<HysTableFilterValue[]>([]);
 const ownFilterKey = ref<string | null>(null),
-  desiredFilterKey = computed(() =>
-    props.filterColumnKey === undefined
-      ? ownFilterKey.value
-      : props.filterColumnKey,
-  );
+  desiredFilterKey = computed(() => {
+    if (props.filterColumnKey !== undefined) return props.filterColumnKey;
+    const columns = layout.value.leaves;
+    const open = columns.find((c) => hasFilter(c) && c.filterDropdownOpen === true);
+    if (open) return open.key;
+    return columns.some((c) => c.key === ownFilterKey.value && c.filterDropdownOpen === false)
+      ? null
+      : ownFilterKey.value;
+  });
+function hasFilter(column: HysTableColumn<T>) {
+  return !!(column.filterable || column.filters || column.renderFilterDropdown || column.filterMethod || column.filteredValue);
+}
+function isFiltered(column: HysTableColumn<T>) {
+  return column.filtered ?? !!filters.value[column.key]?.length;
+}
 let restoreFilterFocus = false;
 async function requestFilter(key: string | null, restore = false) {
+  const columns = layout.value.leaves;
+  const nextColumn = columns.find((c) => c.key === key && hasFilter(c));
   if (
     key !== null &&
-    (busy.value ||
-      !model.live.value ||
-      !layout.value.leaves.some(
-        (c) => c.key === key && (c.filterable || c.filters),
-      ))
+    (busy.value || !model.live.value || !nextColumn)
   )
     return false;
+  const previous = desiredFilterKey.value;
   restoreFilterFocus = restore;
   ownFilterKey.value = key;
+  if (key !== previous) {
+    columns.find((c) => c.key === previous)?.onFilterDropdownOpenChange?.(false);
+    nextColumn?.onFilterDropdownOpenChange?.(true);
+  }
   emit("update:filterColumnKey", key);
   if (desiredFilterKey.value === key) syncFilter();
   await nextTick();
@@ -615,9 +681,7 @@ async function requestFilter(key: string | null, restore = false) {
   );
 }
 const floatingFilter = useFloating(filterAnchor, filterPanel, {
-  get placement() {
-    return props.filterPlacement ?? "bottom-end";
-  },
+  placement: () => filterColumn.value?.filterPlacement ?? props.filterPlacement ?? "bottom-end",
   width: () => 260,
   requestOpen(open, restore) {
     void requestFilter(
@@ -629,10 +693,15 @@ const floatingFilter = useFloating(filterAnchor, filterPanel, {
 });
 const filterOpen = floatingFilter.open,
   filterStyle = floatingFilter.style;
+const filterTarget = computed(() =>
+  props.appendFilterTo ??
+  (filterAnchor.value && props.getPopupContainer?.(filterAnchor.value)) ??
+  "body",
+);
 function syncFilter() {
   const key = desiredFilterKey.value,
     column = layout.value.leaves.find(
-      (c) => c.key === key && (c.filterable || c.filters),
+      (c) => c.key === key && hasFilter(c),
     );
   if (busy.value || !model.live.value || !column) {
     floatingFilter.close(restoreFilterFocus, true);
@@ -640,7 +709,7 @@ function syncFilter() {
     return;
   }
   const anchor = Array.from(
-    table.value?.querySelectorAll<HTMLElement>("th[data-leaf]") ?? [],
+    tableHead.value?.querySelectorAll<HTMLElement>("th[data-column-key]") ?? [],
   )
     .find((th) => th.dataset.columnKey === key)
     ?.querySelector<HTMLElement>(".hys-ui-table-filter");
@@ -667,6 +736,7 @@ watch(
     model.live,
     () => layout.value.leaves,
     () => props.showHeader,
+    tableHead,
   ],
   syncFilter,
   { immediate: true, flush: "post" },
@@ -709,11 +779,43 @@ function clearActiveFilter(options?: HysTableFilterResetOptions | Event) {
   if (config?.confirm !== false) confirmFilter(options);
   else if (config?.closeDropdown === true) floatingFilter.close(true);
 }
+const filterContext = computed(() => filterColumn.value && ({
+  column: filterColumn.value,
+  open: filterOpen.value,
+  values: filterDraft.value,
+  setValues: setFilterDraft,
+  confirm: confirmFilter,
+  clear: clearActiveFilter,
+  close: () => floatingFilter.close(true),
+}));
 const tipAnchor = ref<HTMLElement>(),
   tipPanel = ref<HTMLElement>(),
-  tipContext = shallowRef<HysTableCellContext<T>>();
+  tipContext = shallowRef<HysTableCellContext<T>>(),
+  sortTipColumn = shallowRef<HysTableColumn<T>>();
+function overflowTooltip(column: HysTableColumn<T>) {
+  return column.showOverflowTooltip ?? props.showOverflowTooltip;
+}
+function sorterTooltip(column: HysTableColumn<T>) {
+  return column.showSorterTooltip ?? props.showSorterTooltip;
+}
+const tipOptions = computed<HysTableOverflowTooltipOptions>(() => {
+  const tableOptions = sortTipColumn.value ? props.showSorterTooltip : props.showOverflowTooltip;
+  const columnOptions = sortTipColumn.value
+    ? sortTipColumn.value.showSorterTooltip
+    : tipContext.value?.column.showOverflowTooltip;
+  return {
+    ...(typeof tableOptions === "object" ? tableOptions : undefined),
+    ...(typeof columnOptions === "object" ? columnOptions : undefined),
+  };
+});
+const tipTarget = computed(() =>
+  (tipAnchor.value && props.getPopupContainer?.(tipAnchor.value)) ?? "body",
+);
 const floatingTip = useFloating(tipAnchor, tipPanel, {
-    placement: "top-start",
+    placement: () => tipOptions.value.placement ?? "top-start",
+    get gap() {
+      return tipOptions.value.offset;
+    },
   }),
   tipOpen = floatingTip.open,
   tipStyle = floatingTip.style;
@@ -723,30 +825,63 @@ function keepTip() {
 }
 function hideTip() {
   clearTimeout(tipTimer);
-  tipTimer = setTimeout(() => floatingTip.close(), 80);
+  if (!tipOpen.value) return;
+  const delay = tipOptions.value.hideDelay ?? 80;
+  tipTimer = setTimeout(() => floatingTip.close(), Number.isFinite(delay) ? Math.max(0, delay) : 80);
 }
 function showTip(ctx: HysTableCellContext<T>, event: Event) {
-  clearTimeout(tipTimer);
   const target = event.currentTarget as HTMLElement;
   if (
     busy.value ||
     floatingTip.restoringFocus.value ||
-    !(ctx.column.showOverflowTooltip ?? props.showOverflowTooltip) ||
+    !overflowTooltip(ctx.column) ||
     (target.scrollWidth <= target.clientWidth + 1 &&
       target.scrollHeight <= target.clientHeight + 1)
   )
     return;
+  keepTip();
   tipAnchor.value = target;
+  sortTipColumn.value = undefined;
   tipContext.value = ctx;
   floatingTip.show();
 }
+function showSortTip(column: HysTableColumn<T>, event: Event) {
+  if (busy.value || !sorterTooltip(column) || floatingTip.restoringFocus.value) return;
+  keepTip();
+  tipAnchor.value = event.currentTarget as HTMLElement;
+  tipContext.value = undefined;
+  sortTipColumn.value = column;
+  floatingTip.show();
+}
 const tipContent = computed(() => {
+  const column = sortTipColumn.value;
+  if (column) {
+    const next = model.nextSortOrder(column);
+    const message = next === "asc" ? words.value.sortAsc
+      : next === "desc" ? words.value.sortDesc : words.value.sortClear;
+    return labelText(message, column.label);
+  }
   const ctx = tipContext.value;
   return ctx
     ? ((ctx.column.tooltipFormatter ?? props.tooltipFormatter)?.(ctx) ??
-        text(ctx.value))
+        (tipAnchor.value?.textContent?.trim() || text(ctx.value)))
     : "";
 });
+const customSelectionActions = computed(() =>
+  Array.isArray(props.selectionActions) ? props.selectionActions : undefined,
+);
+const selectionActionRows = computed(() => model.selectionPage.value.map(({ row }) => row));
+const selectionActionKeys = computed(() => model.selectionPage.value.map(({ key }) => key));
+function runSelectionAction(action: HysTableSelectionAction<T>) {
+  if (busy.value || !model.live.value || action.disabled) return;
+  const nodes = model.selectionPage.value;
+  return action.select({
+    rows: nodes.map(({ row }) => row),
+    keys: nodes.map(({ key }) => key),
+    selectedKeys: [...selectedKeys.value],
+    setSelected: (keys) => model.selectPage(keys, nodes),
+  });
+}
 let observer: ResizeObserver | undefined,
   measureFrame = 0,
   resizing:
@@ -902,6 +1037,7 @@ function resizeColumn(key: string, width: number) {
 }
 function scrolled(event: Event) {
   if (!viewport.value) return;
+  syncScrollbar();
   floatingTip.close();
   emit(
     "scroll",
@@ -948,11 +1084,6 @@ watch(
   () => layout.value.leaves.map((c) => c.key).join("\u0000"),
   () => {
     if (
-      filterColumn.value &&
-      !layout.value.leaves.some((c) => c.key === filterColumn.value?.key)
-    )
-      floatingFilter.close();
-    if (
       tipContext.value &&
       !layout.value.leaves.some((c) => c.key === tipContext.value?.column.key)
     )
@@ -968,16 +1099,22 @@ watch(
   () => props.columns,
   () => {
     stopResize();
-    floatingFilter.close();
     floatingTip.close();
   },
   { deep: true },
 );
+watch(display, () => {
+  if (tipContext.value) floatingTip.close();
+});
+watch([() => props.showOverflowTooltip, () => props.showSorterTooltip], () => floatingTip.close(), { deep: true });
 onMounted(() => {
   observe();
   syncFilter();
 });
 onActivated(observe);
+watch(table, () => {
+  if (model.live.value) observe();
+}, { flush: "post" });
 onUpdated(scheduleMeasure);
 onDeactivated(cleanup);
 onBeforeUnmount(cleanup);
@@ -1013,9 +1150,8 @@ async function scrollToRow(
   if (index < 0 || !row) return false;
   const box = el.getBoundingClientRect(),
     rect = row.getBoundingClientRect(),
-    header = sticky.value
-      ? (table.value?.querySelector("thead")?.getBoundingClientRect().height ??
-        0)
+    header = stickyHeaderActive.value
+      ? (tableHead.value?.getBoundingClientRect().height ?? 0) + headerTop.value
       : 0,
     top = rect.top - box.top - el.clientTop + el.scrollTop,
     available = Math.max(0, el.clientHeight - header);
@@ -1084,16 +1220,16 @@ defineExpose({
       {
         'hys-ui-table-striped': striped,
         'hys-ui-table-bordered': bordered,
-        'hys-ui-table-sticky': sticky,
+        'hys-ui-table-sticky': stickyHeaderActive,
       },
     ]"
     :aria-busy="loading || undefined"
   >
     <div v-if="$slots.title" class="hys-ui-table-title">
-      <slot name="title" :rows="model.filteredRows.value" :query="query" />
+      <slot name="title" :rows="model.filteredRows.value" :page-rows="pageRows" :query="query" />
     </div>
     <div
-      v-if="selectionActions || $slots.selection"
+      v-if="selectionActions === true || customSelectionActions?.length || $slots.selection"
       class="hys-ui-table-selection-actions"
     >
       <slot
@@ -1103,33 +1239,45 @@ defineExpose({
         :select-all="() => model.toggleAllSelection(true)"
         :invert="model.invertSelection"
         :clear="model.clearSelection"
+        :page-rows="selectionActionRows"
+        :page-keys="selectionActionKeys"
+        :set-selected="(keys: readonly HysTableKey[]) => model.selectPage(keys)"
       >
         <span aria-live="polite">{{
           words.selected.replace("{count}", String(selectedKeys.length))
         }}</span>
-        <HysButton
-          v-if="selectionType !== 'radio'"
-          size="sm"
-          variant="secondary"
-          :disabled="busy"
-          @click="model.toggleAllSelection(true)"
-          >{{ words.selectAll }}</HysButton
-        >
-        <HysButton
-          v-if="selectionType !== 'radio'"
-          size="sm"
-          variant="secondary"
-          :disabled="busy"
-          @click="model.invertSelection"
-          >{{ words.invertSelection }}</HysButton
-        >
-        <HysButton
-          size="sm"
-          variant="ghost"
-          :disabled="busy || !selectedKeys.length"
-          @click="model.clearSelection"
-          >{{ words.clearSelection }}</HysButton
-        >
+        <template v-if="customSelectionActions">
+          <HysButton
+            v-for="action in customSelectionActions"
+            :key="action.key"
+            size="sm"
+            variant="secondary"
+            :disabled="busy || action.disabled || selectionType === 'radio'"
+            @click="runSelectionAction(action)"
+          >{{ action.label }}</HysButton>
+        </template>
+        <template v-else>
+          <HysButton
+            v-if="selectionType !== 'radio'"
+            size="sm"
+            variant="secondary"
+            :disabled="busy || !model.selectionPage.value.length"
+            @click="model.toggleAllSelection(true)"
+          >{{ words.selectAll }}</HysButton>
+          <HysButton
+            v-if="selectionType !== 'radio'"
+            size="sm"
+            variant="secondary"
+            :disabled="busy || !model.selectionPage.value.length"
+            @click="model.invertSelection"
+          >{{ words.invertSelection }}</HysButton>
+          <HysButton
+            size="sm"
+            variant="ghost"
+            :disabled="busy || !selectedKeys.length"
+            @click="model.clearSelection"
+          >{{ words.clearSelection }}</HysButton>
+        </template>
       </slot>
     </div>
     <div
@@ -1140,15 +1288,24 @@ defineExpose({
       class="hys-ui-table-pagination"
       :data-position="position"
     >
-      <HysPagination
-        v-bind="paginationProps"
-        @change="model.requestPage($event)"
-        @page-size-change="model.changeSize"
-      />
+      <slot
+        name="pagination"
+        :position="position"
+        :props="paginationProps"
+        :set-page="model.requestPage"
+        :set-page-size="model.changeSize"
+      >
+        <HysPagination
+          v-bind="paginationProps"
+          @change="model.requestPage($event)"
+          @page-size-change="model.changeSize"
+        />
+      </slot>
     </div>
-    <div
+    <div class="hys-ui-table-viewport"><div
       ref="viewport"
       class="hys-ui-table-scroll"
+      :class="{ 'hys-ui-table-themed-scrollbar': nativeScrollbar === false }"
       :style="{
         height: length(height),
         maxHeight: length(maxHeight),
@@ -1158,19 +1315,14 @@ defineExpose({
       :aria-label="caption || words.scrollLabel"
       @scroll="scrolled"
     >
-      <table
-        ref="table"
+      <component
+        :is="components?.table ?? 'table'"
+        ref="tableRoot"
         class="hys-ui-data-table"
         :style="{
-          minWidth: minTableWidth + 'px',
+          minWidth: tableMinWidth,
           tableLayout: pixelLayout || resizeBase ? 'fixed' : tableLayout,
-          width:
-            fit &&
-            !pixelLayout &&
-            !resizeBase &&
-            !Object.keys(columnWidths ?? {}).length
-              ? '100%'
-              : minTableWidth + 'px',
+          width: tableWidth,
         }"
       >
         <caption v-if="caption">
@@ -1185,8 +1337,14 @@ defineExpose({
             :style="{ width: colWidth(column) }"
           />
         </colgroup>
-        <thead v-if="showHeader">
-          <tr
+        <component
+          :is="components?.header?.wrapper ?? 'thead'"
+          v-if="showHeader"
+          ref="tableHeadRoot"
+          :style="{ top: headerTop + 'px' }"
+        >
+          <component
+            :is="components?.header?.row ?? 'tr'"
             v-for="(headers, level) in layout.headers"
             :key="level"
             :class="
@@ -1214,15 +1372,17 @@ defineExpose({
               )
             "
           >
-            <th
+            <component
+              :is="components?.header?.cell ?? 'th'"
               v-for="header in headers"
               :key="header.key"
               v-bind="customHeader(header)"
               :data-column-key="header.column.key"
-              :data-leaf="header.column.children ? undefined : ''"
+              :data-leaf="!header.column.children && header.colspan === 1 ? '' : undefined"
               :colspan="header.colspan"
               :rowspan="header.rowspan"
-              :scope="header.column.children ? 'colgroup' : 'col'"
+              :scope="header.column.children || header.colspan > 1 ? 'colgroup' : 'col'"
+              :aria-hidden="header.blank || undefined"
               :class="[
                 header.column.headerClassName,
                 typeof headerCellClassName === 'function'
@@ -1234,7 +1394,7 @@ defineExpose({
               ]"
               :style="headerStyle(header)"
               :aria-sort="
-                header.column.sortable
+                !header.blank && header.column.sortable
                   ? sorts.find((s) => s.key === header.column.key)
                       ?.direction === 'asc'
                     ? 'ascending'
@@ -1244,16 +1404,17 @@ defineExpose({
                       : 'none'
                   : undefined
               "
-              @click="emit('headerClick', header.column, $event)"
-              @contextmenu="emit('headerContextmenu', header.column, $event)"
+              @click="!header.blank && emit('headerClick', header.column, $event)"
+              @contextmenu="!header.blank && emit('headerContextmenu', header.column, $event)"
             >
+              <template v-if="header.blank" />
               <slot
-                v-if="header.column.type === 'selection'"
+                v-else-if="header.column.type === 'selection'"
                 name="selection-header"
                 :column="header.column"
                 :checked="allSelected"
                 :indeterminate="someSelected"
-                :disabled="busy || !model.graph.value.all.some(model.eligible)"
+                :disabled="busy || !model.selectionPage.value.length"
                 :toggle="model.toggleAllSelection"
               >
                 <HysCheckbox
@@ -1265,7 +1426,7 @@ defineExpose({
                   :model-value="allSelected"
                   :indeterminate="someSelected"
                   :disabled="
-                    busy || !model.graph.value.all.some(model.eligible)
+                    busy || !model.selectionPage.value.length
                   "
                   :aria-label="words.selectAll"
                   @click.stop
@@ -1293,6 +1454,11 @@ defineExpose({
                     type="button"
                     class="hys-ui-table-sort"
                     :disabled="busy"
+                    :aria-describedby="tipOpen && sortTipColumn === header.column ? id + '-tooltip' : undefined"
+                    @pointerenter="showSortTip(header.column, $event)"
+                    @pointerleave="hideTip"
+                    @focus="showSortTip(header.column, $event)"
+                    @blur="hideTip"
                     @click="model.toggleSort(header.column)"
                   >
                     <slot
@@ -1303,7 +1469,10 @@ defineExpose({
                         name="header-cell"
                         :column="header.column"
                         :sorts="sorts"
-                        >{{ header.column.label }}</slot
+                        ><RenderContent
+                          v-if="header.column.renderHeader"
+                          :value="header.column.renderHeader(header.column, sorts)"
+                        /><template v-else>{{ header.column.label }}</template></slot
                       ></slot
                     ></button
                   ><span v-else
@@ -1315,7 +1484,10 @@ defineExpose({
                         name="header-cell"
                         :column="header.column"
                         :sorts="sorts"
-                        >{{ header.column.label }}</slot
+                        ><RenderContent
+                          v-if="header.column.renderHeader"
+                          :value="header.column.renderHeader(header.column, sorts)"
+                        /><template v-else>{{ header.column.label }}</template></slot
                       ></slot
                     ></span
                   ><span
@@ -1349,13 +1521,13 @@ defineExpose({
                   ></span>
                 </div>
                 <button
-                  v-if="header.column.filterable || header.column.filters"
+                  v-if="!header.column.children && hasFilter(header.column)"
                   type="button"
                   class="hys-ui-table-filter"
                   :disabled="busy"
                   :class="{
                     'hys-ui-table-filter-active':
-                      !!filters[header.column.key]?.length,
+                      isFiltered(header.column),
                   }"
                   :aria-label="words.filter + header.column.label"
                   :aria-expanded="
@@ -1364,10 +1536,19 @@ defineExpose({
                   :aria-controls="id + '-filter'"
                   @click.stop="openFilter(header.column, $event)"
                 >
+                  <RenderContent
+                    v-if="header.column.renderFilterIcon"
+                    :value="header.column.renderFilterIcon({
+                      column: header.column,
+                      filtered: isFiltered(header.column),
+                      open: filterOpen && filterColumn?.key === header.column.key,
+                    })"
+                  />
                   <slot
+                    v-else
                     name="filter-icon"
                     :column="header.column"
-                    :filtered="!!filters[header.column.key]?.length"
+                    :filtered="isFiltered(header.column)"
                     :open="
                       filterOpen && filterColumn?.key === header.column.key
                     "
@@ -1377,6 +1558,7 @@ defineExpose({
                 <span
                   v-if="
                     !header.column.children &&
+                    header.colspan === 1 &&
                     (header.column.resizable ?? resizable) &&
                     (allowDragLastColumn ||
                       header.column.key !== layout.leaves.at(-1)?.key) &&
@@ -1413,11 +1595,11 @@ defineExpose({
                   "
                 />
               </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading" class="hys-ui-table-message">
+            </component>
+          </component>
+        </component>
+        <component :is="components?.body?.wrapper ?? 'tbody'">
+          <tr v-if="loading && loadingMode === 'replace'" class="hys-ui-table-message">
             <td :colspan="Math.max(1, layout.leaves.length)">
               <div role="status">
                 <slot name="loading"
@@ -1430,7 +1612,8 @@ defineExpose({
           </tr>
           <template v-else
             ><template v-for="(node, index) in display" :key="node.token">
-              <tr
+              <component
+                :is="components?.body?.row ?? 'tr'"
                 v-bind="customAttrs(customRow?.(node.row, index))"
                 :data-row-key="String(node.key)"
                 :aria-selected="
@@ -1461,7 +1644,9 @@ defineExpose({
                   v-for="(column, columnIndex) in layout.leaves"
                   :key="column.key"
                   ><component
-                    :is="column.rowScope ? 'th' : 'td'"
+                    :is="column.rowScope
+                      ? (components?.body?.rowHeaderCell ?? 'th')
+                      : (components?.body?.cell ?? 'td')"
                     v-if="
                       span(index, columnIndex).rowspan &&
                       span(index, columnIndex).colspan
@@ -1690,13 +1875,14 @@ defineExpose({
                           class="hys-ui-table-cell-text"
                           :class="{
                             'hys-ui-table-ellipsis':
-                              column.ellipsis ||
-                              column.showOverflowTooltip ||
-                              showOverflowTooltip,
+                              column.ellipsis || overflowTooltip(column),
                           }"
-                          :tabindex="
-                            (column.showOverflowTooltip ?? showOverflowTooltip)
-                              ? 0
+                          :tabindex="overflowTooltip(column) ? 0 : undefined"
+                          :title="
+                            typeof column.ellipsis === 'object' &&
+                            column.ellipsis.showTitle !== false &&
+                            !overflowTooltip(column)
+                              ? text(tableValue(node.row, column.dataIndex ?? column.key))
                               : undefined
                           "
                           :aria-describedby="
@@ -1769,7 +1955,7 @@ defineExpose({
                     >
                   </component></template
                 >
-              </tr>
+              </component>
               <tr
                 v-if="detail(node)"
                 v-show="expandedSet.has(node.token)"
@@ -1796,30 +1982,70 @@ defineExpose({
               <slot name="append" :rows="model.filteredRows.value" />
             </td>
           </tr>
-        </tbody>
-        <tfoot v-if="showSummary && !loading">
-          <tr>
-            <td
-              v-for="(column, index) in layout.leaves"
-              :key="column.key"
-              :data-column-key="column.key"
-              :style="{ ...fixedStyle(column), textAlign: column.align }"
-            >
-              <slot
-                name="summary-cell"
-                :column="column"
-                :index="index"
-                :value="summaries[index]"
-                :rows="model.filteredRows.value"
-                ><RenderContent :value="summaries[index]"
-              /></slot>
-            </td>
-          </tr>
+        </component>
+        <tfoot
+          v-if="(showSummary || $slots.summary) && (!loading || loadingMode === 'overlay')"
+          class="hys-ui-table-summary"
+          :class="{ 'hys-ui-table-summary-sticky': stickySummary }"
+        >
+          <slot
+            name="summary"
+            :columns="layout.leaves"
+            :rows="summaryRows"
+            :values="summaries"
+            :cell-attrs="summaryCellAttrs"
+          >
+            <tr>
+              <td
+                v-for="(column, index) in layout.leaves"
+                :key="column.key"
+                v-bind="summaryCellAttrs(column)"
+              >
+                <slot
+                  name="summary-cell"
+                  :column="column"
+                  :index="index"
+                  :value="summaries[index]"
+                  :rows="summaryRows"
+                  ><RenderContent :value="summaries[index]"
+                /></slot>
+              </td>
+            </tr>
+          </slot>
         </tfoot>
-      </table>
+      </component>
     </div>
+      <div v-if="loading && loadingMode === 'overlay'" class="hys-ui-table-loading-overlay" role="status">
+        <slot name="loading">
+          <LoaderCircle class="hys-ui-table-spinner" :size="18" />
+          {{ words.loadingText }}
+        </slot>
+      </div>
+    </div>
+    <Teleport to="body">
+      <div
+        v-if="stickyBar"
+        ref="stickyBarElement"
+        v-bind="attrs"
+        class="hys-ui-table-sticky-scrollbar"
+        :class="{ 'hys-ui-table-themed-scrollbar': nativeScrollbar === false }"
+        :style="{
+          top: stickyBar.top + 'px',
+          left: stickyBar.left + 'px',
+          width: stickyBar.width + 'px',
+          height: scrollbarHeight + 'px',
+          direction: stickyBar.direction,
+        }"
+        role="region"
+        :aria-label="words.stickyScrollLabel"
+        tabindex="0"
+        @scroll="scrollViewport"
+      >
+        <div aria-hidden="true" :style="{ width: stickyBar.contentWidth + 'px', height: '1px' }" />
+      </div>
+    </Teleport>
     <div v-if="$slots.footer" class="hys-ui-table-footer">
-      <slot name="footer" :rows="model.filteredRows.value" :query="query" />
+      <slot name="footer" :rows="model.filteredRows.value" :page-rows="pageRows" :query="query" />
     </div>
     <div
       v-for="position in paginationPositions.filter((p) =>
@@ -1829,15 +2055,23 @@ defineExpose({
       class="hys-ui-table-pagination"
       :data-position="position"
     >
-      <HysPagination
-        v-bind="paginationProps"
-        @change="model.requestPage($event)"
-        @page-size-change="model.changeSize"
-      />
+      <slot
+        name="pagination"
+        :position="position"
+        :props="paginationProps"
+        :set-page="model.requestPage"
+        :set-page-size="model.changeSize"
+      >
+        <HysPagination
+          v-bind="paginationProps"
+          @change="model.requestPage($event)"
+          @page-size-change="model.changeSize"
+        />
+      </slot>
     </div>
     <Teleport
-      :to="appendFilterTo || 'body'"
-      :disabled="appendFilterTo === false"
+      :to="filterTarget || 'body'"
+      :disabled="filterTarget === false"
       ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floatingFilter.placement.value"><div
         v-if="filterOpen && filterColumn"
         :id="id + '-filter'"
@@ -1848,7 +2082,12 @@ defineExpose({
         role="dialog"
         :aria-label="words.filter + filterColumn.label"
       >
+        <RenderContent
+          v-if="filterColumn.renderFilterDropdown && filterContext"
+          :value="filterColumn.renderFilterDropdown(filterContext)"
+        />
         <slot
+          v-else
           name="filter-dropdown"
           :column="filterColumn"
           :open="filterOpen"
@@ -1893,21 +2132,28 @@ defineExpose({
         >
       </div></PopupMotion></Teleport
     >
-    <Teleport to="body"
+    <Teleport :to="tipTarget || 'body'" :disabled="tipTarget === false"
       ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floatingTip.placement.value"><div
-        v-if="tipOpen && tipContext"
+        v-if="tipOpen && (tipContext || sortTipColumn)"
         :id="id + '-tooltip'"
         ref="tipPanel"
         v-bind="attrs"
         class="hys-ui-table-tooltip hys-ui-floating-tooltip"
+        :data-effect="tipOptions.effect"
         role="tooltip"
-        :style="tipStyle"
+        :style="[
+          tipStyle,
+          tipOptions.enterable === false ? { pointerEvents: 'none' } : undefined,
+          tipOptions.maxWidth !== undefined && length(tipOptions.maxWidth)
+            ? { maxWidth: `min(${length(tipOptions.maxWidth)}, calc(100vw - 20px))` }
+            : undefined,
+        ]"
         @pointerenter="keepTip"
         @pointerleave="hideTip"
       >
-        <slot name="tooltip" v-bind="tipContext"
+        <slot v-if="tipContext" name="tooltip" v-bind="tipContext"
           ><RenderContent :value="tipContent"
-        /></slot></div
+        /></slot><RenderContent v-else :value="tipContent" /></div
     ></PopupMotion></Teleport>
   </div>
 </template>
@@ -1938,9 +2184,33 @@ defineExpose({
   position: relative;
   overscroll-behavior: contain auto;
 }
+.hys-ui-table-viewport {
+  position: relative;
+}
+.hys-ui-table-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--hys-ui-surface, var(--hys-ui-theme-surface)) 78%, transparent);
+}
 .hys-ui-table-scroll:focus-visible {
   outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
   outline-offset: -2px;
+}
+.hys-ui-table-sticky-scrollbar {
+  position: fixed;
+  z-index: 6;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+}
+.hys-ui-table-themed-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hys-ui-border, var(--hys-ui-theme-border)) transparent;
 }
 .hys-ui-data-table {
   table-layout: fixed;
@@ -2006,11 +2276,29 @@ defineExpose({
 .hys-ui-data-table tbody tr:last-child :is(td, th) {
   border-bottom: 0;
 }
-.hys-ui-data-table tfoot td {
+.hys-ui-table-summary > :deep(tr > :is(td, th)) {
   background: var(--hys-ui-table-head-bg);
+  box-sizing: border-box;
+  padding: var(--hys-ui-table-summary-padding, 12px 14px);
+  font-size: var(--hys-ui-table-summary-font-size, inherit);
   font-weight: 600;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
   border-top: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
   border-bottom: 0;
+}
+.hys-ui-table-sm {
+  --hys-ui-table-summary-padding: 7px 10px;
+  --hys-ui-table-summary-font-size: 12px;
+}
+.hys-ui-table-lg {
+  --hys-ui-table-summary-padding: 17px 18px;
+  --hys-ui-table-summary-font-size: 14px;
+}
+.hys-ui-table-summary-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
 }
 .hys-ui-table-sticky thead {
   position: sticky;
@@ -2289,6 +2577,11 @@ defineExpose({
   color: var(--hys-ui-surface, var(--hys-ui-theme-surface));
   box-shadow: 0 6px 22px #0002;
   overflow-wrap: anywhere;
+}
+.hys-ui-table-tooltip[data-effect="light"] {
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
 }
 .hys-ui-table-spinner {
   animation: hys-ui-table-spin 1s linear infinite;

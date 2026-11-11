@@ -74,6 +74,53 @@
     "PopupMotion": "浮层展开与收起动效"
   },
   "components": {
+    "HysButton": {
+      "Basic": "基础样式与禁用",
+      "Palette": "内置配色",
+      "Links": "链接与文字按钮",
+      "Features": "图标、尺寸与形状",
+      "Group": "按钮组与视图切换",
+      "Actions": "加载状态与自定义标签",
+      "Async": "异步操作、取消与重试",
+      "Color": "自定义颜色与深色背景",
+      "Form": "原生表单提交与重置",
+      "Configure": "交互配置"
+    },
+    "HysButtonGroup": {
+      "Basic": "横向连接与按下状态",
+      "Configure": "垂直按钮组与统一禁用"
+    },
+    "HysSearch": {
+      "Submit": "确认搜索、独立提交按钮和清空",
+      "Custom": "自定义搜索按钮与输入图标"
+    },
+    "HysTour": {
+      "Spotlight": "目标高亮、跟随定位与非模态引导",
+      "Custom": "自定义封面、操作按钮和步骤指示器"
+    },
+    "HysSplitPane": {
+      "Resize": "延迟拖动、独立尺寸与折叠恢复",
+      "Panels": "三面板联动、像素尺寸与受控更新",
+      "Workspace": "嵌套工作区、布局记忆和一键恢复"
+    },
+    "HysMention": {
+      "Prefixes": "多触发词、候选映射与整体删除",
+      "Remote": "远程候选、加载取消与重试",
+      "Create": "创建候选与自定义写入格式",
+      "Triggers": "独立触发规则与手动打开",
+      "Discovery": "拼音、模糊搜索与虚拟分组候选",
+      "Paging": "多数据源、分页加载与缓存",
+      "Rich": "富文本、结构化实体与程序化编辑",
+      "Contexts": "对话框、抽屉与浮层挂载"
+    },
+    "HysAnimatedNumber": {
+      "Statistic": "精确数值格式与倒计时"
+    },
+    "HysPagination": {
+      "Bounds": "页码边界与快速跳转",
+      "Layout": "控件布局、尺寸与自定义内容",
+      "Controlled": "受控页大小与单页隐藏"
+    },
     "HysInput": {
       "Basic": "基础输入",
       "Affixes": "前后缀与附加内容",
@@ -306,6 +353,7 @@
       "Motion": "月份切换动画"
     },
     "HysSelect": {
+      "Labeled": "值与标签联动、远程回显和首选高亮",
       "ManyOptions": "多选项与内部滚动",
       "Bulk": "多选全选与批量取消"
     },
@@ -313,7 +361,9 @@
       "Basic": "基础表格与列配置",
       "Configure": "外观与状态配置",
       "Fixed": "固定表头、列与高度",
+      "Sticky": "外部滚动容器的固定表头和滚动条",
       "Grouped": "多级分组表头",
+      "Structure": "合并表头与自定义表格结构",
       "Sort": "默认、多列与受控排序",
       "Filters": "选项与文本筛选",
       "FilterSearch": "可搜索选项与树形筛选",
@@ -342,6 +392,7 @@
       "SortFields": "多字段排序与标题循环",
       "SelectionCustom": "选择单元格与业务禁用规则",
       "FilterControl": "筛选面板控制与连续应用",
+      "ColumnControl": "列级受控排序、筛选与排序提示",
       "ExpandCustom": "展开图标与操作列定制",
       "UpdateChildren": "动态更新树形子行",
       "Scroll": "行定位与独立视口滚动"

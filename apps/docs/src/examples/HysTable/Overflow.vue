@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { h, ref } from "vue";
 import { HysTable, type HysTableColumn } from "hys-ui";
 type Person = {
   id: number;
@@ -52,21 +52,24 @@ const overflowColumns: HysTableColumn<Person>[] = [
     key: "note",
     label: "工作说明",
     width: 230,
-    ellipsis: true,
-    showOverflowTooltip: true,
+    renderHeader: (column) => h("strong", column.label),
+    showOverflowTooltip: { placement: "bottom-start", maxWidth: 240 },
     tooltipFormatter: ({ row, value }) => row.name + "：" + value,
   },
-  { key: "team", label: "团队", width: 100 },
+  { key: "team", label: "团队", width: 100, showOverflowTooltip: false, ellipsis: { showTitle: true } },
 ];
 </script>
 <template>
   <div>
     <div style="max-width: 550px">
-      <HysTable :rows="rows.slice(0, 5)" :columns="overflowColumns" />
+      <HysTable
+        :rows="rows.slice(0, 5)"
+        :columns="overflowColumns"
+        :show-overflow-tooltip="{ effect: 'light', placement: 'top' }"
+      />
     </div>
     <p class="scenario-note">
-      仅在内容溢出时显示自定义
-      tooltip；支持悬停与聚焦，浮层会避让窗口边缘并随页面离开清理。
+      工作说明列沿用浅色提示样式，并自定义提示位置、宽度和内容。团队列关闭浮层，使用浏览器原生提示。
     </p>
   </div>
 </template>

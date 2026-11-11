@@ -103,6 +103,10 @@
             <td>单元格和表头的 left / center / right 对齐。</td>
           </tr>
           <tr>
+            <td>headerColSpan</td>
+            <td>合并同层、同固定区域的相邻叶列表头。0 隐藏该标题，数据列仍保留。</td>
+          </tr>
+          <tr>
             <td>sortable / sorter / sortBy / sortOrders</td>
             <td>
               启用排序、指定比较函数或取值规则、设置排序循环。sortable='custom'
@@ -124,9 +128,16 @@
             </td>
           </tr>
           <tr>
+            <td>renderHeader</td>
+            <td>
+              接收列配置和当前排序，返回标题内容。列专属表头插槽和 header-cell 插槽优先。
+            </td>
+          </tr>
+          <tr>
             <td>ellipsis / showOverflowTooltip / tooltipFormatter</td>
             <td>
-              单行省略、溢出时显示浮层、自定义提示内容。提示使用共享浮层，避免为每个单元格创建定位监听。
+              ellipsis 可用 { showTitle: true } 显示原生提示。showOverflowTooltip 支持配置位置、主题、最大宽度、偏移、关闭延时和鼠标能否进入浮层。
+              列级配置覆盖表格配置，false 关闭该列浮层。tooltipFormatter 可自定义浮层内容。
             </td>
           </tr>
           <tr>
@@ -168,6 +179,15 @@
       数组次序生效，空值排在末尾。文本筛选不区分大小写，选项值使用类型一致的匹配；同列条件按或、多列条件按且。应用排序或筛选会请求回到第一页。
     </p>
     <p>
+      列可用 sortOrder、filteredValue 和 filterDropdownOpen 接管排序、筛选值和面板显隐。
+      整表的 sort、sorts、filters 和 filterColumnKey 优先。用户操作通过 sortChange、filterChange
+      和列的 onFilterDropdownOpenChange 请求更新。showSorterTooltip 支持按表格或按列配置。
+    </p>
+    <p>
+      列的 renderFilterDropdown 和 renderFilterIcon 接收筛选状态与操作回调，支持由代码生成的列配置。
+      getPopupContainer 可根据触发元素设置浮层挂载位置，筛选面板优先使用 appendFilterTo。
+    </p>
+    <p>
       pagination 默认关闭；true 启用内置分页，也可传入配置对象。配置支持 page /
       pageSize / total / pageSizeOptions / showSizeChanger / showQuickJumper /
       showTotal / compact / hideOnSinglePage；独立 page、pageSize、total
@@ -185,6 +205,11 @@
       区间选择，以当前可见顺序为准，跳过不可选行。invertSelection()
       仅反选当前筛选页，selectInvert 与 selectRange
       在宿主接受变化后发出。hideSelectAll 隐藏表头全选。
+    </p>
+    <p>
+      selectionActions 也接受自定义操作数组，操作接收当前页可选行、当前选择以及 setSelected。
+      全选事件提供实际变化的行，清空后可监听 selectNone。
+      实例方法 toggleRowSelection 可传 { ignoreSelectable: true } 单独处理指定禁用行。
     </p>
     <p>
       selectable 可传布尔值或行可选判断函数。selectionType='radio' 单选，默认
@@ -212,6 +237,11 @@
       在查询状态改变后将表格纵向滚动归零，不改变横向滚动。
     </p>
     <p>
+      pagination.defaultPage 和 defaultPageSize 设置非受控初值，layout 和 size 调整控件。
+      服务端分页可用 pagination.pageCount 指定总页数。
+      pagination 插槽接收 position、props、setPage、setPageSize，可渲染自定义分页器并复用表格的查询逻辑。
+    </p>
+    <p>
       列 filterSearch 可为 true 或 (query, option) 匹配函数；filterMode='tree'
       展示可展开的树形筛选，filters.children
       提供层级。父选项默认匹配自身及后代，filterMethod
@@ -231,11 +261,15 @@
       限制最大高度；提供高度时自动固定表头，可用 stickyHeader
       显式覆盖。表头和数据共享同一张表格，固定列在横向滚动时保持位置。fit
       默认填满容器，列宽交互后使用像素布局，避免拖动引起比例跳变。窄容器可用
-      responsive 隐藏次要列，避免左右固定区域占满可用空间。
+      responsive 隐藏次要列。scrollWidth 可设置表格横向最小宽度，max-content 按内容展开。
+      sticky 支持页面或外部容器的固定表头和同步滚动条，可配置 offsetHeader、offsetScroll 和 getContainer。
     </p>
     <p>
-      showSummary 基于全部已过滤数据计算汇总；summaryMethod 返回数组或以列 key
-      为键的对象。spanMethod 返回 {rowspan, colspan} 或二元数组，0
+      showSummary 默认汇总全部筛选结果。summaryScope="page" 汇总当前页可见数据行，stickySummary 将汇总固定在滚动区底部。
+      summaryMethod 返回数组或以列 key 为键的对象。summary 插槽可在 tfoot 内渲染自定义行，合并单元格时按固定列边界分段，并用 cellAttrs(column) 对齐固定列。
+    </p>
+    <p>
+      spanMethod 返回 {rowspan, colspan} 或二元数组，0
       隐藏对应单元格；覆盖区域自动跳过，合并不跨固定列边界，并在展开详情前截断。expand
       插槽接收 row / index / expanded，preserveExpandedContent
       仅保留曾展开过的详情。
@@ -248,6 +282,11 @@
       覆盖相应区域。行内编辑与业务校验可在单元格插槽中组合
       HysInput、HysNumberInput 和 HysForm；自定义操作使用 @click.stop
       可避免触发行点击。
+    </p>
+    <p>
+      components 可接入自定义表格、表头与数据行组件。结构组件保留对应原生表格标签，并转发属性和默认插槽。
+      transformCellText 可统一处理列 formatter 的输出。title 和 footer 插槽的 pageRows 提供当前页可见行。
+      加载期间可用 loadingMode="overlay" 保留行内容与滚动位置。
     </p>
   </section>
   <section class="notes">

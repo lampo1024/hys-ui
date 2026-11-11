@@ -34,6 +34,8 @@ import {
   type HysSelectFieldNames,
   type HysSelectModelValue,
   type HysSelectOption,
+  isSelectLabeledValue,
+  type HysSelectLabeledValue,
   type HysSelectRow,
   type HysSelectSearchContext,
   type HysSelectValue,
@@ -59,7 +61,10 @@ const props = withDefaults(
       filterable?: boolean;
       clearable?: boolean;
       emptyValues?: readonly unknown[];
-      clearValue?: HysSelectValue | null;
+      /** 单选清空后的值，也可由函数计算。 */
+      clearValue?: HysSelectValue | null | (() => HysSelectValue | null);
+      /** 模型以 { value, label } 保存选中项，可在远程选项尚未加载时回显。 */
+      labelInValue?: boolean;
       fallbackOption?: false | ((value: HysSelectValue) => HysSelectOption);
       multipleLimit?: number;
       maxTagCount?: number;
@@ -85,6 +90,8 @@ const props = withDefaults(
       showOnFocus?: boolean;
       retainSearch?: boolean;
       defaultActiveFirst?: boolean;
+      /** 无已选项时优先高亮的可选值。 */
+      firstActiveValue?: HysSelectValue;
       keyboard?: boolean;
       popupMatchWidth?: boolean;
       popupWidth?: number | string;
@@ -194,13 +201,16 @@ const localValue = shallowRef<HysSelectModelValue>(props.defaultValue ?? null),
   );
 const multiple = computed(() => props.multiple || Array.isArray(current.value)),
   keyOf = selectKeyFactory(() => props.valueKey);
+function modelList(value: HysSelectModelValue): HysSelectValue[] {
+  if (Array.isArray(value)) return value.filter((item) => item != null);
+  if (value == null || props.emptyValues.some((empty) => Object.is(empty, value))) return [];
+  return [value];
+}
+const modelItems = computed(() => modelList(current.value));
 const values = computed<HysSelectValue[]>(() => {
-  const list = Array.isArray(current.value)
-    ? current.value.filter((value) => value != null)
-    : current.value == null ||
-        props.emptyValues.some((value) => Object.is(value, current.value))
-      ? []
-      : [current.value as HysSelectValue];
+  const list = props.labelInValue
+    ? modelItems.value.map((item) => isSelectLabeledValue(item) ? item.value : item)
+    : modelItems.value;
   const keys = new Set<string>();
   return list.filter((value) => {
     const key = keyOf(value);
@@ -208,6 +218,15 @@ const values = computed<HysSelectValue[]>(() => {
     keys.add(key);
     return true;
   });
+});
+const modelLabels = computed(() => {
+  const labels = new Map<string, string>();
+  if (props.labelInValue) {
+    for (const item of modelItems.value) {
+      if (isSelectLabeledValue(item)) labels.set(keyOf(item.value), item.label);
+    }
+  }
+  return labels;
 });
 const selectedKeys = computed(() => new Set(values.value.map(keyOf))),
   created = shallowRef<HysSelectOption[]>([]),
@@ -263,9 +282,14 @@ function fallback(value: HysSelectValue): HysSelectOption | undefined {
             : String(value),
       };
 }
+function resolveOption(value: HysSelectValue) {
+  const key = keyOf(value);
+  const label = modelLabels.value.get(key);
+  return optionCache.value.get(key) ?? (label === undefined ? fallback(value) : { value, label });
+}
 const selected = computed(() =>
   values.value.flatMap((value) => {
-    const option = optionCache.value.get(keyOf(value)) ?? fallback(value);
+    const option = resolveOption(value);
     return option ? [option] : [];
   }),
 );
@@ -526,8 +550,12 @@ function initialActive(last = false) {
     chosen = rows.find((row) =>
       selectedKeys.value.has(keyOf(row.option!.value)),
     );
+  const preferred = !last && props.firstActiveValue !== undefined
+    ? rows.find((row) => keyOf(row.option!.value) === keyOf(props.firstActiveValue!))
+    : undefined;
   activeKey.value = (
     chosen ??
+    preferred ??
     (props.defaultActiveFirst ? (last ? rows.at(-1) : rows[0]) : undefined)
   )?.key;
 }
@@ -552,24 +580,27 @@ async function revealActive() {
       ?.scrollIntoView({ block: "nearest" });
 }
 function update(value: HysSelectModelValue) {
-  const list = Array.isArray(value)
-    ? value
-    : value == null ||
-        props.emptyValues.some((empty) => Object.is(empty, value))
-      ? []
-      : [value as HysSelectValue];
+  const list = modelList(value);
   if (
     list.length === values.value.length &&
     list.every((item, index) => keyOf(item) === keyOf(values.value[index]))
   )
-    return;
-  if (props.modelValue === undefined) localValue.value = value;
+    return current.value as T;
+  let model = value;
+  if (props.labelInValue && (Array.isArray(value) || list.length)) {
+    const labeled = list.map((item): HysSelectLabeledValue => ({
+      value: item, label: resolveOption(item)?.label ?? String(item),
+    }));
+    model = Array.isArray(value) ? labeled : labeled[0];
+  }
+  if (props.modelValue === undefined) localValue.value = model;
   const options = list.flatMap((item) => {
-    const option = optionCache.value.get(keyOf(item)) ?? fallback(item);
+    const option = resolveOption(item);
     return option ? [option] : [];
   });
-  emit("update:modelValue", value as T);
-  emit("change", value as T, multiple.value ? options : options[0]);
+  emit("update:modelValue", model as T);
+  emit("change", model as T, multiple.value ? options : options[0]);
+  return model as T;
 }
 function settleBulkFocus() {
   const focused = document.activeElement as HTMLButtonElement | null;
@@ -593,9 +624,9 @@ function selectAll() {
     added.push(option);
   }
   if (!added.length) return 0;
-  update(next);
+  const model = update(next);
   settleBulkFocus();
-  emit("selectAll", next as T, added);
+  emit("selectAll", model, added);
   return added.length;
 }
 function deselectAll() {
@@ -607,12 +638,11 @@ function deselectAll() {
       .filter((value) => keys.has(keyOf(value)))
       .map(
         (value) =>
-          optionCache.value.get(keyOf(value)) ??
-          fallback(value) ?? { value, label: String(value) },
+          resolveOption(value) ?? { value, label: String(value) },
       );
-  update(next);
+  const model = update(next);
   settleBulkFocus();
-  emit("deselectAll", next as T, removed);
+  emit("deselectAll", model, removed);
   return keys.size;
 }
 const focusableSelector =
@@ -738,7 +768,7 @@ function remove(option: HysSelectOption) {
 function clear() {
   if (controlDisabled.value || props.readonly) return;
   cancelRemote();
-  update(multiple.value ? [] : props.clearValue);
+  update(multiple.value ? [] : typeof props.clearValue === "function" ? props.clearValue() : props.clearValue);
   if (props.clearCreatedOnClear) created.value = [];
   setQuery("");
   emit("clear");

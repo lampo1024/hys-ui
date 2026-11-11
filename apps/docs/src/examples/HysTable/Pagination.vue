@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import {
   HysTable,
+  HysPagination,
   HysSelect,
   HysCheckbox,
   type HysTableColumn,
@@ -54,18 +55,24 @@ const columns: HysTableColumn<Entry>[] = [
         :rows="rows"
         :columns="columns"
         :pagination="{
-          pageSize: 6,
+          defaultPageSize: 6,
           position: positions,
-          showSizeChanger: false,
-          showTotal: true,
+          size: 'sm',
+          layout: 'total, ->, prev, pager, next, sizes',
         }"
         height="320"
         scroll-to-first-row-on-change
-      />
+      >
+        <template #pagination="{ props, setPage, setPageSize }">
+          <HysPagination v-bind="props" @change="setPage" @page-size-change="setPageSize">
+            <template #total="{ start, end, total }">订单 {{ start }}–{{ end }} / {{ total }}</template>
+          </HysPagination>
+        </template>
+      </HysTable>
     </div>
     <output class="state-output">第 {{ page }} 页</output>
     <p class="scenario-note">
-      同一份受控页码同步上下两个分页器。排序、筛选或翻页后仅重置纵向滚动，保留横向位置。
+      上下分页器共享页码和每页条数。分页布局可调整控件顺序，自定义分页器也可继续使用表格的翻页与查询逻辑。
     </p>
   </div>
 </template>

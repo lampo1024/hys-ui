@@ -11,6 +11,7 @@ import {
 } from "vue";
 import { useHysControlState } from "./formContext";
 import { popupSize } from "../motion/popup";
+import { positionFloating } from "./floatingPosition";
 import { registerOverlay, overlayOwnerKey } from "./overlayManager";
 export type Placement =
   | "top"
@@ -43,7 +44,7 @@ export function useFloating(
   anchor: Readonly<Ref<FloatingAnchor | undefined>>,
   panel: Ref<HTMLElement | undefined>,
   options: {
-    placement?: Placement;
+    placement?: Placement | (() => Placement);
     gap?: number;
     padding?: number;
     matchWidth?: boolean | "min" | (() => boolean | "min");
@@ -70,7 +71,12 @@ export function useFloating(
     left: "0px",
     visibility: "hidden",
   });
-  const placement = ref<Placement>(options.placement ?? "bottom-start");
+  function preferredPlacement(): Placement {
+    return typeof options.placement === "function"
+      ? options.placement()
+      : (options.placement ?? "bottom-start");
+  }
+  const placement = ref(preferredPlacement());
   let raf = 0,
     unregister: (() => void) | undefined,
     isTop: (() => boolean) | undefined,
@@ -120,57 +126,15 @@ export function useFloating(
       panel.value.style.minWidth = `${matchedWidth}px`;
       panel.value.style.maxWidth = `calc(100vw - ${pad * 2}px)`;
     }
-    const p = popupSize(panel.value);
-    const w = Math.min(p.width, Math.max(0, vw - 2 * pad)),
-      h = Math.min(p.height, Math.max(0, vh - 2 * pad));
-    let place = options.placement ?? "bottom-start";
-    const below = vh - a.bottom - gap,
-      above = a.top - gap;
-    const adjust = options.autoAdjustOverflow !== false;
-    if (adjust && place.startsWith("bottom") && below < h && above > below)
-      place = place.replace("bottom", "top") as Placement;
-    else if (adjust && place.startsWith("top") && above < h && below > above)
-      place = place.replace("top", "bottom") as Placement;
-    else if (
-      adjust &&
-      place.startsWith("right") &&
-      vw - a.right - gap < w &&
-      a.left > vw - a.right
-    )
-      place = place.replace("right", "left") as Placement;
-    else if (
-      adjust &&
-      place.startsWith("left") &&
-      a.left - gap < w &&
-      vw - a.right > a.left
-    )
-      place = place.replace("left", "right") as Placement;
-    let x = place.endsWith("end")
-      ? a.right - w
-      : place.endsWith("start")
-        ? a.left
-        : a.left + (a.width - w) / 2;
-    let y = place.startsWith("top") ? a.top - h - gap : a.bottom + gap;
-    if (place.startsWith("right") || place.startsWith("left")) {
-      x = place.startsWith("right") ? a.right + gap : a.left - w - gap;
-      y = place.endsWith("start")
-        ? a.top
-        : place.endsWith("end")
-          ? a.bottom - h
-          : a.top + (a.height - h) / 2;
-    }
-    x = Math.max(pad, Math.min(x, vw - w - pad));
-    y = Math.max(pad, Math.min(y, vh - h - pad));
-    placement.value = place;
-    options.onPosition?.({
-      anchor: a,
-      width: w,
-      height: h,
-      x,
-      y,
-      placement: place,
-    });
+    const position = positionFloating(
+      a, popupSize(panel.value), { width: vw, height: vh },
+      preferredPlacement(), gap, pad, options.autoAdjustOverflow !== false,
+    );
+    let { x, y } = position;
+    placement.value = position.placement;
+    options.onPosition?.({ anchor: a, ...position });
     if (options.strategy === "absolute") {
+      panel.value.style.position = "absolute";
       const parent = panel.value.offsetParent as HTMLElement | null;
       if (
         parent &&

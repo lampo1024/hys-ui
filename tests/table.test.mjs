@@ -67,11 +67,11 @@ if (!("inert" in HTMLElement.prototype))
       this.toggleAttribute("inert", !!value);
     },
   });
-const { createApp, h, reactive, ref, nextTick, KeepAlive, defineComponent } =
+const { createApp, h, reactive, ref, nextTick, KeepAlive, defineComponent, markRaw } =
   await import("vue");
 const ui = await import("../packages/ui/dist/index.js");
 const mounts = new Set();
-async function mount(Component, values = {}, slots = {}) {
+async function mount(Component, values = {}, slots = {}, acceptModels = true) {
   const props = reactive(values),
     events = {},
     element = ref(),
@@ -85,7 +85,7 @@ async function mount(Component, values = {}, slots = {}) {
       "on" + name[0].toUpperCase() + name.slice(1),
       (...args) => {
         (events[name] ??= []).push(args);
-        if (name.startsWith("update:")) props[name.slice(7)] = args[0];
+        if (acceptModels && name.startsWith("update:")) props[name.slice(7)] = args[0];
       },
     ]),
   );
@@ -164,6 +164,198 @@ const settle = async () => {
   await pause(0);
   await nextTick();
 };
+
+test("Table column sort and filter controls emit requests and render the accepted data", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [
+      { key: "age", label: "年龄", sortable: true, sortOrder: "asc", formatter: (_row, _col, value) => `${value} 岁` },
+      { key: "team", label: "团队", filteredValue: ["design"] },
+    ],
+    showSorterTooltip: { effect: "light" },
+    transformCellText: ({ text }) => String(text).toUpperCase(),
+  }, {}, false);
+  assert.deepEqual(keys(a), ["3", "1"]);
+  assert.equal(a.find("tbody td[data-column-key='team']").textContent.trim(), "DESIGN");
+  const title = a.find(".hys-ui-table-sort");
+  await fire(title, "focus");
+  await settle();
+  assert.equal(document.querySelector(".hys-ui-table-tooltip")?.textContent.trim(), "年龄降序");
+  assert.equal(document.querySelector(".hys-ui-table-tooltip")?.dataset.effect, "light");
+  await fire(title, "click");
+  assert.deepEqual(keys(a), ["3", "1"]);
+  assert.deepEqual(a.events.sortChange[0][0], { key: "age", direction: "desc" });
+  a.props.columns[0].sortOrder = "desc";
+  await settle();
+  assert.deepEqual(keys(a), ["1", "3"]);
+  a.vm.setFilter("team", ["dev"]);
+  await settle();
+  assert.deepEqual(a.events.filterChange[0][0], { team: ["dev"] });
+  assert.deepEqual(keys(a), ["1", "3"]);
+  a.props.columns[1].filteredValue = ["dev"];
+  await settle();
+  assert.deepEqual(keys(a), ["2"]);
+  a.props.sorts = [];
+  a.props.filters = {};
+  await settle();
+  assert.deepEqual(keys(a), ["1", "2", "3"]);
+});
+
+test("Table column filter controls route popup visibility and accept custom filter rendering", async () => {
+  const requests = [];
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [{
+      key: "name",
+      label: "姓名",
+      filterDropdownOpen: false,
+      onFilterDropdownOpenChange: (open) => requests.push(open),
+      filtered: true,
+      renderFilterIcon: ({ filtered }) => h("span", { "data-marked": filtered }, "Filter"),
+      renderFilterDropdown: ({ setValues, confirm }) => h("button", {
+        onClick: () => { setValues(["Alice"]); confirm({ closeDropdown: false }); },
+      }, "Show Alice"),
+    }],
+    getPopupContainer: (anchor) => anchor.closest(".hys-ui-table"),
+  }, {}, false);
+  assert.equal(await a.vm.showFilter("name"), false);
+  assert.deepEqual(requests, [true]);
+  assert(a.find("[data-marked='true']"));
+  a.props.columns[0].filterDropdownOpen = true;
+  await settle();
+  await fire(a.find(".hys-ui-table-filter-panel button"), "click");
+  assert.deepEqual(keys(a), ["1"]);
+  assert(a.find(".hys-ui-table-filter-panel"));
+  assert.equal(await a.vm.hideFilter(), false);
+  assert.deepEqual(requests, [true, false]);
+  a.props.columns[0].filterDropdownOpen = false;
+  await settle();
+  assert.equal(a.find(".hys-ui-table-filter-panel"), null);
+});
+
+test("Table custom selection captures eligible rows and preserves off-page selections", async () => {
+  let action;
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    selectable: (row) => row.id !== 2,
+    defaultSelectedRowKeys: [3],
+    pagination: { pageSize: 2 },
+    selectionActions: [{ key: "choose", label: "Choose", select: (context) => { action = context; } }],
+  });
+  await fire(a.all("button").find((button) => button.textContent.trim() === "Choose"), "click");
+  assert.deepEqual(action.keys, [1]);
+  a.vm.setPage(2);
+  await settle();
+  assert.equal(await action.setSelected([1, 2]), true);
+  assert.deepEqual(a.vm.selectedKeys, [3, 1]);
+  assert.equal(await a.vm.toggleRowSelection(2, true), false);
+  assert.equal(await a.vm.toggleRowSelection(2, true, { ignoreSelectable: true }), true);
+  assert.deepEqual(a.vm.selectedKeys, [3, 1, 2]);
+  await a.vm.toggleAllSelection(false);
+  assert.deepEqual(a.events.selectAll.at(-1)[2].map(({ id }) => id), [3]);
+  await a.vm.clearSelection();
+  assert.deepEqual(a.events.selectNone, [[]]);
+});
+
+test("Table accepts semantic structure overrides and merges header cells within fixed regions", async () => {
+  const wrap = (tag) => markRaw(defineComponent({
+    inheritAttrs: false,
+    setup: (_, { attrs, slots }) => () => h(tag, { ...attrs, "data-wrapped": tag }, slots.default?.()),
+  }));
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [
+      { key: "name", label: "Person and age", headerColSpan: 3, rowScope: "row", sortable: true },
+      { key: "age", label: "Age", headerColSpan: 0 },
+      { key: "team", label: "Team", fixed: "right", headerColSpan: 0 },
+    ],
+    components: {
+      table: wrap("table"),
+      header: { wrapper: wrap("thead"), row: wrap("tr"), cell: wrap("th") },
+      body: { wrapper: wrap("tbody"), row: wrap("tr"), cell: wrap("td"), rowHeaderCell: wrap("th") },
+    },
+  });
+  const [merged, blank] = a.all("thead th");
+  assert.equal(merged.colSpan, 2);
+  assert.equal(merged.scope, "colgroup");
+  assert.equal(blank.getAttribute("aria-hidden"), "true");
+  assert.equal(blank.textContent.trim(), "");
+  assert(a.find("table[data-wrapped='table'] thead[data-wrapped='thead'] tr[data-wrapped='tr'] th[data-wrapped='th']"));
+  assert(a.find("tbody[data-wrapped='tbody'] tr[data-wrapped='tr'] th[scope='row'][data-wrapped='th']"));
+  assert.equal(a.all("tbody tr:first-child td[data-wrapped='td']").length, 2);
+  await fire(merged.querySelector("button"), "click");
+  assert.deepEqual(a.events.sortChange[0][0], { key: "name", direction: "asc" });
+  assert.equal(await a.vm.scrollToRow(1), true);
+});
+
+test("Table overlay loading keeps rows, summary and viewport scroll while disabling actions", async () => {
+  const a = await mount(ui.HysTable, { rows, columns, showSummary: true, loadingMode: "overlay" }, {
+    loading: () => "Refreshing rows",
+  });
+  a.vm.viewport.scrollTop = 50;
+  a.vm.viewport.scrollLeft = 40;
+  a.props.loading = true;
+  await settle();
+  assert.deepEqual(keys(a), ["1", "2", "3"]);
+  assert(a.find("tfoot"));
+  assert.equal(a.find(".hys-ui-table-loading-overlay").textContent, "Refreshing rows");
+  assert.equal(a.vm.viewport.scrollTop, 50);
+  assert.equal(a.vm.viewport.scrollLeft, 40);
+  assert.equal(a.find(".hys-ui-table-sort").disabled, true);
+  await fire(a.find("tbody tr[data-row-key]"), "click");
+  assert.equal(a.events.rowClick, undefined);
+  a.props.loadingMode = "replace";
+  await settle();
+  assert.deepEqual(keys(a), []);
+  assert.equal(a.find(".hys-ui-table-loading-overlay"), null);
+  assert.equal(a.find("tbody [role='status']").textContent, "Refreshing rows");
+});
+
+test("Table sticky scrollbar does not overwrite pending input during a geometry update", async () => {
+  const a = await mount(ui.HysTable, { rows, columns });
+  const root = document.documentElement;
+  const viewport = a.vm.viewport;
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 900 },
+    clientHeight: { configurable: true, value: 600 },
+  });
+  Object.defineProperties(viewport, {
+    clientWidth: { value: 500 },
+    clientHeight: { value: 900 },
+    scrollWidth: { value: 900 },
+  });
+  viewport.getBoundingClientRect = () => new window.DOMRect(50, -100, 500, 900);
+  try {
+    a.props.sticky = { offsetHeader: 8, offsetScroll: 10 };
+    await settle();
+    await pause(40);
+    const bar = document.querySelector(".hys-ui-table-sticky-scrollbar");
+    assert(bar);
+    assert.equal(a.find("thead").style.top, "108px");
+    bar.scrollLeft = 120;
+    window.dispatchEvent(new Event("scroll"));
+    await pause(40);
+    assert.equal(bar.scrollLeft, 120);
+    await fire(bar, "scroll");
+    assert.equal(viewport.scrollLeft, 120);
+
+    viewport.scrollLeft = 200;
+    await fire(viewport, "scroll");
+    assert.equal(bar.scrollLeft, 200);
+    viewport.scrollLeft = 240;
+    await fire(bar, "scroll");
+    assert.equal(viewport.scrollLeft, 240);
+
+    a.props.sticky = false;
+    await settle();
+    assert.equal(document.querySelector(".hys-ui-table-sticky-scrollbar"), null);
+    assert.equal(a.find("thead").style.top, "0px");
+  } finally {
+    delete root.clientWidth;
+    delete root.clientHeight;
+  }
+});
 
 test("Table searchable option filters keep hidden drafts and single-choice semantics", async () => {
   const a = await mount(ui.HysTable, {
@@ -454,6 +646,108 @@ test("Table pagination positions share state and an empty position array only hi
   await settle();
   assert.equal(a.all(".hys-ui-table-pagination").length, 0);
   assert.deepEqual(keys(a), ["3", "4"]);
+});
+
+test("Table shares pagination defaults and layout across positions and keeps remote page counts independent of loaded rows", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns,
+    pagination: {
+      defaultPage: 2,
+      defaultPageSize: 1,
+      pageCount: 12,
+      position: ["top-left", "bottom-right"],
+      layout: "prev, pager, next",
+      size: "sm",
+    },
+  });
+  assert.deepEqual(keys(a), ["2"]);
+  assert.equal(a.vm.query.pageSize, 1);
+  assert.deepEqual(a.all(".hys-ui-table-pagination nav").map((nav) => nav.dataset.size), ["sm", "sm"]);
+  assert.equal(a.find(".hys-ui-table-pagination select"), null);
+  assert.equal(a.find(".hys-ui-table-pagination [aria-label='末页']"), null);
+  await fire(a.find(".hys-ui-table-pagination [aria-label='下一页']"), "click");
+  assert.deepEqual(keys(a), ["3"]);
+  assert.deepEqual(a.all("[aria-current='page']").map((button) => button.textContent), ["3", "3"]);
+  assert.equal(a.events.queryChange.length, 1);
+
+  const remote = await mount(ui.HysTable, {
+    rows: rows.slice(1, 2),
+    columns,
+    serverMode: true,
+    pagination: { pageCount: 4, defaultPage: 2, hideOnSinglePage: true },
+  });
+  assert.equal(remote.vm.query.page, 2);
+  assert.equal(remote.find(".hys-ui-pf-pagination-total"), null);
+  await fire(remote.find("[aria-label='末页']"), "click");
+  assert.deepEqual(keys(remote), ["2"]);
+  assert.equal(remote.events.queryChange[0][0].page, 4);
+  remote.props.pagination = { ...remote.props.pagination, pageCount: 1 };
+  await settle();
+  assert.equal(remote.find(".hys-ui-table-pagination"), null);
+});
+
+test("Table summary slot receives the scoped values and sticky cell attributes for custom rows", async () => {
+  const a = await mount(ui.HysTable, {
+    rows,
+    columns: [
+      { key: "name", label: "Name", fixed: "left" },
+      { key: "age", label: "Age", summary: "sum" },
+      { key: "team", label: "Team" },
+    ],
+    height: 170,
+    stickySummary: true,
+    pagination: { pageSize: 1 },
+  }, {
+    summary: ({ columns, rows, values, cellAttrs }) => h("tr", [
+      h("th", { scope: "row", ...cellAttrs(columns[0]) }, String(rows.length)),
+      h("td", { colspan: 2 }, String(values[1])),
+    ]),
+  });
+  assert.equal(a.find("tfoot").classList.contains("hys-ui-table-summary-sticky"), true);
+  assert.equal(a.find("tfoot th").style.left, "0px");
+  assert.equal(a.find("tfoot td").colSpan, 2);
+  assert.equal(a.find("tfoot").textContent, "370");
+  a.props.summaryScope = "page";
+  await settle();
+  assert.equal(a.find("tfoot").textContent, "130");
+  a.vm.setPage(2);
+  await settle();
+  assert.equal(a.find("tfoot").textContent, "120");
+  a.props.loading = true;
+  await settle();
+  assert.equal(a.find("tfoot"), null);
+});
+
+test("Table overflow options merge by column and moving onto a short cell dismisses the previous tooltip", async () => {
+  const a = await mount(ui.HysTable, {
+    rows: rows.slice(0, 1),
+    columns: [
+      { key: "name", label: "Name", showOverflowTooltip: { maxWidth: 220 },
+        formatter: (row) => row.name + " formatted",
+        renderHeader: () => h("strong", "Custom name") },
+      { key: "age", label: "Age" },
+      { key: "team", label: "Team", ellipsis: { showTitle: true }, showOverflowTooltip: false },
+    ],
+    showOverflowTooltip: { effect: "light", placement: "bottom-start" },
+  });
+  const [long, short, native] = a.all(".hys-ui-table-cell-text");
+  assert.equal(a.find("thead strong").textContent, "Custom name");
+  assert.equal(native.title, "design");
+  assert.equal(native.hasAttribute("tabindex"), false);
+  Object.defineProperty(long, "scrollWidth", { value: 240 });
+  Object.defineProperty(long, "clientWidth", { value: 80 });
+  await fire(long, "pointerenter");
+  await settle();
+  const tooltip = document.querySelector(".hys-ui-table-tooltip");
+  assert.equal(tooltip?.textContent.trim(), "Alice formatted");
+  assert.equal(tooltip.dataset.effect, "light");
+  assert.match(tooltip.style.maxWidth, /220px/);
+  assert.equal(long.getAttribute("aria-describedby"), tooltip.id);
+  await fire(long, "pointerleave");
+  await fire(short, "pointerenter");
+  await pause(110);
+  assert.equal(document.querySelector(".hys-ui-table-tooltip"), null);
 });
 
 test("Table query scroll restoration preserves horizontal scroll and stays opt-in", async () => {

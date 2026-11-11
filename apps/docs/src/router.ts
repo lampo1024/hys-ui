@@ -10,6 +10,7 @@ export const router=createRouter({history:createWebHistory(import.meta.env.BASE_
 {path:'/components/hys-badge',name:'HysBadge',component:()=>import('./pages/HysBadgePage.vue'),meta:{title:'HysBadge 状态标签'}},
 {path:'/components/hys-breadcrumb',name:'HysBreadcrumb',component:()=>import('./pages/HysBreadcrumbPage.vue'),meta:{title:'HysBreadcrumb 面包屑'}},
 {path:'/components/hys-button',name:'HysButton',component:()=>import('./pages/HysButtonPage.vue'),meta:{title:'HysButton 按钮'}},
+{path:'/components/hys-button-group',name:'HysButtonGroup',component:()=>import('./pages/HysButtonGroupPage.vue'),meta:{title:'HysButtonGroup 按钮组'}},
 {path:'/components/hys-calendar',name:'HysCalendar',component:()=>import('./pages/HysCalendarPage.vue'),meta:{title:'HysCalendar 事件日历'}},
 {path:'/components/hys-calendar-navigation',name:'HysCalendarNavigation',component:()=>import('./pages/HysCalendarNavigationPage.vue'),meta:{title:'HysCalendarNavigation 日历导航'}},
 {path:'/components/hys-card',name:'HysCard',component:()=>import('./pages/HysCardPage.vue'),meta:{title:'HysCard 卡片'}},

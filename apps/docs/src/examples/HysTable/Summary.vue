@@ -24,7 +24,7 @@ const rows = ref<Person[]>(
   })),
 );
 const columns: HysTableColumn<Person>[] = [
-  { key: "name", label: "姓名", width: 140, sortable: true },
+  { key: "name", label: "姓名", width: 140, sortable: true, fixed: "left" },
   {
     key: "team",
     label: "团队",
@@ -41,11 +41,13 @@ const columns: HysTableColumn<Person>[] = [
     label: "预算",
     width: 140,
     align: "right",
+    fixed: "right",
     sortable: true,
     summary: "sum",
   },
 ];
 const custom = ref(false);
+const pageOnly = ref(false);
 function summarize({ rows: items }: { rows: Person[] }) {
   return {
     name: "预算汇总",
@@ -57,20 +59,32 @@ function summarize({ rows: items }: { rows: Person[] }) {
 </script>
 <template>
   <div>
-    <HysCheckbox v-model="custom">自定义汇总文本</HysCheckbox>
+    <div class="demo-controls">
+      <HysCheckbox v-model="pageOnly">仅汇总当前页</HysCheckbox>
+      <HysCheckbox v-model="custom">自定义汇总行</HysCheckbox>
+    </div>
     <div class="demo-content" style="margin-top: 16px">
       <HysTable
         :rows="rows"
         :columns="columns"
+        :height="240"
         show-summary
+        sticky-summary
+        :summary-scope="pageOnly ? 'page' : 'filtered'"
         :summary-method="custom ? summarize : undefined"
-        :pagination="{ pageSize: 5 }"
-      />
+        :pagination="{ pageSize: 6, showSizeChanger: false }"
+      >
+        <template v-if="custom" #summary="{ columns, rows, values, cellAttrs }">
+          <tr>
+            <th scope="row" v-bind="cellAttrs(columns[0])">{{ values[0] }}</th>
+            <td colspan="2">{{ rows.length }} 条记录</td>
+            <td v-bind="cellAttrs(columns[3])">{{ values[3] }}</td>
+          </tr>
+        </template>
+      </HysTable>
     </div>
     <p class="scenario-note">
-      内置
-      sum、avg、min、max、count；汇总基于当前过滤后的全部数据，不受本地页码影响。服务端表格可通过
-      summary-cell 插槽展示后端汇总结果。
+      汇总行随滚动固定在底部。切换到当前页汇总后，翻页会重新计算预算。summary 插槽可合并单元格，固定列通过 cellAttrs 保持对齐。
     </p>
   </div>
 </template>

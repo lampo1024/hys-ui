@@ -48,6 +48,7 @@ const rows = ref<Item[]>([]),
   total = ref(source.length),
   loading = ref(false),
   fail = ref(false),
+  pageCountOnly = ref(false),
   error = ref(""),
   message = ref("");
 let controller: AbortController | undefined,
@@ -135,7 +136,8 @@ onBeforeUnmount(cleanup);
   <div>
     <div class="demo-control-actions">
       <HysCheckbox v-model="fail">模拟失败</HysCheckbox
-      ><HysButton
+      ><HysCheckbox v-model="pageCountOnly">仅返回总页数</HysCheckbox>
+      <HysButton
         size="sm"
         variant="secondary"
         :disabled="loading"
@@ -156,18 +158,22 @@ onBeforeUnmount(cleanup);
         :rows="rows"
         :columns="columns"
         server-mode
-        :total="total"
+        :total="pageCountOnly ? undefined : total"
         :loading="loading"
-        :pagination="{ showQuickJumper: true, pageSizeOptions: [5, 10, 20] }"
+        :pagination="{
+          pageCount: pageCountOnly ? Math.max(1, Math.ceil(total / size)) : undefined,
+          showQuickJumper: true,
+          pageSizeOptions: [5, 10, 20],
+        }"
         @query-change="fetchPage"
       />
     </div>
     <output class="state-output"
-      >{{ message || "正在请求数据" }} · {{ total }} 条</output
+      >{{ message || "正在请求数据" }} · {{ pageCountOnly ? Math.max(1, Math.ceil(total / size)) + ' 页' : total + ' 条' }}</output
     >
     <p class="scenario-note">
       serverMode
-      仅发出查询状态，排序、筛选与分页由宿主处理。本示例模拟异步请求并取消过期返回，失败后可重试。
+      仅发出查询状态，排序、筛选与分页由宿主处理。后端只提供总页数时，可用 pagination.pageCount 驱动翻页。
     </p>
   </div>
 </template>

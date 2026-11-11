@@ -276,6 +276,7 @@ defineExpose({
         @pointerdown="modal.maskDown"
         @pointerup="modal.maskUp"
       >
+        <slot name="backdrop" v-bind="scope" />
         <div
           v-if="modal.interaction.previewing.value"
           :ref="

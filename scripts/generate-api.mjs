@@ -6,6 +6,7 @@ import ts from 'typescript'
 import {applyTagColorApi} from './tag-color-api.mjs'
 import {applyVirtualTableApi} from './virtual-table-api.mjs'
 import {applyFeedbackApi} from './feedback-api.mjs'
+import {applyApiDescriptions} from './api-descriptions.mjs'
 const root=fileURLToPath(new URL('..',import.meta.url)),require=createRequire(import.meta.url)
 const {createChecker}=require('vue-component-meta')
 const checker=createChecker(path.join(root,'packages/ui/tsconfig.json'),{schema:true})
@@ -147,6 +148,58 @@ for(const name of fs.readdirSync(dir).sort()){
   const slots={thumb:'自定义滑块内容，接收 value、index、dragging',tooltip:'提示内容，接收 value、index',mark:'刻度标签，接收 value、label、active'}
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
+ if(name==='HysMention'){
+  const props={
+   users:'现有的成员数据，保留 id 与 name 字段。提供 options 或 loadOptions 时优先使用候选数据',
+   options:'候选数据，支持 value、label、prefix、disabled、class、style 与 payload',
+   fieldNames:'将候选的值、显示名称和禁用状态映射到业务字段',
+   prefix:'字符串或触发词数组，默认 @。候选的 prefix 可限定所属触发词',
+   triggers:'各触发词独立配置边界、空格、关键字长度、匹配器、数据源、搜索和写入方式',
+   matchTrigger:'返回有效触发词的起始位置和查询关键字',
+   recommendOnFocus:'聚焦且无触发词时显示推荐、最近记录和默认候选',
+   split:'选择候选后追加的分隔符，默认空格',
+   filterOption:'false 跳过本地过滤，true 对远程结果也做本地过滤，函数可自定义匹配',
+   validateSearch:'根据关键字与提及范围决定是否触发查询',
+   loadOptions:'接收查询、文本范围、page、pageSize、cursor 和 signal。返回数组或分页结果',
+   sources:'合并多个独立的本地或远程数据源。远程数据源各自分页',
+   searchMode:'包含、模糊、拼音和首字母匹配，可组合使用',
+   searchFields:'追加业务字段路径或取值函数参与搜索',
+   sortOptions:'true 按匹配相关性排序，也可提供业务比较函数',
+   groupBy:'为候选计算分组标题',
+   cache:'缓存远程查询和分页结果。可设置 ttl 和 maxEntries',
+   historyKey:'配置后使用对应的 localStorage 键保存最近使用。省略时只在当前实例内保存',
+   virtual:'仅渲染列表视口附近的候选。用 itemHeight 和 overscan 设置行高与缓冲',
+   entities:'支持 v-model:entities。实体位置使用 UTF-16 索引',
+   validateEntity:'校验已插入或回显的业务实体是否仍有效',
+   invalidEntity:'失效实体的处理方式。mark 标记，text 降为普通文本，remove 删除',
+   canSelect:'业务权限判断，禁止的候选以禁用状态显示',
+   beforeRemove:'实体删除前的同步权限判断',
+   debounce:'远程搜索防抖时长，默认 180 毫秒',
+   minQueryLength:'查询所需的最短关键字长度，默认 0',
+   whole:'按退格时可整段删除已识别或已插入的提及',
+   checkIsWhole:'自定义值和触发词是否允许整段删除',
+   allowCreate:'输入没有同名候选的关键字时显示创建选项',
+   createOption:'自定义创建选项。返回 false 可隐藏该选项',
+   formatMention:'自定义写入文本，包含业务需要的前缀。组件自动追加 split',
+   replaceRest:'选择时替换光标后同一提及词的剩余部分',
+   selectOnTab:'Tab 选中当前候选后继续移动焦点',
+   maxOptions:'普通候选的数量上限，默认 8。0 显示所有匹配候选',
+   highlightMatch:'在默认候选标签中高亮匹配文本',
+   loading:'接入外部加载状态。内部加载期间也会显示加载内容',
+   notFoundText:'候选为空时显示此文案并保持面板',
+   appendTo:'候选面板挂载位置，默认 body。false 保留在组件内',
+   type:'textarea 为多行输入，text 为单行输入，rich 为支持独立实体节点的富文本编辑器',
+  }
+  const events={search:'有效提及上下文变化时返回关键字、触发词和上下文',select:'用户选择候选时返回兼容成员数据、触发词和候选对象',create:'用户选择创建项时返回候选对象和上下文',wholeRemove:'请求删除完整提及时返回值和触发词',loadError:'当前远程候选请求失败时返回原因和查询上下文',openChange:'实际候选面板显隐变化',documentChange:'宿主接受变更后返回文本和实体集合',entityAdd:'宿主接受新增实体后触发',entityRemove:'宿主接受删除实体后触发'}
+  const slots={option:'候选渲染，接收 user、option、context 和 created',header:'面板顶部，接收当前 context',footer:'面板底部，接收 context、hasMore 和 loadMore',group:'分组标题，接收 label 和 context',error:'失败内容，接收 error、retry 和 context',empty:'没有匹配项时显示',loading:'内部或外部加载时显示'}
+  for(const prop of api[name].props)prop.description=props[prop.name]||prop.description
+  for(const event of api[name].events)event.description=events[event.name]||event.description
+  for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
+ }
+ if(name==='HysAnimatedNumber'){
+  const props={value:'数字值可播放动画，字符串支持高精度小数',precision:'显式指定小数位数，优先于 decimals',groupSeparator:'千分位分隔符',decimalSeparator:'小数点符号，默认句点',deadline:'启用倒计时，传 Date 或 Unix 毫秒时间戳',format:'倒计时支持 D、HH、mm、ss 和 SSS 等标记，字面文本用方括号包裹',formatter:'接收当前显示值、格式化文本和剩余毫秒'}
+  for(const prop of api[name].props)prop.description=props[prop.name]||prop.description
+ }
  if(name==='HysAutocomplete'){
   const file=ts.createSourceFile('autocomplete.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/autocomplete.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(node=>ts.isInterfaceDeclaration(node)&&node.name.text==='HysAutocompleteInstance')
   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
@@ -235,15 +288,38 @@ for(const name of fs.readdirSync(dir).sort()){
   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
   const text={locale:'按需覆盖内置文案与辅助技术标签，支持分页导航标签',columns:'列配置，支持 children 分组、固定、排序、筛选、插槽和响应式显示',rows:'只读数据源；树形使用 childrenKey，组件不修改宿主行对象',rowKey:'稳定行标识的路径或函数，默认 id；选择与树形需唯一字符串/数字',size:'sm / md / lg，控制表格间距与文字大小',height:'共享滚动区固定高度，数值单位 px，也可传 CSS 长度',maxHeight:'共享滚动区最大高度，内容不足时自然收缩',stickyHeader:'固定整个多级表头；未设置时根据 height / maxHeight 自动启用',showHeader:'显示多级表头',fit:'未交互调整列宽时填满容器；false 按列宽布局',rowClassName:'行类名字符串或 (row,index) 回调，保留原有签名',rowStyle:'行样式或 (row,index) 回调',cellClassName:'单元格类名或上下文回调',cellStyle:'单元格样式或上下文回调，合并列级 cellStyle',headerCellClassName:'表头类名或 (column,index) 回调',headerCellStyle:'表头样式或 (column,index) 回调，固定位置由组件维护',selectable:'显示多选/单选列，或传 (row,index)=>boolean 控制行可选状态',selectionType:'checkbox 多选或 radio 单选',selectedRowKeys:'受控选择编号，支持 v-model:selectedRowKeys',defaultSelectedRowKeys:'非受控初始选择编号',reserveSelection:'保留跨页编号及已见过的选中行对象',checkStrictly:'树形选择父子独立，默认 true；false 联动已加载可选后代',selectOnIndeterminate:'半选表头点击时选中当前页；false 取消当前页选择',highlightCurrentRow:'点击行时高亮当前行，独立于复选/单选选择',currentRowKey:'受控当前行编号，null 清除',defaultCurrentRowKey:'非受控初始当前行',showIndex:'自动添加序号列',indexMethod:'自定义序号渲染 (index,row)',sort:'受控单列排序 {key,direction} 或 null',sorts:'受控多列排序数组，优先于 sort',defaultSort:'非受控初始单列/多列排序',multiSort:'允许多个排序条件，按数组次序决定优先级',filters:'受控筛选条件，以列 key 对应值数组',defaultFilters:'非受控初始筛选条件',pagination:'默认关闭；true 或分页配置对象，可显示条数、跳转及单页隐藏',page:'受控页码，优先于 pagination.page',pageSize:'受控页大小，优先于 pagination.pageSize，非受控默认 10',total:'服务端总根行数，优先于 pagination.total',serverMode:'仅发送查询，不进行本地排序、过滤或分页',expandable:'自动添加详情展开列；expand 插槽也会自动启用',expandedRowKeys:'受控展开编号',defaultExpandedRowKeys:'非受控初始展开编号',defaultExpandAll:'非受控初始展开全部节点，异步请求有并发限制',rowExpandable:'允许展开指定行 (row)=>boolean',expandOnClickRow:'点击非交互内容时切换展开',preserveExpandedContent:'折叠后保留曾展开的详情 DOM 与控件状态',treeMode:'启用树形数据、缩进与同级排序',childrenKey:'静态子节点字段，默认 children',hasChildrenKey:'懒加载标记字段，默认 hasChildren',indent:'每层树形缩进，默认 18px',loadChildren:'异步获取子行 (row,{signal,key,depth})，支持取消与重试',showSummary:'显示表尾汇总',sumText:'首个数据列的汇总说明，默认 合计',summaryMethod:'自定义汇总 ({columns,rows})，返回数组或 key 映射',spanMethod:'单元格合并回调，返回 {rowspan,colspan} 或二元数组',showOverflowTooltip:'默认对全部列启用省略和溢出提示，可在列上覆盖',tooltipFormatter:'自定义共享提示的 VNode 内容，参数为单元格上下文',resizable:'默认启用数据列宽度调整，列级值优先',columnWidths:'受控像素列宽快照，支持 v-model:columnWidths'}
   Object.assign(text,{"selectionActions":"显示全选、反选当前筛选页与清空全部选择工具；selection 插槽可替换","rangeSelection":"启用 Shift 区间选择，按当前显示顺序，忽略不可选行","hideSelectAll":"隐藏表头全选复选框","customRow":"行属性回调 (row,index)，合并类名、样式和事件","customHeaderRow":"表头行属性回调 (columns,level)","customCell":"单元格属性回调，接收 HysTableCellContext；与列级配置合并","customHeaderCell":"表头单元格属性回调 (column,index)，与列级配置合并","scrollToFirstRowOnChange":"排序、过滤或分页状态生效后将纵向滚动归零，保留横向滚动","pagination":"默认关闭；支持 position 位置数组、页大小、条数、跳转、单页隐藏与双侧同步导航"})
+  Object.assign(text,{
+   pagination:'默认关闭。支持多处同步显示、非受控初始值、自定义控件布局和尺寸，以及服务端总页数',
+   components:'替换表格、表头或表体的结构组件。自定义组件保留对应原生表格元素并转发属性和默认插槽',
+   sticky:'随页面或 getContainer 指定的滚动容器固定多级表头和横向滚动条。可配置顶部和底部偏移',
+   nativeScrollbar:'false 使用主题细滚动条，默认沿用浏览器样式',
+   scrollWidth:'表格横向最小宽度，支持像素数值、CSS 长度和按内容展开的 max-content',
+   summaryScope:'filtered 汇总全部筛选结果，page 汇总当前页实际显示的行',
+   stickySummary:'在表格滚动区底部固定汇总行',
+   showOverflowTooltip:'布尔值或提示配置，可设置位置、主题、宽度、偏移与关闭延时。列级选项覆盖表格设置',
+   showSorterTooltip:'悬停或键盘聚焦列标题时提示下一次排序操作，可设置浮层位置、主题和宽度',
+   getPopupContainer:'根据触发元素指定排序、筛选及溢出浮层的挂载目标',
+   selectionActions:'true 显示默认工具。传自定义操作数组可按业务条件设置当前页选择',
+   transformCellText:'在列 formatter 后、默认单元格渲染前转换内容，接收单元格上下文和 text',
+   loadingMode:'replace 显示加载行，overlay 保留现有行与滚动位置并覆盖加载提示',
+  })
   for(const prop of api[name].props)prop.description=text[prop.name]||prop.description
   const methods={invertSelection:'反选当前筛选页的可用行，保留跨页选择，返回宿主是否接受',element:'组件根元素',viewport:'共享滚动区域元素',selectedKeys:'当前选中编号',currentRow:'当前高亮行对象',expandedKeys:'当前展开编号',query:'当前已应用的排序、过滤、分页和数据',clearSelection:'请求清空选择，返回 Promise<boolean>',getSelectionRows:'读取已知的选中行，reserveSelection 时包含跨页缓存',getHalfSelectionRows:'读取树形半选行',toggleRowSelection:'按行对象或编号切换选择，可传明确 selected',toggleAllSelection:'切换当前根行页及已加载后代的可用选择',setCurrentRow:'设置高亮行，省略或 null 清除',toggleRowExpansion:'按行对象或编号展开/折叠，返回宿主是否接受',loadRow:'加载指定懒节点，force=true 重新加载，返回是否成功',clearSort:'清除排序请求',setSort:'请求设置单列或多列排序',clearFilter:'清除全部或指定列的筛选',setFilter:'请求设置列筛选值数组',setPage:'请求改变页码',resizeColumn:'请求将列调整到指定像素宽度',resetColumnWidths:'清空交互宽度快照并恢复自动布局',doLayout:'下一次 DOM 更新后重新测量固定列',scrollTo:'按 ScrollToOptions 滚动，不改变选择'}
   Object.assign(methods,{columns:'当前显示的规范化叶列',updateKeyChildren:'替换指定行子项，不修改原始 rows，取消旧请求；返回 Promise<boolean>',showFilter:'按列 key 打开筛选，返回受控请求是否接受',hideFilter:'请求关闭筛选，返回是否接受',setScrollTop:'设置表格纵向滚动位置',setScrollLeft:'设置表格横向滚动位置',scrollToRow:'定位当前可见行，支持 block 与 behavior，不改变分页、展开或选择'})
+  methods.toggleRowSelection='按行对象或编号切换选择，options 可指定 range 或 ignoreSelectable。第三个布尔参数仍控制区间选择'
   for(const method of api[name].exposed)method.description=methods[method.name]||method.description
   const events={selectInvert:'接受反选：全部选中行、编号数组',selectRange:'接受区间选择：全部选中行、区间可用行、选中状态',rowClick:'行点击，保留首个行对象，另提供 index 与原生事件',rowDblclick:'行双击：row、index、MouseEvent',rowContextmenu:'行右键：row、index、MouseEvent',cellClick:'单元格点击：上下文与原生事件',cellDblclick:'单元格双击：上下文与原生事件',cellContextmenu:'单元格右键：上下文与原生事件',cellMouseEnter:'进入单元格：上下文与原生事件',cellMouseLeave:'离开单元格：上下文与原生事件',headerClick:'表头点击：column、MouseEvent',headerContextmenu:'表头右键：column、MouseEvent',sortChange:'请求排序，首个参数为原单列条件或 null，第二参数为全部条件',filterChange:'请求应用筛选条件',selectionChange:'宿主接受选择变化：行数组、编号数组',select:'接受行选择：行数组、操作行、选中状态',selectAll:'接受全选/取消：行数组、选中状态',currentChange:'接受当前行变化：新行、原行',expandChange:'接受展开变化：row、expanded、keys',load:'有效异步子行返回：row、children',loadError:'有效异步请求失败：row、error',pageChange:'请求页码',pageSizeChange:'请求页大小',queryChange:'请求查询：action、page、pageSize、sorts、filters、currentData',change:'queryChange 的统一事件别名',columnResize:'列宽提交：column、新宽度、原宽度',scroll:'用户滚动：{scrollLeft,scrollTop}、Event'}
-  Object.assign(events,{childrenChange:'手动子行更新生效：row、children',filterOpenChange:'实际打开的筛选列 key，null 表示关闭'})
+  Object.assign(events,{childrenChange:'手动子行更新生效：row、children',filterOpenChange:'实际打开的筛选列 key，null 表示关闭',selectAll:'宿主接受批量选择后，返回已选行、勾选状态和本次变化的行',selectNone:'非空选择被清空且宿主接受后触发'})
   for(const event of api[name].events)event.description=events[event.name]|| (event.name.startsWith('update:')?'请求更新对应受控状态，可配合 v-model 使用':event.description)
   const slots={selection:'选择工具区：rows、keys、selectAll、invert、clear',title:'表格上方内容：rows、query',footer:'表格下方内容：rows、query',append:'数据行后、汇总行前的内容：rows',expand:'详情内容：row、index、expanded','header-cell':'默认表头内容：column、sorts','body-cell':'默认单元格：row、column、value、index','summary-cell':'汇总单元格：column、index、value、rows','filter-dropdown':'自定义筛选：column、values、setValues、confirm、clear、close',tooltip:'溢出提示，接收 HysTableCellContext',loading:'加载行内容',empty:'空数据内容'}
   Object.assign(slots,{'selection-header':'选择列表头：column、checked、indeterminate、disabled、toggle','selection-cell':'行选择内容：row、index、column、checked、indeterminate、disabled、toggle','filter-icon':'筛选图标：column、filtered、open','expand-icon':'展开图标内容：row、index、expanded、loading、depth；保留内置按钮语义','filter-dropdown':'筛选：column、open、values、setValues、confirm({closeDropdown?})、clear({confirm?,closeDropdown?})、close'})
+  Object.assign(slots,{
+   selection:'选择工具区，接收当前选中行和编号、当前页可选行和编号，以及 selectAll、invert、clear、setSelected',
+   title:'表格上方内容，接收全部筛选结果 rows、当前页可见行 pageRows、查询状态 query',
+   footer:'表格下方内容，接收全部筛选结果 rows、当前页可见行 pageRows、查询状态 query',
+   summary:'在 tfoot 内渲染一行或多行，接收 columns、rows、values 和用于对齐固定列的 cellAttrs(column)',
+   pagination:'自定义分页器，接收位置 position、分页器配置 props、setPage 和 setPageSize',
+  })
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
   api[name].slots.push({name:'header-[column.key]',type:'{column:HysTableColumn<T>;sorts:HysTableSort[]}',required:false,default:'',description:'列专属表头插槽，优先于 header-cell'})
  }
@@ -407,6 +483,7 @@ for(const name of fs.readdirSync(dir).sort()){
  for(const prop of api[name].props){if(prop.name==='popupTransition'){prop.default='scale';prop.description=descriptions[prop.name]}if(prop.name==='popupTransitionDuration'){prop.default='160';prop.description=descriptions[prop.name]}}
  if(['HysTable','HysDataGrid'].includes(name))api[name].slots.push({name:'[column.key]',type:'{ row: Record<string, unknown>; value: unknown; index?: number }',required:false,default:'',description:'与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。'})
 }
+applyApiDescriptions(api)
 fs.mkdirSync(path.join(root,'apps/docs/src/generated'),{recursive:true})
 fs.writeFileSync(path.join(root,'apps/docs/src/generated/api.json'),JSON.stringify(api,null,2)+'\n')
 console.log('Generated source-backed API for '+Object.keys(api).length+' components')

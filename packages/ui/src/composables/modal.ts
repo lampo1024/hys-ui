@@ -179,6 +179,8 @@ export interface HysModalSlotContext {
 }
 export interface HysModalSlots {
   default?: (context: HysModalSlotContext) => VNodeChild;
+  /** Content placed between the overlay and the dialog panel. */
+  backdrop?: (context: HysModalSlotContext) => VNodeChild;
   header?: (context: HysModalSlotContext) => VNodeChild;
   footer?: (context: HysModalSlotContext) => VNodeChild;
   icon?: (context: HysModalSlotContext) => VNodeChild;

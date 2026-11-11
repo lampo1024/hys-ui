@@ -4,7 +4,6 @@ import { HysPagination } from 'hys-ui';
 import { reactive as demoReactive } from 'vue';
 import { HysCheckbox as DemoCheckbox, HysNumberInput as DemoNumber } from 'hys-ui';
 const page = ref(1);
-const pageSize = ref(12);
 const demoConfig = demoReactive<{
     pageSize: number;
     siblingCount: number;
@@ -22,4 +21,4 @@ const demoConfig = demoReactive<{
 <div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.showTotal" label="showTotal"/><small>显示总数</small></div>
 <div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.disabled" label="disabled"/><small>禁用交互</small></div>
 <div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.loading" label="loading"/><small>加载状态</small></div>
-<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.compact" label="compact"/><small>紧凑布局</small></div></div></section></div><div class="demo-content"><HysPagination v-bind="demoConfig" :page="page"  :total="156"   @change="page=$event" @page-size-change="pageSize=$event;page=1"/><output>第 {{page}} 页 · 每页 {{pageSize}} 条</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+<div class="demo-control-toggle"><DemoCheckbox v-model="demoConfig.compact" label="compact"/><small>紧凑布局</small></div></div></section></div><div class="demo-content"><HysPagination v-bind="demoConfig" v-model:page="page" v-model:page-size="demoConfig.pageSize" :total="156"/><output>第 {{page}} 页 · 每页 {{demoConfig.pageSize}} 条</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>

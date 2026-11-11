@@ -1,11 +1,11 @@
 import {computed,getCurrentInstance,inject,provide,toValue,type InjectionKey,type MaybeRefOrGetter} from 'vue'
 export type HysTheme='blue'|'dark'|'green'|'purple'|'orange'|'forest'
 export type HysMotion='full'|'subtle'|'off'
-export interface HysConfig {theme?:MaybeRefOrGetter<HysTheme>;motion?:MaybeRefOrGetter<HysMotion>}
+export interface HysConfig {theme?:MaybeRefOrGetter<HysTheme>;motion?:MaybeRefOrGetter<HysMotion>;buttonAutoInsertSpace?:MaybeRefOrGetter<boolean>}
 const key:InjectionKey<HysConfig>=Symbol('hys-ui-config')
 const localConfigs=new WeakMap<object,HysConfig>()
 /** Call in a component setup. Reactive options are inherited by children and teleported panels. */
-export function provideHysConfig(config:HysConfig){const parent=useHysConfig(),next={theme:config.theme??parent.theme,motion:config.motion??parent.motion};provide(key,next);const instance=getCurrentInstance();if(instance)localConfigs.set(instance,next)}
+export function provideHysConfig(config:HysConfig){const parent=useHysConfig(),next={theme:config.theme??parent.theme,motion:config.motion??parent.motion,buttonAutoInsertSpace:config.buttonAutoInsertSpace??parent.buttonAutoInsertSpace};provide(key,next);const instance=getCurrentInstance();if(instance)localConfigs.set(instance,next)}
 export function useHysConfig(){const instance=getCurrentInstance();return instance&&localConfigs.get(instance)||inject(key,{})}
 export function useHysRootAttrs(){
  const config=useHysConfig()

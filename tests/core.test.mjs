@@ -14,15 +14,258 @@ if(!('inert' in HTMLElement.prototype))Object.defineProperty(HTMLElement.prototy
 const {createApp,h,reactive,ref,nextTick,KeepAlive,defineComponent}=await import('vue')
 const ui=await import('../packages/ui/dist/index.js')
 const mounts=new Set()
-async function mount(Component,values={},slots={}){
+async function mount(Component,values={},slots={},acceptModels=true){
  const props=reactive(values),events={},element=ref(),host=document.createElement('div');document.body.append(host)
- const listeners=Object.fromEntries((Array.isArray(Component.emits)?Component.emits:Object.keys(Component.emits||{})).map(name=>['on'+name[0].toUpperCase()+name.slice(1),(...args)=>{(events[name]??=[]).push(args);if(name.startsWith('update:'))props[name.slice(7)]=args[0]}]))
+ const listeners=Object.fromEntries((Array.isArray(Component.emits)?Component.emits:Object.keys(Component.emits||{})).map(name=>['on'+name[0].toUpperCase()+name.slice(1),(...args)=>{(events[name]??=[]).push(args);if(acceptModels&&name.startsWith('update:'))props[name.slice(7)]=args[0]}]))
  const app=createApp({setup(){ui.provideHysConfig({motion:'off'});return()=>h(Component,{...props,...listeners,ref:element},typeof slots==='string'?{default:()=>slots}:slots)}})
  app.mount(host);const item={props,events,host,get vm(){return element.value},find:(selector)=>host.querySelector(selector),all:selector=>[...host.querySelectorAll(selector)],unmount(){app.unmount();host.remove();mounts.delete(item)}};mounts.add(item);await nextTick();return item
 }
 const fire=async(element,type,options={})=>{assert(element,'Missing target for '+type);const EventClass=type.startsWith('key')?KeyboardEvent:type==='click'?MouseEvent:Event;element.dispatchEvent(new EventClass(type,{bubbles:true,cancelable:true,...options}));await nextTick()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 afterEach(async()=>{for(const item of [...mounts])item.unmount();await nextTick();document.body.innerHTML='';document.body.style.cssText=''})
+
+test('Button locks immediately and cancels its delayed visual loading on a fast completion', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const Loading = () => h('i', { 'data-custom-loading': '' });
+  const button = await mount(ui.HysButton, { loading: { delay: 200 }, loadingIcon: Loading }, '保存');
+  const element = button.find('button');
+  assert.equal(element.disabled, true);
+  assert.equal(element.getAttribute('aria-busy'), 'true');
+  assert.equal(button.find('[data-custom-loading]'), null);
+  await fire(element, 'click');
+  assert.equal(button.events.click, undefined);
+  t.mock.timers.tick(199);
+  button.props.loading = false;
+  await nextTick();
+  t.mock.timers.tick(1);
+  await nextTick();
+  assert.equal(button.find('[data-custom-loading]'), null);
+  button.props.loading = { delay: 200 };
+  await nextTick();
+  t.mock.timers.tick(200);
+  await nextTick();
+  assert(button.find('[data-custom-loading]'));
+});
+
+test('Button custom tags activate by keyboard and display two-Han-character spacing', async () => {
+  const button = await mount(ui.HysButton, { tag: 'span', autoInsertSpace: true, toggle: true }, '保存', false);
+  const element = button.find('[role="button"]');
+  assert.equal(element.tagName, 'SPAN');
+  assert.equal(element.tabIndex, 0);
+  assert.equal(element.getAttribute('aria-pressed'), 'false');
+  assert.equal(button.find('.hys-ui-button-spaced').textContent, '保存');
+  assert.equal(button.vm.ref, element);
+  assert.equal(button.vm.shouldAddSpace, true);
+  await fire(element, 'keydown', { key: 'Enter' });
+  assert.equal(button.events.click.length, 1);
+  assert.equal(element.getAttribute('aria-pressed'), 'true');
+  await fire(element, 'keydown', { key: ' ' });
+  assert.equal(button.events.click.length, 1);
+  await fire(element, 'keyup', { key: ' ' });
+  assert.equal(button.events.click.length, 2);
+  assert.equal(element.getAttribute('aria-pressed'), 'false');
+  button.props.variant = 'text';
+  await nextTick();
+  assert.equal(button.find('.hys-ui-button-spaced'), null);
+  assert.equal(button.vm.shouldAddSpace, false);
+});
+
+test('Button supports semantic and native types, size aliases, registered icons and custom dark color', async () => {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const loading = ref(false);
+  const app = createApp(() => h(ui.HysButton, {
+    type: 'warning', nativeType: 'submit', size: 'large', icon: 'TestButtonIcon',
+    loading: loading.value, loadingIcon: 'TestLoadingIcon', text: true, bg: true, color: '#fbbf24', dark: true,
+  }, () => 'Submit'));
+  app.component('TestButtonIcon', () => h('i', { 'data-test-icon': '' }));
+  app.component('TestLoadingIcon', () => h('i', { 'data-test-loading': '' }));
+  app.mount(host);
+  try {
+    const button = host.querySelector('button');
+    assert.equal(button.type, 'submit');
+    assert(button.classList.contains('hys-ui-btn-lg'));
+    assert(button.classList.contains('hys-ui-button-text-bg'));
+    assert(button.classList.contains('hys-ui-button-custom-dark'));
+    assert(button.querySelector('[data-test-icon]'));
+    loading.value = true;
+    await nextTick();
+    assert(button.querySelector('[data-test-loading]'));
+    assert.equal(button.disabled, true);
+  } finally {
+    app.unmount();
+    host.remove();
+  }
+});
+
+test('Button palettes work with semantic props, text styles, theme switching and color overrides', async () => {
+  const button = await mount(ui.HysButton, { type: 'teal', text: true, bg: true }, 'Confirm');
+  const element = button.find('button');
+  const tone = () => element.style.getPropertyValue('--hys-ui-button-color');
+  const foreground = () => element.style.getPropertyValue('--hys-ui-button-foreground');
+  assert.equal(tone(), '#0f766e');
+  assert.equal(foreground(), '#fff');
+  assert(element.classList.contains('hys-ui-button-palette'));
+  assert(element.classList.contains('hys-ui-button-text-bg'));
+  assert.equal(element.type, 'button');
+  button.props.dark = true;
+  await nextTick();
+  assert.equal(tone(), '#5eead4');
+  assert.equal(foreground(), '#141414');
+  button.props.color = '#dbeafe';
+  await nextTick();
+  assert.equal(tone(), '#dbeafe');
+  assert(!element.classList.contains('hys-ui-button-palette'));
+});
+
+test('ButtonGroup can share a palette and each button can override its color', async () => {
+  const group = await mount(ui.HysButtonGroup, { type: 'indigo' }, {
+    default: () => [
+      h(ui.HysButton, null, () => 'Inherit'),
+      h(ui.HysButton, { variant: 'amber' }, () => 'Override'),
+    ],
+  });
+  const [inherited, override] = group.all('button');
+  assert.equal(inherited.style.getPropertyValue('--hys-ui-button-color'), '#4338ca');
+  assert.equal(override.style.getPropertyValue('--hys-ui-button-color'), '#b45309');
+});
+
+test('Button async actions guard, report failures and cancel when removed', async () => {
+  let context;
+  let resolveAction;
+  const button = await mount(ui.HysButton, {
+    beforeAction: () => false,
+    action: (value) => {
+      context = value;
+      return new Promise(resolve => { resolveAction = resolve; });
+    },
+    toggle: true,
+  }, 'Save', false);
+  const element = button.find('button');
+  await fire(element, 'click');
+  assert.equal(context, undefined);
+  button.props.beforeAction = () => true;
+  await nextTick();
+  await fire(element, 'click');
+  assert.equal(element.disabled, true);
+  await fire(element, 'click');
+  assert.equal(button.events.click.length, 2);
+  resolveAction('done');
+  await nextTick();
+  await nextTick();
+  await nextTick();
+  assert.equal(button.events.actionSuccess[0][0], 'done');
+  assert.equal(element.getAttribute('aria-pressed'), 'true');
+  button.props.action = () => { throw new Error('Failed'); };
+  await nextTick();
+  await fire(element, 'click');
+  assert.equal(button.events.actionError[0][0].message, 'Failed');
+  assert.equal(element.disabled, false);
+  button.props.action = (value) => {
+    context = value;
+    return new Promise(resolve => { resolveAction = resolve; });
+  };
+  await nextTick();
+  await fire(element, 'click');
+  button.unmount();
+  assert.equal(context.signal.aborted, true);
+  resolveAction('late');
+  await nextTick();
+  assert.equal(button.events.actionSuccess.length, 1);
+});
+
+test('ButtonGroup inherits size and variant, supports overrides and disables descendants', async () => {
+  const group = await mount(ui.HysButtonGroup, { size: 'small', type: 'default', direction: 'vertical' }, {
+    default: () => [
+      h(ui.HysButton, null, () => 'First'),
+      h(ui.HysButton, { size: 'lg', variant: 'primary' }, () => 'Second'),
+    ],
+  });
+  const [first, second] = group.all('button');
+  assert(group.find('[role="group"]').classList.contains('hys-ui-button-group-vertical'));
+  assert(first.classList.contains('hys-ui-btn-sm'));
+  assert(first.classList.contains('hys-ui-button-secondary'));
+  assert(second.classList.contains('hys-ui-btn-lg'));
+  group.props.disabled = true;
+  await nextTick();
+  assert(first.disabled && second.disabled);
+});
+
+test('Search supports submit-only behavior, a custom label and an immediate clear query', async () => {
+  const search = await mount(ui.HysSearch, {
+    defaultValue: 'Initial',
+    trigger: 'submit',
+    enterButton: 'Find projects',
+    searchLabel: 'Find projects',
+    searchOnClear: true,
+    inputProps: { name: 'q' },
+  }, {}, false);
+  const input = search.find('input');
+  assert.equal(input.value, 'Initial');
+  assert.equal(input.name, 'q');
+  input.value = 'Build';
+  await fire(input, 'input');
+  assert.equal(search.events.search, undefined);
+  const button = search.find('button[aria-label="Find projects"]');
+  assert.equal(button.tagName, 'BUTTON');
+  await fire(button, 'click');
+  assert.equal(search.events.search[0][0], 'Build');
+  assert.equal(search.events.search[0][1].type, 'click');
+  await fire(input, 'keydown', { key: 'Enter', isComposing: true });
+  assert.equal(search.events.search.length, 1);
+  await fire(search.find('[aria-label="清空搜索"]'), 'click');
+  assert.equal(search.events.clear.length, 1);
+  assert.equal(search.events.search[1][0], '');
+  assert.equal(input.value, '');
+});
+
+test('Select labeled models display saved labels, submit raw values and retain the format in updates', async () => {
+  const select = await mount(ui.HysSelect, {
+    modelValue: { value: 'old', label: 'Saved team' },
+    labelInValue: true,
+    firstActiveValue: 'second',
+    fallbackOption: false,
+    clearable: true,
+    clearValue: () => null,
+    name: 'team',
+    options: [
+      { value: 'first', label: 'First team' },
+      { value: 'second', label: 'Second team' },
+    ],
+  });
+  const trigger = select.find('[role="combobox"]');
+  assert.match(trigger.textContent, /Saved team/);
+  assert.equal(select.find('input[type=hidden]').value, 'old');
+  await fire(trigger, 'click');
+  await pause(20);
+  const active = document.getElementById(trigger.getAttribute('aria-activedescendant'));
+  assert.match(active.textContent, /Second team/);
+  await fire(active, 'click');
+  assert.deepEqual(select.props.modelValue, { value: 'second', label: 'Second team' });
+  assert.equal(select.events.select[0][0], 'second');
+  assert.equal(select.find('input[type=hidden]').value, 'second');
+  await fire(select.find('[aria-label="清空选择"]'), 'click');
+  assert.equal(select.props.modelValue, null);
+});
+
+test('Select bulk operations preserve labeled values absent from the current data source', async () => {
+  const select = await mount(ui.HysSelect, {
+    modelValue: [{ value: 0, label: 'Prior choice' }],
+    labelInValue: true,
+    multiple: true,
+    selectAllScope: 'filtered',
+    options: [{ value: 1, label: 'Available choice' }],
+  });
+  assert.equal(select.vm.selectAll(), 1);
+  await nextTick();
+  const next = [{ value: 0, label: 'Prior choice' }, { value: 1, label: 'Available choice' }];
+  assert.deepEqual(select.props.modelValue, next);
+  assert.deepEqual(select.events.selectAll[0][0], next);
+  assert.equal(select.vm.deselectAll(), 1);
+  await nextTick();
+  assert.deepEqual(select.props.modelValue, [next[0]]);
+  assert.deepEqual(select.events.deselectAll[0][0], [next[0]]);
+});
 
 test('Button defaults to non-submitting native type; loading suppresses action',async()=>{const button=await mount(ui.HysButton,{},'Save');assert.equal(button.find('button').type,'button');await fire(button.find('button'),'click');assert.equal(button.events.click.length,1);button.props.loading=true;await nextTick();await fire(button.find('button'),'click');assert.equal(button.events.click.length,1);assert.equal(button.find('button').getAttribute('aria-busy'),'true')})
 test('Button disabled links cannot navigate; blank links have safe rel and slots',async()=>{const button=await mount(ui.HysButton,{href:'https://example.com',target:'_blank',disabled:true},{icon:()=>h('i','Icon'),default:()=> 'Link'});assert.equal(button.find('a').getAttribute('href'),null);await fire(button.find('a'),'click');assert(!button.events.click);button.props.disabled=false;await nextTick();assert.equal(button.find('a').rel,'noopener noreferrer');assert(button.find('i'));button.vm.focus();assert.equal(document.activeElement,button.find('a'))})
@@ -670,6 +913,276 @@ test('Alert controlled close emits visibility and action exactly once',async()=>
 test('Tag input preserves composition and validates additions',async()=>{const tags=await mount(ui.HysTagInput,{modelValue:[],beforeAdd:value=>value!=='bad'});const input=tags.find('input');input.value='中文';await fire(input,'input');await fire(input,'keydown',{key:'Enter',isComposing:true});assert.equal(tags.props.modelValue.length,0);await fire(input,'keydown',{key:'Enter'});assert.deepEqual([...tags.props.modelValue],['中文']);input.value='bad';await fire(input,'input');await fire(input,'keydown',{key:'Enter'});assert.equal(tags.events.reject.at(-1)[0],'bad')})
 test('Tree supports multiple label selection and toggling',async()=>{const tree=await mount(ui.HysTree,{nodes:[{id:'a',label:'A'},{id:'b',label:'B'}],modelValue:[],multiple:true});await fire(tree.all('[role="treeitem"]')[0],'click');await fire(tree.all('[role="treeitem"]')[1],'click');assert.deepEqual([...tree.props.modelValue],['a','b']);await fire(tree.all('[role="treeitem"]')[0],'click');assert.deepEqual([...tree.props.modelValue],['b'])})
 test('Mention Escape dismisses suggestions and changed input restores choices',async()=>{const mention=await mount(ui.HysMention,{modelValue:'@',users:[{id:'a',name:'Alice'},{id:'b',name:'Bob',disabled:true}]});await fire(mention.find('textarea'),'focus');await pause(10);assert(document.querySelector('[role="listbox"]'));await fire(mention.find('textarea'),'keydown',{key:'Escape'});assert(!document.querySelector('[role="listbox"]'));mention.props.modelValue='@A';await nextTick();await nextTick();await fire(mention.find('textarea'),'keydown',{key:'Enter'});assert.equal(mention.props.modelValue,'@Alice ')})
+
+test('Mention handles overlapping prefixes, mapped options, token replacement and whole deletion', async () => {
+  const mention = await mount(ui.HysMention, {
+    modelValue: 'Discuss ::alXe next',
+    prefix: ['::', ':', '@'],
+    options: [{ slug: 'alice', title: 'Alice', prefix: '::' }, { slug: 'alex', title: 'Alex', prefix: ':' }],
+    fieldNames: { value: 'slug', label: 'title' },
+    replaceRest: true,
+    highlightMatch: true,
+    whole: true,
+  })
+  const control = mention.find('textarea')
+  control.setSelectionRange(12, 12)
+  await fire(control, 'focus')
+  await pause(5)
+  assert.deepEqual(mention.events.search.at(-1).slice(0, 2), ['al', '::'])
+  assert.equal(document.querySelectorAll('[role="option"]').length, 1)
+  assert.equal(document.querySelector('[role="option"] mark').textContent, 'Al')
+  await fire(control, 'keydown', { key: 'Enter' })
+  assert.equal(mention.props.modelValue, 'Discuss ::alice next')
+  assert.equal(mention.events.select[0][1], '::')
+  assert.equal(mention.events.select[0][2].payload.slug, 'alice')
+  await nextTick()
+  assert.equal(control.selectionStart, 16)
+  await fire(control, 'keydown', { key: 'Backspace' })
+  assert.equal(mention.props.modelValue, 'Discuss next')
+  assert.deepEqual(mention.events.wholeRemove, [['alice', '::']])
+})
+
+test('Mention ignores stale remote results, supports retry and cancels when the panel is dismissed', async () => {
+  const requests = []
+  const mention = await mount(ui.HysMention, {
+    debounce: 0,
+    minQueryLength: 1,
+    loadOptions: context => new Promise((resolve, reject) => requests.push({ context, resolve, reject })),
+  })
+  const control = mention.find('textarea')
+  await fire(control, 'focus')
+  control.value = '@'
+  await fire(control, 'input')
+  assert.equal(requests.length, 0)
+  control.value = '@a'
+  await fire(control, 'input')
+  await pause(0)
+  assert.equal(requests[0].context.query, 'a')
+  control.value = '@ab'
+  await fire(control, 'input')
+  await pause(0)
+  assert.equal(requests[0].context.signal.aborted, true)
+  assert.equal(requests[1].context.query, 'ab')
+  requests[0].resolve([{ value: 'stale' }])
+  await pause(0)
+  assert.equal(document.querySelector('[role="listbox"]').getAttribute('aria-busy'), 'true')
+  requests[1].reject(new Error('failed'))
+  await pause(0)
+  assert.equal(mention.events.loadError.length, 1)
+  assert(document.querySelector('.hys-ui-mention-retry'))
+  await fire(control, 'keydown', { key: 'Enter' })
+  requests[2].resolve([{ value: 'matching', label: 'Server match' }])
+  await pause(0)
+  assert.match(document.querySelector('[role="option"]').textContent, /Server match/)
+  await fire(control, 'keydown', { key: 'Escape' })
+  assert.equal(document.querySelector('[role="listbox"]'), null)
+  await fire(control, 'keydown', { key: 'ArrowDown' })
+  await pause(0)
+  assert.equal(requests.length, 4)
+  await fire(control, 'blur')
+  assert.equal(requests[3].context.signal.aborted, true)
+})
+
+test('Mention waits for composition before creating a custom token, with Tab and whole deletion', async () => {
+  const mention = await mount(ui.HysMention, {
+    type: 'text',
+    defaultValue: '#',
+    prefix: '#',
+    split: ';',
+    allowCreate: true,
+    selectOnTab: true,
+    whole: true,
+    formatMention: option => '[[' + option.value + ']]',
+  })
+  const control = mention.find('input')
+  control.setSelectionRange(1, 1)
+  await fire(control, 'focus')
+  await fire(control, 'compositionstart')
+  control.value = '#发布'
+  await fire(control, 'input')
+  assert.equal(mention.events.change, undefined)
+  assert.equal(document.querySelector('[role="option"]'), null)
+  await fire(control, 'compositionend')
+  await pause(0)
+  assert.deepEqual(mention.events.change, [['#发布']])
+  assert(document.querySelector('[data-create="true"]'))
+  await fire(control, 'keydown', { key: 'Tab' })
+  assert.equal(mention.props.modelValue, '[[发布]];')
+  assert.equal(mention.events.create[0][0].value, '发布')
+  await nextTick()
+  await fire(control, 'keydown', { key: 'Backspace' })
+  assert.equal(mention.props.modelValue, '')
+})
+
+test('Mention preserves controlled text when the host rejects a selected candidate', async () => {
+  const mention = await mount(ui.HysMention, {
+    modelValue: '@A',
+    users: [{ id: 'a', name: 'Alice' }],
+  }, {}, false)
+  const control = mention.find('textarea')
+  control.setSelectionRange(2, 2)
+  await fire(control, 'focus')
+  await pause(0)
+  await fire(control, 'keydown', { key: 'Enter' })
+  await pause(0)
+  assert.deepEqual(mention.events['update:modelValue'], [['@Alice ']])
+  assert.equal(control.value, '@A')
+  assert.equal(mention.events.select[0][0].id, 'a')
+})
+
+test('Mention supports independent boundaries, multiword queries and a manually opened trigger', async () => {
+  const mention = await mount(ui.HysMention, {
+    modelValue: 'mail@al',
+    triggers: [
+      { prefix: '@', boundary: 'word', minQueryLength: 2, options: [{ value: 'alice' }] },
+      { prefix: '#', allowSpaces: true, split: ';', options: [{ value: 'release notes' }] },
+      { prefix: '/', options: [{ value: 'help' }], type: 'command' },
+      { prefix: '::', options: [{ value: '✔' }], match: ({ text, caret }) => {
+        const match = /::(ok)$/.exec(text.slice(0, caret))
+        return match ? { start: match.index, query: '✔' } : null
+      } },
+    ],
+  })
+  const control = mention.find('textarea')
+  control.setSelectionRange(7, 7)
+  await fire(control, 'focus')
+  assert.equal(document.querySelector('[role="option"]'), null)
+  control.value = '#release n'
+  await fire(control, 'input')
+  await pause(0)
+  assert.deepEqual(mention.events.search.at(-1).slice(0, 2), ['release n', '#'])
+  await fire(control, 'keydown', { key: 'Enter' })
+  assert.equal(mention.props.modelValue, '#release notes;')
+  assert.equal(mention.vm.open({ prefix: '/', position: 0 }), true)
+  await pause(0)
+  assert.match(document.querySelector('[role="option"]').textContent, /help/)
+  await fire(control, 'keydown', { key: 'Enter' })
+  assert.equal(mention.vm.getEntities()[0].type, 'command')
+  control.value = '::ok'
+  await fire(control, 'input')
+  await pause(0)
+  assert.equal(mention.events.search.at(-1)[1], '::')
+  assert.match(document.querySelector('[role="option"]').textContent, /✔/)
+})
+
+test('Mention searches by pinyin, initials and extra fields, then virtualizes grouped results', async () => {
+  const mention = await mount(ui.HysMention, {
+    options: [
+      { id: 1, value: '张三', description: 'design systems', group: 'Design', recommended: true },
+      { id: 2, value: '李娜', description: 'review', group: 'Engineering' },
+      ...Array.from({ length: 250 }, (_, index) => ({ id: index + 3, value: 'Member ' + index, group: 'Members' })),
+    ],
+    searchMode: ['pinyin', 'initials', 'fuzzy'],
+    searchFields: ['description'],
+    sortOptions: true,
+    maxOptions: 0,
+    virtual: true,
+    itemHeight: 40,
+    recommendOnFocus: true,
+    shortcuts: { 'Ctrl+End': 'last' },
+    canSelect: option => option.id !== 2,
+  })
+  const control = mention.find('textarea')
+  await fire(control, 'focus')
+  await pause(0)
+  assert(document.querySelectorAll('[role="option"]').length < 25)
+  assert.match(document.querySelector('.hys-ui-mention-group').textContent, /常用推荐/)
+  await fire(control, 'keydown', { key: 'End', ctrlKey: true })
+  await pause(0)
+  const active = control.getAttribute('aria-activedescendant')
+  assert.match(document.getElementById(active).textContent, /Member 249/)
+  for (const query of ['zhangsan', 'zs', 'dsys']) {
+    control.value = '@' + query
+    await fire(control, 'input')
+    for (let tries = 0; tries < 25 && !document.querySelector('[role="option"]'); tries++) await pause(15)
+    assert.match(document.querySelector('[role="option"]').textContent, /张三/)
+  }
+  control.value = '@review'
+  await fire(control, 'input')
+  await pause(0)
+  assert.equal(document.querySelector('[role="option"]').disabled, true)
+  assert.equal(control.getAttribute('aria-activedescendant'), null, JSON.stringify(
+    [...document.querySelectorAll('[role="option"]')].map(option => ({ text: option.textContent, disabled: option.disabled, active: option.dataset.active })),
+  ))
+})
+
+test('Mention merges paged sources, reuses fresh queries and expires cached entries', async () => {
+  const calls = []
+  const loader = source => ({ query, page, pageSize, cursor }) => {
+    calls.push({ source, query, page, pageSize, cursor })
+    return { items: [{ value: source + page, label: source + ' ' + page }], nextCursor: page === 1 ? 'page-2' : null }
+  }
+  const original = Date.now
+  let now = original()
+  Date.now = () => now
+  try {
+    const mention = await mount(ui.HysMention, {
+      debounce: 0, pageSize: 1, maxOptions: 0, cache: { ttl: 1000 },
+      sources: [
+        { key: 'a', group: 'First', loadOptions: loader('alpha') },
+        { key: 'b', group: 'Second', loadOptions: loader('beta') },
+      ],
+    })
+    const control = mention.find('textarea')
+    await fire(control, 'focus')
+    control.value = '@q'
+    await fire(control, 'input')
+    await pause(0)
+    assert.equal(document.querySelectorAll('[role="option"]').length, 2)
+    await fire(control, 'keydown', { key: 'PageDown' })
+    await pause(0)
+    assert.equal(document.querySelectorAll('[role="option"]').length, 4)
+    assert.deepEqual(calls.slice(2).map(({ cursor }) => cursor), ['page-2', 'page-2'])
+    control.value = '@other'
+    await fire(control, 'input')
+    await pause(0)
+    control.value = '@q'
+    await fire(control, 'input')
+    await pause(0)
+    assert.equal(calls.length, 6)
+    now += 1001
+    control.value = '@other'
+    await fire(control, 'input')
+    await pause(0)
+    assert.equal(calls.length, 8)
+  } finally { Date.now = original }
+})
+
+test('Mention rich editor serializes safe nodes, edits entities programmatically and restores history', async () => {
+  const mention = await mount(ui.HysMention, {
+    type: 'rich', defaultValue: 'Hello ', name: 'notes', whole: true,
+    validateEntity: entity => entity.id !== 'blocked',
+    clearable: true, maxlength: 80, showCount: true,
+  })
+  const control = mention.find('[contenteditable]')
+  const option = { id: 'person-1', value: '张三', label: '张三', type: 'member', payload: { team: '设计' } }
+  assert(await mention.vm.insertMention(option, { start: 6, end: 6, focus: false }))
+  const document = mention.vm.getDocument()
+  assert.equal(document.text, 'Hello @张三 ')
+  assert.equal(document.entities[0].start, 6)
+  assert.equal(document.entities[0].end, 9)
+  assert.equal(control.querySelector('[data-mention-entity]').getAttribute('contenteditable'), 'false')
+  assert.equal(mention.find('input[type="hidden"]').value, document.text)
+  assert.equal(mention.events.entityAdd[0][0].payload.team, '设计')
+  const saved = mention.vm.serialize()
+  assert(await mention.vm.removeMention('person-1'))
+  assert.equal(mention.vm.getEntities().length, 0)
+  assert(await mention.vm.undo())
+  assert.deepEqual(mention.vm.getDocument(), document)
+  assert(await mention.vm.redo())
+  assert.equal(mention.vm.getEntities().length, 0)
+  assert(await mention.vm.setDocument(saved))
+  const unsafe = '<img src=x onerror=alert(1)> @Old'
+  assert(await mention.vm.setDocument({ text: unsafe, entities: [
+    { id: 'blocked', value: 'Old', label: 'Old', prefix: '@', type: 'member', start: unsafe.indexOf('@'), end: unsafe.length, text: '@Old' },
+  ] }))
+  assert.equal(control.querySelector('img'), null)
+  assert.match(control.textContent, /<img/)
+  assert(control.querySelector('[data-mention-entity][aria-invalid="true"]'))
+  await fire(mention.find('.hys-ui-mention-clear'), 'click')
+  assert.equal(mention.vm.getDocument().text, '')
+  assert.equal(mention.events.clear.length, 1)
+})
 test('Context menu keyboard focus skips disabled entries and Escape closes',async()=>{const menu=await mount(ui.HysContextMenu,{items:[{label:'A',value:'a'},{label:'Blocked',value:'b',disabled:true},{label:'C',value:'c'}]},'Menu target');await fire(menu.host.firstElementChild,'keydown',{key:'F10',shiftKey:true});await pause(10);await fire(document.activeElement,'keydown',{key:'ArrowDown'});assert.equal(document.activeElement.textContent,'C');await fire(document,'keydown',{key:'Escape'});assert(!document.querySelector('[role="menu"]'))})
 test('Virtual table bounds rendered rows for 10,000 records',async()=>{const table=await mount(ui.HysVirtualTable,{rows:Array.from({length:10000},(_,id)=>({id,name:'Row '+id})),columns:[{key:'id',label:'ID',width:100},{key:'name',label:'Name',width:600}],height:280});assert(table.all('[role="row"]').length<30);const viewport=table.find('.hys-ui-v4-table-viewport');viewport.scrollTop=42000;await fire(viewport,'scroll');await new Promise(resolve=>requestAnimationFrame(resolve));await nextTick();assert(table.host.textContent.includes('Row 1000'));assert(table.all('[role="row"]').length<30)})
 test('Repeated floating open/close keeps native listeners balanced',async()=>{const select=await mount(ui.HysSelect,{modelValue:'a',options:[{value:'a',label:'A'}]});const add=document.addEventListener.bind(document),remove=document.removeEventListener.bind(document),counts={keydown:0,pointerdown:0};document.addEventListener=function(type,...args){if(type in counts)counts[type]++;return add(type,...args)};document.removeEventListener=function(type,...args){if(type in counts)counts[type]--;return remove(type,...args)};try{for(let index=0;index<30;index++){await fire(select.find('[role="combobox"]'),'click');await fire(document.querySelector('[role="option"]'),'click')}assert.deepEqual(counts,{keydown:0,pointerdown:0})}finally{document.addEventListener=add;document.removeEventListener=remove}})
@@ -715,9 +1228,204 @@ test('Slider range track snaps relative to its minimum',async()=>{const slider=a
 
 test('Calendar initially displays the selected month and readonly prevents selection',async()=>{const calendar=await mount(ui.HysCalendar,{modelValue:'2025-02-12',readonly:true});assert(calendar.host.textContent.includes('2025年2月'));await fire(calendar.find('[aria-pressed="true"]'),'click');assert(!calendar.events.select);calendar.props.readonly=false;await nextTick();await fire(calendar.find('[aria-pressed="true"]'),'click');assert.equal(calendar.events.select[0][0],'2025-02-12')})
 test('AnimatedNumber zero duration and invalid values settle without stale frames',async()=>{const number=await mount(ui.HysAnimatedNumber,{value:10,duration:0});number.props.value=25;await nextTick();assert.equal(number.host.textContent,'25');number.props.value=NaN;number.props.decimals=Infinity;await nextTick();assert.equal(number.host.textContent,'0')})
+
+test('AnimatedNumber formats precise decimal strings and counts down once per deadline', async () => {
+  const number = await mount(ui.HysAnimatedNumber, {
+    title: 'Total',
+    value: '9007199254740993.105',
+    groupSeparator: '.',
+    decimalSeparator: ',',
+    precision: 2,
+    prefix: '€',
+  })
+  assert.equal(number.vm.displayValue, '9.007.199.254.740.993,11')
+  assert.match(number.host.textContent, /Total.*€.*9\.007\.199\.254\.740\.993,11/)
+  number.props.deadline = Date.now() + 45
+  await nextTick()
+  assert.equal(number.find('[role="timer"]').textContent, '€00:00:01')
+  await pause(95)
+  assert.equal(number.vm.displayValue, '00:00:00')
+  assert.equal(number.events.finish.length, 1)
+  number.props.format = '[剩余] ss'
+  await nextTick()
+  assert.equal(number.vm.displayValue, '剩余 00')
+  assert.equal(number.events.finish.length, 1)
+})
 test('Standalone Badge omits an empty tag and clamps its numeric counter',async()=>{const badge=await mount(ui.HysBadge,{value:120,max:99});assert.equal(badge.host.textContent,'99+');assert(!badge.find('.hys-ui-badge'));assert(badge.find('.hys-ui-badge-standalone'));badge.props.value=0;await nextTick();assert(!badge.find('sup'))})
 test('Waiting Steps do not highlight the active step and disabled steps suppress changes',async()=>{const steps=await mount(ui.HysSteps,{items:['A','B'],current:0,status:'wait',clickable:true,disabled:true});assert(!steps.find('.hys-ui-active'));assert(steps.all('button').every(button=>button.disabled))})
 test('Resizable layouts normalize bounds and support Home/End keyboard sizing',async()=>{const split=await mount(ui.HysSplitPane,{modelValue:500,min:20,max:80});assert.equal(split.find('[role="separator"]').getAttribute('aria-valuenow'),'80');await fire(split.find('[role="separator"]'),'keydown',{key:'Home'});assert.equal(split.props.modelValue,20);await fire(split.find('[role="separator"]'),'keydown',{key:'End'});assert.equal(split.props.modelValue,80);const panel=await mount(ui.HysResizablePanel,{modelValue:500,minWidth:100,maxWidth:400});assert.equal(panel.find('[role="separator"]').getAttribute('aria-valuenow'),'400');await fire(panel.find('[role="separator"]'),'keydown',{key:'Home'});assert.equal(panel.props.modelValue,100);await fire(panel.find('[role="separator"]'),'keydown',{key:'End'});assert.equal(panel.props.modelValue,400)})
+
+test('SplitPane lazy drag reports a preview and commits only on the owning pointer release', async () => {
+  const split = await mount(ui.HysSplitPane, { modelValue: 40, lazy: true });
+  const separator = split.find('[role="separator"]');
+  function pointer(element, type, x, id = 1) {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x });
+    Object.defineProperty(event, 'pointerId', { value: id });
+    element.dispatchEvent(event);
+  }
+  pointer(separator, 'pointerdown', 100);
+  pointer(window, 'pointermove', 140, 2);
+  pointer(window, 'pointerup', 140, 2);
+  assert.equal(split.events.resizeEnd, undefined);
+  pointer(window, 'pointermove', 150);
+  await pause(32);
+  assert.equal(split.props.modelValue, 40);
+  assert.equal(split.events['update:modelValue'], undefined);
+  assert.equal(split.events.resize.at(-1)[0], 57);
+  assert(split.find('.hys-ui-splitter-preview'));
+  pointer(window, 'pointerup', 150);
+  await nextTick();
+  assert.equal(split.props.modelValue, 57);
+  assert.equal(split.find('.hys-ui-splitter-preview'), null);
+  assert.deepEqual(split.events.resizeEnd, [[57, { cancelled: false }]]);
+  pointer(separator, 'pointerdown', 150);
+  pointer(window, 'pointermove', 100);
+  await fire(separator, 'keydown', { key: 'Escape' });
+  await pause(20);
+  assert.equal(split.props.modelValue, 57);
+  assert.deepEqual(split.events.resizeEnd.at(-1), [57, { cancelled: true }]);
+});
+
+test('SplitPane combines both pane bounds, restores the previous size, and supports host rejection', async () => {
+  const split = await mount(ui.HysSplitPane, {
+    defaultValue: 40,
+    firstPanel: { min: 50, collapsible: true },
+    secondPanel: { min: '40%', max: '70%', collapsible: true },
+  }, { first: () => h('button', 'First content') });
+  const separator = split.find('[role="separator"]');
+  await fire(separator, 'keydown', { key: 'Home' });
+  assert.equal(split.props.modelValue, 30);
+  await fire(separator, 'keydown', { key: 'End' });
+  assert.equal(split.props.modelValue, 60);
+  await fire(split.find('[aria-label="折叠前面板"]'), 'click');
+  assert.equal(split.props.modelValue, 0);
+  assert(split.find('.hys-ui-ent-split-first').inert);
+  assert.equal(split.find('.hys-ui-ent-split-first button').textContent, 'First content');
+  assert.equal(await split.vm.togglePanel('first'), true);
+  assert.equal(split.props.modelValue, 60);
+  assert.deepEqual(split.events.collapse, [['first', true], ['first', false]]);
+  split.props.secondPanel = { resizable: false };
+  await nextTick();
+  assert.equal(separator.getAttribute('aria-disabled'), 'true');
+  await fire(separator, 'keydown', { key: 'Home' });
+  assert.equal(split.props.modelValue, 60);
+
+  const controlled = await mount(ui.HysSplitPane, {
+    modelValue: 45, firstPanel: { collapsible: true },
+  }, {}, false);
+  assert.equal(await controlled.vm.togglePanel('first'), false);
+  assert.deepEqual(controlled.events['update:modelValue'], [[0]]);
+  assert.equal(controlled.events.collapse, undefined);
+  assert.equal(controlled.find('[aria-label="折叠前面板"]').getAttribute('aria-expanded'), 'true');
+});
+
+test('SplitPane allocates multiple panels and lazy drag modifies only the adjacent pair', async () => {
+  const split = await mount(ui.HysSplitPane, {
+    lazy: true,
+    sizes: {},
+    panels: [
+      { id: 'fixed', label: 'Fixed', size: 72, resizable: false },
+      { id: 'editor', label: 'Editor', collapsible: true, min: '20%' },
+      { id: 'preview', label: 'Preview', min: '25%' },
+    ],
+  }, { panel: ({ panel }) => h('button', panel.label) });
+  const [disabled, separator] = split.all('[role="separator"]');
+  assert.equal(disabled.getAttribute('aria-disabled'), 'true');
+  assert.equal(separator.getAttribute('aria-controls').split(' ').length, 2);
+  assert.equal(split.vm.getPanelSizes().fixed, 72);
+  assert.deepEqual(split.vm.getPanelSizes(), { fixed: 72, editor: 108, preview: 108 });
+  function pointer(element, type, clientX) {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX });
+    Object.defineProperty(event, 'pointerId', { value: 7 });
+    element.dispatchEvent(event);
+  }
+  pointer(separator, 'pointerdown', 173);
+  pointer(window, 'pointermove', 260);
+  await pause(35);
+  assert.deepEqual(split.props.sizes, {});
+  assert.equal(split.events.panelResize.at(-1)[0].sizes.fixed, 72);
+  assert(split.find('.hys-ui-splitter-preview'));
+  pointer(window, 'pointerup', 260);
+  await nextTick();
+  assert.equal(split.props.sizes.fixed, 72);
+  assert.equal(split.props.sizes.editor, '50%');
+  assert.equal(split.props.sizes.preview, '25%');
+  assert.deepEqual(split.events.panelResizeEnd, [[{
+    separator: 1,
+    before: 'editor',
+    after: 'preview',
+    sizes: { fixed: 72, editor: 144, preview: 72 },
+    cancelled: false,
+  }]]);
+  assert.equal(await split.vm.togglePane('editor'), true);
+  assert.equal(split.props.sizes.editor, '0%');
+  assert(split.find('[data-hys-pane="editor"]').inert);
+  assert.equal(split.find('[data-hys-pane="editor"] button').textContent, 'Editor');
+  assert.equal(await split.vm.togglePane('editor'), true);
+  assert.deepEqual(split.vm.getPanelSizes(), { fixed: 72, editor: 144, preview: 72 });
+  assert.deepEqual(split.events.panelCollapse, [['editor', true], ['editor', false]]);
+});
+
+test('SplitPane keeps controlled multi-panel sizes when the host refuses a collapse', async () => {
+  const split = await mount(ui.HysSplitPane, {
+    layout: 'vertical',
+    sizes: { top: '25%', body: '50%', bottom: '25%' },
+    panels: [
+      { id: 'top', label: 'Top', collapsible: true },
+      { id: 'body', label: 'Body', max: '65%' },
+      { id: 'bottom', label: 'Bottom', collapsible: true },
+    ],
+  }, {}, false);
+  assert.equal(split.find('[role="separator"]').getAttribute('aria-orientation'), 'horizontal');
+  assert.equal(split.find('[aria-label="折叠Top"]').disabled, true);
+  assert.equal(await split.vm.togglePane('top'), false);
+  assert.equal(split.events['update:sizes'], undefined);
+  split.props.panels = [{ id: 'top', label: 'Top', collapsible: true }, { id: 'body' }, { id: 'bottom' }];
+  await nextTick();
+  assert.equal(await split.vm.togglePane('top'), false);
+  assert.deepEqual(split.events['update:sizes'], [[{ top: '0%', body: '75%', bottom: '25%' }]]);
+  assert.equal(split.events.panelCollapse, undefined);
+  assert.equal(split.find('[aria-label="折叠Top"]').getAttribute('aria-expanded'), 'true');
+});
+
+test('SplitPane remembers uncontrolled panel sizes and resets to the configured layout', async () => {
+  const key = 'hys-ui:split-pane:test-workspace:panels';
+  const props = {
+    storageKey: 'test-workspace',
+    dividerSize: 12,
+    doubleClickAction: 'reset',
+    panels: [
+      { id: 'files', size: 80, collapsible: true },
+      { id: 'work' },
+    ],
+  };
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ files: 'invalid', removed: 100 }));
+    const first = await mount(ui.HysSplitPane, { ...props }, {
+      handle: ({ before, after }) => h('span', { 'data-handle': '' }, before + ' / ' + after),
+    }, false);
+    assert.equal(first.find('[data-handle]').textContent, 'files / work');
+    assert.equal(first.vm.getPaneElement('files'), first.find('[data-hys-pane="files"]'));
+    assert.deepEqual(first.vm.getPanelSizes(), { files: 80, work: 208 });
+    assert.equal(await first.vm.resizePane('files', 120), true);
+    assert(Math.abs(JSON.parse(window.localStorage.getItem(key)).files - 120) < 0.001);
+    first.unmount();
+
+    const restored = await mount(ui.HysSplitPane, { ...props }, {}, false);
+    const separator = restored.find('[role="separator"]');
+    assert(Math.abs(restored.vm.getPanelSizes().files - 120) < 0.001);
+    assert.equal(separator.getAttribute('aria-keyshortcuts'), 'Enter');
+    await fire(separator, 'keydown', { key: 'Enter' });
+    assert.equal(restored.vm.getPanelSizes().files, 0);
+    await fire(separator, 'keydown', { key: 'Enter' });
+    assert(Math.abs(restored.vm.getPanelSizes().files - 120) < 0.001);
+    await fire(separator, 'dblclick');
+    assert.deepEqual(restored.vm.getPanelSizes(), { files: 80, work: 208 });
+    assert.equal(window.localStorage.getItem(key), null);
+  } finally {
+    window.localStorage.removeItem(key);
+  }
+});
 test('Textarea inherits field feedback without overwriting its own error',async()=>{const form=await mount(ui.HysForm,{model:{note:''}},{default:()=>h(ui.HysFormItem,{label:'Note',prop:'note',hint:'Helpful text'},()=>h(ui.HysTextarea,{modelValue:'',error:'Local error',readonly:true}))});const input=form.find('textarea');assert.equal(input.getAttribute('aria-invalid'),'true');assert.equal(document.getElementById(input.getAttribute('aria-describedby')).textContent,'Local error');input.value='attempt';await fire(input,'input');assert.equal(input.value,'');assert.equal(form.props.model.note,'')})
 
 test('Pagination synchronizes the page when a size change reduces the page count',async()=>{const pager=await mount(ui.HysPagination,{page:10,total:100,pageSize:10,showSizeChanger:true,showQuickJumper:true});await fire(pager.find('[role="combobox"]'),'click');await pause(10);const option=[...document.querySelectorAll('[role="option"]')].find(node=>node.textContent.trim()==='50');await fire(option,'click');assert.equal(pager.props.pageSize,50);assert.equal(pager.props.page,2);assert.equal(pager.events.change.at(-1)[0],2);assert.equal(pager.events.pageSizeChange.at(-1)[0],50);assert(pager.host.textContent.includes('51–100'));const input=pager.find('.hys-ui-pf-pagination-jump input');assert(input);assert(!pager.find('.hys-ui-pf-pagination-jump [aria-label="增加"]'));input.value='1';await fire(input,'input');assert.equal(pager.find('.hys-ui-pf-pagination-jump button[type="submit"]').disabled,false);await fire(pager.find('.hys-ui-pf-pagination-jump'),'submit');assert.equal(pager.props.page,1)})
@@ -726,6 +1434,71 @@ test('Search defers IME queries, debounces final text and cancels stale work',as
 test('CommandPalette resets keyboard selection on filtering and ignores composition Enter',async()=>{const commands=await mount(ui.HysCommandPalette,{actions:[{id:'a',label:'Alpha'},{id:'b',label:'Beta'}]});await fire(commands.find('button'),'click');await pause(10);const input=document.querySelector('[role="combobox"]');await fire(input,'keydown',{key:'ArrowDown'});input.value='Alpha';await fire(input,'input');await fire(input,'keydown',{key:'Enter',isComposing:true});assert(!commands.events.select);await fire(input,'keydown',{key:'Enter'});assert.equal(commands.events.select[0][0],'a');await pause(80);assert(!document.querySelector('[aria-label="快捷命令"]'))})
 test('OrgTree normalizes duplicate and cyclic input and enables default search',async()=>{const org=await mount(ui.HysOrgTree,{nodes:[{id:'a',name:'Alpha',parentId:'b'},{id:'b',name:'Beta',parentId:'a'},{id:'c',name:'Gamma'},{id:'c',name:'Duplicate'}]});assert(org.find('input'));assert.equal(org.all('[role="treeitem"]').length,3);assert(org.host.textContent.includes('Gamma'));assert(!org.host.textContent.includes('Duplicate'));await fire(org.all('[role="treeitem"]')[2],'click');assert.equal(org.events['update:modelValue'][0][0],'c')})
 test('Tour clamps its current step and closes with Escape by default',async()=>{const tour=await mount(ui.HysTour,{modelValue:true,current:99,steps:[{title:'First',description:'One'},{title:'Last',description:'Two'}]});await pause(10);assert(document.querySelector('[aria-label="Last"]'));await fire([...document.querySelectorAll('.hys-ui-dialog-foot button')].find(button=>button.textContent==='上一步'),'click');assert.equal(tour.props.current,0);assert(document.querySelector('[aria-label="First"]'));await fire(document,'keydown',{key:'Escape'});assert.equal(tour.props.modelValue,false);assert.equal(tour.events.close.length,1)})
+
+test('Tour resolves targets, applies step overrides, and emits finish and close once', async () => {
+  const target = document.createElement('button');
+  target.id = 'tour-test-target';
+  document.body.append(target);
+  let stepCloseCount = 0;
+  const tour = await mount(ui.HysTour, {
+    open: true,
+    current: 0,
+    mask: { color: 'rgba(0, 0, 0, 0.6)' },
+    steps: [
+      { title: 'Anchored', target: '#tour-test-target', placement: 'bottom-start' },
+      { title: 'Floating', target: () => target, mask: false, showArrow: false,
+        type: 'primary', onClose: () => { stepCloseCount++; },
+        nextButtonProps: { children: 'Finish tour' } },
+    ],
+  }, { indicators: ({ current, total }) => `Step ${current + 1} of ${total}` });
+  await pause(35);
+  const dialog = document.querySelector('[role="dialog"]');
+  assert.equal(dialog.dataset.hysTourPlacement, 'bottom-start');
+  assert.equal(dialog.style.position, 'fixed');
+  assert.equal(dialog.hasAttribute('aria-modal'), false);
+  assert.match(document.querySelector('.hys-ui-tour-mask path').getAttribute('d'), /Z M /);
+  assert.equal(document.querySelector('.hys-ui-tour-mask path').getAttribute('fill'), 'rgba(0, 0, 0, 0.6)');
+  assert.match(dialog.textContent, /Step 1 of 2/);
+  tour.vm.next();
+  await pause(35);
+  assert.equal(tour.props.current, 1);
+  assert.equal(document.querySelector('.hys-ui-tour-mask'), null);
+  assert(dialog.classList.contains('hys-ui-tour-card-primary'));
+  assert.equal(dialog.hasAttribute('data-hys-tour-placement'), false);
+  assert.match(dialog.textContent, /Step 2 of 2/);
+  await fire([...dialog.querySelectorAll('button')].find(button => button.textContent.trim() === 'Finish tour'), 'click');
+  assert.equal(tour.props.open, false);
+  assert.equal(tour.events.finish.length, 1);
+  assert.equal(tour.events.close.length, 1);
+  assert.equal(stepCloseCount, 1);
+});
+
+test('Tour starts on the requested step and centers until its target mounts', async () => {
+  const tour = await mount(ui.HysTour, {
+    open: false,
+    current: 0,
+    steps: [
+      { title: 'Intro' },
+      { title: 'Late target', target: '#tour-late-target', targetAreaClickable: false },
+    ],
+  });
+  tour.vm.start(1);
+  await pause(35);
+  const dialog = document.querySelector('[role="dialog"]');
+  assert.equal(tour.props.current, 1);
+  assert.equal(dialog.getAttribute('aria-label'), 'Late target');
+  assert.equal(dialog.style.position, '');
+  assert.equal(dialog.getAttribute('aria-modal'), 'true');
+  const target = document.createElement('button');
+  target.id = 'tour-late-target';
+  document.body.append(target);
+  await pause(35);
+  assert.equal(dialog.style.position, 'fixed');
+  assert(document.querySelector('.hys-ui-tour-mask rect'));
+  target.remove();
+  await pause(35);
+  assert.equal(dialog.style.position, '');
+});
 test('RichTextEditor cancels a pending link operation when the cached page leaves',async()=>{const shown=ref(true),original=document.execCommand,calls=[];document.execCommand=(...args)=>{calls.push(args);return true};try{const Editor=defineComponent({setup(){return()=>h(ui.HysRichTextEditor,{modelValue:'<p>Owned text</p>'})}});await mount(defineComponent({setup(){return()=>h(KeepAlive,()=>shown.value?h(Editor):h('p','Other page'))}}));await fire([...document.querySelectorAll('[role="toolbar"] button')].find(button=>button.textContent==='链接'),'click');await pause(10);const input=document.querySelector('[placeholder="https://example.com"]');input.value='https://example.com';await fire(input,'input');const action=[...document.querySelectorAll('.hys-ui-dialog-foot button')].find(button=>button.textContent==='插入');const pending=fire(action,'click');shown.value=false;await pending;await pause(80);assert.equal(calls.length,0);assert(!document.querySelector('[aria-label="插入链接"]'))}finally{document.execCommand=original}})
 test('FileManager supports keyboard selection, host events and disabled state',async()=>{const manager=await mount(ui.HysFileManager,{modelValue:[{id:'a',name:'a.txt',size:20}]});let opens=0;const input=manager.find('input');input.click=()=>opens++;await fire(manager.find('[role="button"]'),'keydown',{key:'Enter'});assert.equal(opens,1);Object.defineProperty(input,'files',{configurable:true,value:[new window.File(['A'],'new.txt')]});await fire(input,'change');assert.equal(manager.events.upload[0][0][0].name,'new.txt');await fire(manager.all('button')[1],'click');assert.equal(manager.events.remove[0][0],'a');manager.props.disabled=true;await nextTick();await fire(manager.find('[role="button"]'),'keydown',{key:'Enter'});assert.equal(opens,1);assert(input.disabled);assert(manager.all('button').every(button=>button.disabled))})
 test('Accordion switches single panels and preserves multiple controlled values',async()=>{const accordion=await mount(ui.HysAccordion,{modelValue:[0],items:[{title:'First',content:'A'},{title:'Second',content:'B'},{title:'Blocked',disabled:true}]});await fire(accordion.all('button')[1],'click');assert.deepEqual([...accordion.props.modelValue],[1]);accordion.props.multiple=true;await nextTick();await fire(accordion.all('button')[0],'click');assert.deepEqual([...accordion.props.modelValue],[1,0]);await fire(accordion.all('button')[2],'click');assert.deepEqual([...accordion.props.modelValue],[1,0])})
@@ -733,3 +1506,105 @@ test('Table cycles sort state without mutating rows and emits the selected row',
 test('JsonEditor formats valid input and leaves invalid text available for correction',async()=>{const json=await mount(ui.HysJsonEditor,{modelValue:'{"answer":42}'});await fire(json.find('button'),'click');assert(json.props.modelValue.includes('\n  "answer": 42'));json.props.modelValue='{broken';await nextTick();await fire(json.find('button'),'click');assert.equal(json.props.modelValue,'{broken');assert(json.host.textContent.includes('JSON 无效'))})
 test('Kanban emits a move request without changing host-owned cards',async()=>{const board=await mount(ui.HysKanban,{columns:[{id:'todo',title:'Todo'},{id:'done',title:'Done'}],cards:[{id:'a',title:'Task',column:'todo'}]});await fire(board.find('[role="combobox"]'),'click');await pause(10);await fire([...document.querySelectorAll('[role="option"]')].find(option=>option.textContent.trim()==='Done'),'click');assert.deepEqual(board.events.move[0],['a','done']);assert.equal(board.props.cards[0].column,'todo')})
 test('Form labels and validation focus composite controls instead of hidden inputs',async()=>{const form=await mount(ui.HysForm,{model:{choice:''},rules:{choice:{required:true,message:'Choose a value'}}},{default:()=>[h(ui.HysFormItem,{label:'Choice',prop:'choice'},()=>h(ui.HysRadioGroup,{modelValue:'',options:[{label:'One',value:'one'}]})),h(ui.HysFormItem,{label:'Score'},()=>h(ui.HysRating,{modelValue:0})),h(ui.HysFormItem,{label:'Files'},()=>h(ui.HysFileManager,{modelValue:[]}))]});await fire(form.find('form'),'submit');await pause(5);assert.equal(document.activeElement,form.find('input[type="radio"]'));const labels=form.all('.hys-ui-ent-field>label');await fire(labels[1],'click');assert.equal(document.activeElement,form.find('[role="slider"]'));await fire(labels[2],'click');const fileControl=form.find('[role="button"]');assert.equal(document.activeElement,fileControl);assert.equal(fileControl.id,labels[2].htmlFor);assert(form.find('input[type="file"]').hidden)})
+
+test('Pagination keeps the current page until the host applies a requested page size', async () => {
+  const Host = defineComponent({
+    props: { accept: Boolean, total: { type: Number, required: true } },
+    emits: ['pageRequest', 'sizeRequest'],
+    setup(props, { emit }) {
+      const page = ref(10)
+      const pageSize = ref(10)
+      return () => h(ui.HysPagination, {
+        page: page.value,
+        pageSize: pageSize.value,
+        total: props.total,
+        showSizeChanger: true,
+        hideOnSinglePage: true,
+        'onUpdate:pageSize': size => {
+          emit('sizeRequest', size)
+          if (props.accept) pageSize.value = size
+        },
+        'onUpdate:page': next => {
+          emit('pageRequest', next)
+          page.value = next
+        },
+      })
+    },
+  })
+  const pager = await mount(Host, { total: 100 })
+  async function chooseSize() {
+    await fire(pager.find('[role="combobox"]'), 'click')
+    await pause(10)
+    const option = [...document.querySelectorAll('[role="option"]')]
+      .find(node => node.textContent.trim() === '50')
+    await fire(option, 'click')
+  }
+
+  await chooseSize()
+  assert.deepEqual(pager.events.sizeRequest, [[50]])
+  assert.equal(pager.events.pageRequest, undefined)
+  assert.equal(pager.find('[aria-current="page"]').textContent.trim(), '10')
+  assert.equal(pager.find('[role="combobox"]').textContent.trim(), '10')
+
+  pager.props.accept = true
+  await nextTick()
+  await chooseSize()
+  assert.deepEqual(pager.events.pageRequest, [[2]])
+  assert.equal(pager.find('[aria-current="page"]').textContent.trim(), '2')
+
+  pager.props.total = 5
+  await nextTick()
+  assert.deepEqual(pager.events.pageRequest, [[2], [1]])
+  assert.equal(pager.find('nav'), null)
+
+  pager.props.total = 100
+  await nextTick()
+  assert.equal(pager.find('[aria-current="page"]').textContent.trim(), '1')
+})
+
+test('Pagination supports standalone state, ordered controls and scoped slot content', async () => {
+  const pager = await mount(ui.HysPagination, {
+    total: 90,
+    defaultPage: 2,
+    defaultPageSize: 30,
+    layout: 'sizes, total, ->, next, pager, prev, jumper',
+    labels: { navigation: 'Records', pageItem: 'Page {page}', next: 'Next' },
+    responsive: false,
+    size: 'lg',
+  }, {
+    total: ({ total, start, end, pageCount }) => total + ':' + start + '-' + end + '/' + pageCount,
+    item: ({ type, page }) => type + ' ' + page,
+    'jump-button': () => 'Go',
+  })
+  assert.equal(pager.find('nav').getAttribute('aria-label'), 'Records')
+  assert.equal(pager.find('nav').dataset.size, 'lg')
+  assert.deepEqual(
+    [...pager.find('.hys-ui-pf-pagination-leading').children].map(node => node.tagName),
+    ['LABEL', 'SPAN'],
+  )
+  assert.equal(pager.find('.hys-ui-pf-pagination-total').textContent.trim(), '90:31-60/3')
+  assert.equal(pager.find('.hys-ui-pf-pagination-controls > button').textContent.trim(), 'next 3')
+  assert.equal(pager.find('[aria-current="page"]').getAttribute('aria-label'), 'Page 2')
+  assert.equal(pager.find('button[type="submit"]').textContent.trim(), 'Go')
+  await fire(pager.find('[aria-label="Next"]'), 'click')
+  assert.equal(pager.find('[aria-current="page"]').textContent.trim(), 'page 3')
+  assert.deepEqual(pager.events.change, [[3]])
+})
+
+test('Pagination accepts a page count without a fabricated record total and bounds unsafe numbers', async () => {
+  const pager = await mount(ui.HysPagination, {
+    pageCount: 1e20,
+    defaultPage: 1e20,
+    defaultPageSize: 0.5,
+    showSizeChanger: true,
+    siblingCount: Number.NaN,
+  })
+  assert.equal(pager.find('.hys-ui-pf-pagination-total'), null)
+  assert.equal(pager.find('[aria-current="page"]').textContent.trim(), String(Number.MAX_SAFE_INTEGER))
+  assert.equal(pager.find('[role="combobox"]').textContent.trim(), '1')
+  assert(pager.all('.hys-ui-pf-pagination-page').length < 10)
+  pager.props.pageCount = 2
+  await nextTick()
+  assert.equal(pager.find('[aria-current="page"]').textContent.trim(), '2')
+  assert.deepEqual(pager.events['update:page'], [[2]])
+})

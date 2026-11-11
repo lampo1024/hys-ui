@@ -20,6 +20,7 @@ import {
   type HysTableFilters,
   type HysTableFilterValue,
   type HysTableQuery,
+  type HysTableRowSelectionOptions,
   type TableNode,
 } from "./table";
 export function useTable<T extends object>(
@@ -30,6 +31,9 @@ export function useTable<T extends object>(
 ) {
   const live = ref(true),
     busy = computed(() => !!props.loading || !!props.disabled);
+  const pagination = computed(() =>
+    typeof props.pagination === "object" ? props.pagination : {},
+  );
   const localSort = ref<HysTableSort[]>(
     Array.isArray(props.defaultSort)
       ? [...props.defaultSort]
@@ -49,8 +53,8 @@ export function useTable<T extends object>(
       ),
       ...props.defaultFilters,
     }),
-    localPage = ref(1),
-    localSize = ref(10);
+    localPage = ref(pagination.value.defaultPage ?? 1),
+    localSize = ref(pagination.value.defaultPageSize ?? 10);
   const ownSelected = ref<HysTableKey[]>([
       ...(props.defaultSelectedRowKeys ?? []),
     ]),
@@ -184,33 +188,47 @@ export function useTable<T extends object>(
     },
     { immediate: true },
   );
-  const sorts = computed<HysTableSort[]>(() => {
-    const list =
-        props.sorts ??
-        (props.sort !== undefined
-          ? props.sort
-            ? [props.sort]
-            : []
-          : localSort.value),
-      seen = new Set<string>();
+  function normalizeSorts(list: readonly HysTableSort[]) {
+    const sortable = new Map(columns().filter((column) => column.sortable).map((column) => [column.key, column]));
+    const seen = new Set<string>();
     return list
       .filter(
         (item) =>
           ["asc", "desc"].includes(item.direction) &&
-          columns().some((c) => c.key === item.key && c.sortable) &&
+          sortable.has(item.key) &&
           !seen.has(item.key) &&
           (seen.add(item.key), true),
       )
       .slice(0, props.multiSort ? undefined : 1)
       .sort(
         (a, b) =>
-          (columns().find((c) => c.key === b.key)?.sortPriority ?? 0) -
-          (columns().find((c) => c.key === a.key)?.sortPriority ?? 0),
+          (sortable.get(b.key)?.sortPriority ?? 0) -
+          (sortable.get(a.key)?.sortPriority ?? 0),
       );
+  }
+  const columnSorts = computed(() => new Map(
+    columns().filter((column) => column.sortable && column.sortOrder !== undefined)
+      .map((column) => [column.key, column.sortOrder]),
+  ));
+  const sorts = computed(() => {
+    if (props.sorts !== undefined) return normalizeSorts(props.sorts);
+    if (props.sort !== undefined) return normalizeSorts(props.sort ? [props.sort] : []);
+    const local = localSort.value.filter((item) => !columnSorts.value.has(item.key));
+    const controlled = columns().flatMap(({ key }) => {
+      const direction = columnSorts.value.get(key);
+      return direction ? [{ key, direction }] : [];
+    });
+    return normalizeSorts([...controlled, ...local]);
   });
-  const filters = computed<HysTableFilters>(
-    () => props.filters ?? localFilters.value,
-  );
+  const filters = computed<HysTableFilters>(() => {
+    if (props.filters !== undefined) return props.filters;
+    const controlled = columns().flatMap(({ key, filteredValue }) =>
+      filteredValue === undefined ? [] : [[key, filteredValue] as const],
+    );
+    return controlled.length
+      ? { ...localFilters.value, ...Object.fromEntries(controlled) }
+      : localFilters.value;
+  });
   const processed = computed(() => {
     const g = graph.value,
       keep = new Set<string>(),
@@ -235,20 +253,26 @@ export function useTable<T extends object>(
       if (node.children.length) children.set(node.token, group(node.children));
     return { roots: group(g.roots), children };
   });
-  const pagination = computed(() =>
-    typeof props.pagination === "object" ? props.pagination : {},
-  );
   const pageSize = computed(() => {
     const n = props.pageSize ?? pagination.value.pageSize ?? localSize.value;
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 10;
+    return Number.isFinite(n) && n > 0
+      ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, Math.floor(n)))
+      : 10;
   });
-  const total = computed(() =>
-    props.serverMode
-      ? Math.max(0, props.total ?? pagination.value.total ?? props.rows.length)
-      : processed.value.roots.length,
-  );
+  const serverPageCount = computed(() => {
+    const count = pagination.value.pageCount;
+    return props.serverMode && count !== undefined && Number.isFinite(count) && count > 0
+      ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, Math.floor(count)))
+      : undefined;
+  });
+  const paginationTotal = computed(() => {
+    if (!props.serverMode) return processed.value.roots.length;
+    const total = props.total ?? pagination.value.total;
+    if (total === undefined) return serverPageCount.value === undefined ? props.rows.length : undefined;
+    return Number.isFinite(total) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(total))) : 0;
+  });
   const pageCount = computed(() =>
-    Math.max(1, Math.ceil(total.value / pageSize.value)),
+    serverPageCount.value ?? Math.max(1, Math.ceil((paginationTotal.value ?? 0) / pageSize.value)),
   );
   const page = computed(() => {
     const n = props.page ?? pagination.value.page ?? localPage.value;
@@ -387,40 +411,33 @@ export function useTable<T extends object>(
   }
   function setSort(value: HysTableSort | readonly HysTableSort[] | null) {
     if (busy.value || !live.value) return;
-    const next = (
+    const next = normalizeSorts(
       Array.isArray(value) ? [...value] : value ? [value as HysTableSort] : []
-    ).filter(
-      (s) =>
-        columns().some((c) => c.key === s.key && c.sortable) &&
-        ["asc", "desc"].includes(s.direction),
     );
-    localSort.value = props.multiSort ? next : next.slice(0, 1);
-    if (props.multiSort)
-      localSort.value.sort(
-        (a, b) =>
-          (columns().find((c) => c.key === b.key)?.sortPriority ?? 0) -
-          (columns().find((c) => c.key === a.key)?.sortPriority ?? 0),
-      );
+    localSort.value = props.sorts !== undefined || props.sort !== undefined
+      ? next
+      : next.filter((item) => !columnSorts.value.has(item.key));
     localPage.value = 1;
-    emit("update:sort", localSort.value[0] ?? null);
-    emit("update:sorts", localSort.value);
-    emit("sortChange", localSort.value[0] ?? null, localSort.value);
+    emit("update:sort", next[0] ?? null);
+    emit("update:sorts", next);
+    emit("sortChange", next[0] ?? null, next);
     emit("update:page", 1);
-    notify("sort", { sorts: localSort.value, page: 1 });
+    notify("sort", { sorts: next, page: 1 });
+  }
+  function nextSortOrder(column: HysTableColumn<T>, direction?: "asc" | "desc") {
+    const previous = sorts.value.find((s) => s.key === column.key)?.direction;
+    const orders = column.sortOrders?.length
+      ? column.sortOrders
+      : props.sortOrders?.length
+        ? props.sortOrders
+        : (["asc", "desc", null] as const);
+    return direction
+      ? previous === direction ? null : direction
+      : orders[(orders.indexOf(previous ?? null) + 1) % orders.length];
   }
   function toggleSort(column: HysTableColumn<T>, direction?: "asc" | "desc") {
     if (!column.sortable) return;
-    const previous = sorts.value.find((s) => s.key === column.key)?.direction,
-      orders = column.sortOrders?.length
-        ? column.sortOrders
-        : props.sortOrders?.length
-          ? props.sortOrders
-          : (["asc", "desc", null] as const);
-    const next = direction
-      ? previous === direction
-        ? null
-        : direction
-      : orders[(orders.indexOf(previous ?? null) + 1) % orders.length];
+    const next = nextSortOrder(column, direction);
     const list = props.multiSort
       ? sorts.value.filter((s) => s.key !== column.key)
       : [];
@@ -429,7 +446,10 @@ export function useTable<T extends object>(
   }
   function requestFilters(value: HysTableFilters) {
     if (busy.value || !live.value) return;
-    localFilters.value = value;
+    const controlled = new Set(columns().filter((column) => column.filteredValue !== undefined).map((column) => column.key));
+    localFilters.value = props.filters !== undefined || !controlled.size
+      ? value
+      : Object.fromEntries(Object.entries(value).filter(([key]) => !controlled.has(key)));
     localPage.value = 1;
     emit("update:filters", value);
     emit("filterChange", value);
@@ -490,14 +510,24 @@ export function useTable<T extends object>(
       else set.delete(n.token);
     }
   }
+  function commitSelection(tokens: Set<string>) {
+    cascade(tokens);
+    const keys = selectedKeys.value.filter((key) => tokens.has(tableToken(key)));
+    for (const node of graph.value.all)
+      if (tokens.has(node.token) && !selectedSet.value.has(node.token)) keys.push(node.key);
+    return requestSelection(keys);
+  }
   let selectionAnchor: string | undefined;
   async function toggleRowSelection(
     value: T | HysTableKey,
     checked?: boolean,
-    range = false,
+    options: boolean | HysTableRowSelectionOptions = false,
   ) {
     const node = find(value);
-    if (!node || !eligible(node) || busy.value) return false;
+    const range = typeof options === "boolean" ? options : options.range;
+    const ignoreSelectable = typeof options === "object" && options.ignoreSelectable;
+    if (!node || (!ignoreSelectable && !eligible(node)) || busy.value || !live.value)
+      return false;
     const yes = checked ?? !selectedSet.value.has(node.token);
     if (props.selectionType === "radio") {
       const accepted = await requestSelection(yes ? [node.key] : []);
@@ -520,21 +550,11 @@ export function useTable<T extends object>(
       const item = stack.pop()!;
       if (visited.has(item.token)) continue;
       visited.add(item.token);
-      if (eligible(item)) yes ? next.add(item.token) : next.delete(item.token);
+      if ((ignoreSelectable && item === node) || eligible(item))
+        yes ? next.add(item.token) : next.delete(item.token);
       if (props.checkStrictly === false) stack.push(...item.children);
     }
-    cascade(next);
-    const keys = [
-      ...new Map([
-        ...selectedKeys.value
-          .filter((k) => next.has(tableToken(k)))
-          .map((k) => [tableToken(k), k] as const),
-        ...graph.value.all
-          .filter((n) => next.has(n.token))
-          .map((n) => [n.token, n.key] as const),
-      ]).values(),
-    ];
-    const accepted = await requestSelection(keys);
+    const accepted = await commitSelection(next);
     if (accepted) {
       selectionAnchor = node.token;
       emit("select", getSelectionRows(), node.row, yes);
@@ -555,22 +575,16 @@ export function useTable<T extends object>(
         (someSelected.value && props.selectOnIndeterminate === false
           ? false
           : !allSelected.value),
-      next = new Set(selectedSet.value);
-    for (const node of selectionPage.value)
+      previous = selectedSet.value,
+      next = new Set(previous),
+      pageNodes = selectionPage.value;
+    for (const node of pageNodes)
       yes ? next.add(node.token) : next.delete(node.token);
-    cascade(next);
-    const keys = [
-      ...new Map([
-        ...selectedKeys.value
-          .filter((k) => next.has(tableToken(k)))
-          .map((k) => [tableToken(k), k] as const),
-        ...graph.value.all
-          .filter((n) => next.has(n.token))
-          .map((n) => [n.token, n.key] as const),
-      ]).values(),
-    ];
-    const accepted = await requestSelection(keys);
-    if (accepted) emit("selectAll", getSelectionRows(), yes);
+    const accepted = await commitSelection(next);
+    if (accepted) {
+      const changed = pageNodes.filter(({ token }) => previous.has(token) !== next.has(token));
+      emit("selectAll", getSelectionRows(), yes, changed.map(({ row }) => row));
+    }
     return accepted;
   }
   async function invertSelection() {
@@ -581,19 +595,25 @@ export function useTable<T extends object>(
     for (const node of selectionPage.value)
       if (props.checkStrictly !== false || !node.children.some(eligible))
         next.has(node.token) ? next.delete(node.token) : next.add(node.token);
-    cascade(next);
-    const keys = [
-      ...new Map([
-        ...selectedKeys.value
-          .filter((k) => next.has(tableToken(k)))
-          .map((k) => [tableToken(k), k] as const),
-        ...graph.value.all
-          .filter((n) => next.has(n.token))
-          .map((n) => [n.token, n.key] as const),
-      ]).values(),
-    ];
-    const accepted = await requestSelection(keys);
+    const accepted = await commitSelection(next);
     if (accepted) emit("selectInvert", getSelectionRows(), selectedKeys.value);
+    return accepted;
+  }
+  async function selectPage(keys: readonly HysTableKey[], nodes = selectionPage.value) {
+    if (props.selectionType === "radio" || busy.value || !live.value) return false;
+    const requested = new Set(keys.map(tableToken));
+    const next = new Set(selectedSet.value);
+    for (const node of nodes) {
+      const current = graph.value.map.get(node.token);
+      if (current?.row !== node.row || !eligible(current)) continue;
+      requested.has(node.token) ? next.add(node.token) : next.delete(node.token);
+    }
+    return commitSelection(next);
+  }
+  async function clearSelection() {
+    const changed = selectedKeys.value.length > 0;
+    const accepted = await requestSelection([]);
+    if (changed && accepted) emit("selectNone");
     return accepted;
   }
   async function setCurrentRow(value?: T | HysTableKey | null) {
@@ -788,6 +808,7 @@ export function useTable<T extends object>(
     eligible,
     allSelected,
     someSelected,
+    selectionPage,
     sorts,
     filters,
     processed,
@@ -795,7 +816,8 @@ export function useTable<T extends object>(
     display,
     page,
     pageSize,
-    total,
+    pageCount,
+    paginationTotal,
     pagination,
     currentKey,
     currentRow,
@@ -803,6 +825,7 @@ export function useTable<T extends object>(
     pending,
     loadErrors,
     canExpand,
+    nextSortOrder,
     toggleSort,
     setSort,
     setFilter,
@@ -812,7 +835,8 @@ export function useTable<T extends object>(
     toggleRowSelection,
     toggleAllSelection,
     invertSelection,
-    clearSelection: () => requestSelection([]),
+    clearSelection,
+    selectPage,
     getSelectionRows,
     getHalfSelectionRows: () =>
       graph.value.all
