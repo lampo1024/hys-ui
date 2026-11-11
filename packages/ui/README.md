@@ -1,31 +1,94 @@
 # HYS UI
 
-面向 Vue 3.5+ 的组件库，提供 TypeScript 类型、主题配置和独立的中文交互文档。
+HYS UI 是面向管理后台和业务应用的 Vue 3 组件库。用它搭建筛选表单、数据列表和项目排期界面。组件支持按需导入、TypeScript 类型提示和主题定制。
 
-[在线文档与交互示例](https://lampo1024.github.io/hys-ui/)
+[在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [npm](https://www.npmjs.com/package/hys-ui) · [更新记录](https://github.com/lampo1024/hys-ui/blob/main/packages/ui/CHANGELOG.md)
 
-## 安装
+## 按场景找组件
+
+每个组件的文档都可以直接试用。展开示例即可复制 Vue 源码，属性、事件和插槽见该页的 API 参考。
+
+| 场景 | 可以做什么 | 在线示例 |
+| --- | --- | --- |
+| 表单与输入 | 配置字段联动、异步校验、远程搜索和多选。 | [表单](https://lampo1024.github.io/hys-ui/components/hys-form/) · [下拉选择](https://lampo1024.github.io/hys-ui/components/hys-select/) · [自动补全](https://lampo1024.github.io/hys-ui/components/hys-autocomplete/) |
+| 层级与批量选择 | 按层级挑选分类，在两侧列表之间批量移动成员。 | [树形选择](https://lampo1024.github.io/hys-ui/components/hys-tree-select/) · [穿梭框](https://lampo1024.github.io/hys-ui/components/hys-transfer/) |
+| 日期与排期 | 按日期或周筛选，拖动甘特任务、连接前置依赖、查看排期冲突。 | [日期选择](https://lampo1024.github.io/hys-ui/components/hys-date-picker/) · [日期范围](https://lampo1024.github.io/hys-ui/components/hys-date-range-picker/) · [甘特图](https://lampo1024.github.io/hys-ui/components/hys-gantt/) |
+| 弹层与反馈 | 在对话框中编辑长表单，用抽屉查看详情，用轻提示反馈操作结果。 | [对话框](https://lampo1024.github.io/hys-ui/components/hys-modal/) · [抽屉](https://lampo1024.github.io/hys-ui/components/hys-drawer/) · [轻提示](https://lampo1024.github.io/hys-ui/components/hys-toast/) |
+| 文件与进度 | 选择文件、控制上传队列，显示进度、失败和重试状态。 | [文件上传](https://lampo1024.github.io/hys-ui/components/hys-upload/) · [进度条](https://lampo1024.github.io/hys-ui/components/hys-progress/) |
+
+### 三种表格怎么选
+
+- **`HysTable`** 适合常规列表和树形数据。支持固定列、展开行、合并单元格、表尾汇总和分页。[表格示例](https://lampo1024.github.io/hys-ui/components/hys-table/)
+- **`HysDataGrid`** 适合让用户自行筛选和整理数据。支持按列搜索、拖拽调整列顺序、列显隐、分组、CSV 导出和服务端查询。[高级表格示例](https://lampo1024.github.io/hys-ui/components/hys-data-grid/)
+- **`HysVirtualTable`** 适合需要连续滚动的大数据列表。按视口渲染行，也可开启列虚拟化。支持固定行列和滚动加载。[虚拟表格示例](https://lampo1024.github.io/hys-ui/components/hys-virtual-table/)
+
+例如，任务管理页可以用日期范围和多选下拉框筛选任务，用高级表格展示结果，用对话框编辑记录。需要调整计划时，可以在甘特图里拖动任务、查看前置依赖和撤销排期修改。
+
+## 快速开始
+
+适用于 Vue 3.5+ 浏览器应用。通过 ESM 命名导入使用组件，无需全局注册或安装 Vue Router。
 
 ```bash
 npm install hys-ui
 ```
 
+把下面的任务状态选择示例放到任意 Vue 页面即可运行。项目中可以把 `hys-ui/style.css` 移到应用入口统一导入。
+
 ```vue
 <script setup lang="ts">
-import { HysButton } from 'hys-ui'
+import { ref } from 'vue'
+import { HysSelect } from 'hys-ui'
 import 'hys-ui/style.css'
+
+const status = ref('all')
+const options = [
+  { label: '全部状态', value: 'all' },
+  { label: '待办', value: 'todo' },
+  { label: '进行中', value: 'in-progress' },
+  { label: '已完成', value: 'done' },
+]
 </script>
 
 <template>
-  <HysButton round @click="console.log('confirmed')">确认</HysButton>
+  <HysSelect v-model="status" :options="options" aria-label="任务状态" />
+  <p>当前状态值：{{ status }}</p>
 </template>
 ```
 
-通过命名导入按需使用组件。组件源码、文件名、导出名统一采用 `HysXxxxx`。ESM 包的 Vue peer dependency 为 `>=3.5.0 <4`，无需 Vue Router。图标使用 Lucide outline，宿主项目可以传入自有图标。
+## 用轻提示反馈操作结果
 
-## 主题和动效
+在组件的 `<script setup>` 里调用 `useHysToast()`，即可在保存、上传等操作后显示提示。下面用定时器模拟上传，完成后更新同一条消息。
 
-在根组件 setup 中调用，参数可以是响应式 ref 或 getter。配置会传递给子组件与 Teleport 浮层。
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { HysButton, useHysToast } from 'hys-ui'
+import 'hys-ui/style.css'
+
+const toast = useHysToast()
+const uploading = ref(false)
+
+async function simulateUpload() {
+  uploading.value = true
+  const message = toast.loading('正在上传…')
+
+  await new Promise(resolve => setTimeout(resolve, 700))
+
+  message.update({ type: 'success', message: '上传完成', duration: 2000 })
+  uploading.value = false
+}
+</script>
+
+<template>
+  <HysButton :loading="uploading" @click="simulateUpload">模拟上传</HysButton>
+</template>
+```
+
+轻提示默认在顶部居中。可设置显示位置、停留时长和队列上限，也可以合并重复消息。[轻提示 API 与示例](https://lampo1024.github.io/hys-ui/components/hys-toast/)
+
+## 主题与动效
+
+在根组件的 `<script setup>` 中调用 `provideHysConfig`，下级组件及其浮层会继承配置。主题支持响应式切换。
 
 ```ts
 import { ref } from 'vue'
@@ -35,76 +98,8 @@ const theme = ref<HysTheme>('blue')
 provideHysConfig({ theme, motion: 'subtle' })
 ```
 
-主题支持 `blue / dark / green / purple / orange / forest`，动效支持 `full / subtle / off`，系统减少动态效果设置优先。组件库不会写入浏览器存储或修改全局页面主题。
+内置主题有 `blue`、`dark`、`green`、`purple`、`orange` 和 `forest`。可用 `--hys-ui-primary`、`--hys-ui-surface` 等 CSS 变量调整外观。动效可设为 `full`、`subtle` 或 `off`，并遵循系统的减少动态效果设置。支持浮层动效的组件还可以单独设置 `popup-transition` 和 `popup-transition-duration`。
 
-可以使用 `--hys-ui-primary`、`--hys-ui-surface`、`--hys-ui-text`、`--hys-ui-border`、`--hys-ui-font-family` 等公开变量覆盖组件外观。组件类名与变量采用独立前缀，没有 body/html 全局重置。
+## 源码与问题反馈
 
-
-浮层组件统一通过 `popupTransition` 设置展开与收起动效：`scale`（默认柔和缩放）、`fade`（淡入淡出）、`slide`（轻移）、`slide-fade`（轻移缩放）、`none`（关闭）。`popupTransitionDuration` 设置时长，默认 160ms，设为 0 立即切换。该配置适用于选择、日期、自动补全、提及、颜色、提示、菜单，以及表格、树形、头像组、日历事件和甘特图关系等浮层。Modal、Drawer 和 Toast 保留各自的动画配置。
-
-```vue
-<HysSelect
-  v-model="value"
-  :options="options"
-  popup-transition="slide-fade"
-  :popup-transition-duration="200"
-/>
-```
-
-系统减少动态效果和 `motion: 'off'` 优先于局部设置；内嵌日期面板不播放浮层动效。动画仅改变透明度和合成层变换，关闭时立即停止交互，退出完成后移除内容。
-
-## 开发与文档
-
-```bash
-npm install
-npm run dev:docs
-```
-
-访问 http://127.0.0.1:5174。每个组件有独立路由、运行场景、源码、API 与说明，页面状态通过 KeepAlive 保留。API 从源码生成。
-
-- `packages/ui`：唯一的组件源码及 npm 包。
-- `apps/docs`：独立组件文档与交互示例。
-- `tests`：核心行为回归。
-- `scripts`：元信息提取、完整性检查、打包与发布验证。
-
-```bash
-npm run build:ui
-npm run build:docs
-npm test
-npm run check:contracts
-npm run check:release
-```
-
-`build:docs` 输出到 `apps/docs/dist`，部署服务需要将未知路径回退到 `index.html`。
-
-## 轻提示
-
-轻提示默认显示在顶部中间，支持七种位置、五种状态和自定义内容。
-
-```ts
-import { useHysToast } from 'hys-ui'
-
-// 在组件 setup 中使用
-const toast = useHysToast({ maxCount: 5 })
-toast.success('保存成功')
-const task = toast.loading('正在上传…')
-task.update({ type: 'success', message: '上传完成', duration: 2000 })
-```
-
-## 发布
-
-根工作区和文档应用为私有，npm 包名为 `hys-ui`，版本 `0.3.0`，MIT 公开发布。
-
-```bash
-npm run pack:ui
-npm login --registry=https://registry.npmjs.org/
-npm run release:ui
-```
-
-发布流程先执行全部检查、打包和仓库外安装验证，再检查登录账号、包名/版本及压缩包 SHA256，发布同一个已验证压缩包到 `latest`。凭证通过 npm 本地交互管理，不写入仓库。
-
-后续版本按语义化版本发布，并更新 CHANGELOG。暂不承诺 SSR/Nuxt 支持。
-
-## 许可证
-
-[MIT](LICENSE)
+[GitHub 仓库](https://github.com/lampo1024/hys-ui) · [提交问题](https://github.com/lampo1024/hys-ui/issues) · [MIT 许可证](https://github.com/lampo1024/hys-ui/blob/main/LICENSE)
