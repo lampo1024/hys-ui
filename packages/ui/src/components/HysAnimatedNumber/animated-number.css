@@ -1,0 +1,98 @@
+.hys-ui-motion-number {
+  position: relative;
+  display: inline-flex;
+  max-inline-size: 100%;
+  flex-direction: column;
+  align-items: var(--hys-number-align, flex-start);
+  gap: var(--hys-number-gap, 4px);
+  vertical-align: var(--hys-number-vertical-align, middle);
+}
+.hys-ui-motion-number[role="button"] {
+  cursor: pointer;
+}
+.hys-ui-motion-number:focus-visible {
+  outline: 2px solid var(--hys-ui-theme-primary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.hys-ui-motion-number-title {
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+  font-size: 0.85em;
+}
+.hys-ui-motion-number-value {
+  display: inline-flex;
+  max-inline-size: 100%;
+  inline-size: var(--hys-number-width, auto);
+  align-items: baseline;
+  gap: var(--hys-number-affix-gap, 0.2em);
+  font: var(--hys-number-font, inherit);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--hys-number-letter-spacing, normal);
+  color: var(--hys-number-color, inherit);
+  background: var(--hys-number-bg, transparent);
+  text-shadow: var(--hys-number-shadow, none);
+  -webkit-text-stroke: var(--hys-number-stroke, 0);
+}
+[data-tone="up"] {
+  --hys-number-color: var(
+    --hys-number-positive,
+    color-mix(in srgb, var(--hys-ui-theme-green) 62%, var(--hys-ui-theme-text))
+  );
+}
+[data-tone="down"] {
+  --hys-number-color: var(
+    --hys-number-negative,
+    color-mix(in srgb, var(--hys-ui-theme-red) 70%, var(--hys-ui-theme-text))
+  );
+}
+.hys-ui-motion-number-layout {
+  min-inline-size: 0;
+}
+.hys-number-stable {
+  display: inline-grid;
+}
+.hys-number-stable > span {
+  grid-area: 1 / 1;
+}
+.hys-number-measure {
+  visibility: hidden;
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+.hys-ui-motion-number-content {
+  display: inline-block;
+  overflow-wrap: anywhere;
+  transform-origin: var(--hys-number-origin, center);
+  border-radius: 0.15em;
+  background-color: color-mix(
+    in srgb,
+    var(--hys-number-highlight-color, var(--hys-ui-theme-primary))
+      calc(var(--hys-number-highlight, 0) * 20%),
+    transparent
+  );
+  color: color-mix(
+    in srgb,
+    currentColor calc(100% - var(--hys-number-gradient, 0) * 65%),
+    var(--hys-number-gradient-color, var(--hys-ui-theme-primary))
+  );
+}
+.hys-ui-motion-number-prefix {
+  color: var(--hys-number-prefix-color, inherit);
+}
+.hys-ui-motion-number-suffix {
+  color: var(--hys-number-suffix-color, inherit);
+}
+.hys-ui-motion-number-unit {
+  color: var(--hys-number-unit-color, inherit);
+}
+:deep(.hys-ui-motion-number-separator) {
+  color: var(--hys-number-separator-color, inherit);
+}
+.hys-number-live {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -114,7 +114,16 @@
       "Contexts": "对话框、抽屉与浮层挂载"
     },
     "HysAnimatedNumber": {
-      "Statistic": "精确数值格式与倒计时"
+      "Basic": "跨零计数",
+      "Configure": "时长、延迟与缓动",
+      "Controls": "播放控制与进度",
+      "Effects": "逐位效果与组合动效",
+      "Formatting": "地区、单位与舍入",
+      "Statistic": "高精度金额与翻牌倒计时",
+      "Triggers": "播放触发条件",
+      "Realtime": "实时更新与趋势",
+      "Styling": "主题、插槽与无障碍",
+      "Composition": "指标、图表与进度联动"
     },
     "HysPagination": {
       "Bounds": "页码边界与快速跳转",

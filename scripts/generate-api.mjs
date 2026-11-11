@@ -196,10 +196,6 @@ for(const name of fs.readdirSync(dir).sort()){
   for(const event of api[name].events)event.description=events[event.name]||event.description
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
- if(name==='HysAnimatedNumber'){
-  const props={value:'数字值可播放动画，字符串支持高精度小数',precision:'显式指定小数位数，优先于 decimals',groupSeparator:'千分位分隔符',decimalSeparator:'小数点符号，默认句点',deadline:'启用倒计时，传 Date 或 Unix 毫秒时间戳',format:'倒计时支持 D、HH、mm、ss 和 SSS 等标记，字面文本用方括号包裹',formatter:'接收当前显示值、格式化文本和剩余毫秒'}
-  for(const prop of api[name].props)prop.description=props[prop.name]||prop.description
- }
  if(name==='HysAutocomplete'){
   const file=ts.createSourceFile('autocomplete.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/autocomplete.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(node=>ts.isInterfaceDeclaration(node)&&node.name.text==='HysAutocompleteInstance')
   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
