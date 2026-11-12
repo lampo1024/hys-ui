@@ -129,8 +129,6 @@
 .hys-ui-modal-motion-enter-from,.hys-ui-modal-motion-leave-to,.hys-ui-drawer-motion-enter-from,.hys-ui-drawer-motion-leave-to {opacity:0;}
 .hys-ui-modal-motion-enter-from .hys-ui-modal,.hys-ui-modal-motion-leave-to .hys-ui-modal {transform:translateY(var(--hys-ui-motion-shift)) scale(.98);opacity:0;}
 .hys-ui-drawer-motion-enter-from .hys-ui-drawer,.hys-ui-drawer-motion-leave-to .hys-ui-drawer {transform:translate(var(--hys-ui-drawer-enter-x,100%),var(--hys-ui-drawer-enter-y,0px));}
-.hys-ui-toast-motion-enter-active,.hys-ui-toast-motion-leave-active {transition:opacity var(--hys-ui-motion-base) ease,transform var(--hys-ui-motion-base) var(--hys-ui-motion-ease);}
-.hys-ui-toast-motion-enter-from,.hys-ui-toast-motion-leave-to {opacity:0;transform:translate(var(--hys-ui-toast-x,0px),var(--hys-ui-toast-y,0px)) translateY(var(--hys-ui-toast-shift,-8px)) scale(.97);}
 .hys-ui-motion-progress {transition:width var(--hys-ui-motion-slow) var(--hys-ui-motion-ease),background-color var(--hys-ui-motion-base) ease;}
 .hys-ui-kanban-motion-move,.hys-ui-sort-motion-move {transition:transform var(--hys-ui-motion-base) var(--hys-ui-motion-ease);}
 .hys-ui-kanban-motion-enter-active,.hys-ui-kanban-motion-leave-active {transition:opacity var(--hys-ui-motion-base) ease,transform var(--hys-ui-motion-base) var(--hys-ui-motion-ease);}
@@ -146,7 +144,7 @@
 .hys-ui-page-motion-leave-to { opacity: 0; }
 .hys-ui-icon-action, .hys-ui-btn { transition-property: background-color, color, border-color, box-shadow, opacity, transform; transition-duration: var(--hys-ui-motion-fast); transition-timing-function: var(--hys-ui-motion-ease); }
 @media (hover: hover) and (pointer: fine) {
-  .hys-ui-icon-action:not(:disabled):hover { transform: translateX(2px); }
+  .hys-ui-icon-action:not(:disabled, .hys-ui-dialog-close):hover { transform: translateX(2px); }
   .hys-ui-btn:not(:disabled):active { transform: scale(.985); }
 }
 @media (prefers-reduced-motion: reduce) { }

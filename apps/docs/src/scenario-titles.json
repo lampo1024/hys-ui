@@ -74,6 +74,30 @@
     "PopupMotion": "浮层展开与收起动效"
   },
   "components": {
+    "HysToast": {
+      "Basic": "常用消息类型",
+      "Configure": "显示与关闭设置",
+      "Positions": "七种视口位置",
+      "Service": "按 ID 更新与关闭",
+      "Queue": "等待队列与优先级",
+      "Tasks": "异步任务与业务反馈",
+      "Interactions": "关闭条件、计时与交互",
+      "Stack": "层叠预览与独立容器",
+      "Motion": "进场与退场动画",
+      "Appearance": "外观、长内容与本地化",
+      "Content": "声明式富文本与插槽"
+    },
+    "HysSortableList": {
+      "Basic": "任务列表与动态增删",
+      "Configure": "插入、交换与权限",
+      "Layouts": "图片网格、横向标签与菜单",
+      "Board": "看板排序与批量跨列",
+      "Table": "表格行列排序",
+      "Tree": "目录树与跨层移动",
+      "History": "异步保存、回滚与历史",
+      "Virtual": "大列表与边缘自动滚动",
+      "Custom": "自定义预览、主题与动效"
+    },
     "HysButton": {
       "Basic": "基础样式与禁用",
       "Palette": "内置配色",

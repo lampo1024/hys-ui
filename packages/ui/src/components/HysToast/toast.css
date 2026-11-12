@@ -1,0 +1,269 @@
+.hys-ui-toast {
+  inset: auto;
+  display: grid;
+  grid-template-columns: [icon] auto [message] minmax(
+      0,
+      1fr
+    ) [repeat] auto [actions] auto [countdown] auto [close] auto;
+  align-items: center;
+  width: max-content;
+  box-sizing: border-box;
+  pointer-events: auto;
+  transform: translateX(var(--hys-toast-drag-x, 0px));
+  opacity: var(--hys-toast-drag-opacity, 1);
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+.hys-ui-toast.hys-ui-toast-inline {
+  position: relative;
+  inset: auto;
+  max-width: 100%;
+}
+.hys-ui-toast-content {
+  grid-area: 1 / message;
+  min-width: 0;
+}
+.hys-ui-toast-title {
+  font-weight: 650;
+  margin-block-end: 2px;
+  overflow-wrap: anywhere;
+}
+.hys-ui-toast-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+  max-block-size: min(50dvh, 24rem);
+  overflow: auto;
+}
+.hys-ui-toast-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--hys-toast-lines);
+  overflow: hidden;
+}
+.hys-ui-toast-icon {
+  grid-area: 1 / icon;
+  display: inline-flex;
+  margin-inline-end: 10px;
+  color: var(--hys-ui-green, var(--hys-ui-theme-green));
+}
+.hys-ui-toast-error .hys-ui-toast-icon {
+  color: var(--hys-ui-red, var(--hys-ui-theme-red));
+}
+.hys-ui-toast-warning .hys-ui-toast-icon {
+  color: var(--hys-ui-orange, var(--hys-ui-theme-orange));
+}
+.hys-ui-toast-info .hys-ui-toast-icon,
+.hys-ui-toast-loading .hys-ui-toast-icon,
+.hys-ui-toast-custom .hys-ui-toast-icon {
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+}
+.hys-ui-toast-close,
+.hys-ui-toast-text-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+.hys-ui-toast-close:hover,
+.hys-ui-toast-text-action:hover {
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+}
+.hys-ui-toast :is(button, a):focus-visible,
+.hys-ui-toast:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 2px;
+}
+.hys-ui-toast-text-action {
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  font: inherit;
+  padding: 3px 6px;
+}
+.hys-ui-toast-text-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.hys-ui-toast-dismiss {
+  grid-area: 1 / close;
+  margin-inline-start: 8px;
+}
+.hys-ui-toast-repeat {
+  grid-area: 1 / repeat;
+  margin-inline-start: 8px;
+  border-radius: 10px;
+  background: var(--hys-ui-primary-soft, var(--hys-ui-theme-primary-soft));
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  padding: 1px 6px;
+  font-size: 11px;
+}
+.hys-ui-toast-action {
+  grid-area: 1 / actions;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline-start: 8px;
+}
+.hys-ui-toast-action-footer {
+  grid-area: 3 / 1 / auto / -1;
+  justify-content: flex-end;
+  margin: 8px 0 0;
+}
+.hys-ui-toast-footer {
+  margin-block-start: 6px;
+}
+.hys-ui-toast-countdown,
+.hys-ui-toast-copy-status {
+  align-self: center;
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+  font-size: 11px;
+}
+.hys-ui-toast-countdown {
+  grid-area: 1 / countdown;
+  margin-inline-start: 8px;
+  max-inline-size: 7rem;
+  overflow-wrap: anywhere;
+}
+.hys-ui-toast-plain {
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+}
+.hys-ui-toast-glass {
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-surface, var(--hys-ui-theme-surface)) 82%,
+    transparent
+  );
+  backdrop-filter: blur(14px);
+}
+.hys-ui-toast-progress {
+  grid-area: 4 / 1 / auto / -1;
+  margin-block-start: 8px;
+  block-size: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(
+    --hys-toast-progress-track,
+    var(--hys-ui-border, var(--hys-ui-theme-border))
+  );
+}
+.hys-ui-toast-progress > span {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(
+    --hys-toast-progress-color,
+    var(--hys-ui-primary, var(--hys-ui-theme-primary))
+  );
+  transition: inline-size 100ms linear;
+}
+.hys-ui-toast-progress-indeterminate > span {
+  inline-size: 36%;
+  animation: hys-toast-progress 1.2s ease-in-out infinite alternate;
+}
+.hys-ui-toast-swipe {
+  touch-action: pan-y;
+}
+.hys-ui-toast-clickable {
+  cursor: pointer;
+}
+.hys-ui-toast-dragging {
+  user-select: none;
+  transition: none;
+}
+.hys-toast-enter-enter-active,
+.hys-toast-enter-leave-active {
+  transition:
+    opacity var(--hys-toast-motion-duration) var(--hys-toast-motion-easing),
+    transform var(--hys-toast-motion-duration) var(--hys-toast-motion-easing);
+}
+.hys-toast-enter-leave-active {
+  pointer-events: none;
+}
+.hys-toast-enter-enter-from {
+  opacity: var(--hys-toast-motion-opacity);
+  transform: var(--hys-toast-enter);
+}
+.hys-toast-enter-leave-to {
+  opacity: var(--hys-toast-motion-opacity);
+  transform: translateX(var(--hys-toast-drag-x, 0px)) var(--hys-toast-leave);
+}
+.hys-ui-toast-bounce.hys-toast-enter-enter-active {
+  transition: none;
+  animation: hys-toast-bounce var(--hys-toast-motion-duration)
+    var(--hys-toast-motion-easing) both;
+}
+@keyframes hys-toast-bounce {
+  0% {
+    opacity: 0;
+    transform: var(--hys-toast-enter);
+  }
+  55% {
+    opacity: 1;
+    transform: var(--hys-toast-recoil) scale(1.025);
+  }
+  78% {
+    transform: scale(0.986);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hys-ui-toast-spinner {
+  animation: hys-toast-spin 1s linear infinite;
+}
+@keyframes hys-toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hys-toast-progress {
+  to {
+    transform: translateX(178%);
+  }
+}
+.hys-ui-toast[data-hys-motion="off"],
+.hys-ui-toast[data-hys-motion="off"] * {
+  transition-duration: 0ms;
+  animation-duration: 0ms;
+}
+@media (max-width: 480px) {
+  .hys-ui-toast-action {
+    grid-area: 3 / 1 / auto / -1;
+    justify-content: flex-end;
+    margin: 8px 0 0;
+  }
+  .hys-ui-toast-countdown {
+    grid-area: 2 / message / auto / -1;
+    margin: 4px 0 0;
+    max-inline-size: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hys-ui-toast,
+  .hys-ui-toast.hys-ui-toast-bounce,
+  .hys-ui-toast * {
+    transition-duration: 0ms;
+    animation-duration: 0ms;
+  }
+}
+@media (forced-colors: active) {
+  .hys-ui-toast {
+    border: 1px solid CanvasText;
+  }
+  .hys-ui-toast-progress {
+    outline: 1px solid CanvasText;
+  }
+  .hys-ui-toast-progress > span {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}

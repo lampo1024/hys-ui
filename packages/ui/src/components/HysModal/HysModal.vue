@@ -410,7 +410,7 @@ defineExpose({
               <button
                 v-if="showClose"
                 type="button"
-                class="hys-ui-icon-action"
+                class="hys-ui-icon-action hys-ui-dialog-close"
                 :aria-label="closeText"
                 :disabled="
                   modal.closing.value ||

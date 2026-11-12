@@ -259,6 +259,34 @@ test("Non-enterable tooltip ignores panel hover and closes on trigger exit", asy
   await wait(30);
   assert(!a.panel);
 });
+test("Moving quickly between tooltip triggers still hides the previous tooltip", async () => {
+  const first = await mount("Tooltip", { hideDelay: 30, open: false });
+  const second = await mount("Tooltip");
+  await fire(first.reference, "pointerenter");
+  await fire(first.reference, "pointerleave");
+  await fire(second.reference, "pointerenter");
+  assert(first.panel);
+  assert(second.panel);
+  await until(() => !first.panel);
+  assert.equal(first.props.open, false);
+  assert.equal(first.count("hide"), 1);
+  assert(second.panel);
+  await fire(second.reference, "pointerleave");
+  await until(() => !second.panel);
+});
+test("Focus-triggered tooltip closes on blur beneath another overlay", async () => {
+  const tooltip = await mount("Tooltip", { trigger: "focus", hideDelay: 0 });
+  const popover = await mount("Popover");
+  tooltip.reference.focus();
+  await settle();
+  assert(tooltip.panel);
+  await popover.vm.show();
+  assert(popover.panel);
+  popover.reference.focus();
+  await settle();
+  assert(!tooltip.panel);
+  assert(popover.panel);
+});
 test("Mixed hover/focus trigger remains open while focused after pointer exit", async () => {
   const a = await mount("Tooltip", { hideDelay: 0 });
   a.reference.focus();

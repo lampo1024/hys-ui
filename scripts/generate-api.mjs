@@ -7,6 +7,7 @@ import {applyTagColorApi} from './tag-color-api.mjs'
 import {applyVirtualTableApi} from './virtual-table-api.mjs'
 import {applyFeedbackApi} from './feedback-api.mjs'
 import {applyApiDescriptions} from './api-descriptions.mjs'
+import {applyToastApi} from './toast-api.mjs'
 const root=fileURLToPath(new URL('..',import.meta.url)),require=createRequire(import.meta.url)
 const {createChecker}=require('vue-component-meta')
 const checker=createChecker(path.join(root,'packages/ui/tsconfig.json'),{schema:true})
@@ -373,11 +374,7 @@ for(const name of fs.readdirSync(dir).sort()){
   const slots={item:'自定义标签：item、原始 index、current；默认显示 icon 与 label',link:'适配宿主导航：item、原始 index、current、attrs；菜单内复用，绑定 attrs 保留键盘行为',separator:'逐项分隔符：item、原始 index',overflow:'折叠入口内容，接收被折叠的原始 items'}
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
- if(name==='HysToast'){
-  const text={message:'提示文本，可使用默认插槽自定义内容',duration:'自动关闭时长（毫秒）；普通状态默认 3000，loading 默认 0。0 表示不自动关闭',type:'success、info、warning、error、loading 五种状态',position:'七种显示位置，默认 top-center；top/bottom 为兼容别名',offset:'与窗口边缘的距离，单位 px',zIndex:'浮层层级',showIcon:'显示状态图标，可通过 icon 插槽替换',pauseOnHover:'鼠标悬停时暂停剩余关闭时间',closeOnEscape:'按 Escape 关闭最近一条允许关闭的提示',repeat:'重复次数，大于 1 时显示次数标记',plain:'使用柔和背景',teleport:'是否渲染到浮层容器，false 时在原位置显示',appendTo:'浮层挂载目标，默认 body'}
-  for(const prop of api[name].props)if(text[prop.name])prop.description=text[prop.name]
-  for(const event of api[name].events)event.description=event.name==='close'?'开始关闭时触发':event.name==='afterClose'?'退出动画结束后触发':event.description
- }
+ if(name==='HysToast')applyToastApi(api[name])
  if(name==='HysUpload'){
   const file=ts.createSourceFile('upload.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/upload.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(s=>ts.isInterfaceDeclaration(s)&&s.name.text==='HysUploadInstance')
   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
@@ -403,6 +400,23 @@ for(const name of fs.readdirSync(dir).sort()){
  applyFeedbackApi(name,api[name],root)
  applyTagColorApi(name,api[name],root)
  applyVirtualTableApi(name,api[name],root)
+ if (name === 'HysSortableList') {
+   const sourcePath = path.join(dir, name, 'sortableList.ts')
+   const source = ts.createSourceFile(sourcePath, fs.readFileSync(sourcePath, 'utf8'), ts.ScriptTarget.Latest, true)
+   const instance = source.statements.find(node => ts.isInterfaceDeclaration(node) && node.name.text === 'HysSortableListInstance')
+   if (!instance) throw Error('Missing HysSortableListInstance')
+   api[name].exposed = instance.members.map(member => ({
+     name: member.name.getText(source),
+     type: member.type.getText(source),
+     required: !member.questionToken,
+     default: '',
+     description: '',
+   }))
+   for (const prop of api[name].props) {
+     if (prop.name === 'itemKey') prop.default = '"id"'
+     if (prop.name === 'itemLabel') prop.default = '"label"'
+   }
+ }
  if (name === "HysDataGrid") {
    const file = ts.createSourceFile(
      "dataGrid.ts",

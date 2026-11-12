@@ -201,9 +201,24 @@ defineExpose({
 .hys-ui-search-sm .hys-ui-ex-search { min-height: 30px; padding-block: 4px; font-size: 12px; }
 .hys-ui-search-md .hys-ui-ex-search { min-height: 38px; font-size: 13px; }
 .hys-ui-search-lg .hys-ui-ex-search { min-height: 44px; font-size: 15px; }
+.hys-ui-search-joined {
+  border-radius: 9px;
+}
 .hys-ui-search-joined .hys-ui-ex-search {
   border-start-end-radius: 0;
   border-end-end-radius: 0;
+}
+.hys-ui-search-joined > .hys-ui-ex-search:focus-within {
+  outline: none;
+}
+.hys-ui-search-joined:has(> .hys-ui-ex-search:focus-within) {
+  outline: 1px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  box-shadow: 0 0 0 3px
+    color-mix(
+      in srgb,
+      var(--hys-ui-primary, var(--hys-ui-theme-primary)) 14%,
+      transparent
+    );
 }
 .hys-ui-search-submit {
   flex: none;

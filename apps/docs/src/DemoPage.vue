@@ -31,6 +31,8 @@ import FeedbackTimelineReference from './FeedbackTimelineReference.vue'
 import TagColorReference from './TagColorReference.vue'
 import VirtualTableReference from './VirtualTableReference.vue'
 import AnimatedNumberReference from './components/AnimatedNumberReference/AnimatedNumberReference.vue'
+import SortableListReference from './components/SortableListReference/SortableListReference.vue'
+import ToastReference from './components/ToastReference/ToastReference.vue'
 import {useDocToc} from './useDocToc'
 import type {ExampleSourceData} from './sourceTypes'
 import {catalog} from './catalog'
@@ -68,9 +70,13 @@ const surfaceOrder:Record<string,string[]>={HysPagination:["Basic","Configure","
 function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');if(scene==='PopupMotion')return 95;if(props.name==='HysVirtualTable')return Math.max(0,virtualTableOrder.indexOf(scene));return tagColorOrder[props.name]?Math.max(0,tagColorOrder[props.name].indexOf(scene)):feedbackOrder[props.name]?Math.max(0,feedbackOrder[props.name].indexOf(scene)):surfaceOrder[props.name]?Math.max(0,surfaceOrder[props.name].indexOf(scene)):props.name==='HysTable'?Math.max(0,tableOrder.indexOf(scene)):props.name==='HysCalendar'?Math.max(0,calendarOrder.indexOf(scene)):props.name==='HysGantt'?Math.max(0,ganttOrder.indexOf(scene)):props.name==='HysProgress'?Math.max(0,progressOrder.indexOf(scene)):props.name==='HysUpload'?Math.max(0,uploadOrder.indexOf(scene)):props.name==='HysRating'?Math.max(0,ratingOrder.indexOf(scene)):props.name==='HysSegmented'?Math.max(0,segmentedOrder.indexOf(scene)):['HysCheckbox','HysCheckboxGroup','HysRadio','HysRadioGroup','HysSwitch'].includes(props.name)?Math.max(0,choiceOrder.indexOf(scene)):props.name==='HysAutocomplete'?Math.max(0,autocompleteOrder.indexOf(scene)):props.name==='HysAvatar'||props.name==='HysAvatarGroup'?Math.max(0,avatarOrder.indexOf(scene)):props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
 const buttonOrder=['Basic','Palette','Links','Features','Group','Actions','Async','Color','Form','Configure']
 const animatedNumberOrder=['Basic','Configure','Controls','Effects','AnimationCatalog','Formatting','Statistic','Triggers','Activation','Realtime','Styling','Composition','Dashboard']
+const toastOrder=['Basic','Configure','Positions','Service','Queue','Tasks','Interactions','Stack','Motion','Appearance','Content']
+const sortableListOrder=['Basic','Configure','Layouts','Board','Table','Tree','History','Virtual','Custom']
 function rankExample(path:string) {
  const scene=path.split('/').pop()!.replace('.vue','')
  if(props.name==='HysAnimatedNumber')return animatedNumberOrder.indexOf(scene)
+ if(props.name==='HysToast')return toastOrder.indexOf(scene)
+ if(props.name==='HysSortableList')return sortableListOrder.indexOf(scene)
  return props.name==='HysButton' ? buttonOrder.indexOf(scene) : rank(path)
 }
 const scenarios=Object.keys(modules)
@@ -83,7 +89,7 @@ const scenarios=Object.keys(modules)
  })
 const articleRoot=ref<HTMLElement>(),tocRoot=ref<HTMLElement>()
 const compactContents=ref<HTMLDetailsElement>()
-const hasCompactContents=computed(()=>['HysAnimatedNumber','HysInput','HysTextarea'].includes(props.name))
+const hasCompactContents=computed(()=>['HysAnimatedNumber','HysInput','HysTextarea','HysSortableList'].includes(props.name))
 const tocState=useDocToc(articleRoot,tocRoot,()=>[...scenarios.map(s=>s.id),'api','capabilities','usage'])
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
@@ -149,10 +155,11 @@ function jumpToSection(event:MouseEvent){
   <UploadReference v-if="name==='HysUpload'"/>
   <ModalReference v-if="name==='HysModal'"/>
   <AnimatedNumberReference v-if="name==='HysAnimatedNumber'"/>
+  <SortableListReference v-if="name==='HysSortableList'"/>
   <section id="api" class="api-section"><h2>API 参考</h2><p>以下签名与默认值从组件源码生成。</p><HysTabs v-model="section" :items="[{label:'参数 Props',value:'props'},{label:'事件 Events',value:'events'},{label:'插槽 Slots',value:'slots'},{label:'实例方法',value:'exposed'}]"/>
    <p v-if="apiPending" role="status">正在加载接口信息…</p><div v-else-if="apiError" role="alert">{{apiError}} <HysButton size="sm" variant="ghost" @click="loadApi()">重新加载</HysButton></div><div v-else class="api-scroll"><table><thead><tr><th>名称</th><th>类型 / 签名</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr v-for="row in rows" :key="row.name"><td><code>{{row.name}}</code><span v-if="row.required" class="required">必填</span></td><td><code>{{row.type}}</code></td><td><code>{{row.default||'—'}}</code></td><td>{{row.description}}</td></tr><tr v-if="!rows.length"><td colspan="4">此组件未声明此类接口。</td></tr></tbody></table></div>
   </section>
-  <section v-if="name==='HysToast'" class="notes"><h2>调用 API</h2><p>在组件 setup 中调用 <code>useHysToast({maxCount:5})</code>，消息继承当前主题与动效，页面离开时自动清理。</p><div class="api-scroll"><table><thead><tr><th>方法</th><th>说明</th></tr></thead><tbody><tr><td><code>show(options | string)</code></td><td>创建提示，支持 id、content、icon、grouping、onClose 与 onAfterClose。</td></tr><tr><td><code>success / info / warning / error / loading</code></td><td>快捷创建对应状态。loading 默认保留，其余默认 3000ms。</td></tr><tr><td><code>handle.update(options | string)</code></td><td>更新原提示的内容、状态或配置；相同 id 会复用现有提示。</td></tr><tr><td><code>handle.close() / handle.closed</code></td><td>主动关闭，或等待退出动画完成。</td></tr><tr><td><code>createHysToast(config)</code></td><td>在 setup 外创建共享服务，可用于请求回调等场景。支持 theme、motion，结束时调用 dispose()。</td></tr><tr><td><code>closeAll()</code></td><td>关闭当前调用范围中的全部提示。</td></tr></tbody></table></div><p>调用配置还支持 <code>maxCount</code>（默认 5）、<code>appendTo</code> 及组件的显示参数。<code>grouping</code> 默认关闭，启用后合并相同位置、状态和文本的消息。位置参数使用七种标准值，原有 <code>top</code>、<code>bottom</code> 分别对应顶部中间和底部中间。</p></section>
+  <ToastReference v-if="name==='HysToast'"/>
   <section id="capabilities" class="notes"><h2>功能说明</h2><p>{{capability}}</p></section>
   <section id="usage" class="notes"><h2>使用说明</h2><ul><li v-for="note in entry.notes" :key="note">{{note}}</li><li>交互控件可通过 Tab 聚焦，浮层支持 Escape 关闭。减少动态效果设置优先于组件动效。</li><li>主题颜色通过 <code>--hys-ui-primary</code> 等变量覆盖，使用 <code>provideHysConfig</code> 可响应式切换主题与动效。</li></ul></section>
  </article>

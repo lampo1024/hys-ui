@@ -26,16 +26,17 @@ import type {
   HysPopupSurfaceProps,
   HysPopupReference,
 } from "./popupSurface";
+import {
+  popupFocusControls,
+  usePopupSurfaceInteractions,
+} from "./usePopupSurfaceInteractions";
+import { createPopupReferenceBinding } from "./popupReferenceBinding";
 const length = (value: number | string | undefined) =>
   typeof value === "number"
     ? Number.isFinite(value)
       ? Math.max(0, value) + "px"
       : undefined
     : value;
-const wait = (value: number | undefined) =>
-  Number.isFinite(value) ? Math.max(0, Math.min(30000, value!)) : 0;
-const controls =
-  'button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"]),[contenteditable="true"]';
 export function usePopupSurface(
   props: HysPopupSurfaceProps,
   kind: "tooltip" | "popover",
@@ -74,14 +75,14 @@ export function usePopupSurface(
   const nativeReference = computed(
     () =>
       !!referenceElement.value &&
-      (referenceElement.value.matches(controls) ||
-        !!referenceElement.value.querySelector(controls)),
+      (referenceElement.value.matches(popupFocusControls) ||
+        !!referenceElement.value.querySelector(popupFocusControls)),
   );
   function focusReference() {
     const root = actualReference.value;
-    (root?.matches(controls)
+    (root?.matches(popupFocusControls)
       ? root
-      : (root?.querySelector<HTMLElement>(controls) ?? wrapper.value)
+      : (root?.querySelector<HTMLElement>(popupFocusControls) ?? wrapper.value)
     )?.focus({ preventScroll: true });
   }
   function restoreReferenceFocus() {
@@ -166,37 +167,36 @@ export function usePopupSurface(
       return false;
     },
   });
-  let showTimer: ReturnType<typeof setTimeout> | undefined,
-    hideTimer: ReturnType<typeof setTimeout> | undefined,
-    autoTimer: ReturnType<typeof setTimeout> | undefined;
+  const interactions = usePopupSurfaceInteractions(props, kind, {
+    available,
+    anchor,
+    actualReference,
+    panel,
+    floating,
+    restoreReferenceFocus,
+    request,
+  });
+  const { handlers, tab } = interactions;
+  const externalBinding = createPopupReferenceBinding(kind, id, {
+    pointerenter: handlers.pointerEnter,
+    pointerleave: handlers.pointerLeave,
+    focusin: handlers.focusIn,
+    focusout: handlers.focusOut,
+    click: handlers.click,
+    contextmenu: handlers.contextmenu,
+    keydown: handlers.key,
+  });
+  function attachExternal() {
+    const node = active.value && external.value ? actualReference.value : undefined;
+    externalBinding.attach(
+      node && !wrapper.value?.contains(node) ? node : undefined,
+      floating.open.value,
+    );
+  }
   let observer: ResizeObserver | undefined,
-    externalNode: HTMLElement | undefined,
     cycle = 0,
     entered = -1,
     left = -1;
-  let hoverTrigger = false,
-    hoverPanel = false,
-    focusTrigger = false,
-    focusPanel = false,
-    pinned = false;
-  const triggers = computed(() => {
-    const value =
-      props.trigger ?? (kind === "tooltip" ? ["hover", "focus"] : ["click"]);
-    const values = Array.isArray(value) ? value : [value];
-    return new Set(values.includes("manual") ? [] : values);
-  });
-  function clearDelays() {
-    clearTimeout(showTimer);
-    clearTimeout(hideTimer);
-    showTimer = hideTimer = undefined;
-  }
-  function clearAuto() {
-    clearTimeout(autoTimer);
-    autoTimer = undefined;
-  }
-  function resetReasons() {
-    hoverTrigger = hoverPanel = focusTrigger = focusPanel = pinned = false;
-  }
   function sync() {
     if (
       available.value &&
@@ -209,7 +209,7 @@ export function usePopupSurface(
     } else floating.close(false, true);
   }
   async function request(value: boolean, restore = false) {
-    clearDelays();
+    interactions.clearDelays();
     if (
       !active.value ||
       (value &&
@@ -218,7 +218,7 @@ export function usePopupSurface(
           !anchor.value?.isConnected))
     )
       return false;
-    if (!value) resetReasons();
+    if (!value) interactions.resetReasons();
     suspended.value = false;
     let accepted = Object.is(model.current.value, value);
     if (!accepted)
@@ -241,209 +241,6 @@ export function usePopupSurface(
     }
     return accepted;
   }
-  function scheduleShow() {
-    clearTimeout(hideTimer);
-    hideTimer = undefined;
-    if (
-      !available.value ||
-      floating.restoringFocus.value ||
-      floating.open.value ||
-      showTimer
-    )
-      return;
-    const delay = wait(props.showDelay);
-    if (delay)
-      showTimer = setTimeout(() => {
-        showTimer = undefined;
-        void request(true);
-      }, delay);
-    else void request(true);
-  }
-  function held() {
-    return (
-      pinned ||
-      hoverTrigger ||
-      (props.enterable !== false && hoverPanel) ||
-      (triggers.value.has("focus") && focusTrigger) ||
-      (props.enterable !== false && focusPanel)
-    );
-  }
-  function scheduleHide() {
-    clearTimeout(showTimer);
-    showTimer = undefined;
-    clearTimeout(hideTimer);
-    hideTimer = undefined;
-    if (held() || !floating.open.value) return;
-    const hide = () => {
-      hideTimer = undefined;
-      if (!held() && floating.isTop()) void request(false);
-    };
-    const delay = wait(props.hideDelay);
-    if (delay) hideTimer = setTimeout(hide, delay);
-    else hide();
-  }
-  function pointerEnter() {
-    if (!triggers.value.has("hover")) return;
-    hoverTrigger = true;
-    scheduleShow();
-  }
-  function pointerLeave() {
-    if (!triggers.value.has("hover")) return;
-    hoverTrigger = false;
-    scheduleHide();
-  }
-  function panelEnter() {
-    if (props.enterable === false) return;
-    hoverPanel = true;
-    clearTimeout(hideTimer);
-    hideTimer = undefined;
-  }
-  function panelLeave() {
-    hoverPanel = false;
-    if (triggers.value.has("hover")) scheduleHide();
-  }
-  function focusIn(event: FocusEvent) {
-    if (panel.value?.contains(event.target as Node)) return;
-    if (floating.restoringFocus.value) return;
-    focusTrigger = true;
-    if (triggers.value.has("focus")) scheduleShow();
-  }
-  function focusOut(event: FocusEvent) {
-    if (panel.value?.contains(event.target as Node)) return;
-    const next = event.relatedTarget as Node | null;
-    if (anchor.value?.contains(next)) return;
-    focusTrigger = false;
-    if (panel.value?.contains(next) && props.enterable !== false) {
-      focusPanel = true;
-      return;
-    }
-    if (triggers.value.has("focus") || triggers.value.has("hover"))
-      scheduleHide();
-  }
-  function panelFocusIn() {
-    if (props.enterable !== false) focusPanel = true;
-  }
-  function panelFocusOut(event: FocusEvent) {
-    const next = event.relatedTarget as Node | null;
-    if (panel.value?.contains(next)) return;
-    focusPanel = false;
-    if (anchor.value?.contains(next)) {
-      focusTrigger = true;
-      return;
-    }
-    if (triggers.value.has("focus") || triggers.value.has("hover"))
-      scheduleHide();
-  }
-  function click(event: MouseEvent) {
-    if (panel.value?.contains(event.target as Node)) return;
-    if (!triggers.value.has("click") || !available.value) return;
-    pinned = floating.open.value
-      ? !pinned &&
-        ((hoverTrigger && triggers.value.has("hover")) ||
-          (focusTrigger && triggers.value.has("focus")))
-      : true;
-    void request(pinned);
-  }
-  function contextmenu(event: MouseEvent) {
-    if (panel.value?.contains(event.target as Node)) return;
-    if (!triggers.value.has("contextmenu") || !available.value) return;
-    event.preventDefault();
-    pinned = true;
-    void request(true);
-  }
-  function key(event: KeyboardEvent) {
-    if (panel.value?.contains(event.target as Node)) return;
-    if (!triggers.value.size || !available.value || event.defaultPrevented)
-      return;
-    const target = event.target as HTMLElement;
-    if (target.closest('input,textarea,select,[contenteditable="true"]'))
-      return;
-    if (
-      event.key === "F10" &&
-      event.shiftKey &&
-      triggers.value.has("contextmenu")
-    ) {
-      event.preventDefault();
-      pinned = true;
-      void request(true);
-      return;
-    }
-    if (
-      !(props.triggerKeys ?? ["Enter", " "]).some(
-        (key) => key === event.key || (key === "Space" && event.key === " "),
-      )
-    )
-      return;
-    // Native buttons already generate click on Enter/Space. Their own handlers must run once.
-    if (triggers.value.has("click") && target.closest("button,a[href],input"))
-      return;
-    event.preventDefault();
-    pinned = !floating.open.value;
-    void request(pinned);
-  }
-  function focusables(root: ParentNode) {
-    return [...root.querySelectorAll<HTMLElement>(controls)].filter(
-      (el) =>
-        el.tabIndex >= 0 &&
-        !el.matches(":disabled") &&
-        !el.closest('[inert],[aria-hidden="true"]') &&
-        !!el.getClientRects().length &&
-        getComputedStyle(el).visibility !== "hidden",
-    );
-  }
-  function adjacent(backward: boolean) {
-    const source = actualReference.value,
-      all = focusables(document).filter((el) => !panel.value?.contains(el));
-    const index = all.findIndex((el) => el === source || source?.contains(el));
-    const next = index < 0 ? undefined : all[index + (backward ? -1 : 1)];
-    next?.focus();
-    return !!next;
-  }
-  async function tab(event: KeyboardEvent) {
-    if (
-      event.key !== "Tab" ||
-      kind !== "popover" ||
-      !floating.open.value ||
-      !floating.isTop()
-    )
-      return;
-    const target = event.target as Node,
-      inside = panel.value?.contains(target),
-      atTrigger = anchor.value?.contains(target);
-    if (!inside && !atTrigger) return;
-    const items = panel.value ? focusables(panel.value) : [];
-    if (
-      atTrigger &&
-      !event.shiftKey &&
-      props.enterable !== false &&
-      items.length
-    ) {
-      event.preventDefault();
-      items[0].focus();
-      return;
-    }
-    if (
-      inside &&
-      target !== (event.shiftKey ? items[0] : items.at(-1)) &&
-      items.length
-    )
-      return;
-    event.preventDefault();
-    const accepted = await request(false);
-    if (accepted) {
-      if (inside && event.shiftKey) restoreReferenceFocus();
-      else if (!adjacent(event.shiftKey)) restoreReferenceFocus();
-    }
-  }
-  function startAuto() {
-    clearAuto();
-    const delay = wait(props.autoClose);
-    if (floating.open.value && delay)
-      autoTimer = setTimeout(() => {
-        autoTimer = undefined;
-        void request(false);
-      }, delay);
-  }
   function detachObserver() {
     observer?.disconnect();
     observer = undefined;
@@ -460,74 +257,10 @@ export function usePopupSurface(
     observer.observe(panel.value);
     if (actualReference.value) observer.observe(actualReference.value);
   }
-  const nativeEvents = {
-    pointerenter: pointerEnter,
-    pointerleave: pointerLeave,
-    focusin: focusIn,
-    focusout: focusOut,
-    click,
-    contextmenu,
-    keydown: key,
-  } as const;
-  let externalAria: Record<string, string | null> | undefined;
-  function syncExternalAria() {
-    if (!externalNode || !externalAria) return;
-    if (kind === "tooltip") {
-      const text = floating.open.value
-        ? [externalAria["aria-describedby"], id].filter(Boolean).join(" ")
-        : externalAria["aria-describedby"];
-      if (text) externalNode.setAttribute("aria-describedby", text);
-      else externalNode.removeAttribute("aria-describedby");
-    } else {
-      externalNode.setAttribute(
-        "aria-haspopup",
-        externalAria["aria-haspopup"] ?? "dialog",
-      );
-      externalNode.setAttribute("aria-expanded", String(floating.open.value));
-      const target = floating.open.value ? id : externalAria["aria-controls"];
-      if (target) externalNode.setAttribute("aria-controls", target);
-      else externalNode.removeAttribute("aria-controls");
-    }
-  }
-  function detachExternal() {
-    if (externalNode)
-      for (const [name, handler] of Object.entries(nativeEvents))
-        externalNode.removeEventListener(name, handler as EventListener);
-    if (externalNode && externalAria)
-      for (const [key, value] of Object.entries(externalAria)) {
-        if (value === null) externalNode.removeAttribute(key);
-        else externalNode.setAttribute(key, value);
-      }
-    externalAria = undefined;
-    externalNode = undefined;
-  }
-  function attachExternal() {
-    detachExternal();
-    if (!active.value || !external.value) return;
-    externalNode = actualReference.value;
-    if (externalNode && wrapper.value?.contains(externalNode)) {
-      externalNode = undefined;
-      return;
-    }
-    if (externalNode) {
-      externalAria = Object.fromEntries(
-        [
-          "aria-describedby",
-          "aria-controls",
-          "aria-expanded",
-          "aria-haspopup",
-        ].map((key) => [key, externalNode!.getAttribute(key)]),
-      );
-      syncExternalAria();
-    }
-    for (const [name, handler] of Object.entries(nativeEvents))
-      externalNode?.addEventListener(name, handler as EventListener);
-  }
   function cleanup() {
-    clearDelays();
-    clearAuto();
-    resetReasons();
-    detachExternal();
+    interactions.reset();
+    interactions.clearAuto();
+    externalBinding.detach();
     detachObserver();
     document.removeEventListener("keydown", tab, true);
     floating.close(false, true);
@@ -544,9 +277,8 @@ export function usePopupSurface(
     [available, wrapper, external],
     () => {
       if (!available.value) {
-        clearDelays();
-        clearAuto();
-        resetReasons();
+        interactions.reset();
+        interactions.clearAuto();
       }
       sync();
       attachExternal();
@@ -563,12 +295,11 @@ export function usePopupSurface(
     },
     { flush: "sync" },
   );
-  watch(() => props.autoClose, startAuto);
+  watch(() => props.autoClose, interactions.startAuto);
   watch(
     [actualReference, external],
     () => {
-      clearDelays();
-      resetReasons();
+      interactions.reset();
       floating.schedule();
       attachExternal();
     },
@@ -577,8 +308,7 @@ export function usePopupSurface(
   watch(
     () => props.trigger,
     () => {
-      clearDelays();
-      resetReasons();
+      interactions.reset();
     },
   );
   watch(
@@ -600,7 +330,7 @@ export function usePopupSurface(
     floating.open,
     (value) => {
       cycle++;
-      syncExternalAria();
+      externalBinding.syncAria(value);
       emit("visibleChange", value);
       emit("openChange", value);
       emit(value ? "show" : "hide");
@@ -608,11 +338,10 @@ export function usePopupSurface(
       if (value) {
         ever.value = true;
         document.addEventListener("keydown", tab, true);
-        startAuto();
+        interactions.startAuto();
       } else {
-        clearDelays();
-        clearAuto();
-        resetReasons();
+        interactions.reset();
+        interactions.clearAuto();
         detachObserver();
       }
     },
@@ -751,17 +480,7 @@ export function usePopupSurface(
     contentStyle,
     scope,
     wrapperAttrs,
-    pointerEnter,
-    pointerLeave,
-    panelEnter,
-    panelLeave,
-    focusIn,
-    focusOut,
-    panelFocusIn,
-    panelFocusOut,
-    click,
-    contextmenu,
-    key,
+    ...handlers,
     afterEnter,
     afterLeave,
     inactive,

@@ -365,7 +365,7 @@ defineExpose({
               <button
                 v-if="showClose"
                 type="button"
-                class="hys-ui-icon-action"
+                class="hys-ui-icon-action hys-ui-dialog-close"
                 :aria-label="closeText"
                 :disabled="
                   state.closing.value ||
@@ -380,7 +380,7 @@ defineExpose({
           <button
             v-else-if="showClose"
             type="button"
-            class="hys-ui-icon-action hys-ui-drawer-floating-close"
+            class="hys-ui-icon-action hys-ui-dialog-close hys-ui-drawer-floating-close"
             :aria-label="closeText"
             :disabled="
               state.closing.value ||
