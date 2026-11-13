@@ -4,20 +4,24 @@
     <p>
       默认保留字符串绑定：date 为 YYYY-MM-DD，month 为 YYYY-MM，year 为
       YYYY，quarter 为 YYYY-[Q]Q。week 返回所在周的起始日期，默认展示 ISO
-      周编号。dates、weeks、months、quarters、years
-      选择多个值；范围选择器沿用单一输入区，返回两个端点。
+      周编号。dates、weeks、months、quarters、years 选择多个值。HysDatePicker 的
+      daterange、weekrange、monthrange、 quarterrange、yearrange、datetimerange
+      和 HysDateRangePicker 均返回两个端点。 picker 可覆盖选取粒度，v-model 或
+      v-model:value 都可绑定。
     </p>
     <p>
       valueType 可以指定 string、date 或
       timestamp；未指定时从已有值推断，空值默认使用字符串。Date
       和时间戳使用本地日期与时刻，时间戳单位为毫秒；数字 0 是有效值。valueFormat
-      改变字符串绑定格式，format 只改变展示。支持
-      YYYY、MM、DD、HH、mm、ss、Q、GGGG、WW 和方括号字面量；x / X 分别表示毫秒 /
-      秒的字符串时间戳。未使用第三方日期对象。
+      改变字符串绑定格式，format 只改变展示。支持 YYYY、M / MM、D / DD、H /
+      HH、m / mm、s / ss、Q、GGGG、WW， 以及方括号字面量。MMM / MMMM 和 dd / ddd
+      / dddd 使用 locale 的月名和星期名；h / hh 配合 A / a 可区分上午和下午。 x
+      / X 分别表示毫秒和秒的字符串时间戳。
     </p>
     <p>
-      editable 开启直接输入；inputFormats 提供额外可接受的格式，展示仍使用
-      format。输入必须是有效日期，不会把二月三十一日自动进位。Enter
+      editable 开启直接输入。format 可以传字符串、格式函数或数组，
+      数组首项用于展示，字符串项和 inputFormats 均可解析。 格式函数接收本地
+      Date，可搭配字符串格式支持录入。输入必须是有效日期。Enter
       或离开控件提交，Esc 取消；inputReadonly
       阻止文本编辑，仍允许打开面板。multiple 模式使用面板逐项切换。
     </p>
@@ -57,11 +61,12 @@
       校验只在宿主接受后发生，ok 表示有效确认。
     </p>
     <p>
-      defaultValue 用作非受控初始值，defaultPickerValue
-      只指定初始浏览位置。panelValue、mode、open
-      可分别受控；宿主可以拒绝请求。clearValue
-      定义清空值；默认字符串单选为空字符串，Date / timestamp 单选为
-      null，多选为空数组，范围为两个相应空值。clearable 不改变清空方法的可用性。
+      defaultValue 用作非受控初始值，defaultPickerValue 指定初始浏览位置。
+      范围可传两个浏览日期，也可用 v-model:panelValues 分别控制两侧位置。
+      panelValue 控制左侧，mode 控制视图，open 控制显隐。 valueOnClear 优先于
+      clearValue，可传值或点击清空时求值的函数。 emptyValues
+      声明额外的空值。默认字符串单选为空字符串， Date / timestamp 单选为
+      null，多选为空数组，范围为两个对应空值。
     </p>
   </section>
   <section class="notes">
@@ -70,7 +75,8 @@
       min、max 限制日期或时刻。disabledDate 保留旧接口，接收当天 UTC 零时的
       Date；使用 getUTCFullYear / getUTCMonth / getUTCDate / getUTCDay
       读取日期。第二个参数包含
-      iso、range、from，便于按起止角色和已选开始日判断。月、季度和年选项在其周期内存在可用日期时允许选择。
+      iso、range、from，便于按起止角色和已选开始日判断，from 为范围开始端的本地
+      Date。 月、季度和年选项在其周期内存在可用日期时允许选择。
     </p>
     <p>
       范围自动整理反向点击的日期。minRangeDays / maxRangeDays
@@ -80,10 +86,16 @@
       分别允许开放起止边界，弹层提供单独清除操作。
     </p>
     <p>
-      showTime 或 type='datetime' 在日期下方提供自定义时间选项。defaultTime
-      设置新端点的默认 HH:mm:ss，范围可分别设置。disabledTime 返回
-      hours、minutes(hour)、seconds(hour,minute)；hourStep、minuteStep、secondStep
-      控制列出的步长。隐藏秒列保留已有秒值。无效或颠倒的完整时刻不能确认。
+      showTime 或 datetime / datetimerange 启用时间选项。defaultTime 支持
+      HH:mm[:ss] 或本地 Date，范围可分别设置；showTime 也可配置默认时刻、步长、
+      12 小时制和隐藏禁用项。dateFormat、timeFormat 启用面板内的直接输入，
+      arrowControl 提供步进按钮。disabledHours / disabledMinutes /
+      disabledSeconds 与 disabledTime
+      合并。隐藏秒列表时会保留已有秒值，直接输入时刻按指定格式解析。
+    </p>
+    <p>
+      日期范围也可用 defaultTime 为开始和结束日期附加时刻。使用
+      Date、时间戳或含时刻的 valueFormat 可保留这两个时刻，面板仍按日期选择。
     </p>
   </section>
   <section class="notes">
@@ -91,22 +103,28 @@
     <p>
       默认每周从星期一开始，firstDayOfWeek 使用 0–6 表示周日到周六；locale
       控制月份、星期名称，messages 覆盖操作文字。周编号使用 ISO
-      规则。点击年份或月份标题可以快速定位，点击面板标题返回选择视图，无需额外返回按钮。
+      规则。年份面板可继续浏览年代；日期时间选择器可切换到 time 视图。
     </p>
     <p>
-      shortcuts 接收静态值或点击时计算的函数，遵守相同禁用规则。范围默认
+      shortcuts、presets、ranges
+      接收静态值或点击时计算的函数，遵守相同禁用规则。 shortcutPlacement='start'
+      将快捷项放在面板起始侧，窄屏回到顶部。范围默认
       singlePanel=true，关闭后显示两个面板；unlinkPanels
-      允许分别浏览，窄屏时在浮层内滚动。inline
-      直接嵌入面板；placement、appendTo、popupWidth、popupClass、popupStyle
-      定制浮层，主题与尺寸从宿主继承。
+      允许分别浏览。窄屏可点击月份跳转，或在浮层内横向滑动。inline
+      直接嵌入面板。placement、fallbackPlacements 配置定位，appendTo、
+      getPopupContainer、teleported 配置挂载位置。popperOptions 提供原生浮层的
+      strategy、offset、padding 和 flip。
     </p>
     <p>
       cell / default 插槽接收
       iso、date、text、type、disabled、selected、inRange、outside、today、week
-      等元数据；date 与禁用回调一样使用 UTC 日期。header、footer 和 shortcut
+      等元数据；date 与 disabledDate 一样使用 UTC
+      日期。date-render、month-cell-render
+      可单独定制网格。header、footer、extra-footer 和 shortcut
       可定制分区，footer 提供
       dates、confirm、cancel、clear。prefix、suffix、clear-icon
-      和四个导航图标均可替换。
+      和四个导航图标均可替换。可通过 id、placeholder、name
+      的二元数组分别配置范围输入框。
     </p>
   </section>
   <section class="notes">

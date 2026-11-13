@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PopupMotion from '../../motion/PopupMotion';
+import PopupMotion from "../../motion/PopupMotion";
 
 import {
   computed,
@@ -28,12 +28,14 @@ import {
   useHysFormItemContext,
   type HysFieldContext,
 } from "../../composables/formContext";
-import { useFloating } from "../../composables/useFloating";
+import { useFloating, type Placement } from "../../composables/useFloating";
 import { useChoiceNativeReset } from "../../composables/choiceModel";
 import { useDatePicker } from "../../composables/useDatePicker";
 import { calendarISO, calendarParts } from "../../composables/calendar";
 import {
   dateNative,
+  dateFormat as formatDatePoint,
+  datePoint,
   datePickerDefaults,
   type HysDatePickerProps,
   type HysDatePickerValue,
@@ -55,10 +57,13 @@ const navigationSlots = computed(() =>
 );
 const emit = defineEmits([
   "update:modelValue",
+  "update:value",
   "change",
   "value-change",
   "update:open",
   "visible-change",
+  "openChange",
+  "update:panelValues",
   "update:panelValue",
   "update:mode",
   "panelChange",
@@ -85,6 +90,7 @@ const attrs = useAttrs(),
   root = ref<HTMLElement>(),
   button = ref<HTMLButtonElement>(),
   panel = ref<HTMLElement>(),
+  calendarStrip = ref<HTMLElement>(),
   editors = new Map<number, HTMLInputElement>(),
   live = ref(true),
   range = computed(() => !!props.range),
@@ -94,6 +100,7 @@ const attrs = useAttrs(),
   id = useId(),
   focused = ref(false),
   inputText = ref<string[]>([]);
+const dirtyEditors = new Set<number>();
 provide(fieldKey as InjectionKey<HysFieldContext | undefined>, undefined);
 const store = useDatePicker(
   props,
@@ -133,12 +140,40 @@ const active = computed(
       : undefined,
   );
 let restoreRequested = false,
-  epoch = 0;
+  epoch = 0,
+  openOnPointerDown: boolean | undefined;
+const placementAliases: Record<string, Placement> = {
+  topLeft: "top-start",
+  topRight: "top-end",
+  bottomLeft: "bottom-start",
+  bottomRight: "bottom-end",
+};
+const popupTarget = computed(() =>
+  props.getPopupContainer && root.value && active.value
+    ? props.getPopupContainer(root.value)
+    : props.appendTo || "body",
+);
 const floating = useFloating(anchor, panel, {
   get placement() {
-    return props.placement;
+    const value = props.placement ?? "bottom-start";
+    return placementAliases[value] ?? (value as Placement);
   },
   width: () => props.popupWidth,
+  get gap() {
+    return props.popperOptions?.offset;
+  },
+  get padding() {
+    return props.popperOptions?.padding;
+  },
+  get strategy() {
+    return props.popperOptions?.strategy;
+  },
+  get autoAdjustOverflow() {
+    return props.popperOptions?.flip;
+  },
+  get fallbackPlacements() {
+    return props.fallbackPlacements;
+  },
   requestOpen: (value, restore) => {
     if (!value) restoreRequested = !!restore;
     emit("update:open", value);
@@ -146,23 +181,43 @@ const floating = useFloating(anchor, panel, {
   },
 });
 const visible = computed(() => props.inline || floating.open.value),
-  placeholder = computed(
+  startText = computed(
     () =>
-      props.placeholder ||
-      (range.value
-        ? `${props.startPlaceholder ?? words.value.start}${props.rangeSeparator}${props.endPlaceholder ?? words.value.end}`
-        : words.value.empty),
+      props.startPlaceholder ??
+      (typeof props.placeholder === "string"
+        ? undefined
+        : props.placeholder?.[0]) ??
+      words.value.start,
   ),
+  endText = computed(
+    () =>
+      props.endPlaceholder ??
+      (typeof props.placeholder === "string"
+        ? undefined
+        : props.placeholder?.[1]) ??
+      words.value.end,
+  ),
+  separatorText = computed(() => props.separator ?? props.rangeSeparator),
+  placeholder = computed(() =>
+    typeof props.placeholder === "string" && props.placeholder
+      ? props.placeholder
+      : range.value
+        ? [startText.value, endText.value].join(separatorText.value)
+        : words.value.empty,
+  ),
+  displayedEndpoints = computed(() => {
+    const [start, end] = store.describe();
+    return [start || startText.value, end || endText.value];
+  }),
   display = computed(() => {
     const values = store.describe();
     if (!range.value) return values.filter(Boolean).join("、");
-    if (!values.some(Boolean)) return "";
-    return [
-      values[0] || props.startPlaceholder || words.value.start,
-      values[1] || props.endPlaceholder || words.value.end,
-    ].join(props.rangeSeparator);
+    return values.some(Boolean)
+      ? displayedEndpoints.value.join(separatorText.value)
+      : "";
   }),
-  canConfirm = computed(() => store.valid(draft.value)),
+  canConfirm = computed(() => !error.value && store.valid(draft.value)),
+  canUseNow = computed(() => store.valid([store.today.value])),
   draftWarning = computed(() =>
     needsConfirm.value &&
     (range.value ? draft.value.every(Boolean) : !!draft.value.length) &&
@@ -173,11 +228,21 @@ const visible = computed(() => props.inline || floating.open.value),
   problem = computed(() => error.value || draftWarning.value),
   canClear = computed(
     () =>
-      props.clearable &&
+      (props.allowClear ?? props.clearable) &&
       !blocked.value &&
       selected.value.some((p, i) => p && !store.locked(i)),
   ),
-  fieldId = computed(() => String(attrs.id ?? field.id.value ?? id)),
+  fieldId = computed(
+    () =>
+      (typeof props.id === "string" ? props.id : props.id?.[0]) ??
+      field.id.value ??
+      id,
+  ),
+  endId = computed(
+    () =>
+      (typeof props.id === "string" ? undefined : props.id?.[1]) ??
+      fieldId.value + "-end",
+  ),
   ariaLabel = computed(
     () =>
       props.ariaLabel || props.label || field.label.value || placeholder.value,
@@ -200,9 +265,20 @@ const visible = computed(() => props.inline || floating.open.value),
           ...props.popupStyle,
           ...floating.style.value,
           width:
-            props.popupWidth ??
-            (range.value && !props.singlePanel ? "576px" : "304px"),
-          maxWidth: "calc(100vw - 20px)",
+            floating.style.value.width ??
+            (typeof props.popupWidth === "number" &&
+            Number.isFinite(props.popupWidth)
+              ? Math.max(0, props.popupWidth) + "px"
+              : typeof props.popupWidth === "string"
+                ? props.popupWidth
+                : undefined) ??
+            (range.value && !props.singlePanel ? 576 : 304) +
+              (props.shortcutPlacement === "start" &&
+              store.shortcuts.value.length
+                ? 100
+                : 0) +
+              "px",
+          maxWidth: floating.style.value.maxWidth ?? "calc(100vw - 20px)",
           maxHeight: "min(80dvh,calc(100dvh - 20px))",
         },
   ),
@@ -234,6 +310,7 @@ function bindEditor(index: number, el: unknown) {
   else editors.delete(index);
 }
 function syncText() {
+  dirtyEditors.clear();
   inputText.value = store.describe();
   if (range.value) while (inputText.value.length < 2) inputText.value.push("");
 }
@@ -246,7 +323,9 @@ function focusTrigger() {
 }
 async function focusPanel() {
   await nextTick();
-  await views.get(0)?.focus();
+  if (view.value === "time")
+    panel.value?.querySelector<HTMLElement>(".hys-ui-date-time-mode")?.focus();
+  else await views.get(0)?.focus();
 }
 async function show(focus = true, force = false) {
   if (blocked.value) return false;
@@ -255,7 +334,7 @@ async function show(focus = true, force = false) {
   if (!props.inline) await floating.show(force);
   await nextTick();
   if (!active.value || ticket !== epoch) return false;
-  if (!was) {
+  if (!was && !dirtyEditors.size) {
     store.begin();
     syncText();
   }
@@ -266,6 +345,15 @@ async function show(focus = true, force = false) {
 }
 function hide(restore = false) {
   if (!props.inline) floating.close(restore);
+}
+function toggleTrigger(event: MouseEvent) {
+  const wasOpen =
+    event.detail > 0
+      ? (openOnPointerDown ?? floating.open.value)
+      : floating.open.value;
+  openOnPointerDown = undefined;
+  if (wasOpen) hide();
+  else void show();
 }
 function cancel() {
   store.begin();
@@ -316,10 +404,22 @@ async function shortcut(index: number) {
   }
 }
 async function commitInput(index: number) {
-  if (props.inputReadonly || blocked.value) return false;
-  const accepted = await store.input(inputText.value[index] ?? "", index);
-  if (accepted) syncText();
+  if (props.inputReadonly || blocked.value || !dirtyEditors.delete(index))
+    return false;
+  const text = inputText.value[index] ?? "";
+  if (needsConfirm.value && !active.value) await show(false);
+  const accepted = await store.input(text, index);
+  if (
+    accepted &&
+    (needsConfirm.value || (range.value && !store.valid(draft.value)))
+  ) {
+    inputText.value = store.describe(draft.value);
+  } else if (accepted) syncText();
   return accepted;
+}
+function editInput(index: number, event: Event) {
+  dirtyEditors.add(index);
+  inputText.value[index] = (event.target as HTMLInputElement).value;
 }
 function triggerKey(event: KeyboardEvent, index = 0) {
   if (event.isComposing || event.keyCode === 229) return;
@@ -339,7 +439,7 @@ function focus(event: FocusEvent) {
     emit("focus", event);
   }
   if (
-    props.showOnFocus &&
+    (props.automaticDropdown ?? props.showOnFocus) &&
     !floating.restoringFocus.value &&
     !floating.open.value
   )
@@ -362,12 +462,21 @@ async function blur(event: FocusEvent) {
 }
 function inputBlur(event: FocusEvent, index: number) {
   const next = event.relatedTarget as Node | null;
-  if (!panel.value?.contains(next) && !root.value?.contains(next))
+  if (next !== editors.get(index) && !panel.value?.contains(next))
     void commitInput(index);
   void blur(event);
 }
 function move(day: number, index: number) {
   if (!blocked.value) store.setPanel(day, index);
+}
+function revealPanel(index: number) {
+  const strip = calendarStrip.value;
+  const target = views.get(index)?.element;
+  if (!strip || !target) return;
+  const edge = strip.getBoundingClientRect();
+  const bounds = target.getBoundingClientRect();
+  const rtl = getComputedStyle(strip).direction === "rtl";
+  strip.scrollLeft += rtl ? bounds.right - edge.right : bounds.left - edge.left;
 }
 async function showMonth(value: unknown) {
   const point = store.boundary(value);
@@ -387,10 +496,10 @@ async function setValue(value: HysDatePickerValue) {
   return ok;
 }
 function today(now = false) {
-  const point = store.today.value;
+  const point = datePoint(new Date())!;
   if (now && time.value) {
-    draft.value = [{ ...point }];
-    if (range.value) return;
+    if (range.value || !store.valid([point])) return;
+    draft.value = [point];
     void confirm();
   } else void pick(point.day);
 }
@@ -402,38 +511,143 @@ function clearEndpoint(index: number) {
     return;
   draft.value = draft.value.map((p, i) => (i === index ? null : p));
   store.error.value = "";
+  store.emitDraft(index);
 }
-function timeOptions(index: number, part: "hour" | "minute" | "second") {
-  const point = draft.value[index];
-  if (!point) return [];
-  const hour = Math.floor(point.second / 3600),
-    minute = Math.floor(point.second / 60) % 60,
-    config = store.timeDisabled(point, index),
-    step =
-      part === "hour"
-        ? props.hourStep
-        : part === "minute"
-          ? props.minuteStep
-          : props.secondStep,
-    max = part === "hour" ? 24 : 60,
-    n = Math.max(
-      1,
-      Math.min(max, Number.isFinite(step) ? Math.floor(step!) : 1),
-    ),
-    current =
-      part === "hour" ? hour : part === "minute" ? minute : point.second % 60;
+const timeOptionsConfig = computed(() =>
+  typeof props.showTime === "object" ? props.showTime : undefined,
+);
+const timeDisplayFormat = computed(
+  () => props.timeFormat ?? timeOptionsConfig.value?.format,
+);
+const dateFieldFormat = computed(
+  () => props.dateFormat ?? (view.value === "time" ? "YYYY-MM-DD" : undefined),
+);
+const twelveHours = computed(
+  () =>
+    props.use12Hours ??
+    timeOptionsConfig.value?.use12Hours ??
+    /(^|[^a-z])h{1,2}/.test(timeDisplayFormat.value ?? ""),
+);
+const secondsVisible = computed(() =>
+  timeDisplayFormat.value
+    ? /s/.test(timeDisplayFormat.value.replace(/\[[^\]]*\]/g, ""))
+    : props.showSeconds,
+);
+const clockParts = computed(() =>
+  secondsVisible.value
+    ? [words.value.hour, words.value.minute, words.value.second]
+    : [words.value.hour, words.value.minute],
+);
+const dateView = computed<HysDatePickerView>(() =>
+  store.unit.value === "week" ? "date" : store.unit.value,
+);
+const timeModeLabel = computed(() =>
+  props.locale.startsWith("zh")
+    ? view.value === "time"
+      ? "选择日期"
+      : "选择时间"
+    : view.value === "time"
+      ? "Choose date"
+      : "Choose time",
+);
+const clockOptions = computed(() =>
+  draft.value.map((point, index) => {
+    if (!point) return [];
+    const config = store.timeDisabled(point, index);
+    const hour = timeValue(index, 0),
+      minute = timeValue(index, 1);
+    return [
+      buildTimeOptions(
+        24,
+        hour,
+        timeOptionsConfig.value?.hourStep ?? props.hourStep,
+        config.hours,
+        twelveHours.value,
+      ),
+      buildTimeOptions(
+        60,
+        minute,
+        timeOptionsConfig.value?.minuteStep ?? props.minuteStep,
+        config.minutes(hour),
+      ),
+      buildTimeOptions(
+        60,
+        timeValue(index, 2),
+        timeOptionsConfig.value?.secondStep ?? props.secondStep,
+        config.seconds(hour, minute),
+      ),
+    ];
+  }),
+);
+function buildTimeOptions(
+  max: number,
+  current: number,
+  step: number,
+  disabled: readonly number[],
+  clock = false,
+) {
+  const interval = Number.isFinite(step)
+    ? Math.max(1, Math.min(max, Math.floor(step)))
+    : 1;
+  const hide =
+    props.hideDisabledOptions ?? timeOptionsConfig.value?.hideDisabledOptions;
   return Array.from({ length: max }, (_, value) => value)
-    .filter((value) => value % n === 0 || value === current)
+    .filter(
+      (value) =>
+        (value % interval === 0 || value === current) &&
+        (!hide || !disabled.includes(value)),
+    )
     .map((value) => ({
-      label: String(value).padStart(2, "0"),
+      label: clock
+        ? String(value % 12 || 12).padStart(2, "0") +
+          (value < 12 ? " AM" : " PM")
+        : String(value).padStart(2, "0"),
       value,
-      disabled:
-        part === "hour"
-          ? config.hours?.includes(value)
-          : part === "minute"
-            ? config.minutes?.(hour).includes(value)
-            : config.seconds?.(hour, minute).includes(value),
+      disabled: disabled.includes(value),
     }));
+}
+function stepTime(index: number, part: number, direction: number) {
+  const current = timeValue(index, part);
+  const values =
+    clockOptions.value[index]?.[part]?.filter((option) => !option.disabled) ??
+    [];
+  const next =
+    direction > 0
+      ? (values.find((option) => option.value > current) ?? values[0])
+      : (values.filter((option) => option.value < current).at(-1) ??
+        values.at(-1));
+  if (next) setTime(index, part, next.value);
+}
+function panelDateText(index: number, format: string) {
+  const point = draft.value[index];
+  return point
+    ? formatDatePoint(
+        point,
+        format,
+        store.first.value,
+        store.weekContains.value,
+        props.locale,
+      )
+    : "";
+}
+function editPanelField(
+  event: Event,
+  index: number,
+  format: string,
+  part: "date" | "time",
+) {
+  if (
+    event instanceof KeyboardEvent &&
+    (event.isComposing || event.keyCode === 229)
+  )
+    return;
+  const input = event.target as HTMLInputElement;
+  if (input.value === panelDateText(index, format)) {
+    error.value = "";
+    return;
+  }
+  if (store.editDraft(index, input.value, format, part))
+    input.value = panelDateText(index, format);
 }
 function timeValue(index: number, part: number) {
   const second = draft.value[index]?.second ?? 0;
@@ -485,6 +699,7 @@ watch(
 );
 watch(floating.open, (value) => {
   emit("visible-change", value);
+  emit("openChange", value);
   if (!value) {
     epoch++;
     store.begin();
@@ -508,7 +723,27 @@ watch(
   { deep: true },
 );
 watch(
-  [panels, view, () => props.singlePanel, () => props.popupWidth],
+  [
+    store.displayPattern,
+    () => props.locale,
+    () => props.type,
+    () => props.picker,
+  ],
+  () => {
+    if (!dirtyEditors.size) syncText();
+  },
+);
+watch(
+  [
+    panels,
+    view,
+    () => props.singlePanel,
+    () => props.popupWidth,
+    () => props.placement,
+    () => props.popperOptions,
+    () => props.fallbackPlacements,
+    popupTarget,
+  ],
   () => void nextTick(() => floating.update()),
 );
 useChoiceNativeReset(
@@ -607,15 +842,19 @@ defineExpose({
         }"
       >
         <template v-if="editable && !store.multiple.value"
-          ><span v-if="$slots.prefix" class="hys-ui-date-prefix"
-            ><slot name="prefix" /></span
+          ><span v-if="$slots.prefix || prefixIcon" class="hys-ui-date-prefix"
+            ><slot name="prefix"
+              ><component
+                :is="prefixIcon"
+                :size="16"
+                aria-hidden="true" /></slot></span
           ><template v-for="index in range ? 2 : 1" :key="index"
             ><span v-if="index === 2" class="hys-ui-date-separator"
-              ><slot name="range-separator">{{ rangeSeparator }}</slot></span
+              ><slot name="range-separator">{{ separatorText }}</slot></span
             ><input
               :ref="(el) => bindEditor(index - 1, el)"
               v-bind="inputAttrs()"
-              :id="index === 1 ? fieldId : fieldId + '-end'"
+              :id="index === 1 ? fieldId : endId"
               data-hys-ui-field-managed
               class="hys-ui-date-input"
               type="text"
@@ -639,15 +878,9 @@ defineExpose({
               :disabled="control.disabled.value || store.locked(index - 1)"
               :readonly="readonly || inputReadonly"
               :placeholder="
-                range
-                  ? index === 1
-                    ? (startPlaceholder ?? words.start)
-                    : (endPlaceholder ?? words.end)
-                  : placeholder
+                range ? (index === 1 ? startText : endText) : placeholder
               "
-              @input="
-                inputText[index - 1] = ($event.target as HTMLInputElement).value
-              "
+              @input="editInput(index - 1, $event)"
               @click="show(false)"
               @keydown="triggerKey($event, index - 1)"
               @blur="inputBlur($event, index - 1)" /></template
@@ -675,15 +908,30 @@ defineExpose({
               .join(' ') || undefined
           "
           :aria-readonly="readonly || undefined"
-          @click="floating.open.value ? hide() : show()"
+          @pointerdown="openOnPointerDown = floating.open.value"
+          @click="toggleTrigger"
           @keydown="triggerKey"
         >
-          <span v-if="$slots.prefix" class="hys-ui-date-prefix"
-            ><slot name="prefix" /></span
+          <span v-if="$slots.prefix || prefixIcon" class="hys-ui-date-prefix"
+            ><slot name="prefix"
+              ><component
+                :is="prefixIcon"
+                :size="16"
+                aria-hidden="true" /></slot></span
           ><span
             class="hys-ui-date-display"
             :class="{ 'hys-ui-pf-placeholder': !display }"
-            >{{ display || placeholder }}</span
+            ><template
+              v-if="
+                range &&
+                $slots['range-separator'] &&
+                (display || typeof props.placeholder !== 'string')
+              "
+              >{{ displayedEndpoints[0]
+              }}<span class="hys-ui-date-separator"
+                ><slot name="range-separator" /></span
+              >{{ displayedEndpoints[1] }}</template
+            ><template v-else>{{ display || placeholder }}</template></span
           >
         </button>
         <span class="hys-ui-date-icons"
@@ -695,7 +943,9 @@ defineExpose({
             @mousedown.prevent
             @click="clear"
           >
-            <slot name="clear-icon"><X :size="14" /></slot></button
+            <slot name="clear-icon"
+              ><component :is="clearIcon || X" :size="14" aria-hidden="true"
+            /></slot></button
           ><span class="hys-ui-date-suffix" aria-hidden="true"
             ><slot name="suffix"
               ><component
@@ -721,220 +971,435 @@ defineExpose({
     >
       {{ error }}
     </p>
-    <Teleport :to="appendTo || 'body'" :disabled="inline || appendTo === false"
-      ><PopupMotion :popup-transition="props.popupTransition" :popup-transition-duration="props.popupTransitionDuration" :placement="floating.placement.value" :disabled="inline"><div
-        v-if="visible"
-        :id="id + '-panel'"
-        ref="panel"
-        v-bind="skin"
-        class="hys-ui-date-popup"
-        :class="[
-          popupClass,
-          'hys-ui-date-popup-' + control.size.value,
-          {
-            'hys-ui-date-inline': inline,
-            'hys-ui-date-dual': panelCount === 2,
-          },
-        ]"
-        :style="panelStyle"
-        :role="inline ? 'group' : 'dialog'"
-        :aria-label="ariaLabel"
-        @focusin="focus"
-        @focusout="blur"
-      >
-        <header v-if="$slots.header" class="hys-ui-date-popup-header">
-          <slot name="header" :dates="dates" :view="view" />
-        </header>
-        <div v-if="shortcuts?.length" class="hys-ui-date-shortcuts">
-          <button
-            v-for="(entry, index) in shortcuts"
-            :key="index"
-            type="button"
-            :disabled="blocked || entry.disabled"
-            @click="shortcut(index)"
-          >
-            <slot name="shortcut" :shortcut="entry" :index="index">{{
-              entry.label
-            }}</slot>
-          </button>
-        </div>
-        <div v-if="range" class="hys-ui-date-range-status">
-          <button
-            v-for="(name, index) in [words.start, words.end]"
-            :key="index"
-            type="button"
-            :disabled="blocked || store.locked(index)"
-            :aria-pressed="store.stage.value === (index ? 'end' : 'start')"
-            @click="activateEndpoint(index)"
-          >
-            <span>{{ name }}</span
-            ><strong>{{ store.describe(draft)[index] || "—" }}</strong></button
-          ><span class="hys-ui-date-range-instruction" role="status">{{
-            store.stage.value === "end" ? words.chooseEnd : words.chooseStart
-          }}</span>
-        </div>
-        <div class="hys-ui-date-panels">
-          <HysDatePickerPanel
-            v-for="index in panelCount"
-            :key="index"
-            :ref="
-              (value) => {
-                if (value) views.set(index - 1, value as any);
-                else views.delete(index - 1);
-              }
-            "
-            :month="panels[index - 1]"
-            :view="index === 1 ? view : store.rightView.value"
-            :unit="store.unit.value"
-            :selected="draft"
-            :range="range"
-            :preview="rangePreview"
-            :first="store.first.value"
-            :week-contains="store.weekContains.value"
-            :week-number-formatter="weekNumberFormatter"
-            :locale="locale"
-            :words="words"
-            :week-numbers="!!showWeekNumbers || store.unit.value === 'week'"
-            :adjacent="showAdjacentDays"
-            :disabled="blocked"
-            :available="
-              (day) =>
-                store.available(
-                  day,
-                  range && store.stage.value === 'end' ? 1 : 0,
-                )
-            "
-            :period-available="store.periodAvailable"
-            :cell-class-name="cellClassName"
-            @browse="move($event, index - 1)"
-            @mode="store.setMode($event, index - 1)"
-            @pick="pick"
-            @preview="store.preview.value = $event"
-            ><template v-if="$slots['week-number']" #week-number="scope"
-              ><slot name="week-number" v-bind="scope" /></template
-            ><template #cell="cell"
-              ><slot name="cell" v-bind="cell"
-                ><slot v-bind="cell">{{ cell.text }}</slot></slot
-              ></template
-            ><template v-for="name in navigationSlots" #[name]
-              ><slot :name="name" /></template
-          ></HysDatePickerPanel>
-        </div>
-        <div
-          v-if="time"
-          class="hys-ui-date-time-area"
-          data-hys-ui-form-internal
+    <Teleport
+      :to="popupTarget"
+      :disabled="inline || teleported === false || appendTo === false"
+      ><PopupMotion
+        :popup-transition="props.popupTransition"
+        :popup-transition-duration="props.popupTransitionDuration"
+        :placement="floating.placement.value"
+        :disabled="inline"
+        ><div
+          v-if="visible"
+          :id="id + '-panel'"
+          ref="panel"
+          v-bind="skin"
+          class="hys-ui-date-popup"
+          :class="[
+            popupClass,
+            popupClassName,
+            popperClass,
+            'hys-ui-date-popup-' + control.size.value,
+            {
+              'hys-ui-date-inline': inline,
+              'hys-ui-date-dual': panelCount === 2,
+            },
+          ]"
+          :style="[popperStyle, panelStyle]"
+          :role="inline ? 'group' : 'dialog'"
+          :aria-label="ariaLabel"
+          @focusin="focus"
+          @focusout="blur"
         >
+          <header v-if="$slots.header" class="hys-ui-date-popup-header">
+            <slot name="header" :dates="dates" :view="view" />
+          </header>
           <div
-            v-for="index in range ? 2 : 1"
-            :key="index"
-            class="hys-ui-date-time-row"
+            class="hys-ui-date-popup-body"
+            :class="{
+              'hys-ui-date-popup-aside':
+                shortcutPlacement === 'start' && store.shortcuts.value.length,
+            }"
           >
-            <span
-              >{{ range ? (index === 1 ? words.start : words.end) : ""
-              }}<Clock3 v-if="!range" :size="14" /></span
-            ><template v-for="part in showSeconds ? 3 : 2" :key="part"
-              ><span v-if="part > 1" class="hys-ui-date-time-colon">:</span
-              ><HysSelect
-                :model-value="timeValue(index - 1, part - 1)"
-                :options="
-                  timeOptions(
-                    index - 1,
-                    part === 1 ? 'hour' : part === 2 ? 'minute' : 'second',
-                  )
-                "
-                :disabled="
-                  blocked || store.locked(index - 1) || !draft[index - 1]
-                "
-                :size="control.size.value"
-                :aria-label="
-                  (range ? (index === 1 ? words.start : words.end) + ' ' : '') +
-                  (part === 1
-                    ? words.hour
-                    : part === 2
-                      ? words.minute
-                      : words.second)
-                "
-                :popup-match-width="false"
-                @update:model-value="setTime(index - 1, part - 1, $event)"
-            /></template>
-          </div>
-        </div>
-        <div
-          v-if="range && allowEmpty?.some(Boolean)"
-          class="hys-ui-date-partial"
-        >
-          <button
-            v-for="index in 2"
-            v-show="allowEmpty?.[index - 1]"
-            :key="index"
-            type="button"
-            :disabled="blocked || store.locked(index - 1)"
-            @click="clearEndpoint(index - 1)"
-          >
-            {{ words.clear }} {{ index === 1 ? words.start : words.end }}
-          </button>
-        </div>
-        <p
-          v-if="problem"
-          :id="id + '-error'"
-          class="hys-ui-date-error hys-ui-date-popup-error"
-          role="alert"
-        >
-          {{ problem }}
-        </p>
-        <footer
-          v-if="$slots.footer || showFooter || needsConfirm"
-          class="hys-ui-date-footer"
-        >
-          <slot
-            name="footer"
-            :dates="dates"
-            :confirm="confirm"
-            :cancel="cancel"
-            :clear="clear"
-            ><div class="hys-ui-date-footer-shortcuts">
-              <HysButton
-                v-if="showToday && !range"
-                size="sm"
-                variant="ghost"
-                :disabled="blocked || !store.available(store.today.value.day)"
-                @click="today(false)"
-                >{{ words.today }}</HysButton
-              ><HysButton
-                v-if="time && showNow && !range"
-                size="sm"
-                variant="ghost"
-                :disabled="blocked"
-                @click="today(true)"
-                >{{ words.now }}</HysButton
-              ><HysButton
-                v-if="canClear"
-                size="sm"
-                variant="ghost"
-                @click="clear"
-                >{{ words.clear }}</HysButton
+            <div
+              v-if="store.shortcuts.value.length"
+              class="hys-ui-date-shortcuts"
+            >
+              <button
+                v-for="(entry, index) in store.shortcuts.value"
+                :key="index"
+                type="button"
+                :disabled="blocked || entry.disabled"
+                @click="shortcut(index)"
               >
+                <slot name="shortcut" :shortcut="entry" :index="index">{{
+                  entry.label
+                }}</slot>
+              </button>
             </div>
-            <div class="hys-ui-date-footer-actions">
-              <HysButton size="sm" variant="ghost" @click="cancel">{{
-                needsConfirm || range ? words.cancel : words.close
-              }}</HysButton
-              ><HysButton
-                v-if="needsConfirm"
-                size="sm"
-                :disabled="blocked || !canConfirm"
-                @click="confirm"
-                >{{ words.confirm }}</HysButton
+            <div class="hys-ui-date-popup-main">
+              <div v-if="range" class="hys-ui-date-range-status">
+                <button
+                  v-for="(name, index) in [words.start, words.end]"
+                  :key="index"
+                  type="button"
+                  :disabled="blocked || store.locked(index)"
+                  :aria-pressed="
+                    store.stage.value === (index ? 'end' : 'start')
+                  "
+                  @click="activateEndpoint(index)"
+                >
+                  <span>{{ name }}</span
+                  ><strong>{{
+                    store.describe(draft)[index] || "—"
+                  }}</strong></button
+                ><span class="hys-ui-date-range-instruction" role="status">{{
+                  store.stage.value === "end"
+                    ? words.chooseEnd
+                    : words.chooseStart
+                }}</span>
+              </div>
+              <div
+                v-if="view !== 'time' && panelCount === 2"
+                class="hys-ui-date-panel-jumps"
               >
-            </div></slot
+                <button
+                  v-for="(day, index) in panels"
+                  :key="index"
+                  type="button"
+                  :aria-label="
+                    (index ? words.end : words.start) +
+                    ' ' +
+                    calendarISO(day).slice(0, 7)
+                  "
+                  @click="revealPanel(index)"
+                >
+                  {{ calendarISO(day).slice(0, 7) }}
+                </button>
+              </div>
+              <div
+                v-if="view !== 'time'"
+                ref="calendarStrip"
+                class="hys-ui-date-panels"
+              >
+                <HysDatePickerPanel
+                  v-for="index in panelCount"
+                  :key="index"
+                  :ref="
+                    (value) => {
+                      if (value) views.set(index - 1, value as any);
+                      else views.delete(index - 1);
+                    }
+                  "
+                  :month="panels[index - 1]"
+                  :view="index === 1 ? view : store.rightView.value"
+                  :unit="store.unit.value"
+                  :selected="draft"
+                  :range="range"
+                  :stage="store.stage.value"
+                  :preview="rangePreview"
+                  :first="store.first.value"
+                  :week-contains="store.weekContains.value"
+                  :week-number-formatter="weekNumberFormatter"
+                  :locale="locale"
+                  :words="words"
+                  :week-numbers="
+                    (showWeekNumber ?? showWeekNumbers) ||
+                    store.unit.value === 'week'
+                  "
+                  :adjacent="showAdjacentDays"
+                  :disabled="blocked"
+                  :available="
+                    (day) =>
+                      store.available(
+                        day,
+                        range && store.stage.value === 'end' ? 1 : 0,
+                      )
+                  "
+                  :period-available="store.periodAvailable"
+                  :cell-class-name="cellClassName"
+                  @browse="move($event, index - 1)"
+                  @mode="store.setMode($event, index - 1)"
+                  @pick="pick"
+                  @preview="store.preview.value = $event"
+                  ><template v-if="$slots['week-number']" #week-number="scope"
+                    ><slot name="week-number" v-bind="scope" /></template
+                  ><template #cell="cell"
+                    ><slot name="cell" v-bind="cell"
+                      ><slot
+                        v-if="cell.type === 'date' && $slots['date-render']"
+                        name="date-render"
+                        v-bind="cell"
+                      />
+                      <slot
+                        v-else-if="
+                          cell.type === 'month' && $slots['month-cell-render']
+                        "
+                        name="month-cell-render"
+                        v-bind="cell"
+                      />
+                      <slot v-else v-bind="cell">{{ cell.text }}</slot></slot
+                    ></template
+                  ><template v-for="name in navigationSlots" #[name]
+                    ><slot :name="name" /></template
+                ></HysDatePickerPanel>
+              </div>
+              <div v-if="time" class="hys-ui-date-time-toolbar">
+                <HysButton
+                  class="hys-ui-date-time-mode"
+                  size="sm"
+                  variant="ghost"
+                  :disabled="blocked"
+                  @click="store.setMode(view === 'time' ? dateView : 'time')"
+                  >{{ timeModeLabel }}</HysButton
+                >
+              </div>
+              <div
+                v-if="time"
+                class="hys-ui-date-time-area"
+                data-hys-ui-form-internal
+              >
+                <div
+                  v-for="index in range ? 2 : 1"
+                  :key="index"
+                  class="hys-ui-date-time-row"
+                >
+                  <div
+                    v-if="dateFieldFormat || timeDisplayFormat"
+                    class="hys-ui-date-time-fields"
+                  >
+                    <label v-if="dateFieldFormat">
+                      <span>{{
+                        range
+                          ? index === 1
+                            ? words.start
+                            : words.end
+                          : words.empty
+                      }}</span>
+                      <input
+                        type="text"
+                        :value="panelDateText(index - 1, dateFieldFormat)"
+                        :placeholder="dateFieldFormat"
+                        :disabled="blocked || store.locked(index - 1)"
+                        :readonly="inputReadonly"
+                        @change="
+                          editPanelField(
+                            $event,
+                            index - 1,
+                            dateFieldFormat,
+                            'date',
+                          )
+                        "
+                        @keydown.enter.prevent="
+                          editPanelField(
+                            $event,
+                            index - 1,
+                            dateFieldFormat,
+                            'date',
+                          )
+                        "
+                      />
+                    </label>
+                    <label v-if="timeDisplayFormat">
+                      <span
+                        >{{
+                          range
+                            ? (index === 1 ? words.start : words.end) + " "
+                            : ""
+                        }}{{ words.hour }}</span
+                      >
+                      <input
+                        type="text"
+                        :value="panelDateText(index - 1, timeDisplayFormat)"
+                        :placeholder="timeDisplayFormat"
+                        :disabled="
+                          blocked ||
+                          store.locked(index - 1) ||
+                          !draft[index - 1]
+                        "
+                        :readonly="inputReadonly"
+                        @change="
+                          editPanelField(
+                            $event,
+                            index - 1,
+                            timeDisplayFormat,
+                            'time',
+                          )
+                        "
+                        @keydown.enter.prevent="
+                          editPanelField(
+                            $event,
+                            index - 1,
+                            timeDisplayFormat,
+                            'time',
+                          )
+                        "
+                      />
+                    </label>
+                  </div>
+                  <div class="hys-ui-date-time-controls">
+                    <span class="hys-ui-date-time-caption" aria-hidden="true"
+                      >{{ range ? (index === 1 ? words.start : words.end) : ""
+                      }}<Clock3 v-if="!range" :size="14"
+                    /></span>
+                    <template
+                      v-for="(part, partIndex) in clockParts"
+                      :key="partIndex"
+                    >
+                      <span
+                        v-if="partIndex"
+                        class="hys-ui-date-time-colon"
+                        aria-hidden="true"
+                        >:</span
+                      >
+                      <div class="hys-ui-date-clock-part">
+                        <HysSelect
+                          :model-value="timeValue(index - 1, partIndex)"
+                          :options="clockOptions[index - 1]?.[partIndex] ?? []"
+                          :disabled="
+                            blocked ||
+                            store.locked(index - 1) ||
+                            !draft[index - 1]
+                          "
+                          size="sm"
+                          :aria-label="
+                            (range
+                              ? (index === 1 ? words.start : words.end) + ' '
+                              : '') + part
+                          "
+                          :popup-match-width="false"
+                          @update:model-value="
+                            setTime(index - 1, partIndex, $event)
+                          "
+                        />
+                        <div
+                          v-if="arrowControl"
+                          class="hys-ui-date-time-arrows"
+                        >
+                          <button
+                            v-for="direction in [-1, 1]"
+                            :key="direction"
+                            type="button"
+                            :aria-label="part + (direction < 0 ? ' −' : ' +')"
+                            :disabled="
+                              blocked ||
+                              store.locked(index - 1) ||
+                              !clockOptions[index - 1]?.[partIndex]?.some(
+                                (option) => !option.disabled,
+                              )
+                            "
+                            @click="stepTime(index - 1, partIndex, direction)"
+                          >
+                            {{ direction < 0 ? "−" : "+" }}
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-if="range && allowEmpty?.some(Boolean)"
+                class="hys-ui-date-partial"
+              >
+                <button
+                  v-for="index in 2"
+                  v-show="allowEmpty?.[index - 1]"
+                  :key="index"
+                  type="button"
+                  :disabled="blocked || store.locked(index - 1)"
+                  @click="clearEndpoint(index - 1)"
+                >
+                  {{ words.clear }} {{ index === 1 ? words.start : words.end }}
+                </button>
+              </div>
+              <p
+                v-if="problem"
+                :id="id + '-error'"
+                class="hys-ui-date-error hys-ui-date-popup-error"
+                role="alert"
+              >
+                {{ problem }}
+              </p>
+            </div>
+          </div>
+          <div v-if="$slots['extra-footer']" class="hys-ui-date-extra-footer">
+            <slot name="extra-footer" :dates="dates" :view="view" />
+          </div>
+          <footer
+            v-if="$slots.footer || showFooter || needsConfirm"
+            class="hys-ui-date-footer"
           >
-        </footer>
-      </div></PopupMotion></Teleport
+            <slot
+              name="footer"
+              :dates="dates"
+              :confirm="confirm"
+              :cancel="cancel"
+              :clear="clear"
+              ><div v-if="showFooter" class="hys-ui-date-footer-shortcuts">
+                <HysButton
+                  v-if="showToday && !range"
+                  size="sm"
+                  variant="ghost"
+                  :disabled="blocked || !store.available(store.today.value.day)"
+                  @click="today(false)"
+                  >{{ words.today }}</HysButton
+                ><HysButton
+                  v-if="time && showNow && !range"
+                  size="sm"
+                  variant="ghost"
+                  :disabled="blocked || !canUseNow"
+                  @click="today(true)"
+                  >{{ words.now }}</HysButton
+                ><HysButton
+                  v-if="canClear"
+                  size="sm"
+                  variant="ghost"
+                  @click="clear"
+                  >{{ words.clear }}</HysButton
+                >
+              </div>
+              <div class="hys-ui-date-footer-actions">
+                <HysButton
+                  v-if="showFooter"
+                  size="sm"
+                  variant="ghost"
+                  @click="cancel"
+                  >{{
+                    needsConfirm || range ? words.cancel : words.close
+                  }}</HysButton
+                ><HysButton
+                  v-if="needsConfirm"
+                  size="sm"
+                  :disabled="blocked || !canConfirm"
+                  @click="confirm"
+                  >{{ words.confirm }}</HysButton
+                >
+              </div></slot
+            >
+          </footer>
+        </div></PopupMotion
+      ></Teleport
     >
   </div>
 </template>
 <style scoped>
+.hys-ui-date-popup-main {
+  min-width: 0;
+}
+.hys-ui-date-extra-footer {
+  padding: 8px 12px;
+  border-top: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+}
+.hys-ui-date-popup-aside {
+  display: grid;
+  grid-template-columns: minmax(0, 100px) minmax(0, 1fr);
+}
+.hys-ui-date-popup-aside > .hys-ui-date-shortcuts {
+  align-content: start;
+  flex-direction: column;
+  align-items: stretch;
+  border-inline-end: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+}
+@media (max-width: 600px) {
+  .hys-ui-date-popup-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hys-ui-date-popup-aside > .hys-ui-date-shortcuts {
+    flex-direction: row;
+    border-inline-end: 0;
+  }
+}
 .hys-ui-date-picker {
   position: relative;
   min-width: 0;
@@ -1095,6 +1560,9 @@ defineExpose({
   overflow: auto;
   min-width: 0;
 }
+.hys-ui-date-panel-jumps {
+  display: none;
+}
 .hys-ui-date-popup-header {
   padding: 12px 14px;
   border-bottom: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
@@ -1170,13 +1638,70 @@ defineExpose({
   display: grid;
   gap: 8px;
 }
+.hys-ui-date-time-toolbar {
+  padding: 4px 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+.hys-ui-date-time-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hys-ui-date-time-fields label {
+  display: grid;
+  gap: 3px;
+  flex: 1 1 110px;
+  min-width: 0;
+  font-size: 12px;
+}
+.hys-ui-date-time-fields input {
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+}
+.hys-ui-date-time-fields input:focus-visible,
+.hys-ui-date-time-arrows button:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+}
 .hys-ui-date-time-row {
+  display: grid;
+  gap: 8px;
+}
+.hys-ui-date-clock-part {
+  flex: 1 1 66px;
+  min-width: 0;
+  max-width: 115px;
+}
+.hys-ui-date-time-arrows {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.hys-ui-date-time-arrows button {
+  flex: 1;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  border-radius: 5px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.hys-ui-date-time-arrows button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.hys-ui-date-time-controls {
   display: flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
 }
-.hys-ui-date-time-row > span:first-child {
+.hys-ui-date-time-caption {
   flex-shrink: 0;
   font-size: 11px;
   margin-inline-end: auto;
@@ -1184,12 +1709,12 @@ defineExpose({
   display: flex;
   gap: 4px;
 }
-.hys-ui-date-time-row > :deep(.hys-ui-select) {
+.hys-ui-date-clock-part > :deep(.hys-ui-select) {
   flex: 1;
   min-width: 0;
-  max-width: 74px;
+  width: 100%;
 }
-.hys-ui-date-time-row > :deep(.hys-ui-select .hys-ui-select-control) {
+.hys-ui-date-clock-part > :deep(.hys-ui-select .hys-ui-select-control) {
   padding-inline: 6px;
 }
 .hys-ui-date-time-colon {
@@ -1230,9 +1755,6 @@ defineExpose({
   outline-offset: -2px;
 }
 @media (max-width: 650px) {
-  .hys-ui-date-dual .hys-ui-date-panel {
-    flex-basis: 270px;
-  }
   .hys-ui-date-control-editable {
     padding-inline-start: 8px;
     gap: 4px;
@@ -1243,6 +1765,30 @@ defineExpose({
   }
   .hys-ui-date-footer {
     flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .hys-ui-date-panel-jumps {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 2px 10px;
+  }
+  .hys-ui-date-panel-jumps button {
+    padding: 4px 10px;
+    border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+    border-radius: 6px;
+    background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+    color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+    font: inherit;
+    cursor: pointer;
+  }
+  .hys-ui-date-dual .hys-ui-date-panels {
+    scroll-snap-type: x mandatory;
+  }
+  .hys-ui-date-dual :deep(.hys-ui-date-panel) {
+    flex-basis: 100%;
+    scroll-snap-align: start;
   }
 }
 </style>

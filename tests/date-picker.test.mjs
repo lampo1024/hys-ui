@@ -153,6 +153,221 @@ const settle = async () => {
   await nextTick();
   await pause(2);
 };
+test("DatePicker accepts alternate locale formats and clears to a custom value through v-model:value", async () => {
+  let clears = 0;
+  const a = await mount(ui.HysDatePicker, {
+    value: "2026-11-06",
+    locale: "en",
+    format: [(date) => "Day " + date.getDate(), "MMM D, YYYY ddd", "M-D-YYYY"],
+    editable: true,
+    allowClear: true,
+    valueOnClear: () => {
+      clears++;
+      return "pending";
+    },
+    emptyValues: ["pending"],
+  });
+  const input = a.find(".hys-ui-date-input");
+  assert.equal(input.value, "Day 6");
+  for (const [entry, expected] of [
+    ["Nov 9, 2026 Tue", "2026-11-06"],
+    ["Nov 9, 2026 Mon", "2026-11-09"],
+    ["11-10-2026", "2026-11-10"],
+  ]) {
+    input.value = entry;
+    await fire(input, "input");
+    await fire(input, "keydown", { key: "Enter" });
+    await settle();
+    assert.equal(a.props.value, expected);
+  }
+  await fire(a.find(".hys-ui-date-clear"), "click");
+  await settle();
+  assert.equal(a.props.value, "pending");
+  assert.equal(input.value, "");
+  assert.equal(clears, 1);
+});
+
+test("DatePicker range alias supports separate input IDs and stages the first typed endpoint", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    modelValue: null,
+    type: "daterange",
+    id: ["begin-date", "finish-date"],
+    placeholder: ["Begin", "Finish"],
+    editable: true,
+    separator: "→",
+  });
+  const begin = a.find("#begin-date"),
+    finish = a.find("#finish-date");
+  assert.equal(begin.placeholder, "Begin");
+  assert.equal(finish.placeholder, "Finish");
+  assert.equal(a.find(".hys-ui-date-separator").textContent, "→");
+  for (const [input, value] of [
+    [begin, "2026-11-06"],
+    [finish, "2026-11-09"],
+  ]) {
+    input.value = value;
+    await fire(input, "input");
+    await fire(input, "keydown", { key: "Enter" });
+    await settle();
+    if (input === begin) assert.equal(a.props.modelValue, null);
+  }
+  assert.deepEqual(a.props.modelValue, ["2026-11-06", "2026-11-09"]);
+  assert.deepEqual(
+    a.events.calendarChange.at(-1)[1].formatted,
+    a.props.modelValue,
+  );
+});
+
+test("Date-only ranges apply each default time after ordering the endpoints", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    type: "daterange",
+    valueType: "date",
+    defaultPickerValue: "2026-11-06",
+    defaultTime: ["09:30", new Date(2000, 0, 1, 17, 45)],
+  });
+  await a.vm.show();
+  assert.equal(popup().querySelector(".hys-ui-date-time-area"), null);
+  await fire(date("2026-11-09"), "click");
+  await fire(date("2026-11-06"), "click");
+  await settle();
+  assert.deepEqual(
+    a.vm.value.map((value) => [
+      value.getDate(),
+      value.getHours(),
+      value.getMinutes(),
+    ]),
+    [
+      [6, 9, 30],
+      [9, 17, 45],
+    ],
+  );
+});
+
+test("DateRangePicker seeds both panels, reports independent navigation and validates lazy presets", async () => {
+  let uses = 0;
+  const a = await mount(
+    ui.HysDateRangePicker,
+    {
+      modelValue: null,
+      defaultPickerValue: [new Date(2026, 9, 1), new Date(2026, 11, 1)],
+      singlePanel: false,
+      unlinkPanels: true,
+      showConfirm: true,
+      shortcutPlacement: "start",
+      presets: [
+        {
+          label: "End of year",
+          value: () => {
+            uses++;
+            return ["2026-12-21", "2026-12-31"];
+          },
+        },
+      ],
+    },
+    { "extra-footer": ({ view }) => view },
+  );
+  await a.vm.show();
+  const panels = [...popup().querySelectorAll(".hys-ui-date-panel")];
+  assert.deepEqual(
+    panels.map((panel) => panel.ariaLabel),
+    ["2026-10", "2026-12"],
+  );
+  assert.equal(
+    popup().querySelector(".hys-ui-date-extra-footer").textContent,
+    "date",
+  );
+  await fire(panels[1].querySelector('[aria-label="下个月"]'), "click");
+  assert.deepEqual(
+    a.events["update:panelValues"]
+      .at(-1)[0]
+      .map((date) => [date.getFullYear(), date.getMonth()]),
+    [
+      [2026, 9],
+      [2027, 0],
+    ],
+  );
+  assert.equal(uses, 0);
+  await fire(button("End of year"), "click");
+  assert.equal(uses, 1);
+  assert.equal(a.props.modelValue, null);
+  assert(await a.vm.confirm());
+  await settle();
+  assert.deepEqual(a.props.modelValue, ["2026-12-21", "2026-12-31"]);
+  assert.deepEqual(
+    a.events.openChange.map(([open]) => open),
+    [true, false],
+  );
+});
+
+test("DatePicker datetime fields validate 12-hour input, boundaries and hidden time options", async () => {
+  const a = await mount(ui.HysDatePicker, {
+    modelValue: "",
+    type: "datetime",
+    defaultPickerValue: "2026-11-06",
+    dateFormat: "MMM DD, YYYY",
+    locale: "en",
+    timeFormat: "hh:mm A",
+    showTime: {
+      defaultValue: new Date(2000, 0, 1, 14),
+      hideDisabledOptions: true,
+      minuteStep: 15,
+    },
+    min: "2026-11-06 13:00:00",
+    disabledHours: () => [15],
+    arrowControl: true,
+    defaultMode: "time",
+  });
+  await a.vm.show();
+  assert.equal(popup().querySelector(".hys-ui-date-panels"), null);
+  const [dateInput, timeInput] = popup().querySelectorAll(
+    ".hys-ui-date-time-fields input",
+  );
+  dateInput.value = "Nov 06, 2026";
+  await fire(dateInput, "change");
+  assert.equal(timeInput.value, "02:00 PM");
+  await fire(button("Hour +"), "click");
+  assert.equal(timeInput.value, "04:00 PM");
+  timeInput.value = "12:30 PM";
+  await fire(timeInput, "change");
+  assert(button("OK").disabled);
+  timeInput.value = "01:30 PM";
+  await fire(timeInput, "change");
+  assert.equal(a.props.modelValue, "");
+  await fire(button("OK"), "click");
+  await settle();
+  assert.equal(a.props.modelValue, "2026-11-06 13:30:00");
+});
+
+test("DatePicker decade browsing and custom popup host keep selection and visibility separate", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const a = await mount(
+    ui.HysDatePicker,
+    {
+      picker: "month",
+      defaultPickerValue: "2026-11",
+      defaultMode: "decade",
+      getPopupContainer: () => host,
+      popperClass: "custom-date-popup",
+      popperStyle: "--custom-date: 1",
+    },
+    { "month-cell-render": ({ text }) => "Month " + text },
+  );
+  await a.vm.show();
+  assert(host.contains(popup()));
+  assert(popup().classList.contains("custom-date-popup"));
+  assert.equal(popup().style.getPropertyValue("--custom-date"), "1");
+  await fire(popup().querySelector("[data-date='2020-01-01']"), "click");
+  await settle();
+  await fire(popup().querySelector("[data-date='2024-01-01']"), "click");
+  await settle();
+  assert(popup().textContent.includes("Month "));
+  await fire(popup().querySelector("[data-date='2024-02-01']"), "click");
+  await settle();
+  assert.equal(a.vm.value, "2024-02");
+  assert.equal(a.vm.open, false);
+});
+
 test("DatePicker preserves string values, Monday-first grids and original excluded-day callbacks", async () => {
   const a = await mount(ui.HysDatePicker, {
     modelValue: "2026-11-07",
@@ -205,11 +420,18 @@ test("DatePicker Date and timestamp outputs retain the selected civil date and n
   });
   assert.equal(b.vm.value, 0);
   assert.equal(
-    b.find(".hys-ui-date-display").textContent.includes("1970"),
+    b
+      .find(".hys-ui-date-display")
+      .textContent.includes(String(new Date(0).getFullYear())),
     true,
   );
   await b.vm.show();
-  await fire(date("1970-01-02"), "click");
+  const next = new Date(0);
+  next.setDate(next.getDate() + 1);
+  const localDay = [next.getFullYear(), next.getMonth() + 1, next.getDate()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join("-");
+  await fire(date(localDay), "click");
   await settle();
   assert.equal(typeof b.props.modelValue, "number");
 });

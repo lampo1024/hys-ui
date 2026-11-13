@@ -3,9 +3,11 @@ import { ref, computed } from "vue";
 import HysDatePickerControl from "./HysDatePickerControl.vue";
 import {
   datePickerDefaults,
+  dateRange,
   type HysDatePickerProps,
   type HysDatePickerValue,
   type HysDatePickerChange,
+  type HysDateCalendarChange,
   type HysDateScalar,
   type HysDatePickerView,
   type HysDatePickerSlots,
@@ -18,10 +20,13 @@ const props = withDefaults(
 );
 const emit = defineEmits<{
   "update:modelValue": [value: V];
+  "update:value": [value: V];
   change: [value: V, info: HysDatePickerChange];
   "value-change": [value: V, info: HysDatePickerChange];
   "update:open": [value: boolean];
   "visible-change": [value: boolean];
+  openChange: [value: boolean];
+  "update:panelValues": [value: readonly [Date, Date]];
   "update:panelValue": [value: HysDateScalar];
   "update:mode": [value: HysDatePickerView];
   panelChange: [
@@ -29,10 +34,7 @@ const emit = defineEmits<{
     view: HysDatePickerView,
     context: { index: number },
   ];
-  calendarChange: [
-    value: HysDatePickerValue,
-    context: { range: "start" | "end"; dates: readonly (Date | null)[] },
-  ];
+  calendarChange: [value: HysDatePickerValue, context: HysDateCalendarChange];
   clear: [];
   ok: [value: V];
   invalid: [
@@ -46,10 +48,13 @@ const slots = defineSlots<HysDatePickerSlots>(),
 const listeners = Object.fromEntries(
   [
     "update:modelValue",
+    "update:value",
     "change",
     "value-change",
     "update:open",
     "visible-change",
+    "openChange",
+    "update:panelValues",
     "update:panelValue",
     "update:mode",
     "panelChange",
@@ -89,7 +94,7 @@ defineExpose({
 <template>
   <HysDatePickerControl
     v-bind="{ ...(props as unknown as HysDatePickerProps), ...$attrs }"
-    :range="false"
+    :range="dateRange(props.type)"
     ref="control"
     v-on="listeners"
     ><template v-if="$slots.default" #default="scope"
@@ -100,6 +105,12 @@ defineExpose({
       ><slot name="cell" v-bind="scope" /></template
     ><template v-if="$slots.header" #header="scope"
       ><slot name="header" v-bind="scope" /></template
+    ><template v-if="$slots['extra-footer']" #extra-footer="scope"
+      ><slot name="extra-footer" v-bind="scope" /></template
+    ><template v-if="$slots['date-render']" #date-render="scope"
+      ><slot name="date-render" v-bind="scope" /></template
+    ><template v-if="$slots['month-cell-render']" #month-cell-render="scope"
+      ><slot name="month-cell-render" v-bind="scope" /></template
     ><template v-if="$slots.footer" #footer="scope"
       ><slot name="footer" v-bind="scope" /></template
     ><template v-if="$slots.shortcut" #shortcut="scope"

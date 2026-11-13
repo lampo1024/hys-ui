@@ -7705,6 +7705,14 @@
         "global": false
       },
       {
+        "name": "value",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控绑定别名，支持 v-model:value；同时设置时 modelValue 优先。",
+        "global": false
+      },
+      {
         "name": "defaultValue",
         "type": "V | undefined",
         "required": false,
@@ -7721,11 +7729,35 @@
         "global": false
       },
       {
+        "name": "emptyValues",
+        "type": "readonly HysDatePickerValue[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "视为空的附加值集合，也适用于各端点；配置的哨兵值保留给空态。",
+        "global": false
+      },
+      {
+        "name": "valueOnClear",
+        "type": "V | (() => V) | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空时输出的值，或点击清空时调用的函数；优先于 clearValue。使用自定义哨兵时可用 emptyValues 声明初始空态。",
+        "global": false
+      },
+      {
         "name": "type",
         "type": "HysDatePickerType | undefined",
         "required": false,
         "default": "date",
-        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / weeks / months / quarters / years",
+        "description": "date / week / month / quarter / year / datetime；复选 dates / weeks / months / quarters / years；统一范围 daterange / weekrange / monthrange / quarterrange / yearrange / datetimerange。",
+        "global": false
+      },
+      {
+        "name": "picker",
+        "type": "HysDatePickerUnit | undefined",
+        "required": false,
+        "default": "",
+        "description": "date / week / month / quarter / year；覆盖 type 的选取粒度，范围或多选仍由组件与 type 决定。",
         "global": false
       },
       {
@@ -7746,10 +7778,10 @@
       },
       {
         "name": "format",
-        "type": "string | undefined",
+        "type": "HysDateDisplayFormat | readonly HysDateDisplayFormat[] | undefined",
         "required": false,
         "default": "",
-        "description": "展示格式，不改变绑定值",
+        "description": "字符串、(date: Date) => string 或混合数组。首项控制展示，数组中所有字符串均用于解析；格式函数只参与展示。",
         "global": false
       },
       {
@@ -7757,7 +7789,7 @@
         "type": "readonly string[] | undefined",
         "required": false,
         "default": "",
-        "description": "文本输入额外允许的解析格式",
+        "description": "额外可解析的字符串格式，依次尝试 format 中的字符串、inputFormats、valueFormat 或默认绑定格式。",
         "global": false
       },
       {
@@ -7802,10 +7834,18 @@
       },
       {
         "name": "placeholder",
-        "type": "string | undefined",
+        "type": "string | readonly [string, string] | undefined",
         "required": false,
         "default": "",
-        "description": "整体输入区的空值提示",
+        "description": "单选或非编辑范围的整体占位；范围也可传 [开始提示, 结束提示]，startPlaceholder 和 endPlaceholder 优先。",
+        "global": false
+      },
+      {
+        "name": "id",
+        "type": "string | readonly [string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "触发器 ID；可编辑范围可传 [开始 ID, 结束 ID]。单个 ID 时结束端附加 -end。",
         "global": false
       },
       {
@@ -7877,7 +7917,31 @@
         "type": "((date: Date, context: HysDatePickerContext) => HysDateDisabledTime) | undefined",
         "required": false,
         "default": "",
-        "description": "返回 hours、minutes(hour)、seconds(hour,minute) 的禁用编号",
+        "description": "接收本地时刻 Date 和 {iso, range, from}；返回 hours、minutes(hour)、seconds(hour, minute)，也支持相应的 disabled* 函数。",
+        "global": false
+      },
+      {
+        "name": "disabledHours",
+        "type": "((range: \"start\" | \"end\", from: Date | null) => readonly number[]) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(range, from) => number[]，禁用 0–23 的小时，与 disabledTime 合并。",
+        "global": false
+      },
+      {
+        "name": "disabledMinutes",
+        "type": "((hour: number, range: \"start\" | \"end\", from: Date | null) => readonly number[]) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(hour, range, from) => number[]，禁用 0–59 的分钟，与 disabledTime 合并。",
+        "global": false
+      },
+      {
+        "name": "disabledSeconds",
+        "type": "((hour: number, minute: number, range: \"start\" | \"end\", from: Date | null) => readonly number[]) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(hour, minute, range, from) => number[]，禁用 0–59 的秒，与 disabledTime 合并。",
         "global": false
       },
       {
@@ -7945,6 +8009,14 @@
         "global": false
       },
       {
+        "name": "showWeekNumber",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随 showWeekNumbers",
+        "description": "是否在普通日历显示周号，优先于 showWeekNumbers；周选择模式始终显示周号。",
+        "global": false
+      },
+      {
         "name": "showAdjacentDays",
         "type": "boolean | undefined",
         "required": false,
@@ -7954,10 +8026,10 @@
       },
       {
         "name": "defaultPickerValue",
-        "type": "HysDateScalar | undefined",
+        "type": "HysDateScalar | HysDatePanelValues | undefined",
         "required": false,
         "default": "",
-        "description": "初始浏览日期，不改变已选值",
+        "description": "无选中值时的初始浏览日期；范围可传两个日期分别定位面板。每次打开按当前选择或该默认值定位。",
         "global": false
       },
       {
@@ -7969,11 +8041,19 @@
         "global": false
       },
       {
+        "name": "panelValues",
+        "type": "HysDatePanelValues | undefined",
+        "required": false,
+        "default": "",
+        "description": "双面板的受控浏览位置 [开始面板, 结束面板]，支持 v-model:panelValues，优先于 panelValue。",
+        "global": false
+      },
+      {
         "name": "mode",
         "type": "HysDatePickerView | undefined",
         "required": false,
         "default": "",
-        "description": "受控面板 date / month / quarter / year",
+        "description": "受控面板 date / month / quarter / year / decade / time；time 需要启用日期时间选择。",
         "global": false
       },
       {
@@ -7981,7 +8061,7 @@
         "type": "HysDatePickerView | undefined",
         "required": false,
         "default": "",
-        "description": "首次打开的面板类型，默认跟随 type",
+        "description": "每次打开的初始视图，默认跟随选择粒度。decade 先选年代，time 打开时显示时间区。",
         "global": false
       },
       {
@@ -7993,11 +8073,43 @@
         "global": false
       },
       {
+        "name": "presets",
+        "type": "readonly HysDateShortcut[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "快捷日期或范围，形状为 {label, value, disabled?}；value 可传静态值或点击时执行的函数。",
+        "global": false
+      },
+      {
+        "name": "ranges",
+        "type": "Readonly<Record<string, HysDatePickerValue | (() => HysDatePickerValue)>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按名称映射到范围数组或返回范围的函数；在 shortcuts、presets 之后显示。",
+        "global": false
+      },
+      {
+        "name": "shortcutPlacement",
+        "type": "\"start\" | \"top\" | undefined",
+        "required": false,
+        "default": "top",
+        "description": "top 在日历上方，start 在逻辑起始侧，窄屏回到上方。",
+        "global": false
+      },
+      {
         "name": "clearable",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
         "description": "显示清空操作，默认 false；实例 clear 方法独立可用",
+        "global": false
+      },
+      {
+        "name": "allowClear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随 clearable",
+        "description": "覆盖 clearable 是否展示清空按钮，未设置时使用 clearable。",
         "global": false
       },
       {
@@ -8022,6 +8134,14 @@
         "required": false,
         "default": "false",
         "description": "聚焦时自动打开，默认 false",
+        "global": false
+      },
+      {
+        "name": "automaticDropdown",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随 showOnFocus",
+        "description": "覆盖 showOnFocus；true 在触发器聚焦时打开，恢复焦点时保持关闭。",
         "global": false
       },
       {
@@ -8058,18 +8178,58 @@
       },
       {
         "name": "showTime",
-        "type": "boolean | undefined",
+        "type": "boolean | HysDateTimeOptions | undefined",
         "required": false,
-        "default": "false",
-        "description": "日期选择时增加自定义时间列表，等价于 datetime",
+        "default": "",
+        "description": "布尔值或时间选项对象；支持 defaultValue、format、use12Hours、hourStep、minuteStep、secondStep、hideDisabledOptions。",
         "global": false
       },
       {
         "name": "defaultTime",
-        "type": "string | readonly [string, string] | undefined",
+        "type": "HysDateDefaultTime | readonly [HysDateDefaultTime, HysDateDefaultTime] | undefined",
         "required": false,
         "default": "",
-        "description": "新端点默认 HH:mm:ss，范围可指定两个时刻",
+        "description": "新选日期的默认时刻，接受 HH:mm[:ss] 或本地 Date；范围可传两个值。日期范围可通过 Date、时间戳或含时间的 valueFormat 保留时刻。优先于 showTime.defaultValue。",
+        "global": false
+      },
+      {
+        "name": "dateFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "日期时间面板的日期字段格式，如 YYYY/MM/DD ddd；启用后可在面板内直接编辑日期。",
+        "global": false
+      },
+      {
+        "name": "timeFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "日期时间面板的时间字段格式，如 hh:mm A；优先于 showTime.format。格式含 s 或 ss 时显示秒列表。",
+        "global": false
+      },
+      {
+        "name": "use12Hours",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用 12 小时显示和 AM / PM；优先于 showTime.use12Hours。未设置时可从面板时间格式的 h / hh 推断。",
+        "global": false
+      },
+      {
+        "name": "hideDisabledOptions",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "隐藏已禁用的时间选项；优先于 showTime.hideDisabledOptions，默认保留并禁用。",
+        "global": false
+      },
+      {
+        "name": "arrowControl",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "为时、分、秒增加步进按钮，循环浏览同列的可选值。",
         "global": false
       },
       {
@@ -8077,7 +8237,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "1",
-        "description": "小时列表步长，默认 1",
+        "description": "小时选项步长，整数 1–24，默认 1；showTime.hourStep 优先，保留当前值。",
         "global": false
       },
       {
@@ -8085,7 +8245,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "1",
-        "description": "分钟列表步长，默认 1",
+        "description": "分钟选项步长，整数 1–60，默认 1；showTime.minuteStep 优先，保留当前值。",
         "global": false
       },
       {
@@ -8093,7 +8253,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "1",
-        "description": "秒列表步长，默认 1",
+        "description": "秒选项步长，整数 1–60，默认 1；showTime.secondStep 优先，保留当前值。",
         "global": false
       },
       {
@@ -8110,6 +8270,14 @@
         "required": false,
         "default": " 至 ",
         "description": "范围展示的分隔符，默认 至",
+        "global": false
+      },
+      {
+        "name": "separator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "范围文字分隔符，优先于 rangeSeparator；range-separator 插槽可渲染自定义内容。",
         "global": false
       },
       {
@@ -8210,10 +8378,10 @@
       },
       {
         "name": "placement",
-        "type": "Placement | undefined",
+        "type": "Placement | \"topLeft\" | \"topRight\" | \"bottomLeft\" | \"bottomRight\" | undefined",
         "required": false,
-        "default": "",
-        "description": "浮层位置，默认 bottom-start",
+        "default": "bottom-start",
+        "description": "默认 bottom-start；支持十二个方向，也可使用 bottomLeft / bottomRight / topLeft / topRight。",
         "global": false
       },
       {
@@ -8222,6 +8390,38 @@
         "required": false,
         "default": "body",
         "description": "浮层目标，默认 body；false 保留原地",
+        "global": false
+      },
+      {
+        "name": "teleported",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true（等效默认）",
+        "description": "false 将浮层保留在控件旁；默认为挂载到 appendTo 或 getPopupContainer 的目标。",
+        "global": false
+      },
+      {
+        "name": "getPopupContainer",
+        "type": "((trigger: HTMLElement) => HTMLElement) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(trigger: HTMLElement) => HTMLElement，浮层打开时解析挂载目标，优先于 appendTo。",
+        "global": false
+      },
+      {
+        "name": "fallbackPlacements",
+        "type": "readonly Placement[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "有序候选定位数组；首选位置溢出时按顺序尝试，均溢出时选择溢出最少的位置。",
+        "global": false
+      },
+      {
+        "name": "popperOptions",
+        "type": "HysDatePopupOptions | undefined",
+        "required": false,
+        "default": "",
+        "description": "HYS 浮层定位设置。strategy 为 fixed / absolute，offset 默认 8px，padding 默认 10px，flip=false 禁止翻转。",
         "global": false
       },
       {
@@ -8241,11 +8441,51 @@
         "global": false
       },
       {
+        "name": "popupClassName",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层类名，与 popupClass、popperClass 叠加。",
+        "global": false
+      },
+      {
+        "name": "popperClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层类名，与 popupClass、popupClassName 叠加。",
+        "global": false
+      },
+      {
         "name": "popupStyle",
         "type": "CSSProperties | undefined",
         "required": false,
         "default": "",
         "description": "自定义面板样式",
+        "global": false
+      },
+      {
+        "name": "popperStyle",
+        "type": "string | CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层 CSS 对象或样式字符串；同名样式由 popupStyle 和计算定位覆盖。",
+        "global": false
+      },
+      {
+        "name": "prefixIcon",
+        "type": "string | Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入区前缀，可传 Vue 图标组件或已注册的组件名；prefix 插槽优先。",
+        "global": false
+      },
+      {
+        "name": "clearIcon",
+        "type": "string | Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空按钮图标，可传 Vue 图标组件或已注册的组件名；clear-icon 插槽优先。",
         "global": false
       },
       {
@@ -8344,6 +8584,27 @@
         "description": "浮层实际显示状态变化"
       },
       {
+        "name": "update:value",
+        "type": "[value: V]",
+        "required": false,
+        "default": "",
+        "description": "值更新请求，载荷为下一次绑定值 V；与 update:modelValue 同步发出。"
+      },
+      {
+        "name": "openChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "浮层实际打开或关闭时触发，载荷为 boolean；与 visible-change 同时触发。"
+      },
+      {
+        "name": "update:panelValues",
+        "type": "[value: readonly [Date, Date]]",
+        "required": false,
+        "default": "",
+        "description": "范围面板翻页、跳转等请求，载荷为 [左面板 Date, 右面板 Date]，均为对应月份 1 日的本地零时。"
+      },
+      {
         "name": "update:panelValue",
         "type": "[value: HysDateScalar]",
         "required": false,
@@ -8352,10 +8613,10 @@
       },
       {
         "name": "calendarChange",
-        "type": "[value: HysDatePickerValue, context: { range: \"start\" | \"end\"; dates: readonly (Date | null)[]; }]",
+        "type": "[value: HysDatePickerValue, context: HysDateCalendarChange]",
         "required": false,
         "default": "",
-        "description": "草稿变化：(value,{range,dates})，不会提前修改绑定值"
+        "description": "选择日期、调整时间、选择预设或清除草稿端点后触发，载荷 (value, {range, dates, formatted})。"
       },
       {
         "name": "ok",
@@ -8437,6 +8698,27 @@
         "description": "下一年 / 年份页图标"
       },
       {
+        "name": "extra-footer",
+        "type": "{ dates: readonly (Date | null)[]; view: HysDatePickerView; }",
+        "required": false,
+        "default": "",
+        "description": "在默认操作区上方追加内容，参数 {dates, view}；不替换确认等操作。"
+      },
+      {
+        "name": "date-render",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "日期网格模板，参数同 cell；含 range、rangeStart、rangeEnd、row、column。"
+      },
+      {
+        "name": "month-cell-render",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "月份网格模板，参数同 cell；row、column 从 0 起算。"
+      },
+      {
         "name": "header",
         "type": "{ dates: readonly (Date | null)[]; view: HysDatePickerView; }",
         "required": false,
@@ -8462,7 +8744,7 @@
         "type": "any",
         "required": false,
         "default": "",
-        "description": "可编辑范围分隔内容"
+        "description": "范围触发器中间的分隔内容，适用于按钮触发器和可编辑的双输入框。"
       }
     ],
     "exposed": [
@@ -8576,7 +8858,7 @@
         "type": "(view: HysDatePickerView) => boolean",
         "required": true,
         "default": "",
-        "description": "请求切换 date / month / quarter / year 面板，返回是否接受"
+        "description": "请求切换 date / month / quarter / year / decade / time 面板，返回是否接受"
       }
     ]
   },
@@ -8607,6 +8889,14 @@
         "global": false
       },
       {
+        "name": "value",
+        "type": "V | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控绑定别名，支持 v-model:value；同时设置时 modelValue 优先。",
+        "global": false
+      },
+      {
         "name": "defaultValue",
         "type": "V | undefined",
         "required": false,
@@ -8623,11 +8913,35 @@
         "global": false
       },
       {
+        "name": "emptyValues",
+        "type": "readonly HysDatePickerValue[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "视为空的附加值集合，也适用于各端点；配置的哨兵值保留给空态。",
+        "global": false
+      },
+      {
+        "name": "valueOnClear",
+        "type": "V | (() => V) | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空时输出的值，或点击清空时调用的函数；优先于 clearValue。使用自定义哨兵时可用 emptyValues 声明初始空态。",
+        "global": false
+      },
+      {
         "name": "type",
         "type": "HysDatePickerType | undefined",
         "required": false,
         "default": "date",
-        "description": "date / week / month / quarter / year / datetime；单选还支持 dates / weeks / months / quarters / years",
+        "description": "date / week / month / quarter / year / datetime；复选 dates / weeks / months / quarters / years；统一范围 daterange / weekrange / monthrange / quarterrange / yearrange / datetimerange。",
+        "global": false
+      },
+      {
+        "name": "picker",
+        "type": "HysDatePickerUnit | undefined",
+        "required": false,
+        "default": "",
+        "description": "date / week / month / quarter / year；覆盖 type 的选取粒度，范围或多选仍由组件与 type 决定。",
         "global": false
       },
       {
@@ -8648,10 +8962,10 @@
       },
       {
         "name": "format",
-        "type": "string | undefined",
+        "type": "HysDateDisplayFormat | readonly HysDateDisplayFormat[] | undefined",
         "required": false,
         "default": "",
-        "description": "展示格式，不改变绑定值",
+        "description": "字符串、(date: Date) => string 或混合数组。首项控制展示，数组中所有字符串均用于解析；格式函数只参与展示。",
         "global": false
       },
       {
@@ -8659,7 +8973,7 @@
         "type": "readonly string[] | undefined",
         "required": false,
         "default": "",
-        "description": "文本输入额外允许的解析格式",
+        "description": "额外可解析的字符串格式，依次尝试 format 中的字符串、inputFormats、valueFormat 或默认绑定格式。",
         "global": false
       },
       {
@@ -8704,10 +9018,18 @@
       },
       {
         "name": "placeholder",
-        "type": "string | undefined",
+        "type": "string | readonly [string, string] | undefined",
         "required": false,
         "default": "",
-        "description": "整体输入区的空值提示",
+        "description": "单选或非编辑范围的整体占位；范围也可传 [开始提示, 结束提示]，startPlaceholder 和 endPlaceholder 优先。",
+        "global": false
+      },
+      {
+        "name": "id",
+        "type": "string | readonly [string, string] | undefined",
+        "required": false,
+        "default": "",
+        "description": "触发器 ID；可编辑范围可传 [开始 ID, 结束 ID]。单个 ID 时结束端附加 -end。",
         "global": false
       },
       {
@@ -8779,7 +9101,31 @@
         "type": "((date: Date, context: HysDatePickerContext) => HysDateDisabledTime) | undefined",
         "required": false,
         "default": "",
-        "description": "返回 hours、minutes(hour)、seconds(hour,minute) 的禁用编号",
+        "description": "接收本地时刻 Date 和 {iso, range, from}；返回 hours、minutes(hour)、seconds(hour, minute)，也支持相应的 disabled* 函数。",
+        "global": false
+      },
+      {
+        "name": "disabledHours",
+        "type": "((range: \"start\" | \"end\", from: Date | null) => readonly number[]) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(range, from) => number[]，禁用 0–23 的小时，与 disabledTime 合并。",
+        "global": false
+      },
+      {
+        "name": "disabledMinutes",
+        "type": "((hour: number, range: \"start\" | \"end\", from: Date | null) => readonly number[]) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(hour, range, from) => number[]，禁用 0–59 的分钟，与 disabledTime 合并。",
+        "global": false
+      },
+      {
+        "name": "disabledSeconds",
+        "type": "((hour: number, minute: number, range: \"start\" | \"end\", from: Date | null) => readonly number[]) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(hour, minute, range, from) => number[]，禁用 0–59 的秒，与 disabledTime 合并。",
         "global": false
       },
       {
@@ -8847,6 +9193,14 @@
         "global": false
       },
       {
+        "name": "showWeekNumber",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随 showWeekNumbers",
+        "description": "是否在普通日历显示周号，优先于 showWeekNumbers；周选择模式始终显示周号。",
+        "global": false
+      },
+      {
         "name": "showAdjacentDays",
         "type": "boolean | undefined",
         "required": false,
@@ -8856,10 +9210,10 @@
       },
       {
         "name": "defaultPickerValue",
-        "type": "HysDateScalar | undefined",
+        "type": "HysDateScalar | HysDatePanelValues | undefined",
         "required": false,
         "default": "",
-        "description": "初始浏览日期，不改变已选值",
+        "description": "无选中值时的初始浏览日期；范围可传两个日期分别定位面板。每次打开按当前选择或该默认值定位。",
         "global": false
       },
       {
@@ -8871,11 +9225,19 @@
         "global": false
       },
       {
+        "name": "panelValues",
+        "type": "HysDatePanelValues | undefined",
+        "required": false,
+        "default": "",
+        "description": "双面板的受控浏览位置 [开始面板, 结束面板]，支持 v-model:panelValues，优先于 panelValue。",
+        "global": false
+      },
+      {
         "name": "mode",
         "type": "HysDatePickerView | undefined",
         "required": false,
         "default": "",
-        "description": "受控面板 date / month / quarter / year",
+        "description": "受控面板 date / month / quarter / year / decade / time；time 需要启用日期时间选择。",
         "global": false
       },
       {
@@ -8883,7 +9245,7 @@
         "type": "HysDatePickerView | undefined",
         "required": false,
         "default": "",
-        "description": "首次打开的面板类型，默认跟随 type",
+        "description": "每次打开的初始视图，默认跟随选择粒度。decade 先选年代，time 打开时显示时间区。",
         "global": false
       },
       {
@@ -8895,11 +9257,43 @@
         "global": false
       },
       {
+        "name": "presets",
+        "type": "readonly HysDateShortcut[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "快捷日期或范围，形状为 {label, value, disabled?}；value 可传静态值或点击时执行的函数。",
+        "global": false
+      },
+      {
+        "name": "ranges",
+        "type": "Readonly<Record<string, HysDatePickerValue | (() => HysDatePickerValue)>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按名称映射到范围数组或返回范围的函数；在 shortcuts、presets 之后显示。",
+        "global": false
+      },
+      {
+        "name": "shortcutPlacement",
+        "type": "\"start\" | \"top\" | undefined",
+        "required": false,
+        "default": "top",
+        "description": "top 在日历上方，start 在逻辑起始侧，窄屏回到上方。",
+        "global": false
+      },
+      {
         "name": "clearable",
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
         "description": "显示清空操作，默认 false；实例 clear 方法独立可用",
+        "global": false
+      },
+      {
+        "name": "allowClear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随 clearable",
+        "description": "覆盖 clearable 是否展示清空按钮，未设置时使用 clearable。",
         "global": false
       },
       {
@@ -8924,6 +9318,14 @@
         "required": false,
         "default": "false",
         "description": "聚焦时自动打开，默认 false",
+        "global": false
+      },
+      {
+        "name": "automaticDropdown",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "跟随 showOnFocus",
+        "description": "覆盖 showOnFocus；true 在触发器聚焦时打开，恢复焦点时保持关闭。",
         "global": false
       },
       {
@@ -8960,18 +9362,58 @@
       },
       {
         "name": "showTime",
-        "type": "boolean | undefined",
+        "type": "boolean | HysDateTimeOptions | undefined",
         "required": false,
-        "default": "false",
-        "description": "日期选择时增加自定义时间列表，等价于 datetime",
+        "default": "",
+        "description": "布尔值或时间选项对象；支持 defaultValue、format、use12Hours、hourStep、minuteStep、secondStep、hideDisabledOptions。",
         "global": false
       },
       {
         "name": "defaultTime",
-        "type": "string | readonly [string, string] | undefined",
+        "type": "HysDateDefaultTime | readonly [HysDateDefaultTime, HysDateDefaultTime] | undefined",
         "required": false,
         "default": "",
-        "description": "新端点默认 HH:mm:ss，范围可指定两个时刻",
+        "description": "新选日期的默认时刻，接受 HH:mm[:ss] 或本地 Date；范围可传两个值。日期范围可通过 Date、时间戳或含时间的 valueFormat 保留时刻。优先于 showTime.defaultValue。",
+        "global": false
+      },
+      {
+        "name": "dateFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "日期时间面板的日期字段格式，如 YYYY/MM/DD ddd；启用后可在面板内直接编辑日期。",
+        "global": false
+      },
+      {
+        "name": "timeFormat",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "日期时间面板的时间字段格式，如 hh:mm A；优先于 showTime.format。格式含 s 或 ss 时显示秒列表。",
+        "global": false
+      },
+      {
+        "name": "use12Hours",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "使用 12 小时显示和 AM / PM；优先于 showTime.use12Hours。未设置时可从面板时间格式的 h / hh 推断。",
+        "global": false
+      },
+      {
+        "name": "hideDisabledOptions",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "隐藏已禁用的时间选项；优先于 showTime.hideDisabledOptions，默认保留并禁用。",
+        "global": false
+      },
+      {
+        "name": "arrowControl",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "为时、分、秒增加步进按钮，循环浏览同列的可选值。",
         "global": false
       },
       {
@@ -8979,7 +9421,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "1",
-        "description": "小时列表步长，默认 1",
+        "description": "小时选项步长，整数 1–24，默认 1；showTime.hourStep 优先，保留当前值。",
         "global": false
       },
       {
@@ -8987,7 +9429,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "1",
-        "description": "分钟列表步长，默认 1",
+        "description": "分钟选项步长，整数 1–60，默认 1；showTime.minuteStep 优先，保留当前值。",
         "global": false
       },
       {
@@ -8995,7 +9437,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "1",
-        "description": "秒列表步长，默认 1",
+        "description": "秒选项步长，整数 1–60，默认 1；showTime.secondStep 优先，保留当前值。",
         "global": false
       },
       {
@@ -9012,6 +9454,14 @@
         "required": false,
         "default": " 至 ",
         "description": "范围展示的分隔符，默认 至",
+        "global": false
+      },
+      {
+        "name": "separator",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "范围文字分隔符，优先于 rangeSeparator；range-separator 插槽可渲染自定义内容。",
         "global": false
       },
       {
@@ -9112,10 +9562,10 @@
       },
       {
         "name": "placement",
-        "type": "Placement | undefined",
+        "type": "Placement | \"topLeft\" | \"topRight\" | \"bottomLeft\" | \"bottomRight\" | undefined",
         "required": false,
-        "default": "",
-        "description": "浮层位置，默认 bottom-start",
+        "default": "bottom-start",
+        "description": "默认 bottom-start；支持十二个方向，也可使用 bottomLeft / bottomRight / topLeft / topRight。",
         "global": false
       },
       {
@@ -9124,6 +9574,38 @@
         "required": false,
         "default": "body",
         "description": "浮层目标，默认 body；false 保留原地",
+        "global": false
+      },
+      {
+        "name": "teleported",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true（等效默认）",
+        "description": "false 将浮层保留在控件旁；默认为挂载到 appendTo 或 getPopupContainer 的目标。",
+        "global": false
+      },
+      {
+        "name": "getPopupContainer",
+        "type": "((trigger: HTMLElement) => HTMLElement) | undefined",
+        "required": false,
+        "default": "",
+        "description": "(trigger: HTMLElement) => HTMLElement，浮层打开时解析挂载目标，优先于 appendTo。",
+        "global": false
+      },
+      {
+        "name": "fallbackPlacements",
+        "type": "readonly Placement[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "有序候选定位数组；首选位置溢出时按顺序尝试，均溢出时选择溢出最少的位置。",
+        "global": false
+      },
+      {
+        "name": "popperOptions",
+        "type": "HysDatePopupOptions | undefined",
+        "required": false,
+        "default": "",
+        "description": "HYS 浮层定位设置。strategy 为 fixed / absolute，offset 默认 8px，padding 默认 10px，flip=false 禁止翻转。",
         "global": false
       },
       {
@@ -9143,11 +9625,51 @@
         "global": false
       },
       {
+        "name": "popupClassName",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层类名，与 popupClass、popperClass 叠加。",
+        "global": false
+      },
+      {
+        "name": "popperClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层类名，与 popupClass、popupClassName 叠加。",
+        "global": false
+      },
+      {
         "name": "popupStyle",
         "type": "CSSProperties | undefined",
         "required": false,
         "default": "",
         "description": "自定义面板样式",
+        "global": false
+      },
+      {
+        "name": "popperStyle",
+        "type": "string | CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加浮层 CSS 对象或样式字符串；同名样式由 popupStyle 和计算定位覆盖。",
+        "global": false
+      },
+      {
+        "name": "prefixIcon",
+        "type": "string | Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "输入区前缀，可传 Vue 图标组件或已注册的组件名；prefix 插槽优先。",
+        "global": false
+      },
+      {
+        "name": "clearIcon",
+        "type": "string | Component | undefined",
+        "required": false,
+        "default": "",
+        "description": "清空按钮图标，可传 Vue 图标组件或已注册的组件名；clear-icon 插槽优先。",
         "global": false
       },
       {
@@ -9246,6 +9768,27 @@
         "description": "浮层实际显示状态变化"
       },
       {
+        "name": "update:value",
+        "type": "[value: V]",
+        "required": false,
+        "default": "",
+        "description": "值更新请求，载荷为下一次绑定值 V；与 update:modelValue 同步发出。"
+      },
+      {
+        "name": "openChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "浮层实际打开或关闭时触发，载荷为 boolean；与 visible-change 同时触发。"
+      },
+      {
+        "name": "update:panelValues",
+        "type": "[value: readonly [Date, Date]]",
+        "required": false,
+        "default": "",
+        "description": "范围面板翻页、跳转等请求，载荷为 [左面板 Date, 右面板 Date]，均为对应月份 1 日的本地零时。"
+      },
+      {
         "name": "update:panelValue",
         "type": "[value: HysDateScalar]",
         "required": false,
@@ -9254,10 +9797,10 @@
       },
       {
         "name": "calendarChange",
-        "type": "[value: HysDatePickerValue, context: { range: \"start\" | \"end\"; dates: readonly (Date | null)[]; }]",
+        "type": "[value: HysDatePickerValue, context: HysDateCalendarChange]",
         "required": false,
         "default": "",
-        "description": "草稿变化：(value,{range,dates})，不会提前修改绑定值"
+        "description": "选择日期、调整时间、选择预设或清除草稿端点后触发，载荷 (value, {range, dates, formatted})。"
       },
       {
         "name": "ok",
@@ -9339,6 +9882,27 @@
         "description": "下一年 / 年份页图标"
       },
       {
+        "name": "extra-footer",
+        "type": "{ dates: readonly (Date | null)[]; view: HysDatePickerView; }",
+        "required": false,
+        "default": "",
+        "description": "在默认操作区上方追加内容，参数 {dates, view}；不替换确认等操作。"
+      },
+      {
+        "name": "date-render",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "日期网格模板，参数同 cell；含 range、rangeStart、rangeEnd、row、column。"
+      },
+      {
+        "name": "month-cell-render",
+        "type": "HysDatePickerCell",
+        "required": false,
+        "default": "",
+        "description": "月份网格模板，参数同 cell；row、column 从 0 起算。"
+      },
+      {
         "name": "header",
         "type": "{ dates: readonly (Date | null)[]; view: HysDatePickerView; }",
         "required": false,
@@ -9364,7 +9928,7 @@
         "type": "any",
         "required": false,
         "default": "",
-        "description": "可编辑范围分隔内容"
+        "description": "范围触发器中间的分隔内容，适用于按钮触发器和可编辑的双输入框。"
       }
     ],
     "exposed": [
@@ -9478,7 +10042,7 @@
         "type": "(view: HysDatePickerView) => boolean",
         "required": true,
         "default": "",
-        "description": "请求切换 date / month / quarter / year 面板，返回是否接受"
+        "description": "请求切换 date / month / quarter / year / decade / time 面板，返回是否接受"
       }
     ]
   },

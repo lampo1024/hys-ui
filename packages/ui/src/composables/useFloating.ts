@@ -59,6 +59,7 @@ export function useFloating(
     closeOnEscape?: boolean;
     closeOnOutside?: boolean;
     autoAdjustOverflow?: boolean;
+    fallbackPlacements?: readonly Placement[];
     strategy?: "fixed" | "absolute";
     zIndex?: () => number | undefined;
     onPosition?: (position: FloatingPosition) => void;
@@ -138,6 +139,7 @@ export function useFloating(
       gap,
       pad,
       options.autoAdjustOverflow !== false,
+      options.fallbackPlacements,
     );
     let { x, y } = position;
     placement.value = position.placement;
@@ -312,7 +314,7 @@ export function useFloating(
   });
   return {
     open,
-    style: computed(() => ({
+    style: computed<Record<string, string>>(() => ({
       ...style.value,
       zIndex: String(registration.value?.zIndex.value ?? 1200),
     })),

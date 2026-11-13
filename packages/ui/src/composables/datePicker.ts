@@ -1,6 +1,11 @@
-import type { HysPopupTransition } from '../motion/popup';
-import type { CSSProperties, VNodeChild } from "vue";
-import type { Placement } from "./useFloating";
+import type {
+  HysDatePickerLocale,
+  HysDatePickerUnit,
+  HysDatePickerValue,
+  HysDatePickerWeek,
+  HysDatePoint,
+} from "./datePickerTypes";
+export type * from "./datePickerTypes";
 import {
   calendarDay,
   calendarDate,
@@ -10,237 +15,17 @@ import {
   calendarShift,
   civilDay,
 } from "./calendar";
-export type HysDateScalar = string | Date | number;
-export type HysDatePickerValue =
-  HysDateScalar | readonly (HysDateScalar | null)[] | null;
-export type HysDateRangeValue =
-  readonly [HysDateScalar | null, HysDateScalar | null] | null;
-export type HysDatePickerType =
-  | "date"
-  | "dates"
-  | "week"
-  | "weeks"
-  | "month"
-  | "months"
-  | "quarter"
-  | "quarters"
-  | "year"
-  | "years"
-  | "datetime";
-export type HysDatePickerView = "date" | "month" | "quarter" | "year";
-export type HysDatePickerUnit = "date" | "week" | "month" | "quarter" | "year";
-export interface HysDatePoint {
-  day: number;
-  second: number;
-}
-export interface HysDatePickerContext {
-  range: "start" | "end";
-  from: Date | null;
-  iso: string;
-}
-export interface HysDateDisabledTime {
-  hours?: readonly number[];
-  minutes?: (hour: number) => readonly number[];
-  seconds?: (hour: number, minute: number) => readonly number[];
-}
-export interface HysDateShortcut {
-  label: string;
-  value: HysDatePickerValue | (() => HysDatePickerValue);
-  disabled?: boolean;
-}
-export interface HysDatePickerCell {
-  date: Date;
-  iso: string;
-  value: number;
-  end: number;
-  text: string;
-  type: HysDatePickerView;
-  outside: boolean;
-  disabled: boolean;
-  selected: boolean;
-  inRange: boolean;
-  today: boolean;
-  week: number;
-  weekYear: number;
-  weekStart: string;
-  weekEnd: string;
-}
-export interface HysDatePickerWeek {
-  year: number;
-  week: number;
-  start: string;
-  end: string;
-  dates: readonly string[];
-}
-export interface HysDatePickerChange {
-  source: "date" | "time" | "input" | "shortcut" | "clear" | "confirm" | "api";
-  dates: readonly (Date | null)[];
-  formatted: readonly string[];
-  weeks?: readonly (HysDatePickerWeek | null)[];
-}
-export interface HysDatePickerLocale {
-  today: string;
-  now: string;
-  clear: string;
-  cancel: string;
-  close: string;
-  confirm: string;
-  start: string;
-  end: string;
-  chooseStart: string;
-  chooseEnd: string;
-  invalid: string;
-  week: string;
-  year: string;
-  month: string;
-  back: string;
-  prevMonth: string;
-  nextMonth: string;
-  prevYear: string;
-  nextYear: string;
-  hour: string;
-  minute: string;
-  second: string;
-  empty: string;
-  limit: string;
-}
-export interface HysDatePickerProps<
-  V extends HysDatePickerValue = HysDatePickerValue,
-> {
-  popupTransition?: HysPopupTransition;
-  popupTransitionDuration?: number;
-  modelValue?: V;
-  defaultValue?: V;
-  clearValue?: V;
-  type?: HysDatePickerType;
-  valueType?: "string" | "date" | "timestamp";
-  valueFormat?: string;
-  format?: string;
-  inputFormats?: readonly string[];
-  disabled?: boolean | readonly [boolean, boolean];
-  readonly?: boolean;
-  size?: "sm" | "md" | "lg";
-  status?: "error" | "warning" | "success";
-  bordered?: boolean;
-  placeholder?: string;
-  label?: string;
-  ariaLabel?: string;
-  name?: string | readonly [string, string];
-  form?: string;
-  autofocus?: boolean;
-  min?: HysDateScalar;
-  max?: HysDateScalar;
-  disabledDate?: (date: Date, context: HysDatePickerContext) => boolean;
-  disabledTime?: (
-    date: Date,
-    context: HysDatePickerContext,
-  ) => HysDateDisabledTime;
-  firstDayOfWeek?: number;
-  firstWeekContainsDate?: number;
-  weekNumberFormatter?: (week: HysDatePickerWeek) => string;
-  disabledWeek?: (week: HysDatePickerWeek) => boolean;
-  weekValidation?: "any" | "full";
-  locale?: string;
-  messages?: Partial<HysDatePickerLocale>;
-  showWeekNumbers?: boolean;
-  showAdjacentDays?: boolean;
-  defaultPickerValue?: HysDateScalar;
-  panelValue?: HysDateScalar;
-  mode?: HysDatePickerView;
-  defaultMode?: HysDatePickerView;
-  shortcuts?: readonly HysDateShortcut[];
-  clearable?: boolean;
-  editable?: boolean;
-  inputReadonly?: boolean;
-  showOnFocus?: boolean;
-  showToday?: boolean;
-  showNow?: boolean;
-  showFooter?: boolean;
-  showConfirm?: boolean;
-  showTime?: boolean;
-  defaultTime?: string | readonly [string, string];
-  hourStep?: number;
-  minuteStep?: number;
-  secondStep?: number;
-  showSeconds?: boolean;
-  rangeSeparator?: string;
-  startPlaceholder?: string;
-  endPlaceholder?: string;
-  allowEmpty?: readonly [boolean, boolean];
-  singlePanel?: boolean;
-  unlinkPanels?: boolean;
-  minRangeDays?: number;
-  maxRangeDays?: number;
-  rangeValidation?: "endpoints" | "continuous";
-  maxDates?: number;
-  open?: boolean;
-  defaultOpen?: boolean;
-  inline?: boolean;
-  placement?: Placement;
-  appendTo?: string | HTMLElement | false;
-  popupWidth?: number | string;
-  popupClass?: string;
-  popupStyle?: CSSProperties;
-  validateEvent?: boolean;
-  cellClassName?: (cell: HysDatePickerCell) => string;
-}
-export interface HysDateRangePickerProps<
-  V extends HysDatePickerValue = HysDateRangeValue,
-> extends HysDatePickerProps<V> {}
-export interface HysDatePickerInstance<
-  V extends HysDatePickerValue = HysDatePickerValue,
-> {
-  readonly element: HTMLElement | undefined;
-  readonly open: boolean;
-  readonly value: V;
-  readonly draft: readonly (Date | null)[];
-  focus: () => void;
-  blur: () => void;
-  show: () => Promise<boolean>;
-  hide: (restoreFocus?: boolean) => void;
-  handleOpen: () => Promise<boolean>;
-  handleClose: () => void;
-  clear: () => Promise<boolean>;
-  setValue: (value: V) => Promise<boolean>;
-  confirm: () => Promise<boolean>;
-  cancel: () => void;
-  showMonth: (value: HysDateScalar) => Promise<boolean>;
-  setMode: (view: HysDatePickerView) => boolean;
-}
-export interface HysDatePickerSlots {
-  "week-number"?: (
-    week: HysDatePickerWeek & { selected: boolean; disabled: boolean },
-  ) => any;
-  default?: (cell: HysDatePickerCell) => any;
-  cell?: (cell: HysDatePickerCell) => any;
-  prefix?: () => any;
-  suffix?: () => any;
-  "clear-icon"?: () => any;
-  "prev-month"?: () => any;
-  "next-month"?: () => any;
-  "prev-year"?: () => any;
-  "next-year"?: () => any;
-  header?: (context: {
-    dates: readonly (Date | null)[];
-    view: HysDatePickerView;
-  }) => any;
-  footer?: (context: {
-    dates: readonly (Date | null)[];
-    confirm: () => Promise<boolean>;
-    cancel: () => void;
-    clear: () => Promise<boolean>;
-  }) => any;
-  shortcut?: (context: { shortcut: HysDateShortcut; index: number }) => any;
-  "range-separator"?: () => any;
-}
-export type HysDateRangePickerInstance<
-  V extends HysDatePickerValue = HysDateRangeValue,
-> = HysDatePickerInstance<V>;
 export const datePickerDefaults = {
   open: undefined,
   showConfirm: undefined,
   type: "date",
   clearable: false,
+  allowClear: undefined,
+  automaticDropdown: undefined,
+  showWeekNumber: undefined,
+  use12Hours: undefined,
+  hideDisabledOptions: undefined,
+  teleported: undefined,
   editable: false,
   bordered: true,
   firstDayOfWeek: 1,
@@ -313,10 +98,17 @@ export const datePickerEnglish: HysDatePickerLocale = {
 };
 export const DATE_MIN = civilDay(1, 0, 1),
   DATE_MAX = civilDay(9999, 11, 31);
-export const dateUnit = (type: string | undefined): HysDatePickerUnit =>
-  type === "datetime" || !type
-    ? "date"
-    : (type.replace(/s$/, "") as HysDatePickerUnit);
+export const dateRange = (type: string | undefined) =>
+  !!type?.endsWith("range");
+export function dateUnit(type: string | undefined): HysDatePickerUnit {
+  const unit = type?.replace(/range$/, "").replace(/s$/, "");
+  return unit === "week" ||
+    unit === "month" ||
+    unit === "quarter" ||
+    unit === "year"
+    ? unit
+    : "date";
+}
 export const dateMultiple = (type: string | undefined) =>
   ["dates", "weeks", "months", "quarters", "years"].includes(type ?? "");
 export function datePattern(type: string | undefined, time = false) {
@@ -355,13 +147,50 @@ export function dateTimeString(second: number) {
     .map((n) => String(n).padStart(2, "0"))
     .join(":");
 }
-export function dateTimeSeconds(value: string | undefined) {
+export function dateTimeSeconds(value: string | Date | undefined) {
+  if (value instanceof Date)
+    return Number.isFinite(value.getTime())
+      ? value.getHours() * 3600 + value.getMinutes() * 60 + value.getSeconds()
+      : 0;
   const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value ?? "");
   return m && +m[1] < 24 && +m[2] < 60 && +(m[3] ?? 0) < 60
     ? +m[1] * 3600 + +m[2] * 60 + +(m[3] ?? 0)
     : 0;
 }
-const TOKEN = /\[[^\]]*\]|YYYY|GGGG|MM|DD|HH|mm|ss|WW|Q/g;
+const TOKEN =
+  /\[[^\]]*\]|YYYY|GGGG|MMMM|MMM|MM|dddd|ddd|dd|DD|HH|hh|mm|ss|WW|M|D|H|h|m|s|Q|A|a/g;
+type DateNameToken = "MMM" | "MMMM" | "dd" | "ddd" | "dddd";
+const dateNameTokens: readonly string[] = ["MMM", "MMMM", "dd", "ddd", "dddd"];
+const dateNameCache = new Map<string, Record<DateNameToken, string[]>>();
+function dateNames(locale: string) {
+  const cached = dateNameCache.get(locale);
+  if (cached) return cached;
+  function names(
+    option: Intl.DateTimeFormatOptions,
+    length: number,
+    month = false,
+  ) {
+    let formatter: Intl.DateTimeFormat;
+    try {
+      formatter = new Intl.DateTimeFormat(locale, option);
+    } catch {
+      formatter = new Intl.DateTimeFormat("en", option);
+    }
+    return Array.from({ length }, (_, i) =>
+      formatter.format(new Date(2026, month ? i : 0, month ? 1 : 4 + i)),
+    );
+  }
+  const result = {
+    MMM: names({ month: "short" }, 12, true),
+    MMMM: names({ month: "long" }, 12, true),
+    dd: names({ weekday: "narrow" }, 7),
+    ddd: names({ weekday: "short" }, 7),
+    dddd: names({ weekday: "long" }, 7),
+  };
+  if (dateNameCache.size >= 16) dateNameCache.clear();
+  dateNameCache.set(locale, result);
+  return result;
+}
 export function dateWeek(
   day: number,
   first = 1,
@@ -396,9 +225,13 @@ export function dateFormat(
   pattern: string,
   first = 1,
   contains = 4,
+  locale = "en",
 ) {
   const p = calendarParts(point.day),
     info = dateWeek(point.day, first, contains);
+  const hour = Math.floor(point.second / 3600),
+    minute = Math.floor(point.second / 60) % 60,
+    second = point.second % 60;
   const values: Record<string, string> = {
     YYYY: String(p.year).padStart(4, "0"),
     GGGG: String(info.year).padStart(4, "0"),
@@ -409,9 +242,24 @@ export function dateFormat(
     ss: String(point.second % 60).padStart(2, "0"),
     WW: String(info.week).padStart(2, "0"),
     Q: String(Math.floor(p.month / 3) + 1),
+    M: String(p.month + 1),
+    D: String(p.day),
+    H: String(hour),
+    h: String(hour % 12 || 12),
+    hh: String(hour % 12 || 12).padStart(2, "0"),
+    m: String(minute),
+    s: String(second),
+    A: hour < 12 ? "AM" : "PM",
+    a: hour < 12 ? "am" : "pm",
   };
   return pattern.replace(TOKEN, (t) =>
-    t.startsWith("[") ? t.slice(1, -1) : values[t],
+    t.startsWith("[")
+      ? t.slice(1, -1)
+      : dateNameTokens.includes(t)
+        ? dateNames(locale)[t as DateNameToken][
+            t.startsWith("M") ? p.month : p.weekday
+          ]
+        : values[t],
   );
 }
 export function datePoint(
@@ -419,6 +267,7 @@ export function datePoint(
   pattern = "YYYY-MM-DD",
   first = 1,
   contains = 4,
+  locale = "en",
 ): HysDatePoint | undefined {
   if (value instanceof Date || typeof value === "number") {
     const date = value instanceof Date ? value : new Date(value);
@@ -446,30 +295,58 @@ export function datePoint(
     if (token.startsWith("[")) source += escapeRegExp(token.slice(1, -1));
     else {
       tokens.push(token);
-      source +=
-        token === "Q"
-          ? "(\\d)"
-          : token === "YYYY" || token === "GGGG"
-            ? "(\\d{4})"
-            : "(\\d{2})";
+      source += dateNameTokens.includes(token)
+        ? "(" +
+          dateNames(locale)
+            [token as DateNameToken].map(escapeRegExp)
+            .join("|") +
+          ")"
+        : token === "A" || token === "a"
+          ? "(AM|PM|am|pm)"
+          : token === "Q"
+            ? "(\\d)"
+            : token === "YYYY" || token === "GGGG"
+              ? "(\\d{4})"
+              : token.length === 1
+                ? "(\\d{1,2})"
+                : "(\\d{2})";
     }
     last = match.index! + token.length;
   }
   source += escapeRegExp(pattern.slice(last));
-  const match = new RegExp("^" + source + "$").exec(value);
+  const match = new RegExp("^" + source + "$").exec(value.trim());
   if (
     !match ||
     !tokens.some((t) => t === "YYYY" || t === "GGGG") ||
     new Set(tokens).size !== tokens.length
   )
     return;
-  tokens.forEach((token, i) => (parts[token] = +match[i + 1]));
+  tokens.forEach((token, i) => {
+    if (token === "MMM" || token === "MMMM")
+      parts[token] = dateNames(locale)[token].indexOf(match[i + 1]) + 1;
+    else if (!token.startsWith("d"))
+      parts[token] =
+        token === "A" || token === "a"
+          ? Number(match[i + 1].toLowerCase() === "pm")
+          : +match[i + 1];
+  });
+  const clock = parts.hh ?? parts.h;
+  const meridiem = parts.A ?? parts.a;
+  if (clock !== undefined && (clock < 1 || clock > 12)) return;
   const y = parts.YYYY ?? parts.GGGG,
-    m = parts.MM ?? (parts.Q ? (parts.Q - 1) * 3 + 1 : 1),
-    d = parts.DD ?? 1,
-    h = parts.HH ?? 0,
-    min = parts.mm ?? 0,
-    s = parts.ss ?? 0;
+    m =
+      parts.MM ??
+      parts.M ??
+      parts.MMM ??
+      parts.MMMM ??
+      (parts.Q ? (parts.Q - 1) * 3 + 1 : 1),
+    d = parts.DD ?? parts.D ?? 1,
+    h =
+      clock === undefined
+        ? (parts.HH ?? parts.H ?? 0)
+        : (clock % 12) + (meridiem ?? 0) * 12,
+    min = parts.mm ?? parts.m ?? 0,
+    s = parts.ss ?? parts.s ?? 0;
   if (
     y < 1 ||
     y > 9999 ||
@@ -500,7 +377,19 @@ export function datePoint(
   } else if (calendarParts(day).month !== m - 1 || calendarParts(day).day !== d)
     return;
   if (day < DATE_MIN || day > DATE_MAX) return;
+  const weekday = calendarParts(day).weekday;
+  if (
+    tokens.some(
+      (token, index) =>
+        token.startsWith("d") &&
+        dateNames(locale)[token as DateNameToken][weekday] !== match[index + 1],
+    )
+  )
+    return;
   return { day, second: h * 3600 + min * 60 + s };
+}
+export function dateClockPoint(value: string, format: string) {
+  return datePoint("2000-01-01 " + value.trim(), "YYYY-MM-DD " + format);
 }
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

@@ -19,7 +19,7 @@ const value = ref<[string, string]>(["2026-11-02", "2026-12-18"]),
     </div>
     <output class="state-output">{{ value }}</output>
     <p class="scenario-note">
-      默认联动保持相邻月份；开启独立浏览后可以分别定位月份。窄屏时面板在弹层内部横向滚动。
+      默认联动保持相邻月份。开启独立浏览后可以分别定位月份，窄屏可点击月份标签或横向滑动。
     </p>
   </div>
 </template>

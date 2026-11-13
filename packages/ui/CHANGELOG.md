@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+- DatePicker 与 DateRangePicker 增加统一范围类型、多格式录入、自定义清空值、跨年代浏览、独立双面板、快捷预设和浮层定位配置，并补充五个交互示例与 API 说明。
+- 日期时间选择支持面板内输入、12 小时制、时分秒步进和禁用规则；日期范围可设置起止默认时刻。窄屏可通过月份按钮切换双面板。
+- Modal 与 Drawer 的全屏、还原和关闭按钮悬停时位置稳定。
+
 ## 0.7.0
 
 - 新增 Spin、Icon、Popconfirm、Space、Descriptions、Result 和 TabPane，并配套交互示例和 API 文档。

@@ -10,7 +10,6 @@ import {
   calendarDate,
   calendarISO,
   calendarParts,
-  calendarShift,
   civilDay,
 } from "../../composables/calendar";
 import {
@@ -33,6 +32,7 @@ const props = defineProps<{
   unit: HysDatePickerUnit;
   selected: readonly (HysDatePoint | null)[];
   range: boolean;
+  stage: "start" | "end";
   preview?: number;
   first: number;
   weekContains: number;
@@ -58,6 +58,10 @@ const root = ref<HTMLElement>(),
   year = computed(() => calendarParts(props.month).year),
   month = computed(() => calendarParts(props.month).month),
   pageYear = computed(() => Math.floor((year.value - 1) / 12) * 12 + 1),
+  pageCentury = computed(() => Math.floor(year.value / 100) * 100),
+  decadeLabel = computed(() =>
+    props.locale.startsWith("zh") ? "选择年代" : "Choose decade",
+  ),
   baseView = computed(() => (props.unit === "week" ? "date" : props.unit)),
   today = () =>
     calendarISO(
@@ -96,9 +100,13 @@ const cells = computed<HysDatePickerCell[]>(() => {
             ? Array.from({ length: 4 }, (_, i) =>
                 civilDay(year.value, i * 3, 1),
               )
-            : Array.from({ length: 12 }, (_, i) =>
-                civilDay(pageYear.value + i, 0, 1),
-              ),
+            : props.view === "decade"
+              ? Array.from({ length: 10 }, (_, i) =>
+                  civilDay(Math.max(1, pageCentury.value + i * 10), 0, 1),
+                )
+              : Array.from({ length: 12 }, (_, i) =>
+                  civilDay(pageYear.value + i, 0, 1),
+                ),
     endpoints =
       props.preview !== undefined && selected[0]
         ? [selected[0].day, props.preview]
@@ -107,10 +115,10 @@ const cells = computed<HysDatePickerCell[]>(() => {
       props.range && endpoints.length === 2
         ? endpoints.sort((a, b) => a - b)
         : undefined;
-  return values.map((day) => {
+  return values.map((day, index) => {
     const parts = calendarParts(day),
-      unit = props.view === "date" ? props.unit : props.view,
-      period = datePeriod(day, unit, props.first),
+      period = cellPeriod(day),
+      columns = props.view === "date" ? 7 : 3,
       outside = parts.month !== month.value,
       text =
         props.view === "date"
@@ -119,7 +127,9 @@ const cells = computed<HysDatePickerCell[]>(() => {
             ? dateLocale(props.locale).format(calendarDate(day))
             : props.view === "quarter"
               ? "Q" + (Math.floor(parts.month / 3) + 1)
-              : String(parts.year),
+              : props.view === "decade"
+                ? parts.year + "–" + calendarParts(period[1]).year
+                : String(parts.year),
       info = dateWeek(day, props.first, props.weekContains),
       disabled =
         props.disabled ||
@@ -140,10 +150,13 @@ const cells = computed<HysDatePickerCell[]>(() => {
       type: props.view,
       outside: props.view === "date" && outside,
       disabled,
-      selected: selected.some(
-        (p) => datePeriod(p.day, unit, props.first)[0] === period[0],
-      ),
-      inRange: !!range && day >= range[0] && day <= range[1],
+      selected: selected.some((p) => p.day >= period[0] && p.day <= period[1]),
+      inRange: !!range && period[1] >= range[0] && period[0] <= range[1],
+      range: props.range ? props.stage : undefined,
+      rangeStart: !!range && range[0] >= period[0] && range[0] <= period[1],
+      rangeEnd: !!range && range[1] >= period[0] && range[1] <= period[1],
+      row: Math.floor(index / columns),
+      column: index % columns,
       today: calendarISO(day) === today(),
       week: info.week,
       weekYear: info.year,
@@ -152,6 +165,24 @@ const cells = computed<HysDatePickerCell[]>(() => {
     };
   });
 });
+function cellPeriod(day: number): [number, number] {
+  if (props.view === "decade") {
+    const firstYear = Math.floor(calendarParts(day).year / 10) * 10;
+    return [
+      civilDay(Math.max(1, firstYear), 0, 1),
+      civilDay(firstYear + 9, 11, 31),
+    ];
+  }
+  return datePeriod(
+    day,
+    props.view === "date"
+      ? props.unit
+      : props.view === "time"
+        ? "date"
+        : props.view,
+    props.first,
+  );
+}
 const tabDay = computed(() => {
   const usable = cells.value.filter((c) => !c.disabled);
   return (
@@ -195,29 +226,40 @@ async function browse(day: number) {
 }
 function move(direction: number, large = false) {
   const months =
-    props.view === "year"
-      ? 144
-      : large || props.view === "month" || props.view === "quarter"
-        ? 12
-        : 1;
+    props.view === "decade"
+      ? 1200
+      : props.view === "year"
+        ? 144
+        : large || props.view === "month" || props.view === "quarter"
+          ? 12
+          : 1;
   void browse(dateShift(props.month, months * direction));
 }
 async function pick(cell: HysDatePickerCell) {
   if (cell.disabled) return;
-  const granularity = { year: 0, quarter: 1, month: 2, date: 3 };
+  const granularity = {
+    decade: -1,
+    year: 0,
+    quarter: 1,
+    month: 2,
+    date: 3,
+    time: 3,
+  };
   if (granularity[props.view] >= granularity[baseView.value]) {
     emit("pick", cell.value);
     return;
   }
   await browse(cell.value);
   await changeView(
-    props.view === "year"
-      ? props.unit === "quarter"
-        ? "quarter"
-        : "month"
-      : props.view === "quarter"
-        ? "month"
-        : "date",
+    props.view === "decade"
+      ? "year"
+      : props.view === "year"
+        ? props.unit === "quarter"
+          ? "quarter"
+          : "month"
+        : props.view === "quarter"
+          ? "month"
+          : "date",
   );
 }
 async function keyboard(event: KeyboardEvent, cell: HysDatePickerCell) {
@@ -255,11 +297,13 @@ async function keyboard(event: KeyboardEvent, cell: HysDatePickerCell) {
       (event.key === "PageUp" ? -1 : 1) *
       (event.ctrlKey
         ? 12
-        : props.view === "year"
-          ? 144
-          : props.view === "date"
-            ? 1
-            : 12);
+        : props.view === "decade"
+          ? 1200
+          : props.view === "year"
+            ? 144
+            : props.view === "date"
+              ? 1
+              : 12);
     next = dateShift(next, count);
   } else return;
   event.preventDefault();
@@ -268,16 +312,19 @@ async function keyboard(event: KeyboardEvent, cell: HysDatePickerCell) {
       ? day + n
       : dateShift(
           day,
-          n * (props.view === "year" ? 12 : props.view === "quarter" ? 3 : 1),
+          n *
+            (props.view === "decade"
+              ? 120
+              : props.view === "year"
+                ? 12
+                : props.view === "quarter"
+                  ? 3
+                  : 1),
         );
   if (step) next = offset(next, step);
   let found = false;
   for (let i = 0; i < 370 && next >= DATE_MIN && next <= DATE_MAX; i++) {
-    const end = datePeriod(
-      next,
-      props.view === "date" ? props.unit : props.view,
-      props.first,
-    )[1];
+    const end = cellPeriod(next)[1];
     if (
       props.view === "date"
         ? props.available(next)
@@ -310,7 +357,9 @@ defineExpose({ focus, element: root });
         <button
           type="button"
           :aria-label="words.prevYear"
-          :disabled="disabled || year <= 1"
+          :disabled="
+            disabled || (view === 'decade' ? pageCentury === 0 : year <= 1)
+          "
           @click="move(-1, true)"
         >
           <slot name="prev-year"><ChevronsLeft :size="15" /></slot></button
@@ -326,12 +375,29 @@ defineExpose({ focus, element: root });
       </div>
       <div class="hys-ui-date-period-title" aria-live="polite">
         <button
-          v-if="view === 'year'"
+          v-if="view === 'decade'"
           type="button"
           :aria-label="words.back"
-          @click="changeView(baseView)"
+          @click="changeView('year')"
         >
-          {{ pageYear }} — {{ Math.min(9999, pageYear + 11) }}</button
+          {{ Math.max(1, pageCentury) }} — {{ pageCentury + 99 }}
+        </button>
+        <template v-else-if="view === 'year'">
+          <button
+            type="button"
+            :aria-label="words.back"
+            @click="changeView(baseView)"
+          >
+            {{ pageYear }} — {{ Math.min(9999, pageYear + 11) }}
+          </button>
+          <button
+            type="button"
+            :aria-label="decadeLabel"
+            :title="decadeLabel"
+            @click="changeView('decade')"
+          >
+            <ChevronsRight :size="13" />
+          </button> </template
         ><template v-else
           ><button
             type="button"
@@ -363,7 +429,9 @@ defineExpose({ focus, element: root });
         ><button
           type="button"
           :aria-label="words.nextYear"
-          :disabled="disabled || year >= 9999"
+          :disabled="
+            disabled || (view === 'decade' ? pageCentury >= 9900 : year >= 9999)
+          "
           @click="move(1, true)"
         >
           <slot name="next-year"><ChevronsRight :size="15" /></slot>
@@ -391,7 +459,7 @@ defineExpose({ focus, element: root });
       :aria-label="
         view === 'date'
           ? words.empty
-          : view === 'year'
+          : view === 'year' || view === 'decade'
             ? words.year
             : words.month
       "
@@ -453,7 +521,7 @@ defineExpose({ focus, element: root });
             type="button"
             role="gridcell"
             :data-picker-day="cell.value"
-            :data-date="view === 'date' ? cell.iso : undefined"
+            :data-date="cell.iso"
             :data-period="view !== 'date' ? cell.iso : undefined"
             :aria-label="view === 'date' ? cell.iso : cell.text"
             :aria-selected="cell.selected"
@@ -594,6 +662,7 @@ defineExpose({ focus, element: root });
 }
 .hys-ui-date-view-month,
 .hys-ui-date-view-quarter,
+.hys-ui-date-view-decade,
 .hys-ui-date-view-year {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 236px;
@@ -602,6 +671,7 @@ defineExpose({ focus, element: root });
 }
 .hys-ui-date-view-month button,
 .hys-ui-date-view-quarter button,
+.hys-ui-date-view-decade button,
 .hys-ui-date-view-year button {
   height: 44px;
   font-size: 13px;
