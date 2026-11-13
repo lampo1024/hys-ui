@@ -152,6 +152,65 @@ const columns = [
     ],
   },
 ];
+
+test("Table combines multi-word search with tree and column filters and preserves remote ownership", async () => {
+  const invoiceColumns = [
+    { key: "name", label: "客户", dataIndex: ["client", "name"] },
+    { key: "region", label: "地区" },
+    { key: "state", label: "状态", filterable: true },
+  ];
+  const rows = [
+    { id: 1, client: { name: "总部" }, region: "华北", state: "有效", children: [
+      { id: 2, client: { name: "Café Nord" }, region: "华东", state: "有效" },
+    ] },
+    { id: 3, client: { name: "Cafe South" }, region: "华东", state: "停用" },
+  ];
+  const table = await mount(ui.HysTable, {
+    columns: invoiceColumns, rows, treeMode: true,
+    searchColumns: ["name", "region"], defaultFilters: { state: ["有效"] },
+  });
+  table.vm.setSearch("cafe 华东");
+  await nextTick();
+  assert.deepEqual(table.all("tr[data-row-key]").map((row) => row.dataset.rowKey), ["1", "2"]);
+  assert.equal(table.events.queryChange.at(-1)[0].action, "search");
+  assert.equal(table.events.queryChange.at(-1)[0].page, 1);
+  table.vm.clearSearch();
+  await nextTick();
+  assert.equal(table.vm.query.search, "");
+  assert.deepEqual(table.vm.query.filters.state, ["有效"]);
+  table.props.searchMethod = (term, row) => String(row.id) === term;
+  table.vm.setSearch("2");
+  await nextTick();
+  assert.deepEqual(table.all("tr[data-row-key]").map((row) => row.dataset.rowKey), ["1", "2"]);
+
+  const remote = await mount(ui.HysTable, { columns: invoiceColumns, rows, serverMode: true, loading: true, search: "" });
+  remote.vm.setSearch("new term");
+  await nextTick();
+  assert.equal(remote.events.queryChange.at(-1)[0].search, "new term");
+  remote.props.loading = false;
+  await nextTick();
+  assert.equal(remote.all("tr[data-row-key]").length, 2);
+});
+
+test("Table keyboard navigation focuses displayed rows and respects selection restrictions", async () => {
+  const table = await mount(ui.HysTable, {
+    columns: [{ key: "name", label: "姓名" }],
+    rows: [{ id: 1, name: "A" }, { id: "1", name: "B" }, { id: 3, name: "C" }],
+    keyboardNavigation: true, selectable: (row) => row.id !== 3,
+  });
+  assert.equal(table.all("tbody tr[tabindex='0']").length, 1);
+  assert.equal(table.vm.focusRow(1), true);
+  await fire(document.activeElement, "keydown", { key: "ArrowDown" });
+  assert.equal(document.activeElement.dataset.hysNavigationRow, "string:1");
+  await fire(document.activeElement, "keydown", { key: " " });
+  assert.deepEqual(table.vm.selectedKeys, ["1"]);
+  await fire(document.activeElement, "keydown", { key: "Enter" });
+  assert.equal(table.events.rowClick.at(-1)[0].name, "B");
+  await fire(document.activeElement, "keydown", { key: "End" });
+  await fire(document.activeElement, "keydown", { key: " " });
+  assert.deepEqual(table.vm.selectedKeys, ["1"]);
+  assert.equal(table.vm.focusRow(999), false);
+});
 const rows = [
   { id: 1, name: "Alice", age: 30, team: "design" },
   { id: 2, name: "Bob", age: 20, team: "dev" },

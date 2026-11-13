@@ -33,6 +33,11 @@ import VirtualTableReference from './VirtualTableReference.vue'
 import AnimatedNumberReference from './components/AnimatedNumberReference/AnimatedNumberReference.vue'
 import SortableListReference from './components/SortableListReference/SortableListReference.vue'
 import ToastReference from './components/ToastReference/ToastReference.vue'
+import SpinReference from './components/SpinReference/SpinReference.vue'
+import IconReference from './components/IconReference/IconReference.vue'
+import PopconfirmReference from './components/PopconfirmReference/PopconfirmReference.vue'
+import DescriptionsReference from './components/DescriptionsReference/DescriptionsReference.vue'
+import TabsReference from './components/TabsReference/TabsReference.vue'
 import {useDocToc} from './useDocToc'
 import type {ExampleSourceData} from './sourceTypes'
 import {catalog} from './catalog'
@@ -70,11 +75,28 @@ const surfaceOrder:Record<string,string[]>={HysPagination:["Basic","Configure","
 function rank(path:string){const scene=path.split('/').pop()!.replace('.vue','');if(scene==='PopupMotion')return 95;if(props.name==='HysVirtualTable')return Math.max(0,virtualTableOrder.indexOf(scene));return tagColorOrder[props.name]?Math.max(0,tagColorOrder[props.name].indexOf(scene)):feedbackOrder[props.name]?Math.max(0,feedbackOrder[props.name].indexOf(scene)):surfaceOrder[props.name]?Math.max(0,surfaceOrder[props.name].indexOf(scene)):props.name==='HysTable'?Math.max(0,tableOrder.indexOf(scene)):props.name==='HysCalendar'?Math.max(0,calendarOrder.indexOf(scene)):props.name==='HysGantt'?Math.max(0,ganttOrder.indexOf(scene)):props.name==='HysProgress'?Math.max(0,progressOrder.indexOf(scene)):props.name==='HysUpload'?Math.max(0,uploadOrder.indexOf(scene)):props.name==='HysRating'?Math.max(0,ratingOrder.indexOf(scene)):props.name==='HysSegmented'?Math.max(0,segmentedOrder.indexOf(scene)):['HysCheckbox','HysCheckboxGroup','HysRadio','HysRadioGroup','HysSwitch'].includes(props.name)?Math.max(0,choiceOrder.indexOf(scene)):props.name==='HysAutocomplete'?Math.max(0,autocompleteOrder.indexOf(scene)):props.name==='HysAvatar'||props.name==='HysAvatarGroup'?Math.max(0,avatarOrder.indexOf(scene)):props.name==='HysSlider'?Math.max(0,sliderOrder.indexOf(scene)):props.name==='HysInput'||props.name==='HysTextarea'?Math.max(0,inputOrder.indexOf(scene)):order[scene]??10}
 const buttonOrder=['Basic','Palette','Links','Features','Group','Actions','Async','Color','Form','Configure']
 const animatedNumberOrder=['Basic','Configure','Controls','Effects','AnimationCatalog','Formatting','Statistic','Triggers','Activation','Realtime','Styling','Composition','Dashboard']
+const spinOrder=['Basic','Animations','Timing','Tasks','Overlay','Business','Custom']
+const iconOrder=['Basic','Picker','Sources','Appearance','Motion','Interactions','Registry']
+const splitPaneOrder=['Basic','Configure','Resize','Snapping','Panels','Cascade','Responsive','Inspector','Workspace']
+const dataGridOrder=['Basic','Configure','GroupedHeaders','ColumnLayouts','RowStates','ContextActions','GroupingSummary','KeyboardReview','Selection','Resize','Editing','Tree','Controlled','Server','PopupMotion','States']
+const popconfirmOrder=['Basic','Async','Guard','Table','Controlled','Placement','Custom','PopupMotion']
+const layoutOrder:Record<string,string[]>={HysDescriptions:['Basic','Responsive','Custom'],HysResult:['Basic','Exceptions','Workflow'],HysSpace:['Basic','Responsive','Separators']}
+const tabsOrder=['Basic','Configure','AdvancedLayout','Overflow','Keyboard','Interaction','Guard','Lifecycle','AsyncContent','Dynamic','Workbench','Routing','Custom','States']
 const toastOrder=['Basic','Configure','Positions','Service','Queue','Tasks','Interactions','Stack','Motion','Appearance','Content']
 const sortableListOrder=['Basic','Configure','Layouts','Board','Table','Tree','History','Virtual','Custom']
 function rankExample(path:string) {
  const scene=path.split('/').pop()!.replace('.vue','')
  if(props.name==='HysAnimatedNumber')return animatedNumberOrder.indexOf(scene)
+ if(props.name==='HysSpin')return spinOrder.indexOf(scene)
+ if(props.name==='HysIcon')return iconOrder.indexOf(scene)
+ if(props.name==='HysSplitPane')return splitPaneOrder.indexOf(scene)
+ if(props.name==='HysDataGrid')return dataGridOrder.indexOf(scene)
+ if(props.name==='HysTable'&&scene==='QuickSearch')return tableOrder.indexOf('Filters')-.5
+ if(props.name==='HysTable'&&scene==='KeyboardRows')return tableOrder.indexOf('Selection')+.5
+ if(props.name==='HysPopconfirm')return popconfirmOrder.indexOf(scene)
+ if(layoutOrder[props.name])return layoutOrder[props.name].indexOf(scene)
+ if(props.name==='HysTabs')return tabsOrder.indexOf(scene)
+ if(props.name==='HysTabPane')return scene==='Basic'?0:1
  if(props.name==='HysToast')return toastOrder.indexOf(scene)
  if(props.name==='HysSortableList')return sortableListOrder.indexOf(scene)
  return props.name==='HysButton' ? buttonOrder.indexOf(scene) : rank(path)
@@ -89,7 +111,7 @@ const scenarios=Object.keys(modules)
  })
 const articleRoot=ref<HTMLElement>(),tocRoot=ref<HTMLElement>()
 const compactContents=ref<HTMLDetailsElement>()
-const hasCompactContents=computed(()=>['HysAnimatedNumber','HysInput','HysTextarea','HysSortableList'].includes(props.name))
+const hasCompactContents=computed(()=>['HysAnimatedNumber','HysInput','HysTextarea','HysSortableList','HysTabs','HysTable','HysDataGrid'].includes(props.name))
 const tocState=useDocToc(articleRoot,tocRoot,()=>[...scenarios.map(s=>s.id),'api','capabilities','usage'])
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
@@ -160,6 +182,11 @@ function jumpToSection(event:MouseEvent){
    <p v-if="apiPending" role="status">正在加载接口信息…</p><div v-else-if="apiError" role="alert">{{apiError}} <HysButton size="sm" variant="ghost" @click="loadApi()">重新加载</HysButton></div><div v-else class="api-scroll"><table><thead><tr><th>名称</th><th>类型 / 签名</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr v-for="row in rows" :key="row.name"><td><code>{{row.name}}</code><span v-if="row.required" class="required">必填</span></td><td><code>{{row.type}}</code></td><td><code>{{row.default||'—'}}</code></td><td>{{row.description}}</td></tr><tr v-if="!rows.length"><td colspan="4">此组件未声明此类接口。</td></tr></tbody></table></div>
   </section>
   <ToastReference v-if="name==='HysToast'"/>
+  <SpinReference v-if="name==='HysSpin'"/>
+  <IconReference v-if="name==='HysIcon'"/>
+  <PopconfirmReference v-if="name==='HysPopconfirm'"/>
+  <DescriptionsReference v-if="name==='HysDescriptions'"/>
+  <TabsReference v-if="name==='HysTabs'"/>
   <section id="capabilities" class="notes"><h2>功能说明</h2><p>{{capability}}</p></section>
   <section id="usage" class="notes"><h2>使用说明</h2><ul><li v-for="note in entry.notes" :key="note">{{note}}</li><li>交互控件可通过 Tab 聚焦，浮层支持 Escape 关闭。减少动态效果设置优先于组件动效。</li><li>主题颜色通过 <code>--hys-ui-primary</code> 等变量覆盖，使用 <code>provideHysConfig</code> 可响应式切换主题与动效。</li></ul></section>
  </article>

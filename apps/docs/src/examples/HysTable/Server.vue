@@ -11,6 +11,7 @@ import {
   HysCheckbox,
   HysButton,
   HysAlert,
+  HysInput,
   type HysTableColumn,
   type HysTableQuery,
 } from "hys-ui";
@@ -43,6 +44,7 @@ const columns: HysTableColumn<Item>[] = [
   },
 ];
 const rows = ref<Item[]>([]),
+  search = ref(""),
   page = ref(1),
   size = ref(5),
   total = ref(source.length),
@@ -73,7 +75,9 @@ async function fetchPage(query: HysTableQuery<Item>) {
       current.signal.addEventListener("abort", abort, { once: true });
     });
     if (fail.value) throw Error("暂时无法获取订单");
+    const term = query.search?.trim().toLowerCase() ?? "";
     let result = source.filter((row) =>
+      (!term || row.name.toLowerCase().includes(term) || row.team.includes(term)) &&
       Object.entries(query.filters).every(
         ([key, values]) =>
           !values.length ||
@@ -111,6 +115,7 @@ function refresh() {
       pageSize: size.value,
       sorts: [],
       filters: {},
+      search: search.value,
       currentData: [],
     },
   );
@@ -153,6 +158,7 @@ onBeforeUnmount(cleanup);
     />
     <div class="demo-content" style="margin-top: 16px">
       <HysTable
+        v-model:search="search"
         v-model:page="page"
         v-model:page-size="size"
         :rows="rows"
@@ -166,14 +172,24 @@ onBeforeUnmount(cleanup);
           pageSizeOptions: [5, 10, 20],
         }"
         @query-change="fetchPage"
-      />
+      >
+        <template #title="{ setSearch }">
+          <HysInput
+            :model-value="search"
+            aria-label="搜索远程订单"
+            placeholder="搜索订单名称或团队"
+            clearable
+            style="width: min(100%, 260px)"
+            @update:model-value="setSearch($event)"
+          />
+        </template>
+      </HysTable>
     </div>
     <output class="state-output"
       >{{ message || "正在请求数据" }} · {{ pageCountOnly ? Math.max(1, Math.ceil(total / size)) + ' 页' : total + ' 条' }}</output
     >
     <p class="scenario-note">
-      serverMode
-      仅发出查询状态，排序、筛选与分页由宿主处理。后端只提供总页数时，可用 pagination.pageCount 驱动翻页。
+      服务端统一处理搜索、排序、列筛选和分页。输入新搜索词会取消上一次请求并从第一页查询。
     </p>
   </div>
 </template>

@@ -10,6 +10,9 @@ const props = defineProps<{
   options: HysPopupSurfaceProps;
   kind: "tooltip" | "popover";
   title?: string;
+  labelledBy?: string;
+  describedBy?: string;
+  tabindex?: number;
 }>();
 // Only floating content owns nested popups; the reference keeps its original owner.
 provide(
@@ -51,13 +54,18 @@ const skin = useHysRootAttrs();
         :role="kind === 'tooltip' ? 'tooltip' : 'dialog'"
         :aria-label="
           options.ariaLabel ||
-          (kind === 'popover' ? title || '浮层' : undefined)
+          (kind === 'popover' && !labelledBy ? title || '浮层' : undefined)
         "
         :aria-labelledby="
-          kind === 'popover' && !options.ariaLabel && (title || $slots.title)
-            ? surface.titleId
-            : undefined
+          (!options.ariaLabel &&
+            (labelledBy ??
+              (kind === 'popover' && (title || $slots.title)
+                ? surface.titleId
+                : undefined))) ||
+          undefined
         "
+        :aria-describedby="describedBy"
+        :tabindex="tabindex"
         :data-side="surface.placement.value.split('-')[0]"
         :data-placement="surface.placement.value"
         @pointerenter="surface.panelEnter"

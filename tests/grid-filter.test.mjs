@@ -141,6 +141,108 @@ afterEach(async () => {
   document.body.style.cssText = "";
 });
 
+test("DataGrid column layout snapshots respect visibility and width constraints", async () => {
+  const grid = await mount(ui.HysDataGrid, {
+    columns: [
+      { key: "id", label: "ID", pinned: "left", hideable: false },
+      { key: "title", label: "Title", minWidth: 100, maxWidth: 220 },
+      { key: "state", label: "State" },
+    ],
+    rows: [{ id: 1, title: "Review", state: "Open" }],
+  });
+  grid.vm.applyColumnLayout({ order: ["state", "title", "missing"], hidden: ["id", "state"], widths: { title: 900 } });
+  await nextTick();
+  assert.deepEqual(grid.vm.getColumnLayout(), {
+    order: ["state", "title", "id"], hidden: ["state"], widths: { title: 220 },
+  });
+  assert.deepEqual(grid.all("thead th[data-column-key]").map((cell) => cell.dataset.columnKey), ["id", "title"]);
+  const snapshot = grid.events.columnLayoutChange.at(-1)[0];
+  snapshot.order.length = 0;
+  assert.equal(grid.vm.getColumnLayout().order.length, 3);
+  grid.vm.resetColumns();
+  await nextTick();
+  assert.deepEqual(grid.vm.getColumnLayout().hidden, []);
+});
+
+test("DataGrid groups visible headers and keeps fixed column overrides in layout snapshots", async () => {
+  const group = { key: "amounts", label: "金额" };
+  const grid = await mount(ui.HysDataGrid, {
+    columns: [
+      { key: "id", label: "ID", pinned: "left", pinnable: false, hideable: false },
+      { key: "net", label: "Net", group, minWidth: 100, maxWidth: 220 },
+      { key: "tax", label: "Tax", group },
+    ],
+    rows: [{ id: 1, net: 100, tax: 20 }],
+  });
+  assert.equal(grid.find("th[scope='colgroup']").getAttribute("colspan"), "2");
+  assert.equal(grid.vm.pinColumn("id", null), false);
+  assert.equal(grid.vm.pinColumn("tax", "right"), true);
+  await nextTick();
+  assert.deepEqual(grid.all("th[scope='colgroup']").map((th) => th.colSpan), [1, 1]);
+  assert.equal(grid.find("thead th[data-column-key='tax']").style.right, "0px");
+  assert.equal(grid.vm.resizeColumn("net", 300), true);
+  assert.equal(grid.vm.setColumnVisibility("net", false), true);
+  const snapshot = grid.vm.getColumnLayout();
+  assert.deepEqual(snapshot.pins, { tax: "right" });
+  assert.deepEqual(snapshot.widths, { net: 220 });
+  grid.vm.resetColumns();
+  grid.vm.applyColumnLayout(snapshot);
+  await nextTick();
+  assert.deepEqual(grid.vm.getColumnLayout(), snapshot);
+  assert.equal(grid.find("thead th[data-column-key='net']"), null);
+  assert.equal(grid.vm.resetColumnWidth("net"), true);
+  assert.deepEqual(grid.vm.getColumnLayout().widths, {});
+});
+
+test("DataGrid separates current row from selection and reports typed context menu targets", async () => {
+  const grid = await mount(ui.HysDataGrid, {
+    columns: [{ key: "name", label: "Name" }],
+    rows: [{ id: 1, name: "One" }, { id: "1", name: "Text one" }],
+    highlightCurrentRow: true, currentRowKey: null, contextMenu: () => false,
+  });
+  const cell = grid.find("[data-grid-row='string:1'] td[data-column-key='name']");
+  await fire(cell, "click");
+  assert.equal(grid.vm.getCurrentRowKey(), "1");
+  assert.deepEqual(grid.vm.getSelection(), []);
+  assert.equal(cell.parentElement.getAttribute("aria-current"), "true");
+  const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 });
+  assert.equal(cell.dispatchEvent(event), true);
+  assert.equal(grid.events.cellContextmenu.at(-1)[0].value, "Text one");
+  assert.equal(grid.events.rowContextmenu.length, 1);
+  assert.equal(grid.events.rowContextmenu.at(-1)[0].rowKey, "1");
+  grid.vm.setCurrentRow(null);
+  await nextTick();
+  assert.equal(cell.parentElement.hasAttribute("aria-current"), false);
+});
+
+test("DataGrid separates group and footer summaries and navigates only visible rows", async () => {
+  const grid = await mount(ui.HysDataGrid, {
+    columns: [{ key: "team", label: "Team" }, { key: "hours", label: "Hours", summary: "sum" }],
+    rows: [{ id: 1, team: "A", hours: 2 }, { id: 2, team: "A", hours: 4 }, { id: 3, team: "B", hours: 8 }],
+    pageSize: 2, groupBy: "team", groupSummary: true, showSummary: true,
+    summaryScope: "page", keyboardNavigation: true,
+  });
+  assert.match(grid.find(".hys-ui-pf-grid-group-summary").textContent, /Hours 6/);
+  assert.match(grid.find("tfoot").textContent, /6/);
+  assert.equal(grid.vm.focusRow(1), true);
+  await fire(document.activeElement, "keydown", { key: "End" });
+  await fire(document.activeElement, "keydown", { key: " " });
+  assert.deepEqual(grid.vm.getSelection(), [2]);
+  grid.props.summaryScope = "selected";
+  await nextTick();
+  assert.match(grid.find("tfoot").textContent, /4/);
+  grid.vm.setGroupsExpanded(false);
+  await nextTick();
+  assert.equal(grid.all("tr[data-grid-row]").length, 0);
+  assert.equal(grid.vm.focusRow(1), false);
+  assert.match(grid.find(".hys-ui-pf-grid-group-summary").textContent, /Hours 6/);
+  grid.vm.setGroupsExpanded(true);
+  grid.vm.setGroupBy("");
+  await nextTick();
+  assert.deepEqual(grid.events.groupChange.at(-1), [""]);
+  assert.equal(grid.all("tr[data-grid-row]").length, 2);
+});
+
 test("DataGrid current-column search toggles the shared filter row while preserving conditions", async () => {
   const a = await mount(ui.HysDataGrid, {
     columns: [

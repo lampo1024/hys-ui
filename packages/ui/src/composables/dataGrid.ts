@@ -1,4 +1,10 @@
 import type { HysPopupMotionProps } from "../motion/popup";
+import type { HysDataGridColumnLayout, HysDataGridColumnLayoutSnapshot } from "../components/HysDataGrid/gridColumnLayout";
+import type {
+  HysDataGridCellContext, HysDataGridClass, HysDataGridContextMenu,
+  HysDataGridHeaderContext, HysDataGridHeaderGroup, HysDataGridPin,
+  HysDataGridRowContext, HysDataGridStyle,
+} from "../components/HysDataGrid/gridPresentation";
 export type HysDataGridKey = string | number;
 export type HysDataGridSort = { key: string; direction: "asc" | "desc" };
 export interface HysDataGridQuery {
@@ -23,7 +29,11 @@ export interface GridColumn<T extends object = Record<string, unknown>> {
   resizable?: boolean;
   reorderable?: boolean;
   pinned?: "left" | "right";
+  pinnable?: boolean;
   align?: "left" | "center" | "right";
+  headerAlign?: "left" | "center" | "right";
+  headerWrap?: boolean;
+  group?: HysDataGridHeaderGroup;
   summary?: "sum" | "avg" | "min" | "max" | "count";
   editable?: boolean;
 }
@@ -64,7 +74,11 @@ export interface HysDataGridProps<
   maxHeight?: number | string;
   scrollToTopOnQuery?: boolean;
   groupable?: boolean;
+  groupBy?: string;
+  defaultGroupBy?: string;
+  groupSummary?: boolean;
   showSummary?: boolean;
+  summaryScope?: "filtered" | "page" | "selected";
   summaryMethod?: (
     column: GridColumn<T>,
     rows: readonly T[],
@@ -72,9 +86,26 @@ export interface HysDataGridProps<
   treeMode?: boolean;
   parentKey?: string;
   editable?: boolean;
+  keyboardNavigation?: boolean;
+  caption?: string;
+  striped?: boolean;
+  highlightCurrentRow?: boolean;
+  currentRowKey?: HysDataGridKey | null;
+  defaultCurrentRowKey?: HysDataGridKey;
+  rowClassName?: HysDataGridClass<HysDataGridRowContext<T>>;
+  rowStyle?: HysDataGridStyle<HysDataGridRowContext<T>>;
+  cellClassName?: HysDataGridClass<HysDataGridCellContext<T>>;
+  cellStyle?: HysDataGridStyle<HysDataGridCellContext<T>>;
+  headerClassName?: HysDataGridClass<HysDataGridHeaderContext<T>>;
+  headerStyle?: HysDataGridStyle<HysDataGridHeaderContext<T>>;
+  contextMenu?: HysDataGridContextMenu<T>;
 }
 export interface HysDataGridInstance {
   resetColumns(): void;
+  getColumnLayout(): HysDataGridColumnLayoutSnapshot;
+  applyColumnLayout(layout: HysDataGridColumnLayout): void;
+  setGroupBy(key: string): void;
+  setGroupsExpanded(expanded: boolean): void;
   getQuery(): HysDataGridQuery;
   setQuery(query: Partial<HysDataGridQuery>): void;
   resetQuery(): void;
@@ -84,6 +115,13 @@ export interface HysDataGridInstance {
   toggleRowSelection(key: HysDataGridKey, checked?: boolean): void;
   scrollTo(options: ScrollToOptions): void;
   scrollToRow(key: HysDataGridKey): boolean;
+  focusRow(key: HysDataGridKey): boolean;
+  getCurrentRowKey(): HysDataGridKey | null;
+  setCurrentRow(key: HysDataGridKey | null): void;
+  setColumnVisibility(key: string, visible: boolean): boolean;
+  pinColumn(key: string, side: HysDataGridPin | null): boolean;
+  resizeColumn(key: string, width: number): boolean;
+  resetColumnWidth(key: string): boolean;
 }
 export type GridRow<T extends object> = {
   row: T;

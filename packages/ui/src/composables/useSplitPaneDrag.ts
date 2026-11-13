@@ -16,7 +16,7 @@ interface Gesture extends DragSettings {
 
 export function useSplitPaneDrag(
   update: (value: number) => void,
-  ended: (value: number, cancelled: boolean, notify: boolean) => void,
+  ended: (value: number, cancelled: boolean, notify: boolean, byInput: boolean) => void,
 ) {
   let drag: Gesture | undefined;
   const coordinate = (event: PointerEvent, vertical: boolean) =>
@@ -44,6 +44,7 @@ export function useSplitPaneDrag(
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", cancel);
     window.addEventListener("keydown", escape, true);
+    window.addEventListener("blur", blur);
     return true;
   }
   function move(event: PointerEvent) {
@@ -67,15 +68,16 @@ export function useSplitPaneDrag(
     if (event.pointerId === drag?.pointer) finish(false);
   }
   function cancel(event: PointerEvent) {
-    if (event.pointerId === drag?.pointer) finish(true);
+    if (event.pointerId === drag?.pointer) finish(true, true, true);
   }
+  function blur() { finish(true, true, true); }
   function escape(event: KeyboardEvent) {
     if (event.key !== "Escape" || !drag) return;
     event.preventDefault();
     event.stopPropagation();
-    finish(true);
+    finish(true, true, true);
   }
-  function finish(cancelled: boolean, notify = true) {
+  function finish(cancelled: boolean, notify = true, byInput = false) {
     const gesture = drag;
     if (!gesture) return;
     drag = undefined;
@@ -84,11 +86,12 @@ export function useSplitPaneDrag(
     window.removeEventListener("pointerup", up);
     window.removeEventListener("pointercancel", cancel);
     window.removeEventListener("keydown", escape, true);
+    window.removeEventListener("blur", blur);
     if (gesture.handle.hasPointerCapture?.(gesture.pointer)) {
       gesture.handle.releasePointerCapture(gesture.pointer);
     }
     if (!cancelled) report(gesture);
-    ended(gesture.latest, cancelled, notify);
+    ended(gesture.latest, cancelled, notify, byInput);
   }
   return { start, cancel, finish, active: () => !!drag };
 }

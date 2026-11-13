@@ -29,18 +29,20 @@ import type {
 import {
   popupFocusControls,
   usePopupSurfaceInteractions,
+  type PopupCloseSource,
 } from "./usePopupSurfaceInteractions";
 import { createPopupReferenceBinding } from "./popupReferenceBinding";
-const length = (value: number | string | undefined) =>
-  typeof value === "number"
-    ? Number.isFinite(value)
-      ? Math.max(0, value) + "px"
-      : undefined
-    : value;
+import { popupMaximumWidth, usePopupSurfaceStyle } from "./popupSurfaceStyle";
 export function usePopupSurface(
   props: HysPopupSurfaceProps,
   kind: "tooltip" | "popover",
   emit: (name: string, ...args: any[]) => void,
+  hooks?: {
+    allowClose?: (source: PopupCloseSource) => boolean;
+    onDismiss?: (source: PopupCloseSource) => void;
+    allowTabExit?: boolean;
+    shouldRestoreFocus?: () => boolean;
+  },
 ) {
   const wrapper = ref<HTMLElement>(),
     referenceElement = shallowRef<HTMLElement>(),
@@ -109,6 +111,8 @@ export function usePopupSurface(
   });
   const teleportTo = computed(() => {
     const to = props.appendTo;
+    if (typeof document === "undefined")
+      return typeof to === "string" ? to : "body";
     if (to instanceof HTMLElement) return to;
     if (typeof to === "string") {
       try {
@@ -158,12 +162,11 @@ export function usePopupSurface(
         : "fixed";
     },
     width: () => props.width,
-    maxWidth: () =>
-      length(props.maxWidth) ?? (kind === "tooltip" ? "320px" : "360px"),
+    maxWidth: () => popupMaximumWidth(props, kind),
     zIndex: () => props.zIndex,
     onPosition: position,
-    requestOpen(value, restore) {
-      void request(value, restore);
+    requestOpen(value, restore, source) {
+      void request(value, restore, source);
       return false;
     },
   });
@@ -175,6 +178,7 @@ export function usePopupSurface(
     floating,
     restoreReferenceFocus,
     request,
+    allowTabExit: hooks?.allowTabExit,
   });
   const { handlers, tab } = interactions;
   const externalBinding = createPopupReferenceBinding(kind, id, {
@@ -187,7 +191,8 @@ export function usePopupSurface(
     keydown: handlers.key,
   });
   function attachExternal() {
-    const node = active.value && external.value ? actualReference.value : undefined;
+    const node =
+      active.value && external.value ? actualReference.value : undefined;
     externalBinding.attach(
       node && !wrapper.value?.contains(node) ? node : undefined,
       floating.open.value,
@@ -208,7 +213,15 @@ export function usePopupSurface(
       void floating.show(true);
     } else floating.close(false, true);
   }
-  async function request(value: boolean, restore = false) {
+  async function request(
+    value: boolean,
+    restore = false,
+    source: PopupCloseSource = "programmatic",
+    notifyDismiss = true,
+  ) {
+    const wasOpen = floating.open.value;
+    if (!value && wasOpen && hooks?.allowClose?.(source) === false)
+      return false;
     interactions.clearDelays();
     if (
       !active.value ||
@@ -234,9 +247,14 @@ export function usePopupSurface(
     if (accepted) {
       if (!value) {
         floating.close(false, true);
-        if (restore && anchor.value?.isConnected) {
+        if (
+          restore &&
+          hooks?.shouldRestoreFocus?.() !== false &&
+          anchor.value?.isConnected
+        ) {
           restoreReferenceFocus();
         }
+        if (wasOpen && notifyDismiss) hooks?.onDismiss?.(source);
       } else sync();
     }
     return accepted;
@@ -400,38 +418,11 @@ export function usePopupSurface(
       props.forceRender ||
       (props.destroyOnHide === false && ever.value),
   );
-  const skinStyle = computed<CSSProperties>(() => {
-    const dark =
-      (props.effect ?? (kind === "tooltip" ? "dark" : "light")) === "dark";
-    return {
-      "--hys-ui-popup-surface":
-        props.color ||
-        (dark
-          ? "#172744"
-          : "var(--hys-ui-surface,var(--hys-ui-theme-surface))"),
-      "--hys-ui-popup-color":
-        props.textColor ||
-        (dark ? "#fff" : "var(--hys-ui-text,var(--hys-ui-theme-text))"),
-      "--hys-ui-popup-border":
-        props.color ||
-        (dark ? "#172744" : "var(--hys-ui-border,var(--hys-ui-theme-border))"),
-    };
-  });
-  const style = computed<CSSProperties>(() => ({
-    ...props.overlayStyle,
-    ...floating.style.value,
-    ...skinStyle.value,
-    overflow: "visible",
-    maxWidth: `min(${length(props.maxWidth) ?? (kind === "tooltip" ? "320px" : "360px")},calc(100vw - 20px))`,
-    minWidth: props.width !== undefined ? "0" : undefined,
-  }));
-  const contentStyle = computed<CSSProperties>(() => ({
-    ...props.contentStyle,
-    maxHeight:
-      props.maxHeight !== undefined
-        ? `min(${length(props.maxHeight)},calc(100vh - 20px))`
-        : "calc(100vh - 20px)",
-  }));
+  const { style, contentStyle } = usePopupSurfaceStyle(
+    props,
+    kind,
+    floating.style,
+  );
   const scope = computed<HysPopupSurfaceContext>(() => ({
     open: floating.open.value,
     show: () => request(true),

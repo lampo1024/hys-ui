@@ -74,6 +74,24 @@
     "PopupMotion": "浮层展开与收起动效"
   },
   "components": {
+    "HysSpin": {
+      "Basic": "独立、行内与容器加载",
+      "Animations": "加载动效与播放控制",
+      "Timing": "显示延迟与最短时长",
+      "Tasks": "进度、取消与失败重试",
+      "Overlay": "局部遮罩与全屏加载",
+      "Business": "搜索、数据区与弹窗场景",
+      "Custom": "自定义内容、预设与服务"
+    },
+    "HysIcon": {
+      "Basic": "内置图标与动态图标",
+      "Sources": "SVG、Sprite、字体与图片",
+      "Appearance": "图标风格、尺寸与主题",
+      "Motion": "动画与状态切换",
+      "Interactions": "图标按钮、组合与 RTL",
+      "Registry": "注册、别名、懒加载与回退",
+      "Picker": "内置图标目录与选择器"
+    },
     "HysToast": {
       "Basic": "常用消息类型",
       "Configure": "显示与关闭设置",
@@ -124,7 +142,11 @@
     },
     "HysSplitPane": {
       "Resize": "延迟拖动、独立尺寸与折叠恢复",
+      "Snapping": "原文与修订稿 · 拖拽吸附与取消恢复",
       "Panels": "三面板联动、像素尺寸与受控更新",
+      "Cascade": "搜索工作台 · 多面板连续联动",
+      "Responsive": "工单列表与详情 · 按容器宽度切换方向",
+      "Inspector": "卡片属性编辑器 · 展开、定宽与聚焦",
       "Workspace": "嵌套工作区、布局记忆和一键恢复"
     },
     "HysMention": {
@@ -398,6 +420,8 @@
       "Bulk": "多选全选与批量取消"
     },
     "HysTable": {
+      "QuickSearch": "发票列表 · 跨列搜索与列筛选",
+      "KeyboardRows": "库存复核 · 键盘行导航",
       "Basic": "基础表格与列配置",
       "Configure": "外观与状态配置",
       "Fixed": "固定表头、列与高度",
@@ -448,6 +472,41 @@
       "Content": "封面、内容分区与操作",
       "Tabs": "页签切换与键盘导航",
       "Loading": "加载与自定义占位"
+    },
+    "HysTabPane": {
+      "Basic": "声明式面板与动态显示",
+      "Nested": "嵌套标签与局部内容"
+    },
+    "HysTabs": {
+      "Basic": "基础切换",
+      "Configure": "外观、方向与尺寸",
+      "AdvancedLayout": "吸顶、固定与内容动效",
+      "Overflow": "溢出、滚动与搜索",
+      "Keyboard": "键盘导航与激活",
+      "Interaction": "悬停预览、触摸与操作菜单",
+      "Guard": "切换和关闭守卫",
+      "Lifecycle": "面板挂载与保留",
+      "AsyncContent": "异步加载、预载与重试",
+      "Dynamic": "事件驱动的增删",
+      "Workbench": "工作台管理与会话恢复",
+      "Routing": "路由联动与访问权限",
+      "Custom": "自定义标题和面板",
+      "States": "禁用与空状态"
+    },
+    "HysDescriptions": {
+      "Basic": "报告详情与缺失字段",
+      "Responsive": "容器断点与跨行跨列",
+      "Custom": "字段渲染与标题操作"
+    },
+    "HysResult": {
+      "Basic": "操作结果与后续操作",
+      "Exceptions": "异常页面与恢复路径",
+      "Workflow": "提交、重试与业务详情"
+    },
+    "HysSpace": {
+      "Basic": "工具栏方向和间距",
+      "Responsive": "窄容器换行与填充",
+      "Separators": "动态项目与分隔内容"
     },
     "HysDivider": {
       "Styles": "线条样式与文字间距",
@@ -665,6 +724,16 @@
       "Sizes": "尺寸约束与长内容滚动",
       "Input": "输入与选择控件作为触发器"
     },
+    "HysPopconfirm": {
+      "Basic": "归档前确认",
+      "Async": "异步提交与失败重试",
+      "Guard": "危险操作与前置检查",
+      "Table": "表格行删除",
+      "Controlled": "受控开关与外部锚点",
+      "Placement": "触发方式、定位与外观",
+      "Custom": "自定义图标和操作按钮",
+      "PopupMotion": "展开与收起动效"
+    },
     "HysPopover": {
       "Basic": "基础气泡浮层",
       "Configure": "触发与显示配置",
@@ -753,6 +822,12 @@
       "States": "空记录与长内容"
     },
     "HysDataGrid": {
+      "GroupedHeaders": "区域经营周报 · 分组表头与固定列",
+      "RowStates": "异常任务 · 当前行高亮与单元格样式",
+      "ContextActions": "库存管理 · 右键菜单与列操作",
+      "ColumnLayouts": "工单视图 · 列布局预设与恢复",
+      "GroupingSummary": "工时统计 · 受控分组与分组小计",
+      "KeyboardReview": "待复核事项 · 键盘选择与定位",
       "Controlled": "受控查询与自定义筛选",
       "Selection": "单选、多选与保留选择",
       "Resize": "固定表头与列宽调整",

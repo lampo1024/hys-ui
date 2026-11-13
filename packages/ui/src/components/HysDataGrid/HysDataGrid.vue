@@ -4,6 +4,7 @@ export type { GridColumn } from "../../composables/dataGrid";
 <script setup lang="ts" generic="T extends object = Record<string, unknown>">
 import {
   computed,
+  mergeProps,
   nextTick,
   onBeforeUnmount,
   onDeactivated,
@@ -18,6 +19,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  Ellipsis,
   Search,
   Settings2,
 } from "lucide-vue-next";
@@ -40,6 +42,27 @@ import {
   type HysDataGridSort,
 } from "../../composables/dataGrid";
 import { useDataGridRemote } from "../../composables/useDataGridRemote";
+import { useTabularRowNavigation } from "../../composables/useTabularRowNavigation";
+import {
+  gridMinColumnWidth as minWidth,
+  gridMaxColumnWidth as maxWidth,
+  gridBoundColumnWidth as boundWidth,
+  normalizeGridColumnLayout,
+  type HysDataGridColumnLayout,
+  type HysDataGridColumnLayoutSnapshot,
+} from "./gridColumnLayout";
+import {
+  gridHeaderGroups,
+  type HysDataGridCellContext,
+  type HysDataGridContext,
+  type HysDataGridHeaderContext,
+  type HysDataGridHeaderGroup,
+  type HysDataGridPin,
+  type HysDataGridRowContext,
+} from "./gridPresentation";
+import { useGridContextMenu } from "./useGridContextMenu";
+import type { HysContextMenuItem, HysMenuKey, HysMenuSelectInfo } from "../../composables/menu";
+import HysContextMenu from "../HysContextMenu/HysContextMenu.vue";
 import HysSortableList from "../HysSortableList/HysSortableList.vue";
 import HysSelect from "../HysSelect/HysSelect.vue";
 import HysInput from "../HysInput/HysInput.vue";
@@ -56,12 +79,26 @@ const props = withDefaults(defineProps<HysDataGridProps<T>>(), {
   parentKey: "parentId",
   selectionType: "checkbox",
   reserveSelection: undefined,
+  summaryScope: "filtered",
 });
 const emit = defineEmits<{
   rowClick: [row: T];
   selectionChange: [keys: HysDataGridKey[]];
   "update:selectedRowKeys": [keys: HysDataGridKey[]];
   columnsChange: [keys: string[]];
+  columnLayoutChange: [layout: HysDataGridColumnLayoutSnapshot];
+  "update:currentRowKey": [key: HysDataGridKey | null];
+  currentChange: [key: HysDataGridKey | null, previous: HysDataGridKey | null];
+  headerClick: [context: HysDataGridHeaderContext<T>, event: MouseEvent];
+  headerContextmenu: [context: HysDataGridHeaderContext<T>, event: MouseEvent];
+  rowDblclick: [context: HysDataGridRowContext<T>, event: MouseEvent];
+  rowContextmenu: [context: HysDataGridRowContext<T>, event: MouseEvent];
+  cellClick: [context: HysDataGridCellContext<T>, event: MouseEvent];
+  cellDblclick: [context: HysDataGridCellContext<T>, event: MouseEvent];
+  cellContextmenu: [context: HysDataGridCellContext<T>, event: MouseEvent];
+  contextMenuSelect: [key: HysMenuKey, context: HysDataGridContext<T>, info: HysMenuSelectInfo];
+  "update:groupBy": [key: string];
+  groupChange: [key: string];
   sortChange: [sort: HysDataGridSort | null];
   pageChange: [page: number];
   pageSizeChange: [size: number];
@@ -79,6 +116,13 @@ defineSlots<{
   empty?(scope: { query: HysDataGridQuery }): unknown;
   loading?(): unknown;
   error?(scope: { error: unknown; retry: () => void }): unknown;
+  "toolbar-actions"?(scope: {
+    query: HysDataGridQuery;
+    selectedKeys: HysDataGridKey[];
+  }): unknown;
+  "header-cell"?(scope: HysDataGridHeaderContext<T>): unknown;
+  "header-group"?(scope: { group: HysDataGridHeaderGroup; columns: readonly GridColumn<T>[]; pinned?: HysDataGridPin }): unknown;
+  "body-cell"?(scope: HysDataGridCellContext<T>): unknown;
   [key: string]: ((scope: any) => unknown) | undefined;
 }>();
 
@@ -145,7 +189,17 @@ const filterTerm = (key: string) =>
   Object.hasOwn(filters.value, key) ? filters.value[key] : "";
 const safePageSize = computed(() => requestedQuery.value.pageSize);
 const isRemote = computed(() => props.serverMode || !!props.loadRows);
-const groupBy = ref("");
+const localGroupBy = ref<string>();
+const groupBy = computed(() => {
+  const key = props.groupBy ?? localGroupBy.value ?? props.defaultGroupBy ?? "";
+  return columnMap.value.has(key) ? key : "";
+});
+function setGroupBy(key: string) {
+  const next = columnMap.value.has(key) ? key : "";
+  if (next === groupBy.value) return;
+  if (props.groupBy === undefined) localGroupBy.value = next;
+  emit("update:groupBy", next);
+}
 const expandedTree = shallowRef(new Set<HysDataGridKey>());
 const collapsedGroups = shallowRef(new Set<string>());
 const editing = ref<{ id: HysDataGridKey; key: string } | null>(null);
@@ -247,7 +301,6 @@ const pageRows = computed(() =>
         page.value * safePageSize.value,
       ),
 );
-const pageSummaryRows = computed(() => processed.value.map((item) => item.row));
 const getQuery = () => normalizeQuery(query.value);
 function setQuery(change: Partial<HysDataGridQuery>) {
   const next = normalizeQuery({ ...query.value, ...change });
@@ -349,7 +402,7 @@ const groupOptions = computed(() =>
 );
 type DisplayRow =
   | { kind: "row"; key: string; item: GridTreeRow<T>; pageIndex: number }
-  | { kind: "group"; key: string; label: string; count: number };
+  | { kind: "group"; key: string; label: string; rows: T[] };
 function groupKey(value: unknown, label: string) {
   try {
     return "group:" + JSON.stringify(value ?? null);
@@ -381,11 +434,27 @@ const displayRows = computed<DisplayRow[]>(() => {
       kind: "group",
       key,
       label: bucket.label,
-      count: bucket.rows.length,
+      rows: bucket.rows.map(({ item }) => item.row),
     });
     if (!collapsedGroups.value.has(key)) result.push(...bucket.rows);
   }
   return result;
+});
+const navigableRows = computed(() => new Map(displayRows.value.flatMap(
+  (entry) => entry.kind === "row" ? [[gridToken(entry.item.id), entry.item] as const] : [],
+)));
+const navigableTokens = computed(() => [...navigableRows.value.keys()]);
+const rowNavigation = useTabularRowNavigation({
+  enabled: () => !!props.keyboardNavigation && !busy.value && failure.value == null,
+  table: () => scrollRef.value?.querySelector(":scope > table"),
+  tokens: () => navigableTokens.value,
+  attribute: "data-grid-row",
+  toggle(token) {
+    const item = navigableRows.value.get(token);
+    if (!item || !props.selectable || !canSelect(item)) return false;
+    toggleRowSelection(item.id);
+    return true;
+  },
 });
 function toggleSet<K>(values: ReadonlySet<K>, key: K) {
   const next = new Set(values);
@@ -401,11 +470,29 @@ function toggleGroup(key: string) {
 }
 watch(groupBy, () => {
   collapsedGroups.value = new Set();
+  emit("groupChange", groupBy.value);
 });
+function setGroupsExpanded(expanded: boolean) {
+  const keys = displayRows.value.flatMap((entry) => entry.kind === "group" ? [entry.key] : []);
+  const next = new Set(collapsedGroups.value);
+  for (const key of keys) {
+    if (expanded) next.delete(key);
+    else next.add(key);
+  }
+  collapsedGroups.value = next;
+}
 function beginEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
   if (!props.editable || !column.editable) return;
-  editing.value = { id: item.id, key: column.key };
+  const target = { id: item.id, key: column.key };
+  editing.value = target;
   editValue.value = cellText(item.row, column);
+  void nextTick(() => {
+    if (editing.value?.id !== target.id || editing.value?.key !== target.key) return;
+    const row = Array.from(scrollRef.value?.querySelectorAll<HTMLTableRowElement>("[data-grid-row]") ?? [])
+      .find((element) => element.dataset.gridRow === gridToken(target.id));
+    const cell = Array.from(row?.cells ?? []).find((element) => element.dataset.columnKey === target.key);
+    cell?.querySelector("input")?.focus();
+  });
 }
 function commitEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
   if (editing.value?.id !== item.id || editing.value?.key !== column.key)
@@ -417,6 +504,12 @@ function commitEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
     column: column.key,
     value: editValue.value,
   });
+}
+function isEditing(item: GridTreeRow<T>, column: GridColumn<T>) {
+  return editing.value?.id === item.id && editing.value?.key === column.key;
+}
+function cancelEdit(event: KeyboardEvent) {
+  if (!event.isComposing && event.keyCode !== 229) editing.value = null;
 }
 function commitBatch() {
   if (!batchColumn.value || !selected.value.length) return;
@@ -430,8 +523,8 @@ function commitBatch() {
 const numberFormat = new Intl.NumberFormat("zh-CN", {
   maximumFractionDigits: 2,
 });
-function summaryValue(column: GridColumn<T>) {
-  const rows = pageSummaryRows.value;
+const summaryRows = computed(() => rowsInScope(props.summaryScope));
+function summaryValue(column: GridColumn<T>, rows = summaryRows.value) {
   if (props.summaryMethod) return props.summaryMethod(column, rows);
   if (!column.summary) return "";
   const values = rows
@@ -462,6 +555,16 @@ const localSelection = shallowRef(
 const selected = computed(() =>
   normalizeKeys(props.selectedRowKeys ?? localSelection.value),
 );
+const localCurrent = ref<HysDataGridKey | null>();
+const currentKey = computed(() => props.currentRowKey !== undefined
+  ? props.currentRowKey
+  : localCurrent.value === undefined ? props.defaultCurrentRowKey ?? null : localCurrent.value);
+function setCurrentRow(key: HysDataGridKey | null) {
+  if (key === currentKey.value || (key !== null && !rowMap.value.has(key))) return;
+  if (props.currentRowKey === undefined) localCurrent.value = key;
+  emit("update:currentRowKey", key);
+}
+watch(currentKey, (key, previous) => emit("currentChange", key, previous));
 const selectionSet = computed(() => new Set(selected.value));
 const rowMap = computed(
   () => new Map(indexedRows.value.map((item) => [item.id, item])),
@@ -480,6 +583,14 @@ const somePageSelected = computed(() =>
   pageKeys.value.some((key) => selectionSet.value.has(key)),
 );
 const getSelection = () => [...selected.value];
+function rowsInScope(scope?: "page" | "filtered" | "selected") {
+  if (scope === "selected")
+    return selected.value.flatMap((key) => {
+      const item = rowMap.value.get(key);
+      return item ? [item.row] : [];
+    });
+  return (scope === "page" ? pageRows.value : processed.value).map(({ row }) => row);
+}
 function setSelection(keys: HysDataGridKey[]) {
   const next = normalizeKeys(keys);
   if (
@@ -527,7 +638,7 @@ function selectPage(checked: boolean) {
   );
 }
 
-function readColumnSettings(): Record<string, unknown> {
+function readColumnSettings(): HysDataGridColumnLayout {
   if (!props.storageKey || typeof localStorage === "undefined") return {};
   try {
     const value = JSON.parse(
@@ -540,34 +651,22 @@ function readColumnSettings(): Record<string, unknown> {
     return {};
   }
 }
-const saved = readColumnSettings();
-const order = ref<string[]>(
-  Array.isArray(saved.order)
-    ? saved.order.filter((key) => typeof key === "string")
-    : [],
-);
-const hidden = ref<string[]>(
-  Array.isArray(saved.hidden)
-    ? saved.hidden.filter((key) => typeof key === "string")
-    : [],
-);
-const widths = ref<Record<string, number>>(
-  saved.widths &&
-    typeof saved.widths === "object" &&
-    !Array.isArray(saved.widths)
-    ? Object.fromEntries(
-        Object.entries(saved.widths).filter(
-          ([, width]) => typeof width === "number" && Number.isFinite(width),
-        ),
-      )
-    : {},
-);
-const minWidth = (column: GridColumn<T>) =>
-  positiveInteger(column.minWidth, 80);
-const maxWidth = (column: GridColumn<T>) =>
-  Math.max(minWidth(column), positiveInteger(column.maxWidth, 800));
-const boundWidth = (column: GridColumn<T>, width: number) =>
-  Math.max(minWidth(column), Math.min(maxWidth(column), width));
+const saved = normalizeGridColumnLayout(columnMap.value, readColumnSettings());
+const order = ref(saved.order);
+const hidden = ref(saved.hidden);
+const widths = ref(saved.widths);
+const pins = ref(saved.pins);
+function getColumnLayout(): HysDataGridColumnLayoutSnapshot {
+  return { order: [...order.value], hidden: [...hidden.value], widths: { ...widths.value },
+    ...(Object.keys(pins.value).length ? { pins: { ...pins.value } } : {}) };
+}
+function setColumnLayout(layout: HysDataGridColumnLayout) {
+  const next = normalizeGridColumnLayout(columnMap.value, layout);
+  order.value = next.order;
+  hidden.value = next.hidden;
+  widths.value = next.widths;
+  pins.value = next.pins;
+}
 const previewWidth = shallowRef<{ key: string; width: number }>();
 const widthOf = (column: GridColumn<T>) =>
   previewWidth.value?.key === column.key
@@ -581,30 +680,13 @@ watch(
     props.columns.map((column) => [
       column.key,
       column.hideable,
+      column.pinnable,
       column.minWidth,
       column.maxWidth,
     ]),
   (_, previous) => {
     if (previous) cancelResize();
-    const columns = columnMap.value;
-    const keys = [...columns.keys()];
-    order.value = [
-      ...new Set([...order.value.filter((key) => columns.has(key)), ...keys]),
-    ];
-    hidden.value = [
-      ...new Set(
-        hidden.value.filter(
-          (key) => columns.has(key) && columns.get(key)?.hideable !== false,
-        ),
-      ),
-    ];
-    if (keys.every((key) => hidden.value.includes(key))) hidden.value = [];
-    widths.value = Object.fromEntries(
-      Object.entries(widths.value).flatMap(([key, width]) => {
-        const column = columns.get(key);
-        return column ? [[key, boundWidth(column, width)]] : [];
-      }),
-    );
+    setColumnLayout(getColumnLayout());
   },
   { immediate: true },
 );
@@ -614,18 +696,23 @@ const visibleColumns = computed(() =>
     return column && !hidden.value.includes(key) ? [column] : [];
   }),
 );
+function pinOf(column: GridColumn<T>) {
+  return (Object.hasOwn(pins.value, column.key) ? pins.value[column.key] : column.pinned) ?? undefined;
+}
 const orderedColumns = computed(() => [
-  ...visibleColumns.value.filter((column) => column.pinned === "left"),
-  ...visibleColumns.value.filter((column) => !column.pinned),
-  ...visibleColumns.value.filter((column) => column.pinned === "right"),
+  ...visibleColumns.value.filter((column) => pinOf(column) === "left"),
+  ...visibleColumns.value.filter((column) => !pinOf(column)),
+  ...visibleColumns.value.filter((column) => pinOf(column) === "right"),
 ]);
+const headerGroups = computed(() => gridHeaderGroups(orderedColumns.value, pinOf));
+const hasHeaderGroups = computed(() => headerGroups.value.some(({ group }) => !!group));
 const settingsItems = computed(() =>
   order.value.flatMap((key) => {
     const column = columnMap.value.get(key);
     return column ? [{ id: key, label: column.label }] : [];
   }),
 );
-watch([order, hidden, widths], () => {
+watch([order, hidden, widths, pins], () => {
   if (props.storageKey && typeof localStorage !== "undefined") {
     try {
       localStorage.setItem(
@@ -634,6 +721,7 @@ watch([order, hidden, widths], () => {
           order: order.value,
           hidden: hidden.value,
           widths: widths.value,
+          pins: pins.value,
         }),
       );
     } catch {
@@ -642,15 +730,49 @@ watch([order, hidden, widths], () => {
   }
   emit(
     "columnsChange",
-    visibleColumns.value.map((column) => column.key),
+    orderedColumns.value.map((column) => column.key),
   );
+  emit("columnLayoutChange", getColumnLayout());
 });
 function toggleColumn(column: GridColumn<T>) {
-  if (column.hideable === false) return;
-  if (hidden.value.includes(column.key))
-    hidden.value = hidden.value.filter((key) => key !== column.key);
-  else if (visibleColumns.value.length > 1)
-    hidden.value = [...hidden.value, column.key];
+  setColumnVisibility(column.key, hidden.value.includes(column.key));
+}
+function setColumnVisibility(key: string, visible: boolean) {
+  const column = columnMap.value.get(key);
+  if (!column || visible === !hidden.value.includes(key)) return false;
+  if (!visible && (column.hideable === false || visibleColumns.value.length <= 1)) return false;
+  cancelResize();
+  endColumnDrag();
+  hidden.value = visible ? hidden.value.filter((item) => item !== key) : [...hidden.value, key];
+  return true;
+}
+function pinColumn(key: string, side: HysDataGridPin | null) {
+  const column = columnMap.value.get(key);
+  if (!column || column.pinnable === false || (side !== null && side !== "left" && side !== "right") ||
+      pinOf(column) === (side ?? undefined)) return false;
+  cancelResize();
+  endColumnDrag();
+  stopColumnAnimations();
+  pins.value = { ...pins.value, [key]: side };
+  if (column.pinned === (side ?? undefined)) delete pins.value[key];
+  return true;
+}
+function resizeColumn(key: string, width: number) {
+  const column = columnMap.value.get(key);
+  if (!column || column.resizable === false || !Number.isFinite(width)) return false;
+  const next = boundWidth(column, width);
+  if (next === widthOf(column)) return false;
+  cancelResize();
+  widths.value = { ...widths.value, [key]: next };
+  return true;
+}
+function resetColumnWidth(key: string) {
+  if (!Object.hasOwn(widths.value, key)) return false;
+  cancelResize();
+  const next = { ...widths.value };
+  delete next[key];
+  widths.value = next;
+  return true;
 }
 const tableWidth = computed(() =>
   orderedColumns.value.reduce(
@@ -662,20 +784,20 @@ const stickyOffsets = computed(() => {
   const offsets = new Map<string, { left?: string; right?: string }>();
   let left = props.selectable ? 44 : 0;
   for (const column of orderedColumns.value) {
-    if (column.pinned !== "left") continue;
+    if (pinOf(column) !== "left") continue;
     offsets.set(column.key, { left: left + "px" });
     left += widthOf(column);
   }
   let right = 0;
   for (const column of [...orderedColumns.value].reverse()) {
-    if (column.pinned !== "right") continue;
+    if (pinOf(column) !== "right") continue;
     offsets.set(column.key, { right: right + "px" });
     right += widthOf(column);
   }
   return offsets;
 });
 const pinnedStyle = (column: GridColumn<T>, header = false) =>
-  column.pinned
+  pinOf(column)
     ? {
         position: "sticky" as const,
         ...stickyOffsets.value.get(column.key),
@@ -861,7 +983,7 @@ function canDropColumn(column: GridColumn<T>) {
     source.key !== column.key &&
     source.reorderable !== false &&
     column.reorderable !== false &&
-    source.pinned === column.pinned
+    pinOf(source) === pinOf(column)
   );
 }
 function columnDestination(
@@ -1022,13 +1144,14 @@ async function dropColumn(event: DragEvent, column: GridColumn<T>) {
   if (generation === columnAnimationGeneration) animateColumnReorder(before);
 }
 
-function resetColumns() {
+function applyColumnLayout(layout: HysDataGridColumnLayout) {
   cancelResize();
   endColumnDrag();
   stopColumnAnimations();
-  order.value = [...columnMap.value.keys()];
-  hidden.value = [];
-  widths.value = {};
+  setColumnLayout(layout);
+}
+function resetColumns() {
+  applyColumnLayout({});
 }
 function exportCsv() {
   const columns = visibleColumns.value;
@@ -1068,8 +1191,123 @@ function scrollToRow(key: HysDataGridKey) {
   row?.scrollIntoView({ block: "nearest", inline: "nearest" });
   return !!row;
 }
+type DataEntry = Extract<DisplayRow, { kind: "row" }>;
+function rowContext(entry: DataEntry): HysDataGridRowContext<T> {
+  const { item, pageIndex } = entry;
+  return { row: item.row, rowKey: item.id, index: item.index, pageIndex, depth: item.depth,
+    selected: selectionSet.value.has(item.id), current: currentKey.value === item.id };
+}
+function cellContext(entry: DataEntry, column: GridColumn<T>, columnIndex: number): HysDataGridCellContext<T> {
+  return { ...rowContext(entry), column, columnIndex, value: gridValue(entry.item.row, column) };
+}
+function headerContext(column: GridColumn<T>, columnIndex: number): HysDataGridHeaderContext<T> {
+  return { column, columnIndex, sort: effectiveSorts.value.find((sort) => sort.key === column.key)?.direction,
+    filter: filterTerm(column.key), pinned: pinOf(column) };
+}
+function presentation<C, R>(value: R | ((context: C) => R | undefined) | undefined, context: C) {
+  return typeof value === "function" ? (value as (context: C) => R | undefined)(context) : value;
+}
+function clickRow(entry: DataEntry, event: MouseEvent) {
+  if (props.highlightCurrentRow && !(event.target as HTMLElement).closest("button,a,input,select,textarea,[contenteditable]"))
+    setCurrentRow(entry.item.id);
+  emit("rowClick", entry.item.row);
+}
+function openHeaderMenu(event: MouseEvent, column: GridColumn<T>, index: number) {
+  const context = headerContext(column, index);
+  if (event.type === "contextmenu") emit("headerContextmenu", context, event);
+  void gridMenu.open({ ...context, type: "header" }, event);
+}
+function openRowMenu(event: MouseEvent, entry: DataEntry) {
+  const context = rowContext(entry);
+  emit("rowContextmenu", context, event);
+  void gridMenu.open({ ...context, type: "row" }, event);
+}
+function openCellMenu(event: MouseEvent, entry: DataEntry, column: GridColumn<T>, index: number) {
+  const context = cellContext(entry, column, index);
+  emit("cellContextmenu", context, event);
+  emit("rowContextmenu", rowContext(entry), event);
+  if ((event.target as HTMLElement).closest("input,textarea,[contenteditable]")) return;
+  void gridMenu.open({ ...context, type: "cell" }, event);
+}
+function doubleClickCell(event: MouseEvent, entry: DataEntry, column: GridColumn<T>, index: number) {
+  emit("cellDblclick", cellContext(entry, column, index), event);
+  if (!event.defaultPrevented &&
+      !(event.target as HTMLElement).closest("button,a,input,select,textarea,[contenteditable]"))
+    beginEdit(entry.item, column);
+}
+function defaultMenuItems(context: HysDataGridContext<T>): HysContextMenuItem[] {
+  if (context.type === "header") {
+    const { column, pinned, sort, filter } = context;
+    return [
+      ...(column.sortable === false ? [] : [
+        { label: "升序排列", value: "sort-asc", disabled: sort === "asc" },
+        { label: "降序排列", value: "sort-desc", disabled: sort === "desc" },
+        { label: "清除本列排序", value: "clear-sort", disabled: !sort },
+      ]),
+      ...(column.filterable === false ? [] : [
+        { label: "筛选此列", value: "filter" },
+        { label: "清除本列筛选", value: "clear-filter", disabled: !filter },
+      ]),
+      ...(column.pinnable === false ? [] : [
+        { label: "固定在左侧", value: "pin-left", disabled: pinned === "left" },
+        { label: "固定在右侧", value: "pin-right", disabled: pinned === "right" },
+        { label: "取消固定", value: "unpin", disabled: !pinned },
+      ]),
+      { label: "隐藏此列", value: "hide-column", disabled: column.hideable === false || visibleColumns.value.length <= 1 },
+      { label: "恢复列宽", value: "reset-width", disabled: !Object.hasOwn(widths.value, column.key) },
+    ];
+  }
+  const item = rowMap.value.get(context.rowKey);
+  return [
+    ...(props.selectable ? [{ label: context.selected ? "取消选择此行" : "选择此行", value: "toggle-selection", disabled: !item || !canSelect(item) }] : []),
+    ...(props.highlightCurrentRow ? [{ label: "设为当前行", value: "current-row", disabled: context.current }] : []),
+    ...(context.type === "cell" && props.editable && context.column.editable ? [{ label: "编辑此单元格", value: "edit-cell" }] : []),
+  ];
+}
+const gridMenu = useGridContextMenu<T>({
+  enabled: (context) => !!props.contextMenu && !busy.value &&
+    (context.type === "header"
+      ? visibleColumns.value.some((column) => column.key === context.column.key)
+      : navigableRows.value.has(gridToken(context.rowKey))),
+  config: () => props.contextMenu,
+  defaults: defaultMenuItems,
+  select(key, context, info) {
+    if (context.type === "header") {
+      const column = columnMap.value.get(context.column.key)!;
+      if (key === "sort-asc") void applySort(column, "asc");
+      if (key === "sort-desc") void applySort(column, "desc");
+      if (key === "clear-sort") setQuery({ sort: effectiveSorts.value.filter((sort) => sort.key !== column.key), page: 1 });
+      if (key === "filter") requestAnimationFrame(() => {
+        if (scrollRef.value?.isConnected && visibleColumns.value.includes(column)) void showColumnFilters(column);
+      });
+      if (key === "clear-filter") setFilter(column.key, "");
+      if (key === "pin-left") pinColumn(column.key, "left");
+      if (key === "pin-right") pinColumn(column.key, "right");
+      if (key === "unpin") pinColumn(column.key, null);
+      if (key === "hide-column") setColumnVisibility(column.key, false);
+      if (key === "reset-width") resetColumnWidth(column.key);
+    } else {
+      if (key === "toggle-selection") toggleRowSelection(context.rowKey);
+      if (key === "current-row") setCurrentRow(context.rowKey);
+      if (key === "edit-cell" && context.type === "cell") {
+        const item = navigableRows.value.get(gridToken(context.rowKey));
+        const column = columnMap.value.get(context.column.key);
+        if (item && column) requestAnimationFrame(() => {
+          if (!busy.value && navigableRows.value.get(gridToken(context.rowKey)) === item &&
+              visibleColumns.value.includes(column)) beginEdit(item, column);
+        });
+      }
+    }
+    emit("contextMenuSelect", key, context, info);
+  },
+});
+watch([busy, () => props.contextMenu, pageRows, orderedColumns], gridMenu.close);
 defineExpose({
   resetColumns,
+  getColumnLayout,
+  applyColumnLayout,
+  setGroupBy,
+  setGroupsExpanded,
   getQuery,
   setQuery,
   resetQuery,
@@ -1079,6 +1317,13 @@ defineExpose({
   toggleRowSelection,
   scrollTo,
   scrollToRow,
+  focusRow: (key: HysDataGridKey) => rowNavigation.focusRow(gridToken(key)),
+  getCurrentRowKey: () => currentKey.value,
+  setCurrentRow,
+  setColumnVisibility,
+  pinColumn,
+  resizeColumn,
+  resetColumnWidth,
 });
 function closeOutside(event: PointerEvent) {
   if (menuRef.value && !menuRef.value.contains(event.target as Node))
@@ -1089,6 +1334,7 @@ watch(settingsOpen, (open) => {
   else document.removeEventListener("pointerdown", closeOutside);
 });
 function cleanup() {
+  gridMenu.close();
   endColumnDrag();
   stopColumnAnimations();
   cancelResize();
@@ -1103,7 +1349,7 @@ onBeforeUnmount(cleanup);
   <section
     v-bind="hysRootAttrs"
     class="hys-ui-pf-grid"
-    :class="'hys-ui-pf-grid--' + density"
+    :class="['hys-ui-pf-grid--' + density, { 'hys-ui-pf-grid-striped': striped }]"
     aria-label="数据表格"
     ref="tableRef"
     :aria-busy="busy || undefined"
@@ -1122,7 +1368,8 @@ onBeforeUnmount(cleanup);
         >分组
         <HysSelect
           size="sm"
-          v-model="groupBy"
+          :model-value="groupBy"
+          @update:model-value="setGroupBy(String($event ?? ''))"
           aria-label="按列分组"
           :options="[
             { label: '不分组', value: '' },
@@ -1215,6 +1462,7 @@ onBeforeUnmount(cleanup);
       <HysButton variant="ghost" size="sm" type="button" @click="exportCsv"
         >导出 CSV</HysButton
       >
+      <slot name="toolbar-actions" :query="query" :selected-keys="selected" />
     </div>
     <div
       ref="scrollRef"
@@ -1224,20 +1472,34 @@ onBeforeUnmount(cleanup);
       role="region"
       aria-label="表格滚动区域"
       @dragleave="leaveColumnDrag"
+      @scroll="gridMenu.close"
     >
       <table
         :class="{ 'hys-ui-pf-grid-sticky-head': stickyHeader }"
         :style="{ minWidth: tableWidth + 'px' }"
       >
-        <colgroup>
-          <col v-if="selectable" style="width: 44px" />
+        <caption v-if="caption">{{ caption }}</caption>
+        <colgroup v-if="selectable"><col style="width: 44px" /></colgroup>
+        <colgroup v-for="entry in headerGroups" :key="entry.id">
           <col
-            v-for="c in orderedColumns"
+            v-for="c in entry.columns"
             :key="c.key"
             :style="{ width: widthOf(c) + 'px' }"
           />
         </colgroup>
         <thead>
+          <tr v-if="hasHeaderGroups" class="hys-ui-pf-grid-header-groups">
+            <th v-if="selectable" class="hys-ui-pf-grid-select-col"></th>
+            <th
+              v-for="entry in headerGroups"
+              :key="entry.id"
+              :scope="entry.group ? 'colgroup' : undefined"
+              :colspan="entry.columns.length"
+              :style="pinnedStyle(entry.pinned === 'right' ? entry.columns[entry.columns.length - 1] : entry.columns[0], true)"
+            >
+              <slot v-if="entry.group" name="header-group" :group="entry.group" :columns="entry.columns" :pinned="entry.pinned">{{ entry.group.label }}</slot>
+            </th>
+          </tr>
           <tr>
             <th v-if="selectable" scope="col" class="hys-ui-pf-grid-select-col">
               <HysCheckbox
@@ -1250,11 +1512,12 @@ onBeforeUnmount(cleanup);
               /><span v-else>选择</span>
             </th>
             <th
-              v-for="c in orderedColumns"
+              v-for="(c, index) in orderedColumns"
               :key="c.key"
               scope="col"
+              :tabindex="contextMenu ? -1 : undefined"
               :data-column-key="c.key"
-              :class="{ 'hys-ui-is-column-dragging': dragging === c.key }"
+              :class="[presentation(headerClassName, headerContext(c, index)), { 'hys-ui-is-column-dragging': dragging === c.key, 'hys-ui-pf-grid-header-wrap': c.headerWrap }]"
               :data-drop-position="
                 columnDropTarget?.key === c.key
                   ? columnDropTarget.position
@@ -1265,6 +1528,9 @@ onBeforeUnmount(cleanup);
               @dragend="endColumnDrag"
               @dragover="previewColumnDrop($event, c)"
               @drop="dropColumn($event, c)"
+              @click="emit('headerClick', headerContext(c, index), $event)"
+              @contextmenu="openHeaderMenu($event, c, index)"
+              @keydown="gridMenu.keydown({ ...headerContext(c, index), type: 'header' }, $event)"
               :aria-sort="
                 effectiveSorts.find((s) => s.key === c.key)?.direction === 'asc'
                   ? 'ascending'
@@ -1273,11 +1539,12 @@ onBeforeUnmount(cleanup);
                     ? 'descending'
                     : 'none'
               "
-              :style="{ ...pinnedStyle(c, true), textAlign: c.align || 'left' }"
+              :style="[presentation(headerStyle, headerContext(c, index)), { ...pinnedStyle(c, true), textAlign: c.headerAlign || c.align || 'left' }]"
             >
               <div class="hys-ui-pf-grid-head">
-                <div class="hys-ui-pf-grid-sort-group">
+                <div class="hys-ui-pf-grid-sort-group" :style="{ justifyContent: (c.headerAlign ?? c.align) === 'center' ? 'center' : (c.headerAlign ?? c.align) === 'right' ? 'end' : 'start' }">
                   <HysButton
+                    v-if="c.sortable !== false"
                     variant="ghost"
                     size="sm"
                     type="button"
@@ -1288,10 +1555,9 @@ onBeforeUnmount(cleanup);
                       ),
                     }"
                     @click="toggleSort(c)"
-                    ><span class="hys-ui-pf-grid-sort-label">{{
-                      c.label
-                    }}</span></HysButton
+                    ><span class="hys-ui-pf-grid-sort-label"><slot :name="'header-' + c.key" v-bind="headerContext(c, index)"><slot name="header-cell" v-bind="headerContext(c, index)">{{ c.label }}</slot></slot></span></HysButton
                   >
+                  <span v-else class="hys-ui-pf-grid-sort-label"><slot :name="'header-' + c.key" v-bind="headerContext(c, index)"><slot name="header-cell" v-bind="headerContext(c, index)">{{ c.label }}</slot></slot></span>
                   <span
                     v-if="c.sortable !== false"
                     class="hys-ui-pf-grid-sort-controls"
@@ -1357,7 +1623,9 @@ onBeforeUnmount(cleanup);
                   }"
                   @click="showColumnFilters(c)"
                   ><Search :size="13" aria-hidden="true" /></HysButton
-                ><span
+                >
+                <HysButton v-if="contextMenu" variant="ghost" size="sm" type="button" class="hys-ui-pf-grid-column-menu" :aria-label="'列操作 · ' + c.label" aria-haspopup="menu" @click.stop="openHeaderMenu($event, c, index)"><Ellipsis :size="14" aria-hidden="true" /></HysButton>
+                <span
                   v-if="c.resizable !== false"
                   class="hys-ui-pf-grid-resize"
                   role="separator"
@@ -1406,7 +1674,7 @@ onBeforeUnmount(cleanup);
               :colspan="Math.max(1, visibleColumns.length + Number(selectable))"
               class="hys-ui-pf-grid-empty"
             >
-              <div role="status"><slot name="loading">正在加载…</slot></div>
+              <div class="hys-ui-pf-grid-state" role="status"><slot name="loading">正在加载…</slot></div>
             </td>
           </tr>
           <tr v-else-if="failure">
@@ -1414,12 +1682,12 @@ onBeforeUnmount(cleanup);
               :colspan="Math.max(1, visibleColumns.length + Number(selectable))"
               class="hys-ui-pf-grid-empty"
             >
-              <slot name="error" :error="failure.error" :retry="reload">
-                <span role="status">加载失败</span>
-                <HysButton size="sm" variant="ghost" @click="reload"
-                  >重试</HysButton
-                >
-              </slot>
+              <div class="hys-ui-pf-grid-state">
+                <slot name="error" :error="failure.error" :retry="reload">
+                  <span role="status">加载失败</span>
+                  <HysButton size="sm" variant="ghost" @click="reload">重试</HysButton>
+                </slot>
+              </div>
             </td>
           </tr>
           <template v-else>
@@ -1445,14 +1713,25 @@ onBeforeUnmount(cleanup);
                       aria-hidden="true"
                     />
                     {{ columnMap.get(groupBy)?.label }}：{{ entry.label }}
-                    <span>({{ entry.count }})</span>
+                    <span>({{ entry.rows.length }})</span>
                   </HysButton>
+                  <span v-if="groupSummary" class="hys-ui-pf-grid-group-summary">
+                    <template v-for="column in orderedColumns" :key="column.key">
+                      <span v-if="column.summary">{{ column.label }} {{ summaryValue(column, entry.rows) }}</span>
+                    </template>
+                  </span>
                 </td>
               </tr>
               <tr
                 v-else
+                v-bind="mergeProps(contextMenu ? { tabindex: -1, onKeydown: (event: KeyboardEvent) => gridMenu.keydown({ ...rowContext(entry), type: 'row' }, event) } : {}, rowNavigation.rowNavigationAttrs(gridToken(entry.item.id)))"
                 :data-grid-row="gridToken(entry.item.id)"
-                @click="emit('rowClick', entry.item.row)"
+                :class="[rowClassName && presentation(rowClassName, rowContext(entry)), { 'hys-ui-pf-grid-current-row': highlightCurrentRow && currentKey === entry.item.id, 'hys-ui-pf-grid-even-row': striped && entry.pageIndex % 2 === 1 }]"
+                :style="rowStyle && presentation(rowStyle, rowContext(entry))"
+                :aria-current="highlightCurrentRow && currentKey === entry.item.id ? 'true' : undefined"
+                @click="clickRow(entry, $event)"
+                @dblclick="emit('rowDblclick', rowContext(entry), $event)"
+                @contextmenu="openRowMenu($event, entry)"
               >
                 <td v-if="selectable" class="hys-ui-pf-grid-select-col">
                   <HysRadio
@@ -1482,26 +1761,29 @@ onBeforeUnmount(cleanup);
                   v-for="(column, index) in orderedColumns"
                   :key="column.key"
                   :data-column-key="column.key"
-                  :style="{
+                  :tabindex="contextMenu ? -1 : undefined"
+                  :class="[cellClassName && presentation(cellClassName, cellContext(entry, column, index)), { 'hys-ui-pf-grid-cell-editing': isEditing(entry.item, column) }]"
+                  :style="[cellStyle && presentation(cellStyle, cellContext(entry, column, index)), {
                     ...pinnedStyle(column),
                     textAlign: column.align || 'left',
-                  }"
-                  :title="cellText(entry.item.row, column)"
+                  }]"
+                  :title="isEditing(entry.item, column) ? undefined : cellText(entry.item.row, column)"
+                  @click="emit('cellClick', cellContext(entry, column, index), $event)"
+                  @dblclick="doubleClickCell($event, entry, column, index)"
+                  @contextmenu.stop="openCellMenu($event, entry, column, index)"
+                  @keydown.self="gridMenu.keydown({ ...cellContext(entry, column, index), type: 'cell' }, $event)"
                 >
                   <HysInput
-                    v-if="
-                      editing?.id === entry.item.id &&
-                      editing?.key === column.key
-                    "
+                    v-if="isEditing(entry.item, column)"
                     v-model="editValue"
                     class="hys-ui-pf-grid-edit"
                     :aria-label="'编辑' + column.label"
                     @click.stop
-                    @keydown.enter.stop="commitEdit(entry.item, column)"
-                    @keydown.esc.stop="editing = null"
+                    @press-enter="commitEdit(entry.item, column)"
+                    @keydown.esc.stop="cancelEdit"
                     @focusout="commitEdit(entry.item, column)"
                   />
-                  <template v-else>
+                  <span class="hys-ui-pf-grid-cell-display" :inert="isEditing(entry.item, column)">
                     <template v-if="treeMode && index === 0">
                       <HysButton
                         v-if="entry.item.hasChildren"
@@ -1535,17 +1817,15 @@ onBeforeUnmount(cleanup);
                         }"
                       ></span>
                     </template>
-                    <span @dblclick.stop="beginEdit(entry.item, column)">
+                    <span>
                       <slot
                         :name="column.key"
-                        :row="entry.item.row"
-                        :value="gridValue(entry.item.row, column)"
-                        :index="entry.item.index"
+                        v-bind="cellContext(entry, column, index)"
                       >
-                        {{ cellText(entry.item.row, column) }}
+                        <slot name="body-cell" v-bind="cellContext(entry, column, index)">{{ cellText(entry.item.row, column) }}</slot>
                       </slot>
                     </span>
-                  </template>
+                  </span>
                 </td>
               </tr>
             </template>
@@ -1556,7 +1836,9 @@ onBeforeUnmount(cleanup);
                 "
                 class="hys-ui-pf-grid-empty"
               >
-                <slot name="empty" :query="getQuery()">{{ emptyText }}</slot>
+                <div class="hys-ui-pf-grid-state">
+                  <slot name="empty" :query="getQuery()">{{ emptyText }}</slot>
+                </div>
               </td>
             </tr>
           </template>
@@ -1599,15 +1881,95 @@ onBeforeUnmount(cleanup);
         @update:page-size="onPageSizeChange"
       />
     </footer>
+    <HysContextMenu
+      v-if="contextMenu"
+      ref="gridContextMenu"
+      :trigger="[]"
+      :items="gridMenu.items.value"
+      class="hys-ui-pf-grid-menu-anchor"
+      aria-label="表格操作"
+      :popup-transition="popupTransition"
+      :popup-transition-duration="popupTransitionDuration"
+      @select="gridMenu.select"
+    />
   </section>
 </template>
 <style scoped>
+.hys-ui-pf-grid caption {
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: min(100%, 100cqi);
+  box-sizing: border-box;
+  padding: 10px 12px;
+  text-align: start;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+  font-weight: 600;
+}
+.hys-ui-pf-grid .hys-ui-pf-grid-header-groups th {
+  padding-block: 8px;
+  text-align: center;
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+}
+.hys-ui-pf-grid .hys-ui-pf-grid-header-wrap .hys-ui-pf-grid-sort-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.hys-ui-pf-grid .hys-ui-pf-grid-column-menu { flex: none; min-width: 24px; padding-inline: 3px; }
+.hys-ui-pf-grid-menu-anchor { display: none; }
+.hys-ui-pf-grid-scroll { container-type: inline-size; }
+.hys-ui-pf-grid td.hys-ui-pf-grid-empty { padding-inline: 0 !important; overflow: visible; }
+.hys-ui-pf-grid-state {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  inline-size: min(100%, 100cqi);
+  padding-inline: 16px;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .hys-ui-pf-grid-head :deep(.hys-ui-btn),.hys-ui-pf-grid-head :deep(.hys-ui-btn:hover),.hys-ui-pf-grid-head :deep(.hys-ui-btn:active){background:transparent!important;border-color:transparent!important;box-shadow:none!important;transform:none!important}
 .hys-ui-pf-grid{border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));border-radius:12px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:var(--hys-ui-text,var(--hys-ui-theme-text,#25324b));min-width:0;font-size:13px}.hys-ui-pf-grid button,.hys-ui-pf-grid input{font:inherit}.hys-ui-pf-grid button{cursor:pointer}.hys-ui-pf-grid button:disabled{cursor:not-allowed;opacity:.4}.hys-ui-pf-grid-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;border-bottom:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee))}.hys-ui-pf-grid-toolbar button,.hys-ui-pf-grid-footer button,.hys-ui-pf-grid-panel button{border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));border-radius:6px;padding:7px 10px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:inherit}.hys-ui-pf-grid-search{display:flex;align-items:center;gap:8px}.hys-ui-pf-grid-search input,.hys-ui-pf-grid-count{margin-left:auto;color:var(--hys-ui-muted,var(--hys-ui-theme-muted,#74829b))}.hys-ui-pf-grid-menu{position:relative}.hys-ui-pf-grid-panel{position:absolute;z-index:30;right:0;top:calc(100% + 6px);background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:inherit;box-shadow:0 10px 32px #0002;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));border-radius:10px;padding:12px;min-width:245px;max-height:360px;overflow:auto}.hys-ui-pf-grid-setting{display:flex;align-items:center;gap:5px;padding:5px 0}.hys-ui-pf-grid-setting label{flex:1;display:flex;gap:7px;align-items:center}.hys-ui-pf-grid-setting button{padding:3px 7px}.hys-ui-pf-grid-scroll{overflow:auto;max-width:100%}.hys-ui-pf-grid table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;min-width:max-content}.hys-ui-pf-grid th,.hys-ui-pf-grid td{border-bottom:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));padding:11px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hys-ui-pf-grid th{position:relative;background:var(--hys-ui-surface-secondary,#f4f7fc);font-weight:600}.hys-ui-pf-grid-sticky-head thead th{position:sticky;top:0;z-index:4}.hys-ui-pf-grid-select-col{position:sticky!important;left:0;z-index:3;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff))}.hys-ui-pf-grid-sticky-head thead .hys-ui-pf-grid-select-col{z-index:6}.hys-ui-pf-grid tbody tr:hover{background:var(--hys-ui-surface-secondary,#f4f7fc)}.hys-ui-pf-grid-head{display:flex;align-items:center;position:relative;gap:3px}.hys-ui-pf-grid-sort,.hys-ui-pf-grid-filter{border:0;background:none;color:inherit;padding:4px;text-align:left}.hys-ui-pf-grid-sort{flex:1;overflow:hidden;text-overflow:ellipsis}.hys-ui-pf-grid-sort-hint{opacity:.4}.hys-ui-pf-grid-resize{position:absolute;right:-11px;top:-12px;bottom:-12px;width:10px;cursor:col-resize;touch-action:none;border-right:2px solid transparent}.hys-ui-pf-grid-resize:hover,.hys-ui-pf-grid-resize:focus{border-right-color:#3867f5;outline:none}.hys-ui-pf-grid-empty{text-align:center;color:var(--hys-ui-muted,var(--hys-ui-theme-muted,#74829b));padding:35px!important}.hys-ui-pf-grid-group-label{display:flex;align-items:center;gap:6px}.hys-ui-pf-grid-group-label select{padding:7px;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));border-radius:6px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:inherit}.hys-ui-pf-grid-group-row td{background:var(--hys-ui-surface-secondary,#f4f7fc);font-weight:600;position:relative!important;left:auto!important}.hys-ui-pf-grid-group-row button{border:0;background:none;color:inherit;padding:3px;cursor:pointer}.hys-ui-pf-grid-group-row span{color:var(--hys-ui-muted,var(--hys-ui-theme-muted,#74829b));font-weight:400}.hys-ui-pf-grid-summary-row td{background:var(--hys-ui-surface-secondary,#f4f7fc);font-weight:700;border-top:2px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee))}.hys-ui-pf-grid-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px}.hys-ui-pf-grid-footer>div{display:flex;gap:6px}.hys-ui-pf-grid--compact td,.hys-ui-pf-grid--compact th{padding-top:6px;padding-bottom:6px}.hys-ui-pf-grid--comfortable td,.hys-ui-pf-grid--comfortable th{padding-top:17px;padding-bottom:17px}@media(max-width:600px){.hys-ui-pf-grid-count{margin-left:0}.hys-ui-pf-grid-footer{align-items:flex-start}}
-.hys-ui-pf-grid-batch{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.hys-ui-pf-grid-batch input,.hys-ui-pf-grid-batch select,.hys-ui-pf-grid-edit{max-width:160px;min-width:65px;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));border-radius:5px;padding:6px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:inherit}.hys-ui-pf-grid-tree-toggle{border:0;background:none;color:inherit;cursor:pointer;width:20px}.hys-ui-pf-grid-edit:focus{outline:2px solid #3867f5}.hys-ui-pf-grid-group-label :deep(.hys-ui-select-wrap){min-width:140px}
+.hys-ui-pf-grid-batch{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.hys-ui-pf-grid-batch input,.hys-ui-pf-grid-batch select{max-width:160px;min-width:65px;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border,#dce3ee));border-radius:5px;padding:6px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface,#fff));color:inherit}.hys-ui-pf-grid-tree-toggle{border:0;background:none;color:inherit;cursor:pointer;width:20px}.hys-ui-pf-grid-group-label :deep(.hys-ui-select-wrap){min-width:140px}
+.hys-ui-pf-grid-cell-display { display: contents; }
+.hys-ui-pf-grid td.hys-ui-pf-grid-cell-editing { position: relative; }
+.hys-ui-pf-grid-cell-editing > .hys-ui-pf-grid-cell-display { visibility: hidden; }
+.hys-ui-pf-grid-cell-editing > .hys-ui-pf-grid-edit {
+  position: absolute;
+  inset: 4px;
+  inline-size: auto;
+  text-align: inherit;
+}
+.hys-ui-pf-grid-edit :deep(.hys-ui-input-group),
+.hys-ui-pf-grid-edit :deep(.hys-ui-input-shell) {
+  box-sizing: border-box;
+  block-size: 100%;
+}
+.hys-ui-pf-grid-edit :deep(.hys-ui-input-shell) {
+  padding: 0 7px;
+  border-radius: 4px;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+}
+.hys-ui-pf-grid-edit :deep(.hys-ui-input-shell:focus-within) {
+  border-color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  box-shadow: none;
+}
+.hys-ui-pf-grid-edit :deep(.hys-ui-input-shell .hys-ui-input) {
+  block-size: 100%;
+  min-block-size: 0;
+  padding: 0;
+  text-align: inherit;
+}
 .hys-ui-pf-grid-search :deep(.hys-ui-input-wrap){width:220px}
 .hys-ui-pf-grid-setting>label{min-width:0;justify-content:flex-start}
-.hys-ui-pf-grid-select-col :deep(.hys-ui-check-label){justify-content:center}.hys-ui-pf-grid-setting :deep(.hys-ui-check-label){justify-content:flex-start;text-align:left}
+.hys-ui-pf-grid :is(th, td).hys-ui-pf-grid-select-col {
+  padding-inline: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.hys-ui-pf-grid-setting :deep(.hys-ui-check-label){justify-content:flex-start;text-align:left}
 
 
 .hys-ui-pf-grid-sort{min-width:0;justify-content:flex-start}
@@ -1660,7 +2022,11 @@ onBeforeUnmount(cleanup);
 }
 .hys-ui-pf-grid thead th { background:var(--hys-ui-grid-header-background); }
 .hys-ui-pf-grid tbody td { background:var(--hys-ui-grid-row-background); }
-.hys-ui-pf-grid tbody tr:hover { --hys-ui-grid-row-background:var(--hys-ui-grid-hover-background); background:var(--hys-ui-grid-hover-background); }
+.hys-ui-pf-grid tbody .hys-ui-pf-grid-even-row { --hys-ui-grid-row-background:var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt)); }
+.hys-ui-pf-grid tbody tr:is(:hover, :focus-visible) { --hys-ui-grid-row-background:var(--hys-ui-grid-hover-background); background:var(--hys-ui-grid-hover-background); }
+.hys-ui-pf-grid tbody .hys-ui-pf-grid-current-row { --hys-ui-grid-row-background:var(--hys-ui-primary-soft,var(--hys-ui-theme-primary-soft)); }
+.hys-ui-pf-grid [data-grid-row]:focus-visible { outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary)); outline-offset: -2px; position: relative; }
+.hys-ui-pf-grid-group-summary { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; margin-inline-start: 12px; font-variant-numeric: tabular-nums; }
 .hys-ui-pf-grid tbody .hys-ui-pf-grid-group-row td,
 .hys-ui-pf-grid tfoot td { background:var(--hys-ui-grid-header-background); }
 .hys-ui-pf-grid thead .hys-ui-pf-grid-filter-row td { background:var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt,#f8faff)); }

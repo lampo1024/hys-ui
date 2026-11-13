@@ -8,6 +8,10 @@ import {applyVirtualTableApi} from './virtual-table-api.mjs'
 import {applyFeedbackApi} from './feedback-api.mjs'
 import {applyApiDescriptions} from './api-descriptions.mjs'
 import {applyToastApi} from './toast-api.mjs'
+import {applySpinIconApi} from './spin-icon-api.mjs'
+import {applyPopconfirmApi} from './popconfirm-api.mjs'
+import {applyLayoutFeedbackApi} from './layout-feedback-api.mjs'
+import {applyTabsApi} from './tabs-api.mjs'
 const root=fileURLToPath(new URL('..',import.meta.url)),require=createRequire(import.meta.url)
 const {createChecker}=require('vue-component-meta')
 const checker=createChecker(path.join(root,'packages/ui/tsconfig.json'),{schema:true})
@@ -103,7 +107,7 @@ for(const name of fs.readdirSync(dir).sort()){
   const slots={default:'正文，接收 close/cancel/confirm、busy、error、titleId、fullscreen、resizing、size、resetSize、pushed 等上下文',title:'默认标题内部内容，保留外层标题及关联 ID',header:'自定义标题内容；将 titleId 绑定到实际标题，关闭与额外操作仍保留',extra:'标题右侧的额外操作，接收完整上下文',footer:'自定义固定操作区，优先于内置按钮',loading:'加载状态内容','close-icon':'关闭按钮图标','fullscreen-icon':'全屏/还原图标'}
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
- if(['HysTooltip','HysPopover'].includes(name)){
+ if(['HysTooltip','HysPopover','HysPopconfirm'].includes(name)){
  const descriptions={open:'受控显示，优先于 modelValue；只有宿主接受请求才改变显示',modelValue:'显示别名，支持 v-model',defaultOpen:'非受控初始展开状态',trigger:'hover / focus / click / contextmenu / manual 或数组；Tooltip 默认 hover+focus，Popover 默认 click',triggerKeys:'触发区域的键盘键名，默认 Enter 与空格；不会截获输入控件的编辑按键',triggerTabindex:'纯文字触发区域的 tabindex，默认 0；真实控件保留其原生焦点行为',placement:'top/bottom/left/right 及 start/end 对齐，共十二种位置；保留原有默认位置',offset:'浮层与参考元素的间距，单位像素；Tooltip 默认 7、Popover 默认 8',autoAdjustOverflow:'空间不足时自动翻转并限制在视口内，默认 true',showDelay:'用户触发展开的延迟，单位毫秒，默认 0；实例调用与外部显示值立即处理',hideDelay:'用户移出后的收起延迟，Tooltip 默认 70ms、Popover 默认 100ms',autoClose:'展开后的自动关闭时间，单位毫秒；默认 0 不自动关闭，受控宿主可拒绝',enterable:'允许鼠标/焦点进入内容，Tooltip 默认 false、Popover 默认 true',closeOnEscape:'Escape 请求关闭最上层浮层，默认 true',closeOnOutside:'点击外部请求关闭，默认 true',destroyOnHide:'关闭后销毁内容，默认 true；false 保留已挂载内容状态',forceRender:'首次展开前就挂载隐藏内容，默认 false',appendTo:'body（默认）、CSS 选择器、HTMLElement 或 false 原地挂载；局部挂载受到祖先裁剪约束',reference:'独立 HTMLElement、虚拟矩形或返回它们的函数；虚拟矩形使用 manual/受控模式',width:'内容宽度，支持数值像素或 CSS 长度',maxWidth:'最大宽度，同时受视口约束；Tooltip 默认 320px、Popover 默认 360px',maxHeight:'内容滚动区最大高度，同时受视口高度约束',showArrow:'显示指向参考区域的箭头，默认 false',arrowOffset:'箭头距离浮层边缘的最小留白，默认 10px',effect:'light 或 dark；浅色跟随当前主题',color:'自定义内容与箭头背景色',textColor:'自定义内容文字颜色',overlayClass:'浮层定位容器的附加类名',overlayStyle:'浮层装饰样式；定位、宽度和层级由组件维护',contentClass:'内部滚动内容的附加类名',contentStyle:'内部滚动内容样式',zIndex:'浮层的起始层级，嵌套时遵守共享浮层栈',ariaLabel:'浮层的辅助技术名称',disabled:'禁止打开，同时继承字段/表单禁用状态；会取消待执行延迟',text:'文字提示，content 插槽优先',content:'气泡浮层正文，默认插槽优先',title:'气泡浮层标题，title 插槽优先'};
  const effectiveDefaults={trigger:name==='HysTooltip'?"['hover', 'focus']":"'click'",triggerKeys:"['Enter', ' ']",triggerTabindex:'0',offset:name==='HysTooltip'?'7':'8',autoClose:'0',maxWidth:name==='HysTooltip'?'320px':'360px',maxHeight:'calc(100vh - 20px)',arrowOffset:'10'};
  for(const prop of api[name].props){prop.description=descriptions[prop.name]||prop.description;if(Object.hasOwn(effectiveDefaults,prop.name))prop.default=effectiveDefaults[prop.name]}
@@ -312,7 +316,7 @@ for(const name of fs.readdirSync(dir).sort()){
   Object.assign(slots,{'selection-header':'选择列表头：column、checked、indeterminate、disabled、toggle','selection-cell':'行选择内容：row、index、column、checked、indeterminate、disabled、toggle','filter-icon':'筛选图标：column、filtered、open','expand-icon':'展开图标内容：row、index、expanded、loading、depth；保留内置按钮语义','filter-dropdown':'筛选：column、open、values、setValues、confirm({closeDropdown?})、clear({confirm?,closeDropdown?})、close'})
   Object.assign(slots,{
    selection:'选择工具区，接收当前选中行和编号、当前页可选行和编号，以及 selectAll、invert、clear、setSelected',
-   title:'表格上方内容，接收全部筛选结果 rows、当前页可见行 pageRows、查询状态 query',
+   title:'表格上方内容，接收全部筛选结果 rows、当前页可见行 pageRows、查询状态 query、搜索词 search 和 setSearch 方法',
    footer:'表格下方内容，接收全部筛选结果 rows、当前页可见行 pageRows、查询状态 query',
    summary:'在 tfoot 内渲染一行或多行，接收 columns、rows、values 和用于对齐固定列的 cellAttrs(column)',
    pagination:'自定义分页器，接收位置 position、分页器配置 props、setPage 和 setPageSize',
@@ -375,6 +379,7 @@ for(const name of fs.readdirSync(dir).sort()){
   for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description
  }
  if(name==='HysToast')applyToastApi(api[name])
+ if(name==='HysSpin'||name==='HysIcon')applySpinIconApi(name,api[name])
  if(name==='HysUpload'){
   const file=ts.createSourceFile('upload.ts',fs.readFileSync(path.join(root,'packages/ui/src/composables/upload.ts'),'utf8'),ts.ScriptTarget.Latest,true),instance=file.statements.find(s=>ts.isInterfaceDeclaration(s)&&s.name.text==='HysUploadInstance')
   if(instance)api[name].exposed=instance.members.map(member=>({name:member.name.getText(file),type:member.type.getText(file),required:!member.questionToken,default:'',description:''}))
@@ -491,9 +496,13 @@ for(const name of fs.readdirSync(dir).sort()){
      method.description = methods[method.name] || method.description;
  }
  for(const prop of api[name].props){if(prop.name==='popupTransition'){prop.default='scale';prop.description=descriptions[prop.name]}if(prop.name==='popupTransitionDuration'){prop.default='160';prop.description=descriptions[prop.name]}}
- if(['HysTable','HysDataGrid'].includes(name))api[name].slots.push({name:'[column.key]',type:'{ row: Record<string, unknown>; value: unknown; index?: number }',required:false,default:'',description:'与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。'})
+ if(name==='HysPopconfirm')applyPopconfirmApi(api[name])
+ if(['HysTable','HysDataGrid'].includes(name))api[name].slots.push({name:'[column.key]',type:name==='HysDataGrid'?'HysDataGridCellContext<T>':'{ row: Record<string, unknown>; value: unknown; index?: number }',required:false,default:'',description:'与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。'})
+ if(name==='HysDataGrid')api[name].slots.push({name:'header-[column.key]',type:'HysDataGridHeaderContext<T>',required:false,default:'',description:'自定义指定列的表头标签，优先于 header-cell，排序、筛选和菜单仍由组件提供。'})
 }
 applyApiDescriptions(api)
+for(const name of Object.keys(api))applyLayoutFeedbackApi(name,api[name])
+for(const name of ['HysTabs','HysTabPane'])applyTabsApi(name,api[name])
 fs.mkdirSync(path.join(root,'apps/docs/src/generated'),{recursive:true})
 fs.writeFileSync(path.join(root,'apps/docs/src/generated/api.json'),JSON.stringify(api,null,2)+'\n')
 console.log('Generated source-backed API for '+Object.keys(api).length+' components')

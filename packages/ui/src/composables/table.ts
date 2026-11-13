@@ -199,11 +199,12 @@ export interface HysTablePagination {
   hideOnSinglePage?: boolean;
 }
 export interface HysTableQuery<T extends object = Record<string, unknown>> {
-  action: "sort" | "filter" | "page" | "pageSize";
+  action: "sort" | "filter" | "page" | "pageSize" | "search";
   page: number;
   pageSize: number;
   sorts: HysTableSort[];
   filters: HysTableFilters;
+  search?: string;
   currentData: T[];
 }
 export interface HysTableLoadContext {
@@ -321,6 +322,7 @@ export interface HysTableProps<T extends object> {
   selectionColumn?: HysTableSelectionColumn;
   getSelectionProps?: (row: T, index: number) => HysTableSelectionProps;
   highlightCurrentRow?: boolean;
+  keyboardNavigation?: boolean;
   currentRowKey?: HysTableKey | null;
   defaultCurrentRowKey?: HysTableKey;
   showIndex?: boolean;
@@ -334,6 +336,10 @@ export interface HysTableProps<T extends object> {
   showSorterTooltip?: boolean | HysTableOverflowTooltipOptions;
   filters?: HysTableFilters;
   defaultFilters?: HysTableFilters;
+  search?: string;
+  defaultSearch?: string;
+  searchColumns?: readonly string[];
+  searchMethod?: (search: string, row: T) => boolean;
   filterColumnKey?: string | null;
   filterPlacement?: Placement;
   appendFilterTo?: string | HTMLElement | false;
@@ -420,6 +426,9 @@ export interface HysTableInstance<T extends object = Record<string, unknown>> {
   setSort: (sort: HysTableSort | readonly HysTableSort[] | null) => void;
   clearFilter: (keys?: readonly string[]) => void;
   setFilter: (key: string, values: readonly HysTableFilterValue[]) => void;
+  setSearch: (search: string) => void;
+  clearSearch: () => void;
+  focusRow: (row: T | HysTableKey) => boolean;
   showFilter: (key: string) => Promise<boolean>;
   hideFilter: () => Promise<boolean>;
   setPage: (page: number) => void;

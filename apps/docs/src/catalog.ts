@@ -1,5 +1,23 @@
 export const catalog=[
   {
+    "name": "HysIcon",
+    "shortName": "Icon",
+    "label": "图标",
+    "slug": "hys-icon",
+    "category": "基础组件",
+    "description": "用统一接口渲染 SVG、字体、图片和 Vue 图标，支持按需加载、交互和图标库选择。",
+    "notes": ["纯装饰图标默认隐藏于辅助技术。图标按钮请提供 label。", "导入的 SVG 会转换为受限的结构化图形。外部 SVG 文件通过图片资源加载。"]
+  },
+  {
+    "name": "HysSpin",
+    "shortName": "Spin",
+    "label": "加载",
+    "slug": "hys-spin",
+    "category": "反馈浮层",
+    "description": "为请求、局部内容和全屏任务提供加载反馈、确定进度与可取消的任务管理。",
+    "notes": ["delay 与 minDuration 配合减少快速请求造成的闪烁。", "将 AbortSignal 传给请求或后台任务，取消操作可以停止业务工作。"]
+  },
+  {
     "name": "HysAnimatedNumber",
     "shortName": "AnimatedNumber",
     "label": "数字动画",
@@ -81,6 +99,30 @@ export const catalog=[
     "notes": [
       "通过下面的交互示例体验组件，配置区可即时调整属性。",
       "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysDescriptions",
+    "shortName": "Descriptions",
+    "label": "描述列表",
+    "slug": "hys-descriptions",
+    "category": "基础组件",
+    "description": "将业务详情组织成标签和值，支持响应式列数、跨列跨行和自定义字段。",
+    "notes": [
+      "默认按组件容器宽度换列，在窄屏、抽屉和侧栏中自动收为单列。",
+      "为 items 中的字段提供唯一 key。使用 value-字段键 插槽定制特定字段，或用 value 插槽统一渲染。"
+    ]
+  },
+  {
+    "name": "HysSpace",
+    "shortName": "Space",
+    "label": "间距",
+    "slug": "hys-space",
+    "category": "基础组件",
+    "description": "统一工具栏、操作区和表单区域的组件间距，支持换行、对齐和分隔。",
+    "notes": [
+      "size 可分别设置横向和纵向间距。小容器中可启用 wrap 让操作按原有顺序换行。",
+      "fill 让每项参与伸展。若按钮或输入框也需要占满对应项目，请同时开启子组件的块级布局。"
     ]
   },
   {
@@ -624,10 +666,10 @@ export const catalog=[
     "label": "分割面板",
     "slug": "hys-split-pane",
     "category": "导航布局",
-    "description": "分割面板的独立交互示例、配置场景与类型参考。",
+    "description": "用可拖拽分隔条组织工作区，支持多面板联动、尺寸吸附、折叠和按容器宽度切换方向。",
     "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "聚焦分隔条后可按方向键调整尺寸，Shift 加大步长，Home 和 End 到达可用边界。相邻面板支持折叠时，可按 Enter 切换。",
+      "双面板的 v-model 表示首个面板的百分比。多面板使用 v-model:sizes，键为面板 id，数值为像素，也可使用 px 或 % 字符串。"
     ]
   },
   {
@@ -641,6 +683,15 @@ export const catalog=[
       "current 从 0 开始；-1 表示尚未开始，items.length 表示全部完成。单项 status 优先。",
       "clickable 开启后可点击或用方向键选择可用步骤，业务前置条件由调用方控制。"
     ]
+  },
+  {
+    "name": "HysTabPane",
+    "shortName": "TabPane",
+    "label": "标签面板",
+    "slug": "hys-tab-pane",
+    "category": "基础组件",
+    "description": "通过声明式面板配置标题、图标、生命周期和内容模板。",
+    "notes": ["在 HysTabs 的默认插槽或 panes 插槽中声明面板，为每项指定唯一 value。", "声明式列表由父组件维护，关闭和添加通过事件通知。"]
   },
   {
     "name": "HysTabs",
@@ -740,6 +791,19 @@ export const catalog=[
     ]
   },
   {
+    "name": "HysPopconfirm",
+    "shortName": "Popconfirm",
+    "label": "气泡确认框",
+    "slug": "hys-popconfirm",
+    "category": "反馈浮层",
+    "description": "在操作旁提示影响并请求确认，支持异步提交、失败重试和键盘操作。",
+    "notes": [
+      "把业务提交放到 action，组件会等待结果。@confirm 用来消费已完成的结果。",
+      "默认聚焦取消按钮。Space 或 Enter 激活按钮，Escape 或点击外部可关闭，Tab 按操作顺序移动焦点。",
+      "为危险操作写清对象和后果。支持主题变量、减少动效和浮层自动避让。"
+    ]
+  },
+  {
     "name": "HysPopover",
     "shortName": "Popover",
     "label": "气泡浮层",
@@ -758,6 +822,18 @@ export const catalog=[
     "notes": [
       "通过下面的交互示例体验组件，配置区可即时调整属性。",
       "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+    ]
+  },
+  {
+    "name": "HysResult",
+    "shortName": "Result",
+    "label": "结果反馈",
+    "slug": "hys-result",
+    "category": "反馈浮层",
+    "description": "为操作完成、权限不足和服务异常提供结果说明，以及明确的下一步操作。",
+    "notes": [
+      "异步更新结果时可使用 announce 开启播报，使用 announcement 提供定制文案。",
+      "适合需要说明结果并提供返回、查看或重试等后续操作的场景。"
     ]
   },
   {

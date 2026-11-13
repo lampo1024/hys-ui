@@ -1,0 +1,191 @@
+.hys-icon-picker {
+  container-type: inline-size;
+  display: grid;
+  gap: 12px;
+  min-inline-size: 0;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+}
+.hys-icon-picker-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  align-items: end;
+}
+.hys-icon-picker-filters label,
+.hys-icon-picker-detail label {
+  display: grid;
+  gap: 4px;
+  min-inline-size: 0;
+  font-size: 12px;
+}
+.hys-icon-picker-filters .hys-icon-picker-search {
+  grid-column: 1 / -1;
+}
+.hys-icon-picker input,
+.hys-icon-picker select,
+.hys-icon-picker button {
+  font: inherit;
+  color: inherit;
+  min-inline-size: 0;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  border-radius: 7px;
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+}
+.hys-icon-picker input,
+.hys-icon-picker select {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: 34px;
+  padding: 5px 8px;
+}
+.hys-icon-picker label.hys-icon-picker-search {
+  position: relative;
+}
+.hys-icon-picker-search svg {
+  position: absolute;
+  inset-inline-start: 9px;
+  inset-block-start: 9px;
+  pointer-events: none;
+}
+.hys-icon-picker-search input {
+  padding-inline-start: 30px;
+}
+.hys-icon-picker button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+.hys-icon-picker :is(input, select, button):focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 2px;
+}
+.hys-icon-picker button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.hys-icon-picker
+  button:is(:hover, [aria-selected="true"], [aria-pressed="true"]):not(
+    :disabled
+  ) {
+  border-color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  background: var(--hys-ui-primary-soft, var(--hys-ui-theme-primary-soft));
+}
+.hys-icon-picker-toolbar,
+.hys-icon-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+.hys-icon-picker-upload {
+  margin-inline-start: auto;
+}
+.hys-icon-picker-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.hys-icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(88px, 100%), 1fr));
+  gap: 6px;
+}
+.hys-icon-picker button.hys-icon-picker-tile {
+  display: grid;
+  justify-items: center;
+  justify-content: stretch;
+  gap: 6px;
+  min-block-size: 68px;
+  padding: 8px 4px;
+}
+.hys-icon-picker-glyph {
+  display: grid;
+  place-items: center;
+  inline-size: 21px;
+  block-size: 21px;
+}
+.hys-icon-picker-glyph :deep(.hys-icon-character),
+.hys-icon-picker-large :deep(.hys-icon-character) {
+  font-size: 19px;
+}
+.hys-icon-picker-label {
+  display: -webkit-box;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.hys-icon-picker-empty,
+.hys-icon-picker-feedback {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+}
+.hys-icon-picker-pages {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: 8px;
+  font-size: 12px;
+}
+.hys-icon-picker-detail {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+  padding: 12px;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  border-radius: 8px;
+}
+.hys-icon-picker-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+}
+.hys-icon-picker-large {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 5px;
+}
+.hys-icon-picker-detail code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.hys-icon-picker-detail small {
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+}
+.hys-icon-picker-detail details {
+  font-size: 12px;
+  min-inline-size: 0;
+}
+.hys-icon-picker-detail pre {
+  max-block-size: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+@container (min-width: 460px) {
+  .hys-icon-picker-filters {
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(80px, 0.62fr));
+  }
+  .hys-icon-picker-filters .hys-icon-picker-search {
+    grid-column: auto;
+  }
+}
+@container (min-width: 630px) {
+  .hys-icon-picker-main:has(aside) {
+    grid-template-columns: minmax(0, 1fr) minmax(170px, 225px);
+  }
+}

@@ -1,0 +1,101 @@
+.hys-ui-descriptions {
+  --hys-description-border: var(--hys-ui-border, var(--hys-ui-theme-border));
+  --hys-description-surface: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+  --hys-description-padding: 12px;
+  min-inline-size: 0;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+  font-size: 13px;
+  line-height: 1.55;
+}
+.hys-ui-descriptions[data-size="sm"] {
+  --hys-description-padding: 8px;
+}
+.hys-ui-descriptions[data-size="lg"] {
+  --hys-description-padding: 16px;
+}
+.hys-descriptions-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 14px;
+  margin-block-end: 12px;
+}
+.hys-descriptions-title {
+  font-size: 15px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.hys-descriptions-extra {
+  min-inline-size: 0;
+  margin-inline-start: auto;
+}
+.hys-descriptions-list {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--hys-descriptions-columns, 1),
+    minmax(0, 1fr)
+  );
+  gap: var(--hys-description-padding) calc(var(--hys-description-padding) * 2);
+  margin: 0;
+}
+.hys-descriptions-field {
+  display: grid;
+  grid-template-columns: minmax(
+      0,
+      min(
+        45%,
+        var(
+          --hys-description-field-label-width,
+          var(--hys-descriptions-label-width, 88px)
+        )
+      )
+    ) minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.hys-descriptions-label,
+.hys-descriptions-value {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.hys-descriptions-label {
+  color: color-mix(in srgb, currentColor 78%, transparent);
+  font-weight: 550;
+}
+[data-layout="vertical"] .hys-descriptions-field {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 3px;
+}
+[data-bordered] .hys-descriptions-list {
+  gap: 1px;
+  border: 1px solid var(--hys-description-border);
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--hys-description-border);
+}
+[data-bordered] .hys-descriptions-field {
+  background: var(--hys-description-surface);
+  align-items: stretch;
+  gap: 0;
+}
+[data-bordered] :is(.hys-descriptions-label, .hys-descriptions-value) {
+  padding: var(--hys-description-padding);
+}
+[data-bordered] .hys-descriptions-label {
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+  border-inline-end: 1px solid var(--hys-description-border);
+}
+[data-bordered][data-layout="vertical"] .hys-descriptions-label {
+  border-inline-end: 0;
+  border-block-end: 1px solid var(--hys-description-border);
+}
+.hys-descriptions-empty {
+  padding: var(--hys-description-padding);
+  border-radius: 8px;
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+}

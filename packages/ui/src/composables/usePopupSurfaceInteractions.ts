@@ -4,6 +4,8 @@ import type { FloatingAnchor, useFloating } from "./useFloating";
 
 export const popupFocusControls =
   'button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"]),[contenteditable="true"]';
+export type PopupCloseSource =
+  "trigger" | "outside" | "escape" | "tab" | "anchor" | "auto" | "programmatic";
 
 export function usePopupSurfaceInteractions(
   props: HysPopupSurfaceProps,
@@ -16,6 +18,7 @@ export function usePopupSurfaceInteractions(
     floating,
     restoreReferenceFocus,
     request,
+    allowTabExit,
   }: {
     available: Readonly<Ref<boolean>>;
     anchor: Readonly<Ref<FloatingAnchor | undefined>>;
@@ -26,7 +29,12 @@ export function usePopupSurfaceInteractions(
       "open" | "isTop" | "restoringFocus"
     >;
     restoreReferenceFocus: () => void;
-    request: (open: boolean) => Promise<boolean>;
+    request: (
+      open: boolean,
+      restore?: boolean,
+      source?: PopupCloseSource,
+    ) => Promise<boolean>;
+    allowTabExit?: boolean;
   },
 ) {
   const wait = (value: number | undefined) =>
@@ -93,7 +101,7 @@ export function usePopupSurfaceInteractions(
     const hide = () => {
       hideTimer = undefined;
       // Hover and focus belong to this popup even when another overlay is above it.
-      if (!held() && floating.open.value) void request(false);
+      if (!held() && floating.open.value) void request(false, false, "trigger");
     };
     const delay = wait(props.hideDelay);
     if (delay) hideTimer = setTimeout(hide, delay);
@@ -159,7 +167,7 @@ export function usePopupSurfaceInteractions(
         ((hoverTrigger && triggers.value.has("hover")) ||
           (focusTrigger && triggers.value.has("focus")))
       : true;
-    void request(pinned);
+    void request(pinned, false, "trigger");
   }
   function contextmenu(event: MouseEvent) {
     if (panel.value?.contains(event.target as Node)) return;
@@ -196,7 +204,7 @@ export function usePopupSurfaceInteractions(
       return;
     event.preventDefault();
     pinned = !floating.open.value;
-    void request(pinned);
+    void request(pinned, false, "trigger");
   }
   function focusables(root: ParentNode) {
     return [...root.querySelectorAll<HTMLElement>(popupFocusControls)].filter(
@@ -230,7 +238,7 @@ export function usePopupSurfaceInteractions(
     if (!inside && !atTrigger) return;
     const items = panel.value ? focusables(panel.value) : [];
     if (
-      atTrigger &&
+      (atTrigger || target === panel.value) &&
       !event.shiftKey &&
       props.enterable !== false &&
       items.length
@@ -241,13 +249,14 @@ export function usePopupSurfaceInteractions(
     }
     if (
       inside &&
+      target !== panel.value &&
       target !== (event.shiftKey ? items[0] : items.at(-1)) &&
       items.length
     )
       return;
     event.preventDefault();
-    const accepted = await request(false);
-    if (accepted) {
+    const accepted = await request(false, false, "tab");
+    if (accepted || allowTabExit) {
       if (inside && event.shiftKey) restoreReferenceFocus();
       else if (!adjacent(event.shiftKey)) restoreReferenceFocus();
     }
@@ -258,7 +267,7 @@ export function usePopupSurfaceInteractions(
     if (floating.open.value && delay)
       autoTimer = setTimeout(() => {
         autoTimer = undefined;
-        void request(false);
+        void request(false, false, "auto");
       }, delay);
   }
   function reset() {

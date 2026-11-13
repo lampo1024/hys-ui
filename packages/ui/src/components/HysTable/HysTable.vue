@@ -41,6 +41,7 @@ import { useHysRootAttrs } from "../../config";
 import { useFloating } from "../../composables/useFloating";
 import { useTable } from "../../composables/useTable";
 import { useTableSticky } from "../../composables/useTableSticky";
+import { useTabularRowNavigation } from "../../composables/useTabularRowNavigation";
 import {
   tableColumns,
   tableBreakpoint,
@@ -103,6 +104,7 @@ const emit = defineEmits<{
   "update:sorts": [sorts: HysTableSort[]];
   sortChange: [sort: HysTableSort | null, sorts: HysTableSort[]];
   "update:filters": [filters: HysTableFilters];
+  "update:search": [search: string];
   filterChange: [filters: HysTableFilters];
   "update:selectedRowKeys": [keys: HysTableKey[]];
   selectionChange: [rows: T[], keys: HysTableKey[]];
@@ -1171,6 +1173,20 @@ async function scrollToRow(
   return true;
 }
 const visibleColumns = computed(() => layout.value.leaves);
+const navigableTokens = computed(() => display.value.map(({ token }) => token));
+const rowNavigation = useTabularRowNavigation({
+  enabled: () => !!props.keyboardNavigation && !busy.value && model.live.value,
+  table: () => table.value,
+  tokens: () => navigableTokens.value,
+  attribute: "data-hys-navigation-row",
+  toggle(token) {
+    const node = model.graph.value.map.get(token);
+    if (!node || !layout.value.leaves.some(({ type }) => type === "selection") || !model.eligible(node))
+      return false;
+    void model.toggleRowSelection(node.key);
+    return true;
+  },
+});
 defineExpose({
   element,
   viewport,
@@ -1193,6 +1209,12 @@ defineExpose({
   setSort: model.setSort,
   clearFilter: model.clearFilter,
   setFilter: model.setFilter,
+  setSearch: model.setSearch,
+  clearSearch: () => model.setSearch(""),
+  focusRow: (row: T | HysTableKey) => {
+    const node = model.find(row);
+    return !!node && rowNavigation.focusRow(node.token);
+  },
   showFilter: (key: string) => requestFilter(key),
   hideFilter: () => requestFilter(null, true),
   setPage: model.requestPage,
@@ -1226,7 +1248,7 @@ defineExpose({
     :aria-busy="loading || undefined"
   >
     <div v-if="$slots.title" class="hys-ui-table-title">
-      <slot name="title" :rows="model.filteredRows.value" :page-rows="pageRows" :query="query" />
+      <slot name="title" :rows="model.filteredRows.value" :page-rows="pageRows" :query="query" :search="model.search.value" :set-search="model.setSearch" />
     </div>
     <div
       v-if="selectionActions === true || customSelectionActions?.length || $slots.selection"
@@ -1601,7 +1623,7 @@ defineExpose({
         <component :is="components?.body?.wrapper ?? 'tbody'">
           <tr v-if="loading && loadingMode === 'replace'" class="hys-ui-table-message">
             <td :colspan="Math.max(1, layout.leaves.length)">
-              <div role="status">
+              <div class="hys-ui-table-state hys-ui-table-loading-state" role="status">
                 <slot name="loading"
                   ><LoaderCircle class="hys-ui-table-spinner" :size="18" />{{
                     words.loadingText
@@ -1614,8 +1636,9 @@ defineExpose({
             ><template v-for="(node, index) in display" :key="node.token">
               <component
                 :is="components?.body?.row ?? 'tr'"
-                v-bind="customAttrs(customRow?.(node.row, index))"
+                v-bind="mergeProps(customAttrs(customRow?.(node.row, index)), rowNavigation.rowNavigationAttrs(node.token))"
                 :data-row-key="String(node.key)"
+                :data-hys-navigation-row="keyboardNavigation ? node.token : undefined"
                 :aria-selected="
                   highlightCurrentRow ? currentKey === node.key : undefined
                 "
@@ -1973,7 +1996,9 @@ defineExpose({
             </template>
             <tr v-if="!display.length" class="hys-ui-table-message">
               <td :colspan="Math.max(1, layout.leaves.length)">
-                <slot name="empty">{{ emptyText ?? words.emptyText }}</slot>
+                <div class="hys-ui-table-state">
+                  <slot name="empty">{{ emptyText ?? words.emptyText }}</slot>
+                </div>
               </td>
             </tr></template
           >
@@ -2159,6 +2184,11 @@ defineExpose({
 </template>
 
 <style scoped>
+.hys-ui-data-table [data-hys-navigation-row]:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+  position: relative;
+}
 .hys-ui-table {
   min-width: 0;
   width: 100%;
@@ -2186,6 +2216,9 @@ defineExpose({
 }
 .hys-ui-table-viewport {
   position: relative;
+}
+.hys-ui-table-scroll {
+  container-type: inline-size;
 }
 .hys-ui-table-loading-overlay {
   position: absolute;
@@ -2517,11 +2550,21 @@ defineExpose({
   background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
 }
 .hys-ui-table-message > td {
-  padding: 34px;
+  padding: 34px 0;
+  overflow: visible;
   text-align: center;
   color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
 }
-.hys-ui-table-message > td > div {
+.hys-ui-table-state {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  inline-size: min(100%, 100cqi);
+  padding-inline: 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.hys-ui-table-loading-state {
   display: flex;
   align-items: center;
   justify-content: center;

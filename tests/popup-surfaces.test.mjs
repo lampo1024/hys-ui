@@ -173,6 +173,120 @@ async function mount(kind = "Popover", values = {}, slots = {}, accept = true) {
     count: (name) => events.filter((e) => e.name === name).length,
   };
 }
+test("Popconfirm focuses cancel, describes its effects, and distinguishes Escape from cancel", async () => {
+  const a = await mount("Popconfirm", {
+    title: "Archive report?",
+    description: "You can restore it later.",
+  });
+  await fire(a.reference, "click");
+  await until(() => document.activeElement?.textContent === "取消");
+  assert.equal(a.panel.getAttribute("role"), "dialog");
+  assert.equal(
+    document.getElementById(a.panel.getAttribute("aria-labelledby"))
+      .textContent,
+    "Archive report?",
+  );
+  assert.equal(
+    document.getElementById(a.panel.getAttribute("aria-describedby"))
+      .textContent,
+    "You can restore it later.",
+  );
+  await fire(document.activeElement, "keydown", { key: "Escape" });
+  assert.equal(a.vm.open, false);
+  assert.equal(document.activeElement, a.reference);
+  assert.equal(a.count("cancel"), 0);
+  assert.deepEqual(a.events.find(({ name }) => name === "dismiss")?.args, [
+    "escape",
+  ]);
+});
+
+test("Popconfirm serializes guard and action, keeps failed requests open, and retries once", async () => {
+  let mayProceed = false,
+    attempts = 0;
+  const a = await mount("Popconfirm", {
+    beforeConfirm: async () => mayProceed,
+    action: async () => {
+      if (++attempts === 1) throw new Error("Temporary failure");
+      return { id: 42 };
+    },
+  });
+  await a.vm.show();
+  assert.equal(await a.vm.confirm(), false);
+  assert.equal(attempts, 0);
+  mayProceed = true;
+  const first = a.vm.confirm();
+  assert.equal(await a.vm.confirm(), false);
+  assert.equal(await first, false);
+  assert.equal(a.vm.open, true);
+  assert.equal(a.count("error"), 1);
+  assert.equal(
+    a.panel.querySelector('[role="alert"]').textContent,
+    "操作失败，请重试。",
+  );
+  assert.equal(await a.vm.confirm(), true);
+  assert.equal(attempts, 2);
+  assert.equal(a.vm.open, false);
+  assert.deepEqual(a.events.find(({ name }) => name === "confirm").args[0], {
+    id: 42,
+  });
+  assert.equal(a.count("dismiss"), 0);
+});
+
+test("Popconfirm ignores accidental dismissal during pending work and aborts an explicit cancel", async () => {
+  let signal, finish;
+  const a = await mount("Popconfirm", {
+    allowCancelWhilePending: true,
+    action: (context) => {
+      signal = context.signal;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    },
+  });
+  await a.vm.show();
+  const first = a.vm.confirm();
+  await until(() => !!signal);
+  await fire(document.body, "pointerdown");
+  await fire(document, "keydown", { key: "Escape" });
+  assert.equal(a.vm.open, true);
+  assert.equal(a.vm.pending, "confirm");
+  assert.equal(await a.vm.cancel(), true);
+  assert.equal(await first, false);
+  assert.equal(signal.aborted, true);
+  finish("stale");
+  await settle();
+  assert.equal(a.vm.open, false);
+  assert.equal(a.count("confirm"), 0);
+  assert.equal(a.count("cancel"), 1);
+});
+
+test("Popconfirm respects a controlled host veto and ignores late completion after closure", async () => {
+  let signal, finish;
+  const a = await mount("Popconfirm", { open: true }, {}, false);
+  await until(() => a.vm.open);
+  assert.equal(await a.vm.close(), false);
+  assert.equal(a.count("dismiss"), 0);
+  a.props.action = (context) => {
+    signal = context.signal;
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
+  };
+  await settle();
+  const work = a.vm.confirm();
+  await until(() => !!signal);
+  a.props.open = false;
+  await settle();
+  assert.equal(await work, false);
+  assert.equal(signal.aborted, true);
+  a.props.open = true;
+  await until(() => a.vm.open);
+  finish("late");
+  await settle();
+  assert.equal(a.vm.open, true);
+  assert.equal(a.count("confirm"), 0);
+});
+
 test("Tooltip preserves hover and focus defaults, and Escape never reopens it", async () => {
   const a = await mount("Tooltip", { text: "Help" });
   await fire(a.host.firstElementChild, "pointerenter");

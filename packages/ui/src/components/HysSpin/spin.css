@@ -1,0 +1,286 @@
+.hys-ui-spin {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  min-block-size: var(--hys-spin-region-height, 0);
+  vertical-align: middle;
+}
+.hys-ui-spin:is(
+  [data-mode="block"],
+  [data-mode="container"],
+  [data-mode="overlay"],
+  [data-mode="fullscreen"]
+) {
+  display: block;
+}
+.hys-ui-spin[data-mode="container"] {
+  min-block-size: var(--hys-spin-region-height, 96px);
+}
+.hys-spin-content {
+  min-inline-size: 0;
+  min-block-size: inherit;
+}
+.hys-spin-scroll-locked {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.hys-spin-layer {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(
+    --hys-spin-color,
+    var(--hys-ui-primary, var(--hys-ui-theme-primary))
+  );
+}
+.hys-spin-layer:is(
+  [data-mode="container"],
+  [data-mode="overlay"],
+  [data-mode="fullscreen"]
+) {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 14px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+.hys-spin-layer[data-mode="fullscreen"] {
+  position: fixed;
+  z-index: 2200;
+  padding: max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  outline: none;
+  overflow: auto;
+}
+.hys-spin-layer[data-block] {
+  pointer-events: auto;
+}
+.hys-spin-layer[data-mask]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(
+    --hys-spin-mask,
+    var(--hys-ui-surface, var(--hys-ui-theme-surface))
+  );
+  opacity: var(--hys-spin-mask-opacity);
+  backdrop-filter: blur(var(--hys-spin-blur));
+}
+.hys-spin-layer[data-mode="fullscreen"][data-mask]::before {
+  background: var(
+    --hys-spin-mask,
+    var(--hys-ui-surface, var(--hys-ui-theme-surface))
+  );
+}
+.hys-spin-layer[data-placement^="top"] {
+  align-items: start;
+}
+.hys-spin-layer[data-placement^="bottom"] {
+  align-items: end;
+}
+.hys-spin-layer:is([data-placement="left"], [data-placement$="-start"]) {
+  justify-items: start;
+}
+.hys-spin-layer:is([data-placement="right"], [data-placement$="-end"]) {
+  justify-items: end;
+}
+.hys-spin-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hys-spin-gap);
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+.hys-spin-layer:is(
+    [data-mode="container"],
+    [data-mode="overlay"],
+    [data-mode="fullscreen"]
+  )
+  .hys-spin-indicator {
+  padding: 6px;
+}
+.hys-spin-indicator[data-layout="top"] {
+  flex-direction: column;
+}
+.hys-spin-indicator[data-layout="bottom"] {
+  flex-direction: column-reverse;
+}
+.hys-spin-indicator[data-layout="right"] {
+  flex-direction: row-reverse;
+}
+.hys-spin-indicator[data-align="start"] {
+  align-items: flex-start;
+  text-align: start;
+}
+.hys-spin-indicator[data-align="end"] {
+  align-items: flex-end;
+  text-align: end;
+}
+.hys-spin-indicator[data-align="center"] {
+  text-align: center;
+}
+.hys-spin-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--hys-spin-width);
+  block-size: var(--hys-spin-height);
+}
+.hys-spin-custom {
+  animation: var(--hys-spin-custom) var(--hys-spin-duration)
+    var(--hys-spin-easing) var(--hys-spin-delay) var(--hys-spin-iterations)
+    var(--hys-spin-direction);
+  animation-play-state: var(--hys-spin-play);
+}
+.hys-spin-details {
+  display: grid;
+  gap: 3px;
+  min-inline-size: 0;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+  overflow-wrap: anywhere;
+}
+.hys-spin-details:empty {
+  display: none;
+}
+.hys-spin-title {
+  font-size: 0.94rem;
+  font-weight: 650;
+}
+.hys-spin-message {
+  font-size: 0.875rem;
+}
+.hys-spin-description {
+  font-size: 0.78rem;
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+}
+.hys-spin-percent {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(
+    --hys-spin-color,
+    var(--hys-ui-primary, var(--hys-ui-theme-primary))
+  );
+}
+.hys-spin-layer[data-status="success"] {
+  --hys-spin-color: var(--hys-ui-green, var(--hys-ui-theme-green));
+}
+.hys-spin-layer[data-status="error"] {
+  --hys-spin-color: var(--hys-ui-red, var(--hys-ui-theme-red));
+}
+.hys-spin-layer[data-status="timeout"] {
+  --hys-spin-color: var(--hys-ui-orange, var(--hys-ui-theme-orange));
+}
+.hys-spin-line,
+.hys-spin-segments {
+  display: flex;
+  inline-size: min(180px, 48vw);
+  block-size: 5px;
+  margin-block: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.hys-spin-line,
+.hys-spin-segments i {
+  background: var(
+    --hys-spin-track,
+    var(--hys-ui-border, var(--hys-ui-theme-border))
+  );
+}
+.hys-spin-line i {
+  background: var(
+    --hys-spin-color,
+    var(--hys-ui-primary, var(--hys-ui-theme-primary))
+  );
+  transition: inline-size 160ms ease;
+  border-radius: inherit;
+}
+.hys-spin-segments {
+  gap: 3px;
+}
+.hys-spin-segments i {
+  flex: 1;
+  border-radius: 2px;
+}
+.hys-spin-segments i::before {
+  content: "";
+  display: block;
+  inline-size: var(--hys-spin-segment-fill);
+  block-size: 100%;
+  background: var(
+    --hys-spin-color,
+    var(--hys-ui-primary, var(--hys-ui-theme-primary))
+  );
+  transition: inline-size 160ms ease;
+}
+.hys-spin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: auto;
+}
+.hys-spin-actions button {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  color: var(--hys-ui-text, var(--hys-ui-theme-text));
+  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  border-radius: 6px;
+  cursor: pointer;
+}
+.hys-spin-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.hys-spin-fade-enter-active,
+.hys-spin-fade-leave-active {
+  transition: opacity var(--hys-spin-transition) ease;
+}
+.hys-spin-fade-enter-from,
+.hys-spin-fade-leave-to {
+  opacity: 0;
+}
+.hys-spin-layer:is([data-motion-off], [data-hys-motion="off"]) :deep(*) {
+  animation: none !important;
+  transition-duration: 0ms;
+}
+.hys-spin-layer[data-hys-motion="off"] {
+  transition-duration: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hys-spin-layer,
+  .hys-spin-layer :deep(*) {
+    animation: none !important;
+    transition-duration: 0ms;
+  }
+}
+@media (forced-colors: active) {
+  .hys-spin-layer,
+  .hys-spin-percent {
+    color: CanvasText;
+  }
+  .hys-spin-line,
+  .hys-spin-segments i {
+    outline: 1px solid CanvasText;
+  }
+  .hys-spin-line i,
+  .hys-spin-segments i::before {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}

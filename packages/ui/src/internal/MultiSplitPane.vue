@@ -3,9 +3,13 @@ import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMoun
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-vue-next";
 import { useHysRootAttrs } from "../config";
 import type {
-  HysSplitPaneHandleContext, HysSplitPaneLength, HysSplitPanePanel, HysSplitPanePanelContext,
+  HysSplitPaneHandleContext, HysSplitPaneLayout, HysSplitPaneLength, HysSplitPanePanel, HysSplitPanePanelContext,
   HysSplitPanePanelResize, HysSplitPanePanelResizeEnd, HysSplitPaneSizes,
 } from "../components/HysSplitPane/HysSplitPane.vue";
+import {
+  adjacentSplitResize, cascadeSplitResize, constrainSplitSize, splitIsVertical,
+  splitPair as replacePair, splitSnapCandidates, splitSnapThreshold,
+} from "../components/HysSplitPane/splitPaneResize";
 import { fitPaneSizes, paneEpsilon, paneRatio } from "../composables/splitPaneSizes";
 import { useSplitPaneDrag } from "../composables/useSplitPaneDrag";
 import { readStoredPaneSizes, useSplitPaneStorage } from "../composables/useSplitPaneStorage";
@@ -14,6 +18,10 @@ const props = defineProps<{
   panels: readonly HysSplitPanePanel[];
   sizes?: HysSplitPaneSizes;
   vertical: boolean;
+  responsiveBreakpoint?: number;
+  resizeMode: "adjacent" | "cascade";
+  snapThreshold: number;
+  cancelBehavior: "keep" | "restore";
   disabled?: boolean;
   lazy?: boolean;
   step: number;
@@ -28,6 +36,7 @@ const emit = defineEmits<{
   panelResize: [details: HysSplitPanePanelResize];
   panelResizeEnd: [details: HysSplitPanePanelResizeEnd];
   panelCollapse: [id: string, collapsed: boolean];
+  layoutChange: [layout: HysSplitPaneLayout];
 }>();
 defineSlots<{
   panel?: (context: HysSplitPanePanelContext) => unknown;
@@ -39,6 +48,10 @@ const skin = useHysRootAttrs();
 const id = useId();
 const host = ref<HTMLElement>();
 const available = ref(0);
+const width = ref(0);
+const vertical = computed(() => splitIsVertical(props.vertical, width.value, props.responsiveBreakpoint));
+const layout = computed<HysSplitPaneLayout>(() => vertical.value ? "vertical" : "horizontal");
+watch(layout, (value) => emit("layoutChange", value));
 const rtl = ref(false);
 const local = ref<HysSplitPaneSizes>();
 const activeBar = ref<number>();
@@ -117,26 +130,17 @@ function panelSizes(values = ratios.value) {
 function detail(separator: number, before: string, after: string, values = ratios.value): HysSplitPanePanelResize {
   return { separator, before, after, sizes: panelSizes(values) };
 }
-function replacePair(values: readonly number[], index: number, first: number) {
-  const next = [...values];
-  next[index + 1] = Math.max(0, values[index] + values[index + 1] - first);
-  next[index] = first;
-  return next;
-}
-function limits(index: number) {
-  const first = ratios.value[index];
-  const total = first + ratios.value[index + 1];
-  const a = bounds.value[index];
-  const b = bounds.value[index + 1];
-  const min = Math.max(a.min, total - b.max);
-  const max = Math.min(a.max, total - b.min);
-  if (min > max) return { min: first, max: first };
-  return { min, max };
+const plans = computed(() => Array.from({ length: barCount.value }, (_, index) =>
+  props.resizeMode === "cascade"
+    ? cascadeSplitResize(ratios.value, bounds.value, panels.value, index)
+    : adjacentSplitResize(ratios.value, bounds.value, index),
+));
+function allowsResize(index: number) {
+  return !props.disabled && panels.value[index]?.resizable !== false && panels.value[index + 1]?.resizable !== false;
 }
 function isResizable(index: number) {
-  if (props.disabled || panels.value[index]?.resizable === false || panels.value[index + 1]?.resizable === false) return false;
-  const { min, max } = limits(index);
-  return max - min > paneEpsilon;
+  const { min, max } = plans.value[index];
+  return allowsResize(index) && max - min > paneEpsilon;
 }
 
 function toggleValue(index: number, separator: number) {
@@ -152,22 +156,25 @@ function toggleValue(index: number, separator: number) {
   const previous = paneRatio(expanded.get(ids.value[index]) ?? panels.value[index].size, available.value) || total / 2;
   return Math.min(maximum, Math.max(minimum, previous));
 }
-async function togglePane(key: string, separator?: number) {
+async function setPaneCollapsed(key: string, collapse: boolean, separator?: number) {
   if (available.value <= 0) return false;
   const index = ids.value.indexOf(key);
+  if (index < 0 || (ratios.value[index] <= paneEpsilon) === collapse) return false;
   const bars = separator === undefined ? [index, index - 1] : [separator];
   for (const bar of bars) {
     const value = toggleValue(index, bar);
     if (value === undefined) continue;
-    const wasCollapsed = ratios.value[index] <= paneEpsilon;
     const total = ratios.value[bar] + ratios.value[bar + 1];
     drag.finish(true);
     publish(replacePair(ratios.value, bar, index === bar ? value : total - value));
     await nextTick();
     const currentIndex = ids.value.indexOf(key);
-    return currentIndex >= 0 && wasCollapsed !== (ratios.value[currentIndex] <= paneEpsilon);
+    return currentIndex >= 0 && (ratios.value[currentIndex] <= paneEpsilon) === collapse;
   }
   return false;
+}
+function togglePane(key: string, separator?: number) {
+  return setPaneCollapsed(key, !collapsed.value.includes(key), separator);
 }
 async function resetSizes() {
   if (props.disabled) return false;
@@ -189,10 +196,11 @@ async function resizePane(key: string, length: HysSplitPaneLength, separator?: n
   const bars = separator === undefined ? [index, index - 1] : [separator];
   let nearest: { bar: number; first: number; distance: number } | undefined;
   for (const bar of bars) {
-    if (bar < 0 || bar >= barCount.value || (bar !== index && bar !== index - 1) || !isResizable(bar)) continue;
+    if (bar < 0 || bar >= barCount.value || (bar !== index && bar !== index - 1) || !allowsResize(bar)) continue;
     const total = ratios.value[bar] + ratios.value[bar + 1];
     const target = bar === index ? wanted : total - wanted;
-    const { min, max } = limits(bar);
+    const { min, max } = adjacentSplitResize(ratios.value, bounds.value, bar);
+    if (max - min <= paneEpsilon) continue;
     const first = Math.min(max, Math.max(min, target));
     const distance = Math.abs(first - target);
     if (!nearest || distance < nearest.distance) nearest = { bar, first, distance };
@@ -234,15 +242,19 @@ function measure() {
   if (!element) return;
   const rect = element.getBoundingClientRect();
   const bar = element.querySelector<HTMLElement>(":scope > .hys-ui-splitter-bar");
-  const axis = props.vertical ? element.clientHeight || rect.height : element.clientWidth || rect.width;
-  const divider = (props.vertical ? bar?.offsetHeight : bar?.offsetWidth) || props.dividerSize;
+  width.value = element.clientWidth || rect.width;
+  const axis = vertical.value ? element.clientHeight || rect.height : width.value;
+  const divider = (vertical.value ? bar?.offsetHeight : bar?.offsetWidth) || props.dividerSize;
   available.value = Math.max(0, axis - divider * barCount.value);
   rtl.value = getComputedStyle(element).direction === "rtl";
 }
 function observe() {
   if (observer || !host.value) return;
   measure();
-  if (typeof ResizeObserver !== "function") return;
+  if (typeof ResizeObserver !== "function") {
+    window.addEventListener("resize", measure);
+    return;
+  }
   observer = new ResizeObserver(measure);
   observer.observe(host.value);
 }
@@ -250,16 +262,24 @@ function stop() {
   drag.finish(true, false);
   observer?.disconnect();
   observer = undefined;
+  if (typeof window !== "undefined") window.removeEventListener("resize", measure);
 }
-const prevIcon = computed(() => props.vertical ? ChevronUp : rtl.value ? ChevronRight : ChevronLeft);
-const nextIcon = computed(() => props.vertical ? ChevronDown : rtl.value ? ChevronLeft : ChevronRight);
+const prevIcon = computed(() => vertical.value ? ChevronUp : rtl.value ? ChevronRight : ChevronLeft);
+const nextIcon = computed(() => vertical.value ? ChevronDown : rtl.value ? ChevronLeft : ChevronRight);
 
-let gesture: { separator: number; before: string; after: string; initial: number[]; requested?: number[] } | undefined;
+let gesture: {
+  separator: number;
+  before: string;
+  after: string;
+  initial: number[];
+  apply: (value: number) => number[];
+  requested?: number[];
+} | undefined;
 const drag = useSplitPaneDrag(
   (value) => {
     if (!gesture) return;
-    const { separator, before, after, initial } = gesture;
-    const next = replacePair(initial, separator, value);
+    const { separator, before, after, apply } = gesture;
+    const next = apply(value);
     if (props.lazy) preview.value = { separator, ratio: next.slice(0, separator + 1).reduce((sum, part) => sum + part, 0) };
     else {
       gesture.requested = next;
@@ -267,13 +287,15 @@ const drag = useSplitPaneDrag(
     }
     emit("panelResize", detail(separator, before, after, next));
   },
-  (value, cancelled, notify) => {
+  (value, cancelled, notify, byInput) => {
     if (!gesture) return;
-    const { separator, before, after, initial } = gesture;
+    const { separator, before, after, initial, apply, requested } = gesture;
     gesture = undefined;
     activeBar.value = undefined;
     preview.value = undefined;
-    if (!cancelled && props.lazy) publish(replacePair(initial, separator, value));
+    if (!cancelled && props.lazy) publish(apply(value));
+    if (cancelled && byInput && !props.lazy && props.cancelBehavior === "restore" &&
+        requested && sameSizes(ratios.value, requested)) publish(initial);
     if (notify) void nextTick(() => emit("panelResizeEnd", { ...detail(separator, before, after), cancelled }));
   },
 );
@@ -282,16 +304,30 @@ function down(event: PointerEvent, index: number) {
   measure();
   if (!isResizable(index)) return;
   const initial = ratios.value;
-  const { min, max } = limits(index);
+  const plan = plans.value[index];
+  const threshold = splitSnapThreshold(props.snapThreshold, available.value);
+  const candidates: number[] = [];
+  if (threshold > 0) {
+    const before = splitSnapCandidates(
+      plan.initial, initial[index], initial[index + 1], available.value, panels.value[index].snapPoints,
+    );
+    const after = splitSnapCandidates(
+      plan.initial, initial[index], initial[index + 1], available.value, undefined, panels.value[index + 1].snapPoints,
+    );
+    candidates.push(
+      ...before.filter((value) => Math.abs(plan.apply(value)[index] - initial[index] - (value - plan.initial)) <= paneEpsilon),
+      ...after.filter((value) => Math.abs(initial[index + 1] - plan.apply(value)[index + 1] - (value - plan.initial)) <= paneEpsilon),
+    );
+  }
   if (!drag.start(event, {
-    vertical: props.vertical,
+    vertical: vertical.value,
     available: available.value,
-    direction: !props.vertical && rtl.value ? -1 : 1,
-    initial: initial[index],
-    constrain: (value) => Math.min(max, Math.max(min, value)),
+    direction: !vertical.value && rtl.value ? -1 : 1,
+    initial: plan.initial,
+    constrain: (value) => constrainSplitSize(value, plan, candidates, threshold),
   })) return;
   const [before, after] = ids.value.slice(index, index + 2);
-  gesture = { separator: index, before, after, initial };
+  gesture = { separator: index, before, after, initial, apply: plan.apply };
   activeBar.value = index;
   emit("panelResizeStart", detail(index, before, after));
 }
@@ -304,27 +340,27 @@ function key(event: KeyboardEvent, index: number) {
   if (drag.active() || !isResizable(index) || available.value <= 0) return;
   if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Home", "End"].includes(event.key)) return;
   event.preventDefault();
-  const { min, max } = limits(index);
+  const plan = plans.value[index];
   const step = (Number.isFinite(props.step) && props.step > 0 ? props.step : 2) * (event.shiftKey ? 5 : 1);
-  const positive = event.key === "ArrowDown" || event.key === (rtl.value && !props.vertical ? "ArrowLeft" : "ArrowRight");
-  const value = event.key === "Home" ? min : event.key === "End" ? max
-    : Math.min(max, Math.max(min, ratios.value[index] + (positive ? step : -step)));
-  publish(replacePair(ratios.value, index, value));
+  const positive = event.key === "ArrowDown" || event.key === (rtl.value && !vertical.value ? "ArrowLeft" : "ArrowRight");
+  const value = event.key === "Home" ? plan.min : event.key === "End" ? plan.max
+    : constrainSplitSize(plan.initial + (positive ? step : -step), plan);
+  publish(plan.apply(value));
 }
 
-const geometry = computed(() => JSON.stringify(panels.value.map((panel) => [panel.id, panel.min, panel.max, panel.resizable, panel.collapsible])));
-watch([geometry, available, rtl, () => props.disabled, () => props.lazy, () => props.vertical], () => drag.finish(true), { flush: "sync" });
+const geometry = computed(() => JSON.stringify(panels.value.map((panel) => [panel.id, panel.min, panel.max, panel.resizable, panel.collapsible, panel.snapPoints])));
+watch([geometry, available, rtl, vertical, () => props.disabled, () => props.lazy, () => props.resizeMode, () => props.snapThreshold], () => drag.finish(true), { flush: "sync" });
 watch(ratios, (current, previous) => {
   if (gesture && !sameSizes(current, previous) && !sameSizes(current, gesture.requested ?? gesture.initial)) {
     drag.finish(true);
   }
 }, { flush: "post" });
-watch([barCount, () => props.vertical, () => props.dividerSize], measure, { flush: "post" });
+watch([barCount, vertical, () => props.dividerSize], measure, { flush: "post" });
 onMounted(observe);
 onActivated(observe);
 onDeactivated(stop);
 onBeforeUnmount(stop);
-defineExpose({ togglePane, getPanelSizes: panelSizes, getPaneElement, resizePane, resetSizes });
+defineExpose({ togglePane, setPaneCollapsed, getPanelSizes: panelSizes, getPaneElement, getLayout: () => layout.value, resizePane, resetSizes });
 </script>
 
 <template>
@@ -333,6 +369,7 @@ defineExpose({ togglePane, getPanelSizes: panelSizes, getPaneElement, resizePane
     v-bind="skin"
     class="hys-ui-ent-split hys-ui-multi-split"
     :class="{ 'hys-ui-vertical': vertical }"
+    :data-layout="layout"
     :style="{
       '--hys-ui-splitter-size': dividerSize + 'px',
       '--hys-ui-divider-count': barCount,
@@ -359,9 +396,9 @@ defineExpose({ togglePane, getPanelSizes: panelSizes, getPaneElement, resizePane
           :aria-controls="`${panelId(index)} ${panelId(index + 1)}`"
           :aria-disabled="!isResizable(index) || undefined"
           :aria-orientation="vertical ? 'horizontal' : 'vertical'"
-          :aria-valuenow="ratios[index]"
-          :aria-valuemin="Math.min(ratios[index], limits(index).min)"
-          :aria-valuemax="Math.max(ratios[index], limits(index).max)"
+          :aria-valuenow="plans[index].initial"
+          :aria-valuemin="Math.min(plans[index].initial, plans[index].min)"
+          :aria-valuemax="Math.max(plans[index].initial, plans[index].max)"
           :aria-keyshortcuts="toggleIndex(index) === undefined ? undefined : 'Enter'"
           :data-resizing="activeBar === index || undefined"
           @pointerdown="down($event, index)"

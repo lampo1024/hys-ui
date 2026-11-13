@@ -1,0 +1,345 @@
+.hys-ui-icon {
+  --hys-icon-running: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--hys-icon-gap);
+  box-sizing: border-box;
+  vertical-align: -0.125em;
+  padding: var(--hys-icon-padding);
+  border-radius: var(--hys-icon-radius);
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  line-height: 1.2;
+}
+.hys-ui-icon[data-align="start"] {
+  justify-content: flex-start;
+}
+.hys-ui-icon[data-align="end"] {
+  justify-content: flex-end;
+}
+.hys-ui-icon:is(button, a) {
+  border: 0;
+  background: transparent;
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  cursor: pointer;
+}
+.hys-ui-icon:is(button, a):hover,
+.hys-ui-icon[data-active] {
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+}
+.hys-ui-icon[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hys-ui-icon:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 3px;
+}
+.hys-ui-icon[data-status="success"] {
+  color: var(--hys-ui-green, var(--hys-ui-theme-green));
+}
+.hys-ui-icon[data-status="error"] {
+  color: var(--hys-ui-red, var(--hys-ui-theme-red));
+}
+.hys-ui-icon[data-status="warning"] {
+  color: var(--hys-ui-orange, var(--hys-ui-theme-orange));
+}
+.hys-ui-icon:is([data-status="loading"], [data-status="info"]) {
+  color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+}
+.hys-icon-box {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--hys-icon-width);
+  block-size: var(--hys-icon-height);
+}
+.hys-icon-orientation,
+.hys-icon-motion {
+  display: grid;
+  place-items: center;
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.hys-icon-orientation {
+  transform: rotate(var(--hys-icon-angle))
+    scale(var(--hys-icon-flip-x), var(--hys-icon-flip-y));
+}
+.hys-ui-icon[data-directional]:dir(rtl) .hys-icon-orientation {
+  transform: rotate(var(--hys-icon-angle))
+    scale(var(--hys-icon-mirrored-x), var(--hys-icon-flip-y));
+}
+.hys-icon-graphic {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.hys-icon-character {
+  display: grid;
+  place-items: center;
+  font-size: var(--hys-icon-font-size, 1em);
+  line-height: 1;
+}
+.hys-icon-layer {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  inline-size: var(--hys-icon-layer-size);
+  block-size: var(--hys-icon-layer-size);
+  transform: translate(
+      calc(-50% + var(--hys-icon-layer-x)),
+      calc(-50% + var(--hys-icon-layer-y))
+    )
+    rotate(var(--hys-icon-layer-angle));
+}
+.hys-icon-layer .hys-icon-character {
+  font-size: 0.75em;
+}
+.hys-icon-badge {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 0;
+  translate: 42% -40%;
+  min-inline-size: 14px;
+  min-block-size: 14px;
+  border-radius: 999px;
+  padding-inline: 3px;
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+  line-height: 1.1;
+  font-size: 10px;
+  color: white;
+  background: var(--hys-ui-red, var(--hys-ui-theme-red));
+  box-shadow: 0 0 0 1px var(--hys-ui-surface, var(--hys-ui-theme-surface));
+}
+.hys-icon-badge[data-position$="-start"] {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  translate: -42% -40%;
+}
+.hys-icon-badge[data-position^="bottom"] {
+  inset-block-end: 0;
+  inset-block-start: auto;
+  translate: 42% 40%;
+}
+.hys-icon-badge[data-position="bottom-start"] {
+  translate: -42% 40%;
+}
+.hys-icon-badge:dir(rtl) {
+  scale: 1;
+  translate: -42% -40%;
+}
+.hys-icon-badge[data-position$="-start"]:dir(rtl) {
+  translate: 42% -40%;
+}
+.hys-icon-badge[data-position="bottom-end"]:dir(rtl) {
+  translate: -42% 40%;
+}
+.hys-icon-badge[data-position="bottom-start"]:dir(rtl) {
+  translate: 42% 40%;
+}
+.hys-icon-badge[data-dot] {
+  padding: 0;
+  min-inline-size: 7px;
+  min-block-size: 7px;
+}
+.hys-ui-icon[data-trigger="always"],
+.hys-ui-icon[data-trigger="hover"]:is(:hover, :focus-visible),
+.hys-ui-icon[data-played]:is([data-trigger="click"], [data-trigger="state"]) {
+  --hys-icon-running: var(--hys-icon-animation);
+}
+.hys-icon-motion,
+.hys-ui-icon[data-animation="draw"] [data-hys-icon-draw],
+.hys-ui-icon[data-animation="morph"] [data-hys-icon-morph-path] {
+  animation-name: var(--hys-icon-running);
+  animation-duration: var(--hys-icon-duration);
+  animation-delay: var(--hys-icon-delay);
+  animation-timing-function: var(--hys-icon-ease);
+  animation-iteration-count: var(--hys-icon-repeat);
+  animation-play-state: var(--hys-icon-play);
+}
+.hys-ui-icon:is([data-animation="draw"], [data-animation="morph"])
+  .hys-icon-motion {
+  animation-name: none;
+}
+.hys-ui-icon[data-animation="draw"] [data-hys-icon-draw] {
+  stroke-dasharray: 1;
+}
+.hys-ui-icon:is([data-off], [data-hys-motion="off"]) {
+  --hys-icon-running: none;
+}
+.hys-icon-change-enter-active,
+.hys-icon-change-leave-active {
+  transition: opacity 100ms ease;
+}
+.hys-icon-change-enter-from,
+.hys-icon-change-leave-to {
+  opacity: 0;
+}
+.hys-ui-icon[data-hys-motion="off"] .hys-icon-motion {
+  transition-duration: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hys-ui-icon
+    :is(.hys-icon-motion, [data-hys-icon-draw], [data-hys-icon-morph-path]) {
+    animation-name: none !important;
+    transition-duration: 0ms;
+  }
+}
+@media (forced-colors: active) {
+  .hys-ui-icon:is(button, a):focus-visible {
+    outline-color: Highlight;
+  }
+  .hys-icon-badge {
+    color: Canvas;
+    background: CanvasText;
+    outline: 1px solid Canvas;
+  }
+}
+@keyframes hys-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hys-icon-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hys-icon-loading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hys-icon-pulse {
+  50% {
+    transform: scale(1.17);
+    opacity: 0.65;
+  }
+}
+@keyframes hys-icon-bounce {
+  35% {
+    transform: translateY(-24%);
+  }
+  62% {
+    transform: translateY(2%);
+  }
+  79% {
+    transform: translateY(-8%);
+  }
+}
+@keyframes hys-icon-shake {
+  20%,
+  60% {
+    transform: translateX(-13%);
+  }
+  40%,
+  80% {
+    transform: translateX(13%);
+  }
+}
+@keyframes hys-icon-swing {
+  20% {
+    transform: rotate(16deg);
+  }
+  55% {
+    transform: rotate(-15deg);
+  }
+  80% {
+    transform: rotate(7deg);
+  }
+}
+@keyframes hys-icon-wiggle {
+  25% {
+    transform: rotate(-9deg) translateX(-8%);
+  }
+  75% {
+    transform: rotate(9deg) translateX(8%);
+  }
+}
+@keyframes hys-icon-float {
+  50% {
+    transform: translateY(-18%);
+  }
+}
+@keyframes hys-icon-breathing {
+  50% {
+    opacity: 0.42;
+    transform: scale(0.92);
+  }
+}
+@keyframes hys-icon-scale {
+  50% {
+    transform: scale(1.28);
+  }
+}
+@keyframes hys-icon-fade {
+  50% {
+    opacity: 0.18;
+  }
+}
+@keyframes hys-icon-slide {
+  from {
+    opacity: 0.25;
+    transform: translateX(-45%);
+  }
+  70%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes hys-icon-flip {
+  to {
+    transform: perspective(100px) rotateY(360deg);
+  }
+}
+@keyframes hys-icon-spring {
+  25% {
+    transform: scale(0.77);
+  }
+  55% {
+    transform: scale(1.18);
+  }
+  77% {
+    transform: scale(0.97);
+  }
+}
+@keyframes hys-icon-heartbeat {
+  20%,
+  50% {
+    transform: scale(1.21);
+  }
+  34% {
+    transform: scale(0.94);
+  }
+}
+@keyframes hys-icon-blink {
+  45%,
+  55% {
+    opacity: 0.18;
+  }
+}
+@keyframes hys-icon-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hys-icon-morph {
+  50% {
+    d: var(--hys-icon-morph-path);
+  }
+}
+@keyframes hys-icon-gradient {
+  50% {
+    filter: hue-rotate(160deg) saturate(1.3);
+  }
+}

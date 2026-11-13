@@ -938,6 +938,71 @@ test('Tabs stale close guards cannot close replaced items or clear newer pending
  pending[1](true);await pause(0);assert.equal(tabs.events.close[0][0],'b')
 })
 
+test('Tabs declarative panes keep content state and stable ARIA references when reordered',async()=>{
+ const order=ref(['a','b']),tabs=await mount(ui.HysTabs,{defaultValue:'a'},{default:()=>order.value.map(key=>h(ui.HysTabPane,{key,value:key,label:key.toUpperCase()},()=>h('input',{placeholder:key})))})
+ const panel=tabs.find('[role="tabpanel"]'),id=panel.id,input=panel.querySelector('input')
+ input.value='retained';order.value=['b','a'];await nextTick()
+ assert.equal(tabs.find('[role="tabpanel"]').id,id);assert.equal(tabs.find('input'),input);assert.equal(input.value,'retained')
+ assert.equal(await tabs.vm.select('b'),true);assert.equal(tabs.find('[aria-selected="true"]').textContent,'B')
+})
+
+test('Tabs workbench protects pinned and readonly items while closing, moving and restoring',async()=>{
+ const items=[{value:'home',label:'Home',pinned:true},{value:'a',label:'A'},{value:'b',label:'B'},{value:'safe',label:'Safe',readonly:true}]
+ const tabs=await mount(ui.HysTabs,{workbench:true,items,modelValue:'a'})
+ assert.equal(await tabs.vm.move('b','a'),true)
+ assert.deepEqual(tabs.props.items.map(item=>item.value),['home','b','a','safe'])
+ assert.equal(await tabs.vm.move('a','home'),false)
+ assert.deepEqual(await tabs.vm.closeMany('all'),['b','a'])
+ assert.deepEqual(tabs.props.items.map(item=>item.value),['home','safe'])
+ assert.equal(tabs.props.modelValue,'safe')
+ assert.equal(await tabs.vm.restore(),true)
+ assert(tabs.props.items.some(item=>item.value==='a'))
+ assert.equal(await tabs.vm.rename('a','Renamed'),true)
+ assert.equal(await tabs.vm.favorite('a'),true)
+ assert.equal(tabs.props.items.find(item=>item.value==='a').label,'Renamed')
+})
+
+test('Tabs reload aborts stale content and a rejected resource can be retried',async()=>{
+ const requests=[],tabs=await mount(ui.HysTabs,{items:[{value:'a',label:'A',load:({signal})=>new Promise((resolve,reject)=>requests.push({signal,resolve,reject}))}]})
+ await pause(0);assert.equal(requests.length,1)
+ const second=tabs.vm.reload('a');await pause(0)
+ assert.equal(requests[0].signal.aborted,true);requests[0].resolve('stale')
+ requests[1].reject(new Error('offline'));assert.equal(await second,false);await nextTick()
+ assert(tabs.find('[role="alert"]').textContent.includes('加载失败'))
+ const third=tabs.vm.reload('a');await pause(0);requests[2].resolve('latest')
+ assert.equal(await third,true);await nextTick();assert.equal(tabs.find('[role="tabpanel"]').textContent.trim(),'latest')
+})
+
+test('Tabs route adapter deduplicates paths, follows external navigation and respects permissions',async()=>{
+ const route=ref('/report/1'),permit=ref(true),scope=ref()
+ const Adapter=defineComponent({setup(){
+   scope.value=ui.useHysRouteTabs({route,resolve:path=>({value:path,label:path,to:path}),navigate:item=>{route.value=item.to},allow:item=>permit.value||item.value!=='/report/2'})
+   return()=>null
+ }})
+ await mount(Adapter)
+ route.value='/report/2';await nextTick();route.value='/report/1';await nextTick()
+ assert.deepEqual(scope.value.items.map(item=>item.value),['/report/1','/report/2'])
+ assert.equal(await scope.value.select('/report/2'),true)
+ assert.equal(scope.value.active,'/report/2')
+ permit.value=false;await nextTick();assert.equal(await scope.value.select('/report/2'),false)
+ assert.deepEqual(scope.value.items.map(item=>item.value),['/report/1'])
+})
+
+test('Tabs controlled workbench restores a snapshot once without a model update loop',async()=>{
+ const storageKey='hys-core-tabs-workbench',seed=[{value:'a',label:'A'},{value:'b',label:'B'}]
+ window.sessionStorage.removeItem(storageKey)
+ const first=await mount(ui.HysTabs,{items:seed,modelValue:'b',workbench:true,storageKey})
+ assert.equal(await first.vm.rename('b','Restored B'),true)
+ assert.equal(first.vm.save(),true)
+ first.unmount()
+ const second=await mount(ui.HysTabs,{items:seed,modelValue:'a',workbench:true,storageKey})
+ await pause(0)
+ assert.equal(second.props.items[1].label,'Restored B')
+ assert.equal(second.props.modelValue,'b')
+ assert.equal(second.events['update:items'].length,1)
+ second.unmount();window.sessionStorage.removeItem(storageKey)
+})
+
 test('Accordion guard errors and disabled transitions cannot expand panels',async()=>{
  let finish
  const accordion=await mount(ui.HysAccordion,{items:[{id:'a',title:'A'}],beforeToggle:async()=>{throw Error('blocked')}})
@@ -1371,6 +1436,94 @@ test('SplitPane lazy drag reports a preview and commits only on the owning point
   await pause(20);
   assert.equal(split.props.modelValue, 57);
   assert.deepEqual(split.events.resizeEnd.at(-1), [57, { cancelled: true }]);
+});
+
+test('SplitPane snaps live drag and restores the original size when Escape cancels', async () => {
+  const split = await mount(ui.HysSplitPane, {
+    modelValue: 40,
+    firstPanel: { snapPoints: ['50%'] },
+    secondPanel: { collapsible: true },
+    cancelBehavior: 'restore',
+  });
+  const separator = split.find('[role="separator"]');
+  function pointer(target, type, clientX) {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX });
+    Object.defineProperty(event, 'pointerId', { value: 3 });
+    target.dispatchEvent(event);
+  }
+  pointer(separator, 'pointerdown', 100);
+  pointer(window, 'pointermove', 125);
+  await pause(32);
+  assert.equal(split.props.modelValue, 50);
+  await fire(separator, 'keydown', { key: 'Escape' });
+  assert.equal(split.props.modelValue, 40);
+  assert.deepEqual(split.events.resizeEnd.at(-1), [40, { cancelled: true }]);
+  assert.equal(await split.vm.resizePane('second', '48%'), true);
+  assert.equal(split.props.modelValue, 52);
+  assert.equal(split.vm.getPaneElement('second'), split.find('.hys-ui-ent-split-second'));
+  assert.equal(await split.vm.collapsePane('second'), true);
+  assert.equal(split.vm.getPanelSizes().second, 0);
+  assert.equal(await split.vm.collapsePane('second'), false);
+  assert.equal(await split.vm.expandPane('second'), true);
+  assert.equal(split.props.modelValue, 52);
+});
+
+test('SplitPane responds to its container width in both modes', async () => {
+  for (const options of [{}, { panels: [{ id: 'list' }, { id: 'detail' }] }]) {
+    const split = await mount(ui.HysSplitPane, { ...options, responsiveBreakpoint: 340 });
+    const separator = split.find('[role="separator"]');
+    assert.equal(split.vm.getLayout(), 'vertical');
+    assert.equal(separator.getAttribute('aria-orientation'), 'horizontal');
+    split.props.responsiveBreakpoint = 300;
+    await nextTick();
+    assert.equal(split.vm.getLayout(), 'horizontal');
+    assert.equal(separator.getAttribute('aria-orientation'), 'vertical');
+    assert.deepEqual(split.events.layoutChange.at(-1), ['horizontal']);
+    split.props.layout = 'vertical';
+    await nextTick();
+    assert.equal(split.vm.getLayout(), 'vertical');
+  }
+});
+
+test('SplitPane cascade redistributes from the divider outwards and stops at locked panels', async () => {
+  const panels = [
+    { id: 'nav', size: '25%', min: '10%', max: '45%' },
+    { id: 'list', size: '25%', min: '15%', max: '32%' },
+    { id: 'detail', size: '25%', min: '20%', max: '45%', collapsible: true },
+    { id: 'history', size: '25%', min: '15%', max: '45%' },
+  ];
+  const split = await mount(ui.HysSplitPane, { panels, sizes: {}, resizeMode: 'cascade', cancelBehavior: 'restore' });
+  const separator = split.all('[role="separator"]')[1];
+  const percentages = () => Object.values(split.vm.getPanelSizes())
+    .map((size) => Math.round(size / 282 * 100));
+  function pointer(target, type, clientX) {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX });
+    Object.defineProperty(event, 'pointerId', { value: 8 });
+    target.dispatchEvent(event);
+  }
+  pointer(separator, 'pointerdown', 150);
+  pointer(window, 'pointermove', 200);
+  await pause(32);
+  assert.deepEqual(percentages(), [33, 32, 20, 15]);
+  await fire(separator, 'keydown', { key: 'Escape' });
+  assert.deepEqual(percentages(), [25, 25, 25, 25]);
+  assert.equal(split.events.panelResizeEnd.at(-1)[0].cancelled, true);
+  await fire(separator, 'keydown', { key: 'End' });
+  assert.deepEqual(percentages(), [33, 32, 20, 15]);
+  assert.equal(separator.getAttribute('aria-valuenow'), '65');
+  await split.vm.resetSizes();
+  split.props.panels = [{ ...panels[0], resizable: false }, ...panels.slice(1)];
+  await nextTick();
+  await fire(separator, 'keydown', { key: 'End' });
+  assert.deepEqual(percentages(), [25, 32, 20, 23]);
+  await split.vm.resetSizes();
+  assert.equal(await split.vm.collapsePane('detail'), false);
+  split.props.panels = panels.map((panel) => panel.id === 'history' ? { ...panel, max: '55%' } : panel);
+  await nextTick();
+  assert.equal(await split.vm.collapsePane('detail', 2), true);
+  assert.equal(split.vm.getPanelSizes().detail, 0);
+  assert.equal(await split.vm.expandPane('detail', 2), true);
+  assert.deepEqual(percentages(), [25, 25, 25, 25]);
 });
 
 test('SplitPane combines both pane bounds, restores the previous size, and supports host rejection', async () => {

@@ -23,6 +23,7 @@ import {
   type HysTableRowSelectionOptions,
   type TableNode,
 } from "./table";
+import { tableSearchPredicate } from "../components/HysTable/tableSearch";
 export function useTable<T extends object>(
   props: HysTableProps<T>,
   columns: () => readonly HysTableColumn<T>[],
@@ -139,6 +140,8 @@ export function useTable<T extends object>(
     }
     return { roots, all, map };
   });
+  const localSearch = ref<string>();
+  const search = computed(() => props.search ?? localSearch.value ?? props.defaultSearch ?? "");
   const selectedKeys = computed<HysTableKey[]>(() => [
     ...new Set(props.selectedRowKeys ?? ownSelected.value),
   ]);
@@ -233,11 +236,15 @@ export function useTable<T extends object>(
     const g = graph.value,
       keep = new Set<string>(),
       children = new Map<string, TableNode<T>[]>(),
-      matches = tableFilterPredicate(filters.value, columns());
+      matches = tableFilterPredicate(filters.value, columns()),
+      matchSearch = props.serverMode ? undefined : tableSearchPredicate(
+        search.value, columns(), props.searchColumns, props.searchMethod,
+      );
     if (!props.serverMode)
       for (let i = g.all.length - 1; i >= 0; i--) {
         const node = g.all[i];
-        if (matches(node.row) || node.children.some((c) => keep.has(c.token)))
+        if ((matches(node.row) && (!matchSearch || matchSearch(node.row))) ||
+          node.children.some((c) => keep.has(c.token)))
           keep.add(node.token);
       }
     const compare = tableCompare(sorts.value, columns());
@@ -298,7 +305,7 @@ export function useTable<T extends object>(
       if (
         expandedSet.value.has(node.token) ||
         (!props.serverMode &&
-          Object.values(filters.value).some((v) => v.length))
+          (search.value.trim() || Object.values(filters.value).some((v) => v.length)))
       ) {
         const list = processed.value.children.get(node.token) ?? [];
         for (let i = list.length - 1; i >= 0; i--) stack.push(list[i]);
@@ -381,6 +388,8 @@ export function useTable<T extends object>(
     filters: Object.fromEntries(
       Object.entries(filters.value).map(([key, values]) => [key, [...values]]),
     ),
+    ...(props.search !== undefined || props.defaultSearch !== undefined || localSearch.value !== undefined
+      ? { search: search.value } : {}),
     currentData: filteredRows.value,
   }));
   function notify(
@@ -399,6 +408,17 @@ export function useTable<T extends object>(
     emit("pageChange", next);
     notify(action, { page: next });
   }
+  function setSearch(value: string) {
+    if (props.disabled || !live.value || value === search.value) return;
+    if (props.search === undefined) localSearch.value = value;
+    localPage.value = 1;
+    emit("update:search", value);
+    emit("update:page", 1);
+    notify("search", { search: value, page: 1 });
+  }
+  watch(() => props.search, (value, previous) => {
+    if (value !== previous) localPage.value = 1;
+  });
   function changeSize(n: number) {
     if (busy.value || !live.value || !Number.isFinite(n) || n < 1) return;
     localSize.value = Math.floor(n);
@@ -811,6 +831,7 @@ export function useTable<T extends object>(
     selectionPage,
     sorts,
     filters,
+    search,
     processed,
     filteredRows,
     display,
@@ -830,6 +851,7 @@ export function useTable<T extends object>(
     setSort,
     setFilter,
     clearFilter,
+    setSearch,
     requestPage,
     changeSize,
     toggleRowSelection,

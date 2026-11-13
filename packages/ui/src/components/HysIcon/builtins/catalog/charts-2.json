@@ -1,0 +1,9 @@
+{
+  "tally-1": [{"tag":"path","attrs":{"d":"M4 4v16"}}],
+  "tally-2": [{"tag":"path","attrs":{"d":"M4 4v16"}},{"tag":"path","attrs":{"d":"M9 4v16"}}],
+  "tally-3": [{"tag":"path","attrs":{"d":"M4 4v16"}},{"tag":"path","attrs":{"d":"M9 4v16"}},{"tag":"path","attrs":{"d":"M14 4v16"}}],
+  "tally-4": [{"tag":"path","attrs":{"d":"M4 4v16"}},{"tag":"path","attrs":{"d":"M9 4v16"}},{"tag":"path","attrs":{"d":"M14 4v16"}},{"tag":"path","attrs":{"d":"M19 4v16"}}],
+  "tally-5": [{"tag":"path","attrs":{"d":"M4 4v16"}},{"tag":"path","attrs":{"d":"M9 4v16"}},{"tag":"path","attrs":{"d":"M14 4v16"}},{"tag":"path","attrs":{"d":"M19 4v16"}},{"tag":"path","attrs":{"d":"M22 6 2 18"}}],
+  "trending-up-down": [{"tag":"path","attrs":{"d":"M14.828 14.828 21 21"}},{"tag":"path","attrs":{"d":"M21 16v5h-5"}},{"tag":"path","attrs":{"d":"m21 3-9 9-4-4-6 6"}},{"tag":"path","attrs":{"d":"M21 8V3h-5"}}],
+  "weight": [{"tag":"circle","attrs":{"cx":"12","cy":"5","r":"3"}},{"tag":"path","attrs":{"d":"M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"}}]
+}

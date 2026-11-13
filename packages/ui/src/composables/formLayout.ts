@@ -1,13 +1,4 @@
-import {
-  computed,
-  onActivated,
-  onBeforeUnmount,
-  onDeactivated,
-  onMounted,
-  ref,
-  watch,
-  type Ref,
-} from "vue";
+export { useContainerWidth as useFormWidth } from "./useContainerWidth";
 
 export type HysFormBreakpoint = "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
 export type HysFormGridValue =
@@ -55,47 +46,4 @@ export function resolveFormCol(
     span: Math.max(0, Math.min(24, Math.floor(result.span ?? 24))),
     offset: Math.max(0, Math.min(23, Math.floor(result.offset ?? 0))),
   };
-}
-// Container width, rather than the viewport, also works in dialogs and sidebars.
-export function useFormWidth(element: Ref<HTMLElement | undefined>) {
-  const width = ref(0);
-  let observer: ResizeObserver | undefined,
-    active = true;
-  const measure = () => {
-    if (element.value)
-      width.value =
-        element.value.clientWidth ||
-        element.value.getBoundingClientRect().width;
-  };
-  function start() {
-    stop();
-    if (!active || !element.value) return;
-    measure();
-    if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(measure);
-      observer.observe(element.value);
-    } else if (typeof window !== "undefined")
-      window.addEventListener("resize", measure);
-  }
-  function stop() {
-    observer?.disconnect();
-    observer = undefined;
-    if (typeof window !== "undefined")
-      window.removeEventListener("resize", measure);
-  }
-  watch(element, start);
-  onMounted(start);
-  onActivated(() => {
-    active = true;
-    start();
-  });
-  onDeactivated(() => {
-    active = false;
-    stop();
-  });
-  onBeforeUnmount(() => {
-    active = false;
-    stop();
-  });
-  return computed(() => width.value);
 }

@@ -50,7 +50,11 @@ export function useFloating(
     matchWidth?: boolean | "min" | (() => boolean | "min");
     width?: () => number | string | undefined;
     maxWidth?: () => number | string | undefined;
-    requestOpen?: (open: boolean, restoreFocus?: boolean) => boolean | void;
+    requestOpen?: (
+      open: boolean,
+      restoreFocus?: boolean,
+      source?: "outside" | "escape" | "anchor",
+    ) => boolean | void;
     closeOnTab?: boolean;
     closeOnEscape?: boolean;
     closeOnOutside?: boolean;
@@ -85,7 +89,7 @@ export function useFloating(
     if (!open.value || !anchor.value || !panel.value) return;
     const a = anchor.value.getBoundingClientRect();
     if (!a.width && !a.height) {
-      close();
+      close(false, false, "anchor");
       return;
     }
     const gap = Number.isFinite(options.gap) ? options.gap! : 8,
@@ -127,8 +131,13 @@ export function useFloating(
       panel.value.style.maxWidth = `calc(100vw - ${pad * 2}px)`;
     }
     const position = positionFloating(
-      a, popupSize(panel.value), { width: vw, height: vh },
-      preferredPlacement(), gap, pad, options.autoAdjustOverflow !== false,
+      a,
+      popupSize(panel.value),
+      { width: vw, height: vh },
+      preferredPlacement(),
+      gap,
+      pad,
+      options.autoAdjustOverflow !== false,
     );
     let { x, y } = position;
     placement.value = position.placement;
@@ -178,14 +187,14 @@ export function useFloating(
       !anchor.value?.contains(e.target as Node) &&
       !panel.value?.contains(e.target as Node)
     )
-      close();
+      close(false, false, "outside");
   }
   function key(e: KeyboardEvent) {
     if (!open.value || !isTop?.()) return;
     if (e.key === "Escape" && options.closeOnEscape !== false) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      close(true);
+      close(true, false, "escape");
     } else if (e.key === "Tab" && options.closeOnTab !== false) {
       const focused = document.activeElement;
       if (anchor.value?.contains(focused)) {
@@ -222,8 +231,16 @@ export function useFloating(
     registration.value = undefined;
     isTop = undefined;
   }
-  function close(restore = false, force = false) {
-    if (!force && open.value && options.requestOpen?.(false, restore) === false)
+  function close(
+    restore = false,
+    force = false,
+    source?: "outside" | "escape" | "anchor",
+  ) {
+    if (
+      !force &&
+      open.value &&
+      options.requestOpen?.(false, restore, source) === false
+    )
       return;
     generation++;
     if (!open.value) return;
@@ -257,7 +274,7 @@ export function useFloating(
     if (token !== generation || !open.value) return;
     const entry = registerOverlay(
       "floating",
-      () => close(true),
+      () => close(true, false, "escape"),
       options.zIndex,
     );
     registration.value = entry;

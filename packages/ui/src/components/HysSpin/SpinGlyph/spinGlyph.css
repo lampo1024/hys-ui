@@ -1,0 +1,265 @@
+.hys-spin-glyph {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+}
+.hys-spin-track {
+  stroke: var(--hys-spin-track, currentColor);
+  opacity: var(--hys-spin-track-opacity, 0.2);
+}
+.hys-spin-meter {
+  transition: stroke-dasharray 180ms ease;
+}
+.hys-spin-glyph
+  :is(
+    .hys-spin-rotate,
+    .hys-spin-grid-cell,
+    .hys-spin-row-item,
+    .hys-spin-shape,
+    .hys-spin-ripple,
+    .hys-spin-ball,
+    .hys-spin-beat,
+    .hys-spin-rhythm,
+    .hys-spin-path
+  ) {
+  transform-origin: center;
+  animation-name: var(--hys-spin-keyframe);
+  animation-duration: var(--hys-spin-duration, 900ms);
+  animation-delay: calc(
+    var(--hys-spin-delay, 0ms) - var(--hys-spin-duration, 900ms) *
+      var(--hys-spin-i, 0) * var(--hys-spin-stagger, 0.11)
+  );
+  animation-direction: var(
+    --hys-spin-local-direction,
+    var(--hys-spin-direction, normal)
+  );
+  animation-iteration-count: var(--hys-spin-iterations, infinite);
+  animation-timing-function: var(--hys-spin-easing, linear);
+  animation-play-state: var(--hys-spin-play, running);
+}
+.hys-spin-rotate,
+[data-animation="square"] .hys-spin-shape {
+  --hys-spin-keyframe: hys-spin-rotate;
+}
+.hys-spin-reverse {
+  --hys-spin-local-direction: var(--hys-spin-reverse-direction, reverse);
+}
+.hys-spin-orbit {
+  --hys-spin-stagger: 0.25;
+}
+.hys-spin-grid-cell {
+  --hys-spin-keyframe: hys-spin-grid;
+  transform-box: fill-box;
+}
+.hys-spin-row-item {
+  transform-box: fill-box;
+}
+[data-animation="bouncing-dots"] .hys-spin-row-item {
+  --hys-spin-keyframe: hys-spin-hop;
+}
+[data-animation="flashing-dots"] .hys-spin-row-item {
+  --hys-spin-keyframe: hys-spin-flash;
+}
+[data-animation="scaling-dots"] .hys-spin-row-item {
+  --hys-spin-keyframe: hys-spin-grid;
+}
+[data-animation="wave"] .hys-spin-row-item {
+  --hys-spin-keyframe: hys-spin-wave;
+}
+[data-animation="bars"] .hys-spin-row-item {
+  --hys-spin-keyframe: hys-spin-bars;
+  transform-origin: center bottom;
+}
+[data-animation="cube-flip"] .hys-spin-shape {
+  --hys-spin-keyframe: hys-spin-flip;
+}
+.hys-spin-ripple {
+  --hys-spin-keyframe: hys-spin-ripple;
+  --hys-spin-stagger: 0.5;
+}
+.hys-spin-ball {
+  --hys-spin-keyframe: hys-spin-ball;
+}
+.hys-spin-beat {
+  --hys-spin-keyframe: hys-spin-beat;
+}
+.hys-spin-rhythm {
+  --hys-spin-keyframe: hys-spin-pulse;
+}
+[data-animation="breathing"] .hys-spin-rhythm {
+  --hys-spin-keyframe: hys-spin-breathing;
+}
+.hys-spin-path {
+  --hys-spin-keyframe: hys-spin-draw;
+  stroke-dasharray: 28 100;
+}
+[data-animation="spiral"] .hys-spin-path {
+  --hys-spin-keyframe: hys-spin-spiral;
+}
+[data-animation="draw"] .hys-spin-path {
+  --hys-spin-keyframe: hys-spin-trace;
+}
+[data-status="success"] .hys-spin-result {
+  animation: hys-spin-success 240ms ease-out both;
+}
+[data-status="error"] .hys-spin-result {
+  animation: hys-spin-error 260ms ease-out both;
+}
+@keyframes hys-spin-rotate {
+  to {
+    transform: rotate(var(--hys-spin-angle, 360deg));
+  }
+}
+@keyframes hys-spin-hop {
+  0%,
+  65%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes hys-spin-flash {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes hys-spin-grid {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.64);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes hys-spin-wave {
+  0%,
+  100% {
+    transform: scaleY(0.28);
+  }
+  50% {
+    transform: scaleY(0.98);
+  }
+}
+@keyframes hys-spin-bars {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  35% {
+    transform: scaleY(1);
+  }
+  70% {
+    transform: scaleY(0.48);
+  }
+}
+@keyframes hys-spin-flip {
+  0% {
+    transform: perspective(80px);
+  }
+  50% {
+    transform: perspective(80px) rotateY(180deg);
+  }
+  100% {
+    transform: perspective(80px) rotateY(180deg) rotateX(180deg);
+  }
+}
+@keyframes hys-spin-ripple {
+  0% {
+    transform: scale(0.28);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+@keyframes hys-spin-ball {
+  0%,
+  100% {
+    transform: translateY(9px) scaleX(1.18);
+  }
+  50% {
+    transform: translateY(-11px);
+  }
+}
+@keyframes hys-spin-beat {
+  0%,
+  100% {
+    transform: scale(0.8);
+  }
+  20% {
+    transform: scale(1.12);
+  }
+  43% {
+    transform: scale(0.86);
+  }
+  57% {
+    transform: scale(1.03);
+  }
+}
+@keyframes hys-spin-pulse {
+  0%,
+  100% {
+    transform: scale(0.65);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+@keyframes hys-spin-breathing {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.86);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+}
+@keyframes hys-spin-draw {
+  to {
+    stroke-dashoffset: -128;
+  }
+}
+@keyframes hys-spin-spiral {
+  to {
+    stroke-dashoffset: -128;
+    transform: rotate(var(--hys-spin-angle, 360deg));
+  }
+}
+@keyframes hys-spin-trace {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+  65%,
+  100% {
+    stroke-dasharray: 100 100;
+  }
+}
+@keyframes hys-spin-success {
+  from {
+    transform: scale(0.74);
+    opacity: 0.45;
+  }
+}
+@keyframes hys-spin-error {
+  28% {
+    transform: translateX(-2px);
+  }
+  58% {
+    transform: translateX(2px);
+  }
+}

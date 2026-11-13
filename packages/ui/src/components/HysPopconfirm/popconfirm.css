@@ -1,0 +1,107 @@
+.hys-ui-popconfirm {
+  position: relative;
+  display: inline-flex;
+  max-inline-size: 100%;
+  vertical-align: middle;
+}
+.hys-ui-popconfirm[data-external] {
+  inline-size: 0;
+  block-size: 0;
+}
+.hys-ui-popconfirm:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 3px;
+  border-radius: 5px;
+}
+.hys-popconfirm-layout {
+  --hys-popconfirm-tone: var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  display: grid;
+  gap: 12px;
+  min-inline-size: 0;
+  padding: 2px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.hys-popconfirm-layout[data-tone="neutral"] {
+  --hys-popconfirm-tone: currentColor;
+}
+.hys-popconfirm-layout[data-tone="success"] {
+  --hys-popconfirm-tone: var(--hys-ui-green, var(--hys-ui-theme-green));
+}
+.hys-popconfirm-layout[data-tone="warning"] {
+  --hys-popconfirm-tone: var(--hys-ui-orange, var(--hys-ui-theme-orange));
+}
+.hys-popconfirm-layout[data-tone="danger"] {
+  --hys-popconfirm-tone: var(--hys-ui-red, var(--hys-ui-theme-red));
+}
+.hys-popconfirm-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.hys-popconfirm-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 8px;
+  color: var(
+    --hys-popconfirm-icon-color,
+    color-mix(in srgb, var(--hys-popconfirm-tone) 72%, currentColor)
+  );
+  background: color-mix(in srgb, var(--hys-popconfirm-tone) 12%, transparent);
+}
+.hys-popconfirm-copy {
+  display: grid;
+  min-inline-size: 0;
+  gap: 3px;
+  align-self: center;
+}
+.hys-popconfirm-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+.hys-popconfirm-description {
+  color: var(
+    --hys-popconfirm-description-color,
+    color-mix(in srgb, currentColor 78%, transparent)
+  );
+}
+.hys-popconfirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.hys-popconfirm-actions[data-align="start"] {
+  justify-content: flex-start;
+}
+.hys-popconfirm-actions[data-align="center"] {
+  justify-content: center;
+}
+.hys-popconfirm-error {
+  padding: 7px 9px;
+  border-inline-start: 2px solid var(--hys-ui-red, var(--hys-ui-theme-red));
+  border-radius: 5px;
+  background: color-mix(
+    in srgb,
+    var(--hys-ui-red, var(--hys-ui-theme-red)) 10%,
+    transparent
+  );
+}
+.hys-popconfirm-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (forced-colors: active) {
+  .hys-popconfirm-icon,
+  .hys-popconfirm-error {
+    border: 1px solid CanvasText;
+  }
+}
