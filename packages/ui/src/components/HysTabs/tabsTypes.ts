@@ -39,6 +39,9 @@ export interface HysTabLoadContext {
   signal: AbortSignal;
 }
 export interface HysTabItem {
+  panelClass?: string;
+  panelStyle?: CSSProperties;
+  panelTabIndex?: 0 | -1;
   label: string;
   value: HysTabValue;
   content?: string;
@@ -248,6 +251,9 @@ export interface HysTabsSlots {
 export type HysTabPaneProps = HysTabItem;
 export interface HysTabPaneSlots {
   default?: (scope: HysTabPanelScope) => VNodeChild;
+  loading?: (scope: HysTabPanelScope) => VNodeChild;
+  error?: (scope: HysTabPanelScope) => VNodeChild;
+  empty?: (scope: HysTabPanelScope) => VNodeChild;
   label?: (scope: HysTabScope) => VNodeChild;
   icon?: (scope: HysTabScope) => VNodeChild;
   badge?: (scope: HysTabScope) => VNodeChild;

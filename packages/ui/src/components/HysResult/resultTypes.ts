@@ -7,6 +7,7 @@ export type HysResultStatus =
   | "success"
   | "warning"
   | "error"
+  | "pending"
   | HysResultCode
   | 403
   | 404
@@ -22,12 +23,18 @@ export interface HysResultProps {
   headingLevel?: 2 | 3 | 4 | 5 | 6;
   announce?: "off" | "polite" | "assertive";
   announcement?: string;
+  layout?: "stacked" | "inline";
+  detailsLabel?: string;
+  detailsOpen?: boolean;
+  defaultDetailsOpen?: boolean;
+  progress?: number;
 }
 export interface HysResultContext {
   status: Exclude<HysResultStatus, number>;
   code?: HysResultCode;
   title: string;
   subtitle?: string;
+  detailsOpen?: boolean;
 }
 export interface HysResultSlots {
   default?: (context: HysResultContext) => VNodeChild;
@@ -35,6 +42,7 @@ export interface HysResultSlots {
   title?: (context: HysResultContext) => VNodeChild;
   subtitle?: (context: HysResultContext) => VNodeChild;
   extra?: (context: HysResultContext) => VNodeChild;
+  details?: (context: HysResultContext) => VNodeChild;
 }
 export interface HysResultInstance {
   readonly element: HTMLElement | undefined;

@@ -33,7 +33,7 @@ export function createPopupReferenceBinding(
   function detach() {
     if (externalNode)
       for (const [name, handler] of Object.entries(events))
-        externalNode.removeEventListener(name, handler as EventListener);
+        externalNode.removeEventListener(name, handler as EventListener, name === "pointerdown");
     if (externalNode && externalAria)
       for (const [key, value] of Object.entries(externalAria)) {
         if (value === null) externalNode.removeAttribute(key);
@@ -53,7 +53,7 @@ export function createPopupReferenceBinding(
     );
     syncAria(open);
     for (const [name, handler] of Object.entries(events))
-      node.addEventListener(name, handler as EventListener);
+      node.addEventListener(name, handler as EventListener, name === "pointerdown");
   }
   return { attach, detach, syncAria };
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { HysSplitPane } from "hys-ui";
+import { HysCheckbox, HysSplitPane } from "hys-ui";
 
 const size = ref(38);
 const lazy = ref(true);
@@ -8,7 +8,7 @@ const lazy = ref(true);
 
 <template>
   <div class="demo-panel">
-    <label><input v-model="lazy" type="checkbox" /> 释放分隔条后应用尺寸</label>
+    <HysCheckbox v-model="lazy" label="释放分隔条后应用尺寸" />
     <HysSplitPane
       v-model="size"
       :lazy="lazy"

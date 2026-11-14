@@ -128,6 +128,21 @@
             </td>
           </tr>
           <tr>
+            <td>wrap</td>
+            <td>
+              boolean | number，省略或 false 时使用默认样式。true
+              保留换行并完整显示文本。大于等于 1 的有限数值向下取整，用作最大显示行数。
+              已开启 overflowTooltip 的列在多行截断时仍可查看全文。
+            </td>
+          </tr>
+          <tr>
+            <td>emptyText</td>
+            <td>
+              string，默认继承 emptyCellText。原值为 null、undefined
+              或空字符串时替代默认正文与 formatter，命名插槽仍优先。
+            </td>
+          </tr>
+          <tr>
             <td>renderHeader</td>
             <td>
               接收列配置和当前排序，返回标题内容。列专属表头插槽和 header-cell 插槽优先。

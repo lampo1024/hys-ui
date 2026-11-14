@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { HysAccordion } from "hys-ui";
 const tokens = [
   ["--hys-number-font", "数值字号、粗细、字体与行高，接受 font 简写"],
   ["--hys-number-width / --hys-number-align", "数值区域宽度与整体对齐方式"],
@@ -121,8 +122,8 @@ const tokens = [
         <code>['mount', 'activate']</code> 可同时在首次进入和重新进入时播放。
       </li>
     </ul>
-    <details>
-      <summary>CSS 自定义属性</summary>
+    <HysAccordion size="sm" :items="[{ title: 'CSS 自定义属性' }]">
+      <template #content>
       <div class="api-scroll">
         <table>
           <thead>
@@ -141,17 +142,12 @@ const tokens = [
           </tbody>
         </table>
       </div>
-    </details>
+      </template>
+    </HysAccordion>
   </section>
 </template>
 
 <style scoped>
-.animated-number-reference summary {
-  margin-block-start: 1rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
 .animated-number-reference td:first-child {
   overflow-wrap: anywhere;
 }

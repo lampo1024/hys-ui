@@ -12,6 +12,8 @@ const instance = ref<HysPopupSurfaceInstance>();
         >切换</HysButton
       ><HysButton variant="ghost" @click="instance?.updatePosition()"
         >重新定位</HysButton
+      ><HysButton variant="ghost" @click="instance?.focus({ suppressTooltip: true })"
+        >收起并聚焦参考元素</HysButton
       >
     </div>
     <div class="demo-content">
@@ -26,6 +28,7 @@ const instance = ref<HysPopupSurfaceInstance>();
     </div>
     <p class="scenario-note">
       show、hide、close 和 toggle 返回请求是否被接受；受控模式下同样由宿主决定。
+      使用 <code>focus({ suppressTooltip: true })</code> 恢复焦点时会取消待显示的提示并收起已显示的提示。
     </p>
   </div>
 </template>

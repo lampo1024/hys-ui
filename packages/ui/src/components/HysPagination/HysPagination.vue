@@ -22,8 +22,14 @@ const props = withDefaults(defineProps<{
   defaultPageSize?: number
   /** 每页条数选项。当前条数会保留在列表中。 */
   pageSizeOptions?: number[]
+  /** 更新页大小后的页码策略。 */
+  pageSizeStrategy?: 'preserve-page' | 'first' | 'preserve-item'
   /** 当前页左右各保留的页码数量，取值 0–5。 */
   siblingCount?: number
+  /** 将省略号替换为向前或向后跳转的按钮。 */
+  jumpGaps?: boolean
+  /** 每次点击省略号按钮跳转的页数。 */
+  gapStep?: number
   showSizeChanger?: boolean
   showQuickJumper?: boolean
   /** 默认布局是否显示记录总数；需要 total 或 total 插槽。 */
@@ -53,11 +59,15 @@ const props = withDefaults(defineProps<{
     previous: string
     next: string
     last: string
+    jumpBackward: string
+    jumpForward: string
   }>
 }>(), {
   defaultPage: 1,
   defaultPageSize: 10,
+  pageSizeStrategy: 'preserve-page',
   siblingCount: 1,
+  jumpGaps: false,
   showSizeChanger: false,
   showQuickJumper: false,
   showTotal: true,
@@ -83,7 +93,7 @@ type LayoutItem = Control | 'total' | 'sizes' | 'jumper'
 type LayoutGroup = { kind: 'controls'; controls: Control[] } | { kind: 'total' | 'sizes' | 'jumper' }
 const slots = defineSlots<{
   total?: (props: { total: number | undefined; start: number; end: number; pageCount: number }) => unknown
-  item?: (props: { type: NavigationItem | 'page'; page: number; active: boolean; disabled: boolean }) => unknown
+  item?: (props: { type: NavigationItem | 'page' | 'jump-backward' | 'jump-forward'; page: number; active: boolean; disabled: boolean }) => unknown
   'jump-button'?: () => unknown
 }>()
 
@@ -121,6 +131,8 @@ const t = computed(() => ({
   previous: '上一页',
   next: '下一页',
   last: '末页',
+  jumpBackward: '向前跳 {pages} 页',
+  jumpForward: '向后跳 {pages} 页',
   ...props.labels,
 }))
 const totalLabel = computed(() => t.value.total
@@ -181,6 +193,15 @@ const sections = computed(() => {
 })
 
 type PageItem = number | 'left-gap' | 'right-gap'
+const gapTargets = computed(() => {
+  const step = positiveInteger(props.gapStep, 5)
+  const backward = Math.max(1, current.value - step)
+  const forward = Math.min(pages.value, current.value + step)
+  return {
+    'left-gap': { page: backward, type: 'jump-backward' as const, label: t.value.jumpBackward.replace('{pages}', String(current.value - backward)) },
+    'right-gap': { page: forward, type: 'jump-forward' as const, label: t.value.jumpForward.replace('{pages}', String(forward - current.value)) },
+  }
+})
 const items = computed<PageItem[]>(() => {
   const last = pages.value
   const siblings = Number.isFinite(props.siblingCount)
@@ -199,7 +220,7 @@ const items = computed<PageItem[]>(() => {
   for (const [i, n] of nums.entries()) {
     const gap = i ? n - nums[i - 1] : 0
     if (gap === 2) result.push(n - 1)
-    if (gap > 2) result.push(i === 1 ? 'left-gap' : 'right-gap')
+    if (gap > 2) result.push(n <= current.value ? 'left-gap' : 'right-gap')
     result.push(n)
   }
   return result
@@ -236,8 +257,14 @@ function changeSize(value: string) {
   emit('pageSizeChange', next)
 }
 // Clamp against the applied page count after the host has handled both model updates.
-watch(pages, (next, previous) => {
-  if (next < previous && requestedPage.value > next) requestPage(next)
+watch([pageSize, pages, () => props.page], ([size, count, page], [previousSize, previousCount, previousControlledPage]) => {
+  const previousPage = Math.min(requestedPage.value, previousCount)
+  if (size !== previousSize && page === previousControlledPage && props.pageSizeStrategy !== 'preserve-page') {
+    const target = props.pageSizeStrategy === 'first'
+      ? 1
+      : Math.min(count, Math.floor(((previousPage - 1) * previousSize) / size) + 1)
+    if (target !== requestedPage.value) requestPage(target)
+  } else if (count < previousCount && requestedPage.value > count) requestPage(count)
 })
 function submitJump() {
   if (validJump.value && jumpDraft.value !== null) changePage(jumpDraft.value)
@@ -288,6 +315,18 @@ function submitJump() {
                     @click="changePage(item)"
                   >
                     <slot name="item" type="page" :page="item" :active="item === current" :disabled="busy">{{ item }}</slot>
+                  </HysButton>
+                  <HysButton
+                    v-else-if="jumpGaps"
+                    variant="secondary"
+                    size="sm"
+                    class="hys-ui-pf-pagination-page"
+                    :disabled="busy"
+                    :aria-label="gapTargets[item].label"
+                    :title="gapTargets[item].label"
+                    @click="changePage(gapTargets[item].page)"
+                  >
+                    <slot name="item" :type="gapTargets[item].type" :page="gapTargets[item].page" :active="false" :disabled="busy">…</slot>
                   </HysButton>
                   <span v-else class="hys-ui-pf-pagination-gap" aria-hidden="true">…</span>
                 </template>

@@ -21,6 +21,7 @@ HYS UI 是面向管理后台和业务应用的 Vue 3 组件库。用它搭建筛
 - **`HysTable`** 适合常规列表和树形数据。支持固定列、展开行、合并单元格、表尾汇总和分页。[表格示例](https://lampo1024.github.io/hys-ui/components/hys-table/)
 - **`HysDataGrid`** 适合让用户自行筛选和整理数据。支持按列搜索、拖拽调整列顺序、列显隐、分组、CSV 导出和服务端查询。[高级表格示例](https://lampo1024.github.io/hys-ui/components/hys-data-grid/)
 - **`HysVirtualTable`** 适合需要连续滚动的大数据列表。按视口渲染行，也可开启列虚拟化。支持固定行列和滚动加载。[虚拟表格示例](https://lampo1024.github.io/hys-ui/components/hys-virtual-table/)
+- **`HysProGrid`** 适合预算审批等可编辑数据工作台。复用 DataGrid 的查询与列布局，提供类型化编辑、异步校验和保存重试。使用时在 `hys-ui/style.css` 之外引入 `hys-ui/pro-grid.css`。
 
 例如，任务管理页可以用日期范围和多选下拉框筛选任务，用高级表格展示结果，用对话框编辑记录。需要调整计划时，可以在甘特图里拖动任务、查看前置依赖和撤销排期修改。
 

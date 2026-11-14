@@ -25,7 +25,6 @@ import {
 } from "lucide-vue-next";
 import { useHysRootAttrs } from "../../config";
 import PopupMotion from "../../motion/PopupMotion";
-import { useMotion } from "../../motion/useMotion";
 import {
   gridField,
   gridKey,
@@ -42,7 +41,10 @@ import {
   type HysDataGridSort,
 } from "../../composables/dataGrid";
 import { useDataGridRemote } from "../../composables/useDataGridRemote";
+import { gridPageCount } from "../../composables/gridCore";
 import { useTabularRowNavigation } from "../../composables/useTabularRowNavigation";
+import { tabularCellControls, useTabularCellNavigation } from "../../composables/useTabularCellNavigation";
+import { tabularCellWrap, tabularDisplayText } from "../../composables/tabularCellDisplay";
 import {
   gridMinColumnWidth as minWidth,
   gridMaxColumnWidth as maxWidth,
@@ -61,7 +63,9 @@ import {
   type HysDataGridRowContext,
 } from "./gridPresentation";
 import { useGridContextMenu } from "./useGridContextMenu";
-import type { HysContextMenuItem, HysMenuKey, HysMenuSelectInfo } from "../../composables/menu";
+import { useGridRowWindow } from "./useGridRowWindow";
+import { useGridColumnMotion } from "./useGridColumnMotion";
+import type { HysContextMenuItem, HysContextMenuSlots, HysMenuKey, HysMenuSelectInfo } from "../../composables/menu";
 import HysContextMenu from "../HysContextMenu/HysContextMenu.vue";
 import HysSortableList from "../HysSortableList/HysSortableList.vue";
 import HysSelect from "../HysSelect/HysSelect.vue";
@@ -74,12 +78,15 @@ import HysPagination from "../HysPagination/HysPagination.vue";
 const props = withDefaults(defineProps<HysDataGridProps<T>>(), {
   rowKey: "id",
   selectable: true,
+  showToolbar: true,
+  pagination: true,
   emptyText: "暂无数据",
   density: "normal",
   parentKey: "parentId",
   selectionType: "checkbox",
   reserveSelection: undefined,
   summaryScope: "filtered",
+  headerMenuButton: true,
 });
 const emit = defineEmits<{
   rowClick: [row: T];
@@ -95,7 +102,10 @@ const emit = defineEmits<{
   rowContextmenu: [context: HysDataGridRowContext<T>, event: MouseEvent];
   cellClick: [context: HysDataGridCellContext<T>, event: MouseEvent];
   cellDblclick: [context: HysDataGridCellContext<T>, event: MouseEvent];
+  cellKeydown: [context: HysDataGridCellContext<T>, event: KeyboardEvent];
   cellContextmenu: [context: HysDataGridCellContext<T>, event: MouseEvent];
+  cellMouseEnter: [context: HysDataGridCellContext<T>, event: MouseEvent];
+  cellMouseLeave: [context: HysDataGridCellContext<T>, event: MouseEvent];
   contextMenuSelect: [key: HysMenuKey, context: HysDataGridContext<T>, info: HysMenuSelectInfo];
   "update:groupBy": [key: string];
   groupChange: [key: string];
@@ -112,7 +122,7 @@ const emit = defineEmits<{
     payload: { keys: HysDataGridKey[]; column: string; value: string },
   ];
 }>();
-defineSlots<{
+const slots = defineSlots<{
   empty?(scope: { query: HysDataGridQuery }): unknown;
   loading?(): unknown;
   error?(scope: { error: unknown; retry: () => void }): unknown;
@@ -123,12 +133,17 @@ defineSlots<{
   "header-cell"?(scope: HysDataGridHeaderContext<T>): unknown;
   "header-group"?(scope: { group: HysDataGridHeaderGroup; columns: readonly GridColumn<T>[]; pinned?: HysDataGridPin }): unknown;
   "body-cell"?(scope: HysDataGridCellContext<T>): unknown;
+  "row-number"?(scope: HysDataGridRowContext<T>): unknown;
+  "row-number-header"?(): unknown;
+  /** Interactive control beside a context menu item. */
+  "context-menu-item-control"?(scope: Parameters<NonNullable<HysContextMenuSlots["item-control"]>>[0]): unknown;
   [key: string]: ((scope: any) => unknown) | undefined;
 }>();
 
 const hysRootAttrs = useHysRootAttrs();
 const tableRef = ref<HTMLElement | null>(null);
 const scrollRef = ref<HTMLElement | null>(null);
+const columnMotion = useGridColumnMotion(() => scrollRef.value);
 const menuRef = ref<HTMLElement | null>(null);
 const settingsOpen = ref(false);
 const filtersVisible = ref(false);
@@ -187,7 +202,7 @@ const search = computed({
 const filters = computed(() => requestedQuery.value.filters);
 const filterTerm = (key: string) =>
   Object.hasOwn(filters.value, key) ? filters.value[key] : "";
-const safePageSize = computed(() => requestedQuery.value.pageSize);
+const safePageSize = computed(() => props.pagination ? requestedQuery.value.pageSize : Math.max(1, props.rows.length));
 const isRemote = computed(() => props.serverMode || !!props.loadRows);
 const localGroupBy = ref<string>();
 const groupBy = computed(() => {
@@ -290,7 +305,7 @@ const totalCount = computed(() =>
 const totalPages = computed(() =>
   props.loadRows && remoteTotal.value === undefined
     ? Number.MAX_SAFE_INTEGER
-    : Math.max(1, Math.ceil(totalCount.value / safePageSize.value)),
+    : props.pagination ? gridPageCount(totalCount.value, safePageSize.value) : 1,
 );
 const page = computed(() => query.value.page);
 const pageRows = computed(() =>
@@ -440,17 +455,49 @@ const displayRows = computed<DisplayRow[]>(() => {
   }
   return result;
 });
-const navigableRows = computed(() => new Map(displayRows.value.flatMap(
-  (entry) => entry.kind === "row" ? [[gridToken(entry.item.id), entry.item] as const] : [],
+const navigableEntries = computed(() => new Map(displayRows.value.flatMap(
+  (entry) => entry.kind === "row" ? [[gridToken(entry.item.id), entry] as const] : [],
 )));
-const navigableTokens = computed(() => [...navigableRows.value.keys()]);
+const navigableTokens = computed(() => [...navigableEntries.value.keys()]);
+const rowWindow = useGridRowWindow(() => displayRows.value,
+  (entry) => entry.kind === "row" ? props.virtualRows?.height(entry.item.row) : undefined,
+  () => groupBy.value ? undefined : props.virtualRows,
+  () => scrollRef.value);
+const windowedRows = rowWindow.window;
+const horizontal = shallowRef({ left: 0, width: 0 });
+function scrollWindow() {
+  gridMenu.close();
+  rowWindow.update();
+  if (props.virtualColumns && scrollRef.value) {
+    const { scrollLeft, clientWidth } = scrollRef.value;
+    horizontal.value = { left: Math.abs(scrollLeft), width: clientWidth };
+  }
+}
+function focusGridCell(key: HysDataGridKey, columnKey: string, focus = true) {
+  const token = gridToken(key);
+  const reveal = () => cellNavigationState.focusCell(token, columnKey, focus);
+  if (reveal()) return true;
+  if (!navigableColumnKeys.value.has(columnKey)) return false;
+  const row = navigableTokens.value.indexOf(token);
+  if (row < 0) return false;
+  const index = orderedColumns.value.findIndex(({ key }) => key === columnKey);
+  const element = scrollRef.value;
+  const needsColumn = !!(props.virtualColumns && element && !bodyColumns.value.some((item) => item.column?.key === columnKey));
+  if (needsColumn && element) {
+    element.scrollLeft = columnOffsets.value[index] * (getComputedStyle(element).direction === "rtl" ? -1 : 1);
+    scrollWindow();
+  }
+  if (rowWindow.reveal(row, reveal)) return true;
+  if (needsColumn) void nextTick(reveal);
+  return needsColumn;
+}
 const rowNavigation = useTabularRowNavigation({
-  enabled: () => !!props.keyboardNavigation && !busy.value && failure.value == null,
+  enabled: () => !!props.keyboardNavigation && !props.cellNavigation && !busy.value && failure.value == null,
   table: () => scrollRef.value?.querySelector(":scope > table"),
   tokens: () => navigableTokens.value,
   attribute: "data-grid-row",
   toggle(token) {
-    const item = navigableRows.value.get(token);
+    const item = navigableEntries.value.get(token)?.item;
     if (!item || !props.selectable || !canSelect(item)) return false;
     toggleRowSelection(item.id);
     return true;
@@ -481,11 +528,16 @@ function setGroupsExpanded(expanded: boolean) {
   }
   collapsedGroups.value = next;
 }
-function beginEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
-  if (!props.editable || !column.editable) return;
-  const target = { id: item.id, key: column.key };
+function canEdit(context: HysDataGridCellContext<T>) {
+  const editable = context.column.editable;
+  return !!props.editable && !busy.value &&
+    (typeof editable === "function" ? editable(context) : editable === true);
+}
+function beginEdit(entry: DataEntry, column: GridColumn<T>, columnIndex: number) {
+  if (!canEdit(cellContext(entry, column, columnIndex))) return false;
+  const target = { id: entry.item.id, key: column.key };
   editing.value = target;
-  editValue.value = cellText(item.row, column);
+  editValue.value = cellText(entry.item.row, column);
   void nextTick(() => {
     if (editing.value?.id !== target.id || editing.value?.key !== target.key) return;
     const row = Array.from(scrollRef.value?.querySelectorAll<HTMLTableRowElement>("[data-grid-row]") ?? [])
@@ -493,11 +545,14 @@ function beginEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
     const cell = Array.from(row?.cells ?? []).find((element) => element.dataset.columnKey === target.key);
     cell?.querySelector("input")?.focus();
   });
+  return true;
 }
-function commitEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
-  if (editing.value?.id !== item.id || editing.value?.key !== column.key)
-    return;
+function commitEdit(entry: DataEntry, column: GridColumn<T>, index: number, returnFocus = false) {
+  if (!isEditing(entry.item, column)) return;
   editing.value = null;
+  const { item } = entry;
+  if (returnFocus) void nextTick(() => cellNavigationState.focusCell(gridToken(item.id), column.key));
+  if (!canEdit(cellContext(entry, column, index))) return;
   emit("cellEdit", {
     row: item.row,
     rowKey: item.id,
@@ -508,13 +563,33 @@ function commitEdit(item: GridTreeRow<T>, column: GridColumn<T>) {
 function isEditing(item: GridTreeRow<T>, column: GridColumn<T>) {
   return editing.value?.id === item.id && editing.value?.key === column.key;
 }
-function cancelEdit(event: KeyboardEvent) {
-  if (!event.isComposing && event.keyCode !== 229) editing.value = null;
+function cancelEdit(event: KeyboardEvent, item: GridTreeRow<T>, column: GridColumn<T>) {
+  if (event.isComposing || event.keyCode === 229) return;
+  editing.value = null;
+  void nextTick(() => cellNavigationState.focusCell(gridToken(item.id), column.key));
 }
+const batchKeys = computed(() => {
+  const column = columnMap.value.get(batchColumn.value);
+  if (!props.editable || busy.value || !column?.editable) return [];
+  const editable = column.editable;
+  if (editable === true) return selected.value;
+  const columnIndex = orderedColumns.value.indexOf(column);
+  const tree = props.treeMode
+    ? new Map(gridTree(indexedRows.value, props.parentKey, new Set(rowMap.value.keys())).map((row) => [row.id, row]))
+    : undefined;
+  return selected.value.filter((key) => {
+    const entry = navigableEntries.value.get(gridToken(key));
+    if (entry) return editable(cellContext(entry, column, columnIndex));
+    const item = rowMap.value.get(key);
+    if (!item) return false;
+    const row = tree?.get(key) ?? { ...item, depth: 0, hasChildren: false };
+    return editable(cellContext({ kind: "row", key: gridToken(key), item: row, pageIndex: -1 }, column, columnIndex));
+  });
+});
 function commitBatch() {
-  if (!batchColumn.value || !selected.value.length) return;
+  if (!batchKeys.value.length) return;
   emit("batchEdit", {
-    keys: [...selected.value],
+    keys: [...batchKeys.value],
     column: batchColumn.value,
     value: batchValue.value,
   });
@@ -661,7 +736,10 @@ function getColumnLayout(): HysDataGridColumnLayoutSnapshot {
     ...(Object.keys(pins.value).length ? { pins: { ...pins.value } } : {}) };
 }
 function setColumnLayout(layout: HysDataGridColumnLayout) {
-  const next = normalizeGridColumnLayout(columnMap.value, layout);
+  const next = normalizeGridColumnLayout(columnMap.value, {
+    ...layout,
+    order: props.columnOrder ?? layout.order,
+  });
   order.value = next.order;
   hidden.value = next.hidden;
   widths.value = next.widths;
@@ -676,14 +754,18 @@ const widthOf = (column: GridColumn<T>) =>
       : positiveInteger(column.width, 160);
 
 watch(
-  () =>
+  () => [
+    props.columnOrder?.slice(),
     props.columns.map((column) => [
       column.key,
       column.hideable,
       column.pinnable,
       column.minWidth,
       column.maxWidth,
+      column.resizable,
+      column.width,
     ]),
+  ],
   (_, previous) => {
     if (previous) cancelResize();
     setColumnLayout(getColumnLayout());
@@ -704,6 +786,37 @@ const orderedColumns = computed(() => [
   ...visibleColumns.value.filter((column) => !pinOf(column)),
   ...visibleColumns.value.filter((column) => pinOf(column) === "right"),
 ]);
+const navigableColumnKeys = computed(() => new Set(orderedColumns.value.map(({ key }) => key)));
+const cellView = computed(() => {
+  if (busy.value || failure.value != null) return undefined;
+  const entries = navigableEntries.value;
+  const columns = orderedColumns.value;
+  const columnIndices = new Map(columns.map(({ key }, index) => [key, index]));
+  return {
+    rowKeys: [...entries.values()].map(({ item }) => item.id),
+    columnKeys: [...columnIndices.keys()],
+    getCell(rowKey: HysDataGridKey, columnKey: string) {
+      const entry = entries.get(gridToken(rowKey));
+      const index = columnIndices.get(columnKey);
+      return entry && index !== undefined ? cellContext(entry, columns[index], index) : undefined;
+    },
+  };
+});
+const cellNavigationState = useTabularCellNavigation({
+  enabled: () => !!props.cellNavigation && !busy.value && failure.value == null,
+  table: () => scrollRef.value?.querySelector(":scope > table"),
+  first: () => {
+    const rowToken = navigableTokens.value[0];
+    const columnKey = orderedColumns.value[0]?.key;
+    return rowToken !== undefined && columnKey !== undefined ? { rowToken, columnKey } : undefined;
+  },
+  has: (rowToken, columnKey) => navigableEntries.value.has(rowToken) && navigableColumnKeys.value.has(columnKey),
+});
+watch([navigableEntries, navigableColumnKeys, busy], () => {
+  const cell = editing.value;
+  if (cell && (busy.value || !navigableEntries.value.has(gridToken(cell.id)) || !navigableColumnKeys.value.has(cell.key)))
+    editing.value = null;
+});
 const headerGroups = computed(() => gridHeaderGroups(orderedColumns.value, pinOf));
 const hasHeaderGroups = computed(() => headerGroups.value.some(({ group }) => !!group));
 const settingsItems = computed(() =>
@@ -752,7 +865,7 @@ function pinColumn(key: string, side: HysDataGridPin | null) {
       pinOf(column) === (side ?? undefined)) return false;
   cancelResize();
   endColumnDrag();
-  stopColumnAnimations();
+  columnMotion.cancel();
   pins.value = { ...pins.value, [key]: side };
   if (column.pinned === (side ?? undefined)) delete pins.value[key];
   return true;
@@ -763,7 +876,11 @@ function resizeColumn(key: string, width: number) {
   const next = boundWidth(column, width);
   if (next === widthOf(column)) return false;
   cancelResize();
-  widths.value = { ...widths.value, [key]: next };
+  return commitWidth(key, next);
+}
+function commitWidth(key: string, width: number) {
+  if (props.commitColumnWidth) return props.commitColumnWidth(key, width);
+  widths.value = { ...widths.value, [key]: width };
   return true;
 }
 function resetColumnWidth(key: string) {
@@ -777,12 +894,41 @@ function resetColumnWidth(key: string) {
 const tableWidth = computed(() =>
   orderedColumns.value.reduce(
     (sum, column) => sum + widthOf(column),
-    props.selectable ? 44 : 0,
+    (props.selectable ? 44 : 0) + (props.rowNumbers ? 48 : 0),
   ),
 );
+const tableColumnCount = computed(() =>
+  Math.max(
+    1,
+    orderedColumns.value.length + Number(props.selectable) +
+      Number(props.rowNumbers) + Number(!!props.fillRemainingWidth),
+  ),
+);
+const columnOffsets = computed(() => {
+  const offsets = [0];
+  for (const column of orderedColumns.value) offsets.push(offsets.at(-1)! + widthOf(column));
+  return offsets;
+});
+const bodyColumns = computed(() => {
+  const columns = orderedColumns.value;
+  const offsets = columnOffsets.value;
+  const { left, width } = horizontal.value;
+  const entries: ({ column: GridColumn<T>; index: number; skip?: undefined } | { skip: number; index: number; column?: undefined })[] = [];
+  for (const [index, column] of columns.entries()) {
+    if (!props.virtualColumns || pinOf(column) ||
+      (offsets[index + 1] >= left - 320 && offsets[index] <= left + (width || 900) + 320)) {
+      entries.push({ column, index });
+    } else {
+      const previous = entries.at(-1);
+      if (previous?.skip) previous.skip++;
+      else entries.push({ skip: 1, index });
+    }
+  }
+  return entries;
+});
 const stickyOffsets = computed(() => {
   const offsets = new Map<string, { left?: string; right?: string }>();
-  let left = props.selectable ? 44 : 0;
+  let left = (props.selectable ? 44 : 0) + (props.rowNumbers ? 48 : 0);
   for (const column of orderedColumns.value) {
     if (pinOf(column) !== "left") continue;
     offsets.set(column.key, { left: left + "px" });
@@ -846,6 +992,7 @@ let resizing:
       pointer: number;
       start: number;
       width: number;
+      scale: number;
       cursor: string;
     }
   | undefined;
@@ -855,7 +1002,7 @@ function updateResize(event: PointerEvent) {
   if (!resizing || event.pointerId !== resizing.pointer) return;
   nextWidth = boundWidth(
     resizing.column,
-    resizing.width + event.clientX - resizing.start,
+    resizing.width + (event.clientX - resizing.start) / resizing.scale,
   );
   if (resizeFrame) return;
   resizeFrame = requestAnimationFrame(() => {
@@ -890,23 +1037,25 @@ function cancelResizeKey(event: KeyboardEvent) {
 }
 function finishResize(event: PointerEvent) {
   if (!resizing || event.pointerId !== resizing.pointer) return;
-  const { column, start, width } = resizing;
-  const movement = event.clientX - start;
+  const { column, start, width, scale } = resizing;
+  const movement = (event.clientX - start) / scale;
   const finalWidth =
     movement === 0 ? width : boundWidth(column, width + movement);
   cancelResize();
-  if (finalWidth !== width)
-    widths.value = { ...widths.value, [column.key]: finalWidth };
+  if (finalWidth !== width) commitWidth(column.key, finalWidth);
 }
 function startResize(event: PointerEvent, column: GridColumn<T>) {
   if (column.resizable === false || event.button !== 0 || resizing) return;
   event.preventDefault();
   event.stopPropagation();
+  const handle = event.currentTarget as HTMLElement;
+  const scale = handle.getBoundingClientRect().width / handle.offsetWidth;
   resizing = {
     column,
     pointer: event.pointerId,
     start: event.clientX,
     width: widthOf(column),
+    scale: Number.isFinite(scale) && scale > 0 ? scale : 1,
     cursor: document.body.style.cursor,
   };
   document.body.style.cursor = "col-resize";
@@ -932,10 +1081,9 @@ function resizeWithKeyboard(event: KeyboardEvent, column: GridColumn<T>) {
   if (value === undefined) return;
   event.preventDefault();
   const next = boundWidth(column, value);
-  if (next !== current) widths.value = { ...widths.value, [column.key]: next };
+  if (next !== current) commitWidth(column.key, next);
 }
 
-const { effectiveMotion } = useMotion();
 const dragging = ref<string | null>(null);
 const columnDropTarget = ref<{
   key: string;
@@ -947,18 +1095,6 @@ let pendingColumnHover: {
   column: GridColumn<T>;
   x: number;
 } | null = null;
-let columnAnimationGeneration = 0;
-const columnAnimations = new Set<Animation>();
-const maxColumnAnimations = 160;
-
-function stopColumnAnimations() {
-  columnAnimationGeneration++;
-  for (const animation of columnAnimations) animation.cancel();
-  columnAnimations.clear();
-}
-watch(effectiveMotion, (value) => {
-  if (value === "off") stopColumnAnimations();
-});
 function endColumnDrag() {
   cancelAnimationFrame(columnDragFrame);
   columnDragFrame = 0;
@@ -967,11 +1103,11 @@ function endColumnDrag() {
   columnDropTarget.value = null;
 }
 function startColumnDrag(event: DragEvent, column: GridColumn<T>) {
-  if (resizing || column.reorderable === false || !event.dataTransfer) {
+  if (props.columnOrder || resizing || column.reorderable === false || !event.dataTransfer) {
     event.preventDefault();
     return;
   }
-  stopColumnAnimations();
+  columnMotion.cancel();
   dragging.value = column.key;
   event.dataTransfer.effectAllowed = "move";
   event.dataTransfer.setData("text/plain", column.key);
@@ -980,6 +1116,7 @@ function canDropColumn(column: GridColumn<T>) {
   const source = props.columns.find((item) => item.key === dragging.value);
   return (
     !!source &&
+    !props.columnOrder &&
     source.key !== column.key &&
     source.reorderable !== false &&
     column.reorderable !== false &&
@@ -1041,75 +1178,7 @@ function leaveColumnDrag(event: DragEvent) {
   pendingColumnHover = null;
   columnDropTarget.value = null;
 }
-function columnBounds() {
-  return new Map(
-    Array.from(
-      tableRef.value?.querySelectorAll<HTMLElement>("th[data-column-key]") ||
-        [],
-    ).map((element) => [
-      element.dataset.columnKey!,
-      element.getBoundingClientRect(),
-    ]),
-  );
-}
-function animateColumnReorder(before: Map<string, DOMRect>) {
-  if (effectiveMotion.value === "off") return;
-  const scroll = tableRef.value?.querySelector<HTMLElement>(
-    ".hys-ui-pf-grid-scroll",
-  );
-  if (!scroll) return;
-  const bounds = scroll.getBoundingClientRect();
-  const top = Math.max(0, bounds.top),
-    bottom = Math.min(window.innerHeight, bounds.bottom);
-  const left = Math.max(0, bounds.left),
-    right = Math.min(window.innerWidth, bounds.right);
-  if (top >= bottom || left >= right) return;
-  const deltas = new Map<string, number>();
-  // Read header geometry once per column, before starting any animation.
-  for (const [key, after] of columnBounds()) {
-    const old = before.get(key);
-    if (
-      old &&
-      after.right > left &&
-      after.left < right &&
-      Math.abs(old.left - after.left) > 0.5
-    )
-      deltas.set(key, old.left - after.left);
-  }
-  const cells: HTMLElement[] = [];
-  for (const row of Array.from(
-    scroll.querySelectorAll<HTMLElement>("thead tr,tbody tr,tfoot tr"),
-  )) {
-    const rect = row.getBoundingClientRect();
-    if (rect.top >= bottom) break;
-    if (rect.bottom <= top) continue;
-    for (const cell of Array.from(row.children)) {
-      if (
-        cell instanceof HTMLElement &&
-        deltas.has(cell.dataset.columnKey || "")
-      )
-        cells.push(cell);
-      if (cells.length >= maxColumnAnimations) break;
-    }
-    if (cells.length >= maxColumnAnimations) break;
-  }
-  const duration = effectiveMotion.value === "full" ? 280 : 180;
-  // Transform-only animation avoids per-frame layout or data processing.
-  for (const cell of cells) {
-    const delta = deltas.get(cell.dataset.columnKey!)!;
-    const animation = cell.animate(
-      [
-        { transform: "translateX(" + delta + "px)" },
-        { transform: "translateX(0)" },
-      ],
-      { duration, easing: "cubic-bezier(.2,.8,.2,1)" },
-    );
-    columnAnimations.add(animation);
-    animation.onfinish = () => columnAnimations.delete(animation);
-    animation.oncancel = () => columnAnimations.delete(animation);
-  }
-}
-async function dropColumn(event: DragEvent, column: GridColumn<T>) {
+function dropColumn(event: DragEvent, column: GridColumn<T>) {
   if (!canDropColumn(column)) {
     endColumnDrag();
     return;
@@ -1133,21 +1202,15 @@ async function dropColumn(event: DragEvent, column: GridColumn<T>) {
   );
   endColumnDrag();
   if (next.every((key, index) => key === order.value[index])) return;
-  stopColumnAnimations();
-  const generation = columnAnimationGeneration;
-  const before =
-    effectiveMotion.value === "off"
-      ? new Map<string, DOMRect>()
-      : columnBounds();
+  const before = columnMotion.capture();
   order.value = next;
-  await nextTick();
-  if (generation === columnAnimationGeneration) animateColumnReorder(before);
+  void columnMotion.play(before);
 }
 
 function applyColumnLayout(layout: HysDataGridColumnLayout) {
   cancelResize();
   endColumnDrag();
-  stopColumnAnimations();
+  columnMotion.cancel();
   setColumnLayout(layout);
 }
 function resetColumns() {
@@ -1200,6 +1263,12 @@ function rowContext(entry: DataEntry): HysDataGridRowContext<T> {
 function cellContext(entry: DataEntry, column: GridColumn<T>, columnIndex: number): HysDataGridCellContext<T> {
   return { ...rowContext(entry), column, columnIndex, value: gridValue(entry.item.row, column) };
 }
+function displayedCell(entry: DataEntry, column: GridColumn<T>, index: number) {
+  if (!column.formatter && column.emptyText === undefined && props.emptyCellText === undefined)
+    return cellText(entry.item.row, column);
+  const context = cellContext(entry, column, index);
+  return tabularDisplayText(context.value, column.emptyText ?? props.emptyCellText, () => column.formatter?.(context));
+}
 function headerContext(column: GridColumn<T>, columnIndex: number): HysDataGridHeaderContext<T> {
   return { column, columnIndex, sort: effectiveSorts.value.find((sort) => sort.key === column.key)?.direction,
     filter: filterTerm(column.key), pinned: pinOf(column) };
@@ -1232,8 +1301,22 @@ function openCellMenu(event: MouseEvent, entry: DataEntry, column: GridColumn<T>
 function doubleClickCell(event: MouseEvent, entry: DataEntry, column: GridColumn<T>, index: number) {
   emit("cellDblclick", cellContext(entry, column, index), event);
   if (!event.defaultPrevented &&
-      !(event.target as HTMLElement).closest("button,a,input,select,textarea,[contenteditable]"))
-    beginEdit(entry.item, column);
+      !(event.target as HTMLElement).closest(tabularCellControls))
+    beginEdit(entry, column, index);
+}
+function keydownCell(event: KeyboardEvent, entry: DataEntry, column: GridColumn<T>, index: number) {
+  if (event.defaultPrevented || event.isComposing) return;
+  if (event.key === "F2" || event.key === "Enter") {
+    emit("cellKeydown", cellContext(entry, column, index), event);
+    if (event.defaultPrevented) return;
+  }
+  if (props.cellNavigation && event.key === "F2" &&
+      !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
+      beginEdit(entry, column, index)) {
+    event.preventDefault();
+    return;
+  }
+  gridMenu.keydown({ ...cellContext(entry, column, index), type: "cell" }, event);
 }
 function defaultMenuItems(context: HysDataGridContext<T>): HysContextMenuItem[] {
   if (context.type === "header") {
@@ -1261,14 +1344,14 @@ function defaultMenuItems(context: HysDataGridContext<T>): HysContextMenuItem[] 
   return [
     ...(props.selectable ? [{ label: context.selected ? "取消选择此行" : "选择此行", value: "toggle-selection", disabled: !item || !canSelect(item) }] : []),
     ...(props.highlightCurrentRow ? [{ label: "设为当前行", value: "current-row", disabled: context.current }] : []),
-    ...(context.type === "cell" && props.editable && context.column.editable ? [{ label: "编辑此单元格", value: "edit-cell" }] : []),
+    ...(context.type === "cell" && canEdit(context) ? [{ label: "编辑此单元格", value: "edit-cell" }] : []),
   ];
 }
 const gridMenu = useGridContextMenu<T>({
   enabled: (context) => !!props.contextMenu && !busy.value &&
     (context.type === "header"
       ? visibleColumns.value.some((column) => column.key === context.column.key)
-      : navigableRows.value.has(gridToken(context.rowKey))),
+      : navigableEntries.value.has(gridToken(context.rowKey))),
   config: () => props.contextMenu,
   defaults: defaultMenuItems,
   select(key, context, info) {
@@ -1290,11 +1373,11 @@ const gridMenu = useGridContextMenu<T>({
       if (key === "toggle-selection") toggleRowSelection(context.rowKey);
       if (key === "current-row") setCurrentRow(context.rowKey);
       if (key === "edit-cell" && context.type === "cell") {
-        const item = navigableRows.value.get(gridToken(context.rowKey));
-        const column = columnMap.value.get(context.column.key);
-        if (item && column) requestAnimationFrame(() => {
-          if (!busy.value && navigableRows.value.get(gridToken(context.rowKey)) === item &&
-              visibleColumns.value.includes(column)) beginEdit(item, column);
+        requestAnimationFrame(() => {
+          const entry = navigableEntries.value.get(gridToken(context.rowKey));
+          const index = orderedColumns.value.findIndex(({ key }) => key === context.column.key);
+          if (entry && index >= 0 && scrollRef.value?.isConnected)
+            beginEdit(entry, orderedColumns.value[index], index);
         });
       }
     }
@@ -1317,7 +1400,14 @@ defineExpose({
   toggleRowSelection,
   scrollTo,
   scrollToRow,
-  focusRow: (key: HysDataGridKey) => rowNavigation.focusRow(gridToken(key)),
+  focusRow: (key: HysDataGridKey) => props.cellNavigation
+    ? !!orderedColumns.value[0] && cellNavigationState.focusCell(gridToken(key), orderedColumns.value[0].key)
+    : rowNavigation.focusRow(gridToken(key)),
+  focusCell: focusGridCell,
+  isCellVisible: (key: HysDataGridKey, columnKey: string) =>
+    !busy.value && failure.value == null &&
+    navigableEntries.value.has(gridToken(key)) && navigableColumnKeys.value.has(columnKey),
+  getCellView: () => cellView.value,
   getCurrentRowKey: () => currentKey.value,
   setCurrentRow,
   setColumnVisibility,
@@ -1336,7 +1426,6 @@ watch(settingsOpen, (open) => {
 function cleanup() {
   gridMenu.close();
   endColumnDrag();
-  stopColumnAnimations();
   cancelResize();
   settingsOpen.value = false;
   document.removeEventListener("pointerdown", closeOutside);
@@ -1349,12 +1438,12 @@ onBeforeUnmount(cleanup);
   <section
     v-bind="hysRootAttrs"
     class="hys-ui-pf-grid"
-    :class="['hys-ui-pf-grid--' + density, { 'hys-ui-pf-grid-striped': striped }]"
+    :class="['hys-ui-pf-grid--' + density, { 'hys-ui-pf-grid-striped': striped, 'hys-ui-pf-grid-has-selection': selectable }]"
     aria-label="数据表格"
     ref="tableRef"
     :aria-busy="busy || undefined"
   >
-    <div class="hys-ui-pf-grid-toolbar">
+    <div v-if="showToolbar" class="hys-ui-pf-grid-toolbar">
       <label class="hys-ui-pf-grid-search"
         ><span>搜索</span
         ><HysInput
@@ -1396,9 +1485,9 @@ onBeforeUnmount(cleanup);
           variant="ghost"
           size="sm"
           type="button"
-          :disabled="!batchColumn"
+          :disabled="!batchKeys.length"
           @click="commitBatch"
-          >应用到 {{ selected.length }} 行</HysButton
+          >应用到 {{ batchColumn ? batchKeys.length : selected.length }} 行</HysButton
         >
       </div>
       <template v-if="filtersVisible">
@@ -1472,7 +1561,7 @@ onBeforeUnmount(cleanup);
       role="region"
       aria-label="表格滚动区域"
       @dragleave="leaveColumnDrag"
-      @scroll="gridMenu.close"
+      @scroll="scrollWindow"
     >
       <table
         :class="{ 'hys-ui-pf-grid-sticky-head': stickyHeader }"
@@ -1480,6 +1569,7 @@ onBeforeUnmount(cleanup);
       >
         <caption v-if="caption">{{ caption }}</caption>
         <colgroup v-if="selectable"><col style="width: 44px" /></colgroup>
+        <colgroup v-if="rowNumbers"><col style="width: 48px" /></colgroup>
         <colgroup v-for="entry in headerGroups" :key="entry.id">
           <col
             v-for="c in entry.columns"
@@ -1487,9 +1577,11 @@ onBeforeUnmount(cleanup);
             :style="{ width: widthOf(c) + 'px' }"
           />
         </colgroup>
+        <colgroup v-if="fillRemainingWidth"><col /></colgroup>
         <thead>
           <tr v-if="hasHeaderGroups" class="hys-ui-pf-grid-header-groups">
             <th v-if="selectable" class="hys-ui-pf-grid-select-col"></th>
+            <th v-if="rowNumbers" class="hys-ui-pf-grid-row-number"></th>
             <th
               v-for="entry in headerGroups"
               :key="entry.id"
@@ -1499,6 +1591,7 @@ onBeforeUnmount(cleanup);
             >
               <slot v-if="entry.group" name="header-group" :group="entry.group" :columns="entry.columns" :pinned="entry.pinned">{{ entry.group.label }}</slot>
             </th>
+            <th v-if="fillRemainingWidth" class="hys-ui-grid-filler" aria-hidden="true" />
           </tr>
           <tr>
             <th v-if="selectable" scope="col" class="hys-ui-pf-grid-select-col">
@@ -1511,6 +1604,7 @@ onBeforeUnmount(cleanup);
                 @update:model-value="selectPage"
               /><span v-else>选择</span>
             </th>
+            <th v-if="rowNumbers" scope="col" class="hys-ui-pf-grid-row-number"><slot name="row-number-header">#</slot></th>
             <th
               v-for="(c, index) in orderedColumns"
               :key="c.key"
@@ -1523,7 +1617,7 @@ onBeforeUnmount(cleanup);
                   ? columnDropTarget.position
                   : undefined
               "
-              :draggable="c.reorderable !== false"
+              :draggable="!columnOrder && c.reorderable !== false"
               @dragstart="startColumnDrag($event, c)"
               @dragend="endColumnDrag"
               @dragover="previewColumnDrop($event, c)"
@@ -1624,7 +1718,7 @@ onBeforeUnmount(cleanup);
                   @click="showColumnFilters(c)"
                   ><Search :size="13" aria-hidden="true" /></HysButton
                 >
-                <HysButton v-if="contextMenu" variant="ghost" size="sm" type="button" class="hys-ui-pf-grid-column-menu" :aria-label="'列操作 · ' + c.label" aria-haspopup="menu" @click.stop="openHeaderMenu($event, c, index)"><Ellipsis :size="14" aria-hidden="true" /></HysButton>
+                <HysButton v-if="contextMenu && headerMenuButton" variant="ghost" size="sm" type="button" class="hys-ui-pf-grid-column-menu" :aria-label="'列操作 · ' + c.label" aria-haspopup="menu" @click.stop="openHeaderMenu($event, c, index)"><Ellipsis :size="14" aria-hidden="true" /></HysButton>
                 <span
                   v-if="c.resizable !== false"
                   class="hys-ui-pf-grid-resize"
@@ -1640,6 +1734,7 @@ onBeforeUnmount(cleanup);
                 />
               </div>
             </th>
+            <th v-if="fillRemainingWidth" class="hys-ui-grid-filler" aria-hidden="true" />
           </tr>
           <tr
             v-if="filtersVisible"
@@ -1649,6 +1744,7 @@ onBeforeUnmount(cleanup);
             aria-label="列筛选"
           >
             <td v-if="selectable" class="hys-ui-pf-grid-select-col"></td>
+            <td v-if="rowNumbers" class="hys-ui-pf-grid-row-number"></td>
             <td
               v-for="column in orderedColumns"
               :key="column.key"
@@ -1666,12 +1762,13 @@ onBeforeUnmount(cleanup);
                 clearable
               />
             </td>
+            <td v-if="fillRemainingWidth" class="hys-ui-grid-filler" aria-hidden="true" />
           </tr>
         </thead>
         <tbody>
           <tr v-if="busy">
             <td
-              :colspan="Math.max(1, visibleColumns.length + Number(selectable))"
+              :colspan="tableColumnCount"
               class="hys-ui-pf-grid-empty"
             >
               <div class="hys-ui-pf-grid-state" role="status"><slot name="loading">正在加载…</slot></div>
@@ -1679,7 +1776,7 @@ onBeforeUnmount(cleanup);
           </tr>
           <tr v-else-if="failure">
             <td
-              :colspan="Math.max(1, visibleColumns.length + Number(selectable))"
+              :colspan="tableColumnCount"
               class="hys-ui-pf-grid-empty"
             >
               <div class="hys-ui-pf-grid-state">
@@ -1691,12 +1788,13 @@ onBeforeUnmount(cleanup);
             </td>
           </tr>
           <template v-else>
-            <template v-for="entry in displayRows" :key="entry.key">
+            <tr v-if="windowedRows.before" class="hys-ui-grid-spacer" aria-hidden="true"><td :colspan="tableColumnCount" :style="{ height: windowedRows.before + 'px' }" /></tr>
+            <template v-for="entry in windowedRows.entries" :key="entry.key">
               <tr
                 v-if="entry.kind === 'group'"
                 class="hys-ui-pf-grid-group-row"
               >
-                <td :colspan="visibleColumns.length + Number(selectable)">
+                <td :colspan="tableColumnCount">
                   <HysButton
                     variant="ghost"
                     size="sm"
@@ -1726,6 +1824,7 @@ onBeforeUnmount(cleanup);
                 v-else
                 v-bind="mergeProps(contextMenu ? { tabindex: -1, onKeydown: (event: KeyboardEvent) => gridMenu.keydown({ ...rowContext(entry), type: 'row' }, event) } : {}, rowNavigation.rowNavigationAttrs(gridToken(entry.item.id)))"
                 :data-grid-row="gridToken(entry.item.id)"
+                :data-hys-cell-row="cellNavigation ? gridToken(entry.item.id) : undefined"
                 :class="[rowClassName && presentation(rowClassName, rowContext(entry)), { 'hys-ui-pf-grid-current-row': highlightCurrentRow && currentKey === entry.item.id, 'hys-ui-pf-grid-even-row': striped && entry.pageIndex % 2 === 1 }]"
                 :style="rowStyle && presentation(rowStyle, rowContext(entry))"
                 :aria-current="highlightCurrentRow && currentKey === entry.item.id ? 'true' : undefined"
@@ -1757,21 +1856,24 @@ onBeforeUnmount(cleanup);
                     "
                   />
                 </td>
+                <th v-if="rowNumbers" scope="row" class="hys-ui-pf-grid-row-number"><slot name="row-number" v-bind="rowContext(entry)">{{ entry.item.index + 1 }}</slot></th>
+                <template v-for="({ column, index, skip }) in bodyColumns" :key="column?.key ?? 'spacer:' + index">
+                <td v-if="skip" :colspan="skip" class="hys-ui-grid-column-spacer" aria-hidden="true" />
                 <td
-                  v-for="(column, index) in orderedColumns"
-                  :key="column.key"
+                  v-else-if="column && cellSpan?.(cellContext(entry, column, index))?.rows !== 0"
+                  :rowspan="cellSpan?.(cellContext(entry, column, index))?.rows"
+                  :colspan="cellSpan?.(cellContext(entry, column, index))?.columns"
                   :data-column-key="column.key"
-                  :tabindex="contextMenu ? -1 : undefined"
+                  v-bind="mergeProps(contextMenu ? { tabindex: -1 } : {}, cellNavigationState.attrs(gridToken(entry.item.id), column.key, index))"
                   :class="[cellClassName && presentation(cellClassName, cellContext(entry, column, index)), { 'hys-ui-pf-grid-cell-editing': isEditing(entry.item, column) }]"
-                  :style="[cellStyle && presentation(cellStyle, cellContext(entry, column, index)), {
-                    ...pinnedStyle(column),
-                    textAlign: column.align || 'left',
-                  }]"
-                  :title="isEditing(entry.item, column) ? undefined : cellText(entry.item.row, column)"
+                  :style="[{ textAlign: column.align || 'left' }, cellStyle && presentation(cellStyle, cellContext(entry, column, index)), pinnedStyle(column)]"
+                  :title="cellTooltip === false || isEditing(entry.item, column) || column.wrap === true ? undefined : displayedCell(entry, column, index)"
                   @click="emit('cellClick', cellContext(entry, column, index), $event)"
                   @dblclick="doubleClickCell($event, entry, column, index)"
                   @contextmenu.stop="openCellMenu($event, entry, column, index)"
-                  @keydown.self="gridMenu.keydown({ ...cellContext(entry, column, index), type: 'cell' }, $event)"
+                  @keydown.self="keydownCell($event, entry, column, index)"
+                  @mouseenter="emit('cellMouseEnter', cellContext(entry, column, index), $event)"
+                  @mouseleave="emit('cellMouseLeave', cellContext(entry, column, index), $event)"
                 >
                   <HysInput
                     v-if="isEditing(entry.item, column)"
@@ -1779,9 +1881,9 @@ onBeforeUnmount(cleanup);
                     class="hys-ui-pf-grid-edit"
                     :aria-label="'编辑' + column.label"
                     @click.stop
-                    @press-enter="commitEdit(entry.item, column)"
-                    @keydown.esc.stop="cancelEdit"
-                    @focusout="commitEdit(entry.item, column)"
+                    @press-enter="commitEdit(entry, column, index, true)"
+                    @keydown.esc.stop="cancelEdit($event, entry.item, column)"
+                    @focusout="commitEdit(entry, column, index)"
                   />
                   <span class="hys-ui-pf-grid-cell-display" :inert="isEditing(entry.item, column)">
                     <template v-if="treeMode && index === 0">
@@ -1817,23 +1919,24 @@ onBeforeUnmount(cleanup);
                         }"
                       ></span>
                     </template>
-                    <span>
+                    <span v-bind="tabularCellWrap(column.wrap)">
                       <slot
                         :name="column.key"
                         v-bind="cellContext(entry, column, index)"
                       >
-                        <slot name="body-cell" v-bind="cellContext(entry, column, index)">{{ cellText(entry.item.row, column) }}</slot>
+                        <slot name="body-cell" v-bind="cellContext(entry, column, index)">{{ displayedCell(entry, column, index) }}</slot>
                       </slot>
                     </span>
                   </span>
                 </td>
+                </template>
+                <td v-if="fillRemainingWidth" class="hys-ui-grid-filler" aria-hidden="true" />
               </tr>
             </template>
+            <tr v-if="windowedRows.after" class="hys-ui-grid-spacer" aria-hidden="true"><td :colspan="tableColumnCount" :style="{ height: windowedRows.after + 'px' }" /></tr>
             <tr v-if="!pageRows.length">
               <td
-                :colspan="
-                  Math.max(1, visibleColumns.length + Number(selectable))
-                "
+                :colspan="tableColumnCount"
                 class="hys-ui-pf-grid-empty"
               >
                 <div class="hys-ui-pf-grid-state">
@@ -1846,6 +1949,7 @@ onBeforeUnmount(cleanup);
         <tfoot v-if="showSummary && !busy && !failure && processed.length">
           <tr class="hys-ui-pf-grid-summary-row">
             <td v-if="selectable" class="hys-ui-pf-grid-select-col">合计</td>
+            <td v-if="rowNumbers" class="hys-ui-pf-grid-row-number"></td>
             <td
               v-for="(column, index) in orderedColumns"
               :key="column.key"
@@ -1863,11 +1967,12 @@ onBeforeUnmount(cleanup);
                     : ""
               }}
             </td>
+            <td v-if="fillRemainingWidth" class="hys-ui-grid-filler" aria-hidden="true" />
           </tr>
         </tfoot>
       </table>
     </div>
-    <footer class="hys-ui-pf-grid-footer">
+    <footer v-if="pagination" class="hys-ui-pf-grid-footer">
       <HysPagination
         v-if="!loadRows || remoteTotal !== undefined"
         :page="page"
@@ -1891,10 +1996,41 @@ onBeforeUnmount(cleanup);
       :popup-transition="popupTransition"
       :popup-transition-duration="popupTransitionDuration"
       @select="gridMenu.select"
-    />
+    >
+      <template v-if="slots['context-menu-item-control']" #item-control="scope">
+        <slot name="context-menu-item-control" v-bind="scope" />
+      </template>
+    </HysContextMenu>
   </section>
 </template>
 <style scoped>
+.hys-ui-pf-grid .hys-ui-grid-filler { padding-inline: 0; }
+.hys-ui-pf-grid .hys-ui-grid-spacer td, .hys-ui-pf-grid .hys-ui-grid-column-spacer { padding: 0; border: 0; }
+.hys-ui-pf-grid .hys-ui-pf-grid-row-number {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  text-align: center;
+  background: var(--hys-ui-surface-alt, var(--hys-ui-theme-surface-alt));
+  color: var(--hys-ui-muted, var(--hys-ui-theme-muted));
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.hys-ui-pf-grid-has-selection .hys-ui-pf-grid-row-number { left: 44px; }
+.hys-ui-pf-grid thead .hys-ui-pf-grid-row-number { position: sticky; z-index: 5; }
+.hys-ui-pf-grid .hys-ui-cell-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hys-ui-pf-grid .hys-ui-cell-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hys-ui-pf-grid [data-hys-cell-index]:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+}
 .hys-ui-pf-grid caption {
   position: sticky;
   inset-inline-start: 0;

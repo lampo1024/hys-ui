@@ -175,6 +175,8 @@
       "Dashboard": "大屏翻牌与访问排行"
     },
     "HysPagination": {
+      "PageSizeAnchor": "工单列表 · 改变每页条数",
+      "JumpGaps": "长列表 · 通过省略号快速跳页",
       "Bounds": "页码边界与快速跳转",
       "Layout": "控件布局、尺寸与自定义内容",
       "Controlled": "受控页大小与单页隐藏"
@@ -422,6 +424,7 @@
     "HysTable": {
       "QuickSearch": "发票列表 · 跨列搜索与列筛选",
       "KeyboardRows": "库存复核 · 键盘行导航",
+      "CellNavigation": "盘点记录 · 单元格定位与文本展示",
       "Basic": "基础表格与列配置",
       "Configure": "外观与状态配置",
       "Fixed": "固定表头、列与高度",
@@ -462,6 +465,8 @@
       "Scroll": "行定位与独立视口滚动"
     },
     "HysBadge": {
+      "CloseGuard": "审核标签 · 异步关闭检查",
+      "Unread": "消息中心 · 计数格式与播报",
       "Counters": "计数、圆点与显示控制",
       "Status": "状态点与文字",
       "Placement": "角标位置与自定义内容",
@@ -469,14 +474,80 @@
       "Selectable": "可选标签与受控状态"
     },
     "HysCard": {
+      "RefreshContent": "报表设置 · 刷新时保留内容",
+      "Collapsible": "交付备注 · 折叠与保留输入",
       "Content": "封面、内容分区与操作",
       "Tabs": "页签切换与键盘导航",
       "Loading": "加载与自定义占位"
     },
     "HysTabPane": {
+      "PanelLayout": "任务记录 · 面板高度与焦点",
+      "AsyncState": "盘点记录 · 面板独立的加载和重试",
       "Basic": "声明式面板与动态显示",
       "Nested": "嵌套标签与局部内容"
     },
+    "HysCalendarNavigation": {
+      "MonthShortcuts": "结算周期 · 常用月份快捷入口",
+      "MonthlyReview": "月度结算 · 范围限制与回到本月"
+    },
+    "HysPermissionMatrix": {
+      "FilteredScope": "批量授权 · 按资源筛选",
+      "LockedCells": "订单工作台 · 锁定权限与批量授权"
+    },
+    "HysResizablePanel": {
+      "CancelResize": "文档预览 · 取消调整宽度",
+      "SnapWidths": "文件预览 · 宽度吸附与快速复位"
+    },
+    "HysSteps": {
+      "GuardedReview": "提交审核 · 切换前校验",
+      "LinearProgress": "订单导入 · 步骤限制与进度"
+    },
+    "HysAccordion": {
+      "KeepSection": "交付说明 · 保留当前展开项",
+      "Methods": "采购说明 · 通过实例展开与定位"
+    },
+    "HysCommandPalette": {
+      "RecentCommands": "工作台命令 · 最近使用",
+      "Availability": "工作区命令 · 关键词搜索与权限"
+    },
+    "HysNotificationCenter": {
+      "Categories": "经营通知 · 分类与未读筛选",
+      "Inbox": "工作台通知 · 搜索与移除"
+    },
+    "HysShortcutHelp": {
+      "ChordSequence": "编辑器 · 组合键与按键序列",
+      "Platform": "编辑器快捷键 · 搜索与系统切换"
+    },
+    "HysChart": {
+      "ReferenceLine": "订单趋势 · 目标参考线",
+      "Balance": "月度现金流 · 正负值与数据表" },
+    "HysDiffViewer": {
+      "ContextReview": "配置审阅 · 变化上下文",
+      "Aligned": "上线配置 · 对齐差异和行号" },
+    "HysKanban": {
+      "PriorityOrder": "待办看板 · 列内优先级",
+      "Capacity": "交付看板 · 列容量与移动限制" },
+    "HysOrgTree": {
+      "AliasSearch": "组织目录 · 按职责与别名检索",
+      "Teams": "仓储组织 · 受控展开和节点说明" },
+    "HysColorTokenEditor": {
+      "RestorePalette": "主题编辑 · 批量恢复默认色",
+      "BrandDefaults": "品牌主题 · 锁定与恢复颜色" },
+    "HysCommentEditor": {
+      "SubmitRetry": "审核评论 · 失败后保留草稿",
+      "DraftLimit": "工单评论 · 草稿与长度限制" },
+    "HysCronEditor": {
+      "RunPreview": "自动巡检 · 下次运行时间",
+      "Validation": "巡检任务 · 业务预设与范围校验" },
+    "HysFileManager": {
+      "TransferStatus": "订单附件 · 上传进度与重试",
+      "Validation": "导入附件 · 类型、体积与数量校验" },
+    "HysJsonEditor": {
+      "IndentOnEnter": "配置编辑 · 换行自动缩进",
+      "Configuration": "任务配置 · 压缩与业务校验" },
+    "HysRichTextEditor": {
+      "TextCount": "交付摘要 · 字符统计与纯文本",
+      "BlockTools": "交付摘要 · 段落格式与粘贴模式" },
     "HysTabs": {
       "Basic": "基础切换",
       "Configure": "外观、方向与尺寸",
@@ -499,6 +570,8 @@
       "Custom": "字段渲染与标题操作"
     },
     "HysResult": {
+      "PendingProgress": "数据导入 · 处理中与进度",
+      "InlineDetails": "报表同步 · 行内反馈与折叠详情",
       "Basic": "操作结果与后续操作",
       "Exceptions": "异常页面与恢复路径",
       "Workflow": "提交、重试与业务详情"
@@ -776,6 +849,20 @@
       "States": "禁用、只读与加载",
       "Request": "请求参数与自定义进度"
     },
+    "HysProGrid": {
+      "Basic": "文本与布尔值编辑",
+      "BudgetApproval": "预算审批、额度高亮与保存重试",
+      "Clipboard": "预算明细的多格复制与粘贴"
+    },
+    "HysSpreadsheet": {
+      "Basic": "日常预算工作簿",
+      "Formulas": "公式计算与错误定位",
+      "Operations": "库存盘点与工作簿保存",
+      "LargeSheet": "大工作表浏览与定位",
+      "Collaboration": "预算复核与协作批注",
+      "ExcelExchange": "Excel 报价单导入与导出",
+      "DataReview": "订单排序、验证与热力图"
+    },
     "HysProgress": {
       "Basic": "基础进度与数值",
       "Configure": "外观与行为配置",
@@ -833,6 +920,7 @@
       "ColumnLayouts": "工单视图 · 列布局预设与恢复",
       "GroupingSummary": "工时统计 · 受控分组与分组小计",
       "KeyboardReview": "待复核事项 · 键盘选择与定位",
+      "CellEditing": "库存调整 · 单元格编辑",
       "Controlled": "受控查询与自定义筛选",
       "Selection": "单选、多选与保留选择",
       "Resize": "固定表头与列宽调整",

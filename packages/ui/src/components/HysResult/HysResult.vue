@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import HysButton from "../HysButton/HysButton.vue";
+import HysProgress from "../HysProgress/HysProgress.vue";
 import { computed, ref, useId } from "vue";
 import {
   CircleCheck,
@@ -6,6 +8,7 @@ import {
   FileQuestion,
   Info,
   LockKeyhole,
+  Clock,
   ServerCrash,
   Sparkles,
   TriangleAlert,
@@ -25,10 +28,27 @@ const props = withDefaults(defineProps<HysResultProps>(), {
   align: "center",
   headingLevel: 2,
   announce: "off",
+  layout: "stacked",
+  detailsLabel: "查看详情",
+  detailsOpen: undefined,
+  defaultDetailsOpen: false,
 });
 const slots = defineSlots<HysResultSlots>();
+const emit = defineEmits<{
+  "update:detailsOpen": [open: boolean];
+  detailsToggle: [open: boolean];
+}>();
+const localDetailsOpen = ref(props.defaultDetailsOpen);
+const detailsOpen = computed(() => props.detailsOpen ?? localDetailsOpen.value);
+function toggleDetails() {
+  const next = !detailsOpen.value;
+  localDetailsOpen.value = next;
+  emit("update:detailsOpen", next);
+  emit("detailsToggle", next);
+}
 const skin = useHysRootAttrs();
 const id = useId() + "-result-title";
+const detailsId = id + "-details";
 const element = ref<HTMLElement>(),
   heading = ref<HTMLElement>();
 const states = {
@@ -37,6 +57,7 @@ const states = {
   success: { title: "操作成功", icon: CircleCheck, tone: "success" },
   warning: { title: "操作需要注意", icon: TriangleAlert, tone: "warning" },
   error: { title: "操作失败", icon: CircleX, tone: "error" },
+  pending: { title: "正在处理", icon: Clock, tone: "primary" },
   "403": { title: "无权访问", icon: LockKeyhole, tone: "warning" },
   "404": { title: "页面不存在", icon: FileQuestion, tone: "primary" },
   "500": { title: "服务暂不可用", icon: ServerCrash, tone: "error" },
@@ -55,6 +76,7 @@ const context = computed<HysResultContext>(() => ({
       : undefined,
   title: props.title ?? states[state.value].title,
   subtitle: props.subtitle,
+  detailsOpen: detailsOpen.value,
 }));
 const icon = computed(() => props.icon ?? states[state.value].icon);
 const message = computed(() =>
@@ -66,6 +88,7 @@ const message = computed(() =>
         .join(" ")),
 );
 const iconSize = computed(() => ({ sm: 24, md: 32, lg: 40 })[props.size]);
+const progressValue = computed(() => typeof props.progress === "number" && Number.isFinite(props.progress) ? Math.min(100, Math.max(0, props.progress)) : undefined);
 defineExpose({
   element,
   focus: (options?: FocusOptions) =>
@@ -83,6 +106,9 @@ defineExpose({
     :data-tone="states[state].tone"
     :data-size="size"
     :data-align="align"
+    :data-layout="layout"
+    :data-with-icon="icon !== false || !!slots.icon"
+    :aria-busy="context.status === 'pending' || undefined"
     :aria-labelledby="context.title || slots.title ? id : undefined"
   >
     <div
@@ -125,6 +151,17 @@ defineExpose({
     </div>
     <div v-if="slots.default" class="hys-result-details">
       <slot v-bind="context" />
+    </div>
+    <div v-if="context.status === 'pending' && progressValue !== undefined" class="hys-result-progress">
+      <HysProgress :value="progressValue" :stroke-width="6" color="var(--hys-result-accent)" aria-label="处理进度" />
+    </div>
+    <div v-if="slots.details" class="hys-result-disclosure">
+      <HysButton size="sm" variant="secondary" :aria-controls="detailsId" :aria-expanded="detailsOpen" @click="toggleDetails">
+        {{ detailsLabel }}
+      </HysButton>
+      <div :id="detailsId" v-show="detailsOpen" class="hys-result-disclosure-content">
+        <slot name="details" v-bind="context" />
+      </div>
     </div>
     <div v-if="slots.extra" class="hys-result-actions">
       <slot name="extra" v-bind="context" />

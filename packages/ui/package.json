@@ -34,6 +34,17 @@
       "import": "./dist/index.js"
     },
     "./style.css": "./dist/style.css",
+    "./pro-grid.css": "./dist/pro-grid.css",
+    "./pro-grid/conditional-format": {
+      "types": "./dist/types/components/HysProGrid/conditionalFormat.d.ts",
+      "import": "./dist/pro-grid/conditional-format.js"
+    },
+    "./pro-grid/conditional-format.css": "./dist/pro-grid/conditional-format.css",
+    "./pro-grid/clipboard": {
+      "types": "./dist/types/components/HysProGrid/clipboard/clipboard.d.ts",
+      "import": "./dist/pro-grid/clipboard.js"
+    },
+    "./pro-grid/clipboard.css": "./dist/pro-grid/clipboard.css",
     "./package.json": "./package.json"
   },
   "sideEffects": [
@@ -44,8 +55,11 @@
   },
   "dependencies": {
     "async-validator": "^4.2.5",
+    "dompurify": "^3.4.17",
+    "fflate": "^0.8.3",
     "lucide-vue-next": "^0.468.0",
-    "pinyin-pro": "^3.29.5"
+    "pinyin-pro": "^3.29.5",
+    "saxes": "^6.0.0"
   },
   "devDependencies": {
     "vue": "^3.5.13"
@@ -55,6 +69,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "vite build --config vite.config.ts && vue-tsc -p tsconfig.build.json"
+    "build": "vite build --config vite.config.ts && node scripts/copy-optional-styles.mjs && vue-tsc -p tsconfig.build.json"
   }
 }

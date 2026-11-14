@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { HysSplitPane, type HysSplitPanePanel, type HysSplitPaneSizes } from "hys-ui";
+import { HysSplitPane, HysTextarea, type HysSplitPanePanel, type HysSplitPaneSizes } from "hys-ui";
 
 const panels: HysSplitPanePanel[] = [
   { id: "files", label: "文件", size: 110, min: 80, max: 160, collapsible: true },
@@ -18,10 +18,7 @@ const sizes = ref<HysSplitPaneSizes>({});
           <strong>{{ panel.label }}</strong>
           <span>{{ Math.round(size) }} px</span>
           <p v-if="panel.id === 'files'">index.vue</p>
-          <label v-if="panel.id === 'editor'">
-            内容
-            <textarea rows="4" placeholder="输入正文" />
-          </label>
+          <HysTextarea v-if="panel.id === 'editor'" label="内容" :rows="4" placeholder="输入正文" />
         </div>
       </template>
     </HysSplitPane>
@@ -33,11 +30,5 @@ const sizes = ref<HysSplitPaneSizes>({});
   display: grid;
   gap: 8px;
   padding: 12px;
-}
-.split-panes-demo-content textarea {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  resize: vertical;
 }
 </style>

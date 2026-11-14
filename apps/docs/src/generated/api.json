@@ -112,6 +112,22 @@
         "default": "",
         "description": "展开或收起前检查，参数为 key、expanded；false 或拒绝的 Promise 阻止操作",
         "global": false
+      },
+      {
+        "name": "headingLevel",
+        "type": "3 | 2 | 4 | 5 | 6 | undefined",
+        "required": false,
+        "default": "3",
+        "description": "面板标题使用的原生标题级别，接受 2–6，默认 3。",
+        "global": false
+      },
+      {
+        "name": "mandatory",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "防止通过点击、键盘或实例方法收起最后一个已展开面板，默认 false。初始展开项通过 defaultActive 或 modelValue 设置。",
+        "global": false
       }
     ],
     "events": [
@@ -174,7 +190,36 @@
         "description": "替换面板正文，按当前面板的数据渲染内容"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "getOpenKeys",
+        "type": "() => HysAccordionKey[]",
+        "required": false,
+        "default": "",
+        "description": "返回当前已展开面板键的副本。"
+      },
+      {
+        "name": "expand",
+        "type": "(key: HysAccordionKey) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "expand(key): Promise<boolean>。经 beforeToggle 请求展开，已展开、禁用或拦截时返回 false。"
+      },
+      {
+        "name": "collapse",
+        "type": "(key: HysAccordionKey) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "collapse(key): Promise<boolean>。经 beforeToggle 请求收起，已收起、禁用或拦截时返回 false。"
+      },
+      {
+        "name": "focus",
+        "type": "(key: HysAccordionKey) => boolean",
+        "required": false,
+        "default": "",
+        "description": "focus(key): boolean。聚焦可用面板的触发按钮，未知或禁用时返回 false。"
+      }
+    ]
   },
   "HysAlert": {
     "props": [
@@ -1698,6 +1743,13 @@
         "description": "宿主实际接受的文本变化；不会因外部赋值重复触发"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个组件"
+      },
+      {
         "name": "search",
         "type": "[query: string]",
         "required": false,
@@ -1745,13 +1797,6 @@
         "required": false,
         "default": "",
         "description": "选择完成：(原始 item, 最终文本)；宿主拒绝模型更新时不触发"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个组件"
       },
       {
         "name": "pressEnter",
@@ -2244,7 +2289,7 @@
       },
       {
         "name": "trigger",
-        "type": "\"click\" | \"hover\" | \"focus\" | undefined",
+        "type": "\"focus\" | \"click\" | \"hover\" | undefined",
         "required": false,
         "default": "\"hover\"",
         "description": "成员浮层触发方式：hover、focus 或 click",
@@ -2476,6 +2521,14 @@
         "global": false
       },
       {
+        "name": "beforeClose",
+        "type": "((event: MouseEvent) => boolean | void | PromiseLike<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "关闭前检查，接收原生 MouseEvent。可返回 Promise，返回 false 保留徽章，等待时关闭按钮禁用。",
+        "global": false
+      },
+      {
         "name": "dot",
         "type": "boolean | undefined",
         "required": false,
@@ -2580,6 +2633,30 @@
         "global": false
       },
       {
+        "name": "formatValue",
+        "type": "((value: string | number, displayValue: string | number) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义计数文字，接收原值与 max 截断后的显示值，返回字符串。content 插槽优先。",
+        "global": false
+      },
+      {
+        "name": "announce",
+        "type": "\"off\" | \"polite\" | \"assertive\" | undefined",
+        "required": false,
+        "default": "\"off\"",
+        "description": "计数或状态变化的 ARIA Live 优先级，默认 off。polite 等待空闲播报，assertive 立即播报。",
+        "global": false
+      },
+      {
+        "name": "announcement",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义播报文字。省略时使用原始计数或状态 text。仅在 announce 开启时生效。",
+        "global": false
+      },
+      {
         "name": "effect",
         "type": "\"light\" | \"dark\" | \"plain\" | undefined",
         "required": false,
@@ -2634,6 +2711,13 @@
         "required": false,
         "default": "",
         "description": "请求关闭，由调用方维护标签数据"
+      },
+      {
+        "name": "closeError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "关闭检查抛错或拒绝时触发，载荷为错误对象。"
       },
       {
         "name": "update:checked",
@@ -3791,7 +3875,7 @@
         "type": "Date",
         "required": true,
         "default": "",
-        "description": "控制导航栏当前显示的月份，按 Date 的 UTC 年和月读取",
+        "description": "当前显示月份，读取 Date 的 UTC 年月。",
         "global": false
       },
       {
@@ -3799,7 +3883,7 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "允许的最小值或最早日期",
+        "description": "最早允许进入的月份，传入合法 YYYY-MM-DD，包含指定日期所在月。",
         "global": false
       },
       {
@@ -3807,7 +3891,47 @@
         "type": "string | undefined",
         "required": false,
         "default": "",
-        "description": "允许的最大值或最晚日期",
+        "description": "最晚允许进入的月份，传入合法 YYYY-MM-DD，包含指定日期所在月。",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "月份短名称的 BCP 47 语言标签，省略时显示 1月 至 12月。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁止导航和切换选择面板，默认 false。",
+        "global": false
+      },
+      {
+        "name": "showToday",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示回到本月按钮，默认 false。本月超出 min/max 时禁用。",
+        "global": false
+      },
+      {
+        "name": "today",
+        "type": "Date | undefined",
+        "required": false,
+        "default": "",
+        "description": "回到本月的基准 Date，默认取操作时的当前时间，按 UTC 年月读取。",
+        "global": false
+      },
+      {
+        "name": "shortcuts",
+        "type": "readonly HysCalendarMonthShortcut[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "底部月份快捷入口数组。每项为 { label, month: Date }，读取 UTC 年月，范围外的入口禁用。",
         "global": false
       }
     ],
@@ -3817,19 +3941,41 @@
         "type": "[value: Date]",
         "required": false,
         "default": "",
-        "description": "翻页或选定年月后请求更新月份，参数为该月第一天的 UTC Date"
+        "description": "请求更新月份，载荷为目标月首日 00:00 UTC。仅在目标月变化且在范围内时触发。"
+      },
+      {
+        "name": "navigate",
+        "type": "[value: Date, source: ChangeSource]",
+        "required": false,
+        "default": "",
+        "description": "有效的月份变更请求触发，载荷为目标月份的 UTC 首日 Date 和来源 previous、next、month、year、today、shortcut 或 api。"
+      },
+      {
+        "name": "viewChange",
+        "type": "[view: HysCalendarNavigationView]",
+        "required": false,
+        "default": "",
+        "description": "切换日期、月份或年份选择面板时触发，返回 days、months 或 years。"
       }
     ],
     "slots": [
       {
         "name": "default",
-        "type": "{}",
+        "type": "{ month: Date; }",
         "required": false,
         "default": "",
-        "description": "日期视图的正文区域，选择年份或月份时由对应选择面板替换"
+        "description": "日期视图的正文，接收 { month: Date }。选择月份或年份时切换到对应面板。"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "goToMonth",
+        "type": "(date: Date) => boolean",
+        "required": false,
+        "default": "",
+        "description": "goToMonth(date: Date): boolean。请求切换至目标 UTC 月份并返回日期视图。禁用、越界或当前月份时返回 false。"
+      }
+    ]
   },
   "HysCard": {
     "props": [
@@ -3871,6 +4017,14 @@
         "required": false,
         "default": "\"加载中\"",
         "description": "默认占位的辅助技术说明",
+        "global": false
+      },
+      {
+        "name": "keepContentOnLoading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。设为 true 时刷新保留正文组件状态，加载层覆盖正文并暂时禁止正文交互。",
         "global": false
       },
       {
@@ -3992,6 +4146,46 @@
         "default": "\"卡片页签\"",
         "description": "页签导航的辅助技术名称",
         "global": false
+      },
+      {
+        "name": "collapsible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "在卡片标题区显示折叠按钮，默认 false。收起时隐藏页签、正文、底部操作和页脚，保留已挂载内容。",
+        "global": false
+      },
+      {
+        "name": "collapsed",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控折叠状态，可配合 v-model:collapsed。",
+        "global": false
+      },
+      {
+        "name": "defaultCollapsed",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控的初始折叠状态，默认 false。",
+        "global": false
+      },
+      {
+        "name": "collapseLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"收起卡片内容\"",
+        "description": "展开状态下的按钮文字，默认“收起卡片内容”。",
+        "global": false
+      },
+      {
+        "name": "expandLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"展开卡片内容\"",
+        "description": "收起状态下的按钮文字，默认“展开卡片内容”。",
+        "global": false
       }
     ],
     "events": [
@@ -4008,6 +4202,20 @@
         "required": false,
         "default": "",
         "description": "调用方已接受的页签变化：value"
+      },
+      {
+        "name": "update:collapsed",
+        "type": "[collapsed: boolean]",
+        "required": false,
+        "default": "",
+        "description": "点击折叠按钮时请求更新 collapsed，载荷为目标布尔值。"
+      },
+      {
+        "name": "collapseChange",
+        "type": "[collapsed: boolean]",
+        "required": false,
+        "default": "",
+        "description": "点击折叠按钮时触发，载荷为本次请求的折叠状态。"
       }
     ],
     "slots": [
@@ -4040,6 +4248,13 @@
         "description": "标题右侧操作"
       },
       {
+        "name": "collapse-toggle",
+        "type": "{ collapsed: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "替换折叠按钮的内容，接收 { collapsed: boolean }。只渲染文字或图标。"
+      },
+      {
         "name": "tab",
         "type": "{ tab: HysCardTab; active: boolean; }",
         "required": false,
@@ -4054,18 +4269,18 @@
         "description": "页签导航右侧内容"
       },
       {
-        "name": "loading",
-        "type": "{}",
-        "required": false,
-        "default": "",
-        "description": "替换默认骨架占位"
-      },
-      {
         "name": "default",
         "type": "{ activeTab: string | number | undefined; }",
         "required": false,
         "default": "",
         "description": "正文，接收 activeTab"
+      },
+      {
+        "name": "loading",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "替换默认骨架占位"
       },
       {
         "name": "actions",
@@ -4711,6 +4926,13 @@
         "description": "选择请求：兼容原有首个值参数，第二参数提供完整上下文"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个控件"
+      },
+      {
         "name": "search",
         "type": "[value: string]",
         "required": false,
@@ -4751,13 +4973,6 @@
         "required": false,
         "default": "",
         "description": "已接受单选：path、原始 nodes、事件"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个控件"
       },
       {
         "name": "load",
@@ -5098,10 +5313,10 @@
     "props": [
       {
         "name": "data",
-        "type": "{ label: string; value: number; }[]",
+        "type": "HysChartPoint[]",
         "required": true,
         "default": "",
-        "description": "按绘图顺序提供标签和值，每项包含 label 与 value",
+        "description": "按绘图顺序提供 { label, value, color? }。零轴随正负值调整，忽略非有限值。color 覆盖柱体或折线节点颜色。",
         "global": false
       },
       {
@@ -5119,10 +5334,65 @@
         "default": "220",
         "description": "设置柱状图或折线图绘制区域的高度，单位为像素",
         "global": false
+      },
+      {
+        "name": "showValues",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "在数据点旁显示数值，默认 false。",
+        "global": false
+      },
+      {
+        "name": "showTable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示同一组数据的语义表格，默认 false。",
+        "global": false
+      },
+      {
+        "name": "valueFormatter",
+        "type": "((value: number, point: HysChartPoint) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "格式化数值，接收 (value, point)，用于图上标签、提示和数据表。",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无图表数据\"",
+        "description": "无有效数据时显示的文案，默认“暂无图表数据”。",
+        "global": false
+      },
+      {
+        "name": "reference",
+        "type": "HysChartReference | undefined",
+        "required": false,
+        "default": "",
+        "description": "横向参考线 { value: number, label: string }，省略时不显示。有限的参考数值参与纵轴范围计算，适用于柱状和折线图。",
+        "global": false
       }
     ],
     "events": [],
-    "slots": [],
+    "slots": [
+      {
+        "name": "title",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "绘图区上方标题。"
+      },
+      {
+        "name": "empty",
+        "type": "{}",
+        "required": false,
+        "default": "",
+        "description": "替换无数据提示。"
+      }
+    ],
     "exposed": []
   },
   "HysCheckbox": {
@@ -5320,18 +5590,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开控件或整个分组"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
       }
     ],
     "slots": [
@@ -5575,18 +5845,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开控件或整个分组"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
       },
       {
         "name": "reject",
@@ -5770,7 +6040,7 @@
       },
       {
         "name": "immediate",
-        "type": "boolean | undefined",
+        "type": "boolean | \"release\" | undefined",
         "required": false,
         "default": "true",
         "description": "默认 true 即时更新；false 暂存预览，确认后更新",
@@ -5993,6 +6263,13 @@
         "description": "已接受颜色变化：(value)"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件获得焦点的 FocusEvent"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -6026,13 +6303,6 @@
         "required": false,
         "default": "",
         "description": "请求显示或收起浮层"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "整个控件获得焦点的 FocusEvent"
       },
       {
         "name": "invalid",
@@ -6197,6 +6467,46 @@
   "HysColorTokenEditor": {
     "props": [
       {
+        "name": "labels",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "颜色键到显示名的映射，省略时显示颜色键。",
+        "global": false
+      },
+      {
+        "name": "defaults",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "颜色键到默认色值的映射，为对应的颜色提供重置按钮。",
+        "global": false
+      },
+      {
+        "name": "lockedKeys",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "锁定调色和重置的颜色键数组。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用所有颜色修改，默认 false。",
+        "global": false
+      },
+      {
+        "name": "resetAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示恢复全部默认色按钮，默认 false。只恢复已配置默认色且可编辑、值已变化的令牌。",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "Record<string, string> | undefined",
         "required": false,
@@ -6212,6 +6522,20 @@
         "required": false,
         "default": "",
         "description": "修改颜色后的令牌映射，键为颜色名称"
+      },
+      {
+        "name": "change",
+        "type": "[key: string, value: string, previous: string]",
+        "required": false,
+        "default": "",
+        "description": "通过选色或重置改变颜色时触发，载荷为颜色键、新值和原值。"
+      },
+      {
+        "name": "reset",
+        "type": "[keys: string[]]",
+        "required": false,
+        "default": "",
+        "description": "批量恢复后触发，载荷为变更的令牌键数组。批量操作发布一次模型更新，随后逐项发布 change。"
       }
     ],
     "slots": [],
@@ -6237,10 +6561,50 @@
       },
       {
         "name": "actions",
-        "type": "Action[]",
+        "type": "HysCommandAction[]",
         "required": true,
         "default": "",
-        "description": "可搜索的命令列表，每项需提供唯一 id 和可显示的 label",
+        "description": "命令数组。id 唯一，label 为显示名，description 与 keywords 参与搜索。disabled 为 true 时保留展示并跳过键盘选择。",
+        "global": false
+      },
+      {
+        "name": "hotkey",
+        "type": "string | false | undefined",
+        "required": false,
+        "default": "\"k\"",
+        "description": "打开和关闭浮层的按键，与 Ctrl 或 Command 组合，默认 k。false 关闭全局快捷键。",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"搜索操作…\"",
+        "description": "搜索框的占位文案，默认“搜索操作…”。",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"没有匹配的命令\"",
+        "description": "搜索无匹配项时的文案，默认“没有匹配的命令”。",
+        "global": false
+      },
+      {
+        "name": "recentLimit",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "最多保留的最近使用项数，默认 0。空查询时将有效且可用的最近命令置顶，输入搜索词后恢复原始命令顺序。",
+        "global": false
+      },
+      {
+        "name": "recent",
+        "type": "string[] | undefined",
+        "required": false,
+        "default": "[]",
+        "description": "最近使用的命令 ID，从最近到最早，可通过 v-model:recent 管理，默认空数组。",
         "global": false
       }
     ],
@@ -6251,10 +6615,40 @@
         "required": false,
         "default": "",
         "description": "确认当前命令时触发，参数为被选中的命令 id"
+      },
+      {
+        "name": "update:recent",
+        "type": "[value: string[]]",
+        "required": false,
+        "default": "",
+        "description": "选中可用命令时请求更新最近使用列表，载荷为去重并截断后的 ID 数组。"
       }
     ],
-    "slots": [],
-    "exposed": []
+    "slots": [
+      {
+        "name": "action",
+        "type": "{ action: HysCommandAction; active: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "自定义选项内容，接收 { action, active }。"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "open",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "打开浮层并聚焦搜索框。"
+      },
+      {
+        "name": "close",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "关闭浮层。"
+      }
+    ]
   },
   "HysCommentEditor": {
     "props": [
@@ -6263,7 +6657,55 @@
         "type": "Comment[]",
         "required": true,
         "default": "",
-        "description": "展示的评论列表，每条包含 id、作者、正文和可选时间",
+        "description": "评论数组，每条包含 id、author、text、time? 和 removable?。removable 为 false 时隐藏删除按钮。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用输入和操作，默认 false。",
+        "global": false
+      },
+      {
+        "name": "maxLength",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的最大 Unicode 码点数，省略时无上限。超限时保留草稿并阻止发送。",
+        "global": false
+      },
+      {
+        "name": "submitting",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "发送中状态，禁用发送和删除按钮。默认 false。",
+        "global": false
+      },
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "草稿占位文字。默认提示 Ctrl 或 Command + Enter 发送。",
+        "global": false
+      },
+      {
+        "name": "submit",
+        "type": "((text: string, signal: AbortSignal) => unknown) | undefined",
+        "required": false,
+        "default": "",
+        "description": "异步发送回调，接收去除首尾空白的文本和 AbortSignal。成功后清空未变化的草稿并触发 send，失败保留草稿。组件卸载或停用时中止信号。",
+        "global": false
+      },
+      {
+        "name": "draft",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "评论草稿，可配合 v-model:draft。默认空字符串，发送时请求清空。",
         "global": false
       }
     ],
@@ -6276,11 +6718,25 @@
         "description": "点击删除时发出评论 id，由宿主更新评论列表"
       },
       {
+        "name": "update:draft",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "输入或发送清空时请求更新草稿，载荷为新文本。"
+      },
+      {
         "name": "send",
         "type": "[text: string]",
         "required": false,
         "default": "",
-        "description": "点击发送或使用 Ctrl+Enter 时触发，返回去除首尾空格后的非空草稿"
+        "description": "未配置 submit 时在激活发送后触发。配置后在发送成功时触发。载荷为去除首尾空白后的草稿。"
+      },
+      {
+        "name": "sendError",
+        "type": "[error: unknown, text: string]",
+        "required": false,
+        "default": "",
+        "description": "异步发送失败时触发，依次返回错误和本次提交的文本。"
       }
     ],
     "slots": [],
@@ -6682,6 +7138,13 @@
         "description": "默认项目正文：原始 item、value、label、path、keys、level、disabled、checked、selected、expanded、submenu"
       },
       {
+        "name": "item-control",
+        "type": "HysMenuItemContext<N> & { select: (event?: KeyboardEvent | undefined) => void; }",
+        "required": false,
+        "default": "",
+        "description": "Interactive control beside a menu item. select runs the item's normal action."
+      },
+      {
         "name": "icon",
         "type": "HysMenuItemContext<N>",
         "required": false,
@@ -6863,6 +7326,46 @@
   "HysCronEditor": {
     "props": [
       {
+        "name": "presets",
+        "type": "readonly HysCronPreset[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义预设，包含 { label, value }。省略时显示内置预设，传空数组隐藏预设按钮。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用输入和预设按钮，默认 false。",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "保留文本选择，禁止修改和选择预设，默认 false。",
+        "global": false
+      },
+      {
+        "name": "previewCount",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "显示未来运行时间条数，默认 0，上限 10。按五段数字 Cron 语法以 UTC 搜索未来五年。",
+        "global": false
+      },
+      {
+        "name": "previewFrom",
+        "type": "Date | undefined",
+        "required": false,
+        "default": "",
+        "description": "运行时间预览的基准 Date，默认组件创建时刻。预览只包含严格晚于基准的时间。",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "string | undefined",
         "required": false,
@@ -6881,7 +7384,15 @@
       }
     ],
     "slots": [],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "validate",
+        "type": "() => boolean",
+        "required": false,
+        "default": "",
+        "description": "validate(): boolean。验证五段数字格式、各段边界、范围与步长。"
+      }
+    ]
   },
   "HysDataGrid": {
     "props": [
@@ -6923,6 +7434,30 @@
         "required": false,
         "default": "",
         "description": "每页记录数，默认 10",
+        "global": false
+      },
+      {
+        "name": "showToolbar",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示搜索、分组与列设置工具栏，默认 true。",
+        "global": false
+      },
+      {
+        "name": "pagination",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示分页栏，默认 true。设为 false 时，本地数据全部显示；服务端模式仍使用宿主提供的数据。",
+        "global": false
+      },
+      {
+        "name": "rowNumbers",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示固定在左侧的行号列，默认 false。行号按数据源位置计算，行号列不参与选择或编辑数据单元格。",
         "global": false
       },
       {
@@ -7162,7 +7697,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "允许编辑",
+        "description": "启用内置编辑，默认 false。列 editable 可为布尔值或 (context: HysDataGridCellContext) => boolean。回调用于单元格编辑、右键菜单及批量编辑校验。",
         "global": false
       },
       {
@@ -7171,6 +7706,22 @@
         "required": false,
         "default": "false",
         "description": "启用当前页键盘行导航，默认 false。方向键移动，Home/End 到首末可见行，Enter 触发行点击，空格切换可选行。",
+        "global": false
+      },
+      {
+        "name": "cellNavigation",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用可见数据单元格的键盘导航，默认 false。开启后表体使用单元格焦点。方向键移动，Home / End 到行首 / 行尾，Ctrl 或 Command + Home / End 到当前可见数据的首 / 末单元格。F2 编辑允许编辑的单元格。内嵌控件保留自己的按键操作。",
+        "global": false
+      },
+      {
+        "name": "emptyCellText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认单元格内容遇到 null、undefined 或空字符串时显示的文字，省略时为空。列 emptyText 优先，0 和 false 按原值显示。",
         "global": false
       },
       {
@@ -7246,6 +7797,38 @@
         "global": false
       },
       {
+        "name": "cellSpan",
+        "type": "((context: HysDataGridCellContext<T>) => { rows: number; columns: number; } | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "返回单元格的行跨度与列跨度，rows 为 0 时省略被覆盖的单元格。",
+        "global": false
+      },
+      {
+        "name": "cellTooltip",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认显示原值的浏览器提示。设为 false 可由单元格插槽提供提示。",
+        "global": false
+      },
+      {
+        "name": "virtualRows",
+        "type": "{ height: (row: T) => number; overscan?: number | undefined; } | undefined",
+        "required": false,
+        "default": "",
+        "description": "启用行窗口，height 返回每行高度，overscan 为视口两侧保留的行数。",
+        "global": false
+      },
+      {
+        "name": "virtualColumns",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用数据列窗口。固定列持续渲染。",
+        "global": false
+      },
+      {
         "name": "headerClassName",
         "type": "HysDataGridClass<HysDataGridHeaderContext<T>> | undefined",
         "required": false,
@@ -7262,11 +7845,43 @@
         "global": false
       },
       {
+        "name": "columnOrder",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "Controlled column order. Omitted columns follow in declaration order.",
+        "global": false
+      },
+      {
+        "name": "commitColumnWidth",
+        "type": "((key: string, width: number) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "可选回调 (key, width) => boolean，接收拖动松手、键盘调整和 resizeColumn 产生的列宽，单位为 px，已按列的 minWidth 和 maxWidth 限制。提供回调时，宿主通过 columns 更新宽度并返回是否接受；默认由网格保存。",
+        "global": false
+      },
+      {
+        "name": "fillRemainingWidth",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。开启后，用一列不可交互的空白填满数据列右侧的剩余宽度，数据列保留设定的宽度。",
+        "global": false
+      },
+      {
         "name": "contextMenu",
         "type": "HysDataGridContextMenu<T> | undefined",
         "required": false,
         "default": "",
         "description": "默认保留浏览器菜单。true 启用表头、行和单元格内置菜单。回调 (context, items) 可增删菜单项，返回 false 或空数组时保留浏览器菜单。支持右键和 Shift+F10。",
+        "global": false
+      },
+      {
+        "name": "headerMenuButton",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认 true，启用右键菜单时显示表头的更多按钮。设为 false 后可通过右键或 Shift + F10 打开表头菜单。",
         "global": false
       },
       {
@@ -7386,11 +8001,32 @@
         "description": "双击单元格，载荷为单元格上下文和 MouseEvent。可调用 preventDefault() 拦截内置编辑。"
       },
       {
+        "name": "cellKeydown",
+        "type": "[context: HysDataGridCellContext<T>, event: KeyboardEvent]",
+        "required": false,
+        "default": "",
+        "description": "数据单元格本身收到未处理的 Enter 或 F2 时发出，载荷为单元格上下文和 KeyboardEvent。可通过 preventDefault() 拦截后续内置编辑。"
+      },
+      {
         "name": "cellContextmenu",
         "type": "[context: HysDataGridCellContext<T>, event: MouseEvent]",
         "required": false,
         "default": "",
         "description": "右键点击单元格，载荷为单元格上下文和 MouseEvent。可调用 preventDefault() 拦截内置菜单。"
+      },
+      {
+        "name": "cellMouseEnter",
+        "type": "[context: HysDataGridCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "鼠标进入数据单元格时触发，载荷依次为 HysDataGridCellContext 和原生 MouseEvent。"
+      },
+      {
+        "name": "cellMouseLeave",
+        "type": "[context: HysDataGridCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "鼠标离开数据单元格时触发，载荷依次为 HysDataGridCellContext 和原生 MouseEvent。"
       },
       {
         "name": "contextMenuSelect",
@@ -7453,14 +8089,14 @@
         "type": "[payload: { row: T; rowKey: HysDataGridKey; column: string; value: string; }]",
         "required": false,
         "default": "",
-        "description": "提交单元格编辑时返回原始记录、行键、列键和新文本"
+        "description": "按 Enter 或离开编辑框时触发，载荷为 { row, rowKey, column, value }。value 为新文本，应用更新由调用方处理。Esc 放弃编辑。"
       },
       {
         "name": "batchEdit",
         "type": "[payload: { keys: HysDataGridKey[]; column: string; value: string; }]",
         "required": false,
         "default": "",
-        "description": "提交批量编辑时返回受影响的行键列表、列键和新文本"
+        "description": "提交批量编辑时触发，载荷为 { keys, column, value }。keys 仅包含符合列编辑权限的选中行，value 为新文本。"
       }
     ],
     "slots": [
@@ -7512,6 +8148,27 @@
         "required": false,
         "default": "",
         "description": "自定义数据单元格内容，接收单元格上下文。列专属插槽优先。"
+      },
+      {
+        "name": "row-number",
+        "type": "HysDataGridRowContext<T>",
+        "required": false,
+        "default": "",
+        "description": "自定义行号内容，仅 rowNumbers 开启时渲染，接收行上下文。"
+      },
+      {
+        "name": "row-number-header",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "自定义行号表头，仅 rowNumbers 开启时渲染。"
+      },
+      {
+        "name": "context-menu-item-control",
+        "type": "HysMenuItemContext<HysContextMenuItem> & { select: (event?: KeyboardEvent | undefined) => void; }",
+        "required": false,
+        "default": "",
+        "description": "Interactive control beside a context menu item."
       },
       {
         "name": "[column.key]",
@@ -7632,7 +8289,28 @@
         "type": "(key: HysDataGridKey) => boolean",
         "required": false,
         "default": "",
-        "description": "按行键聚焦当前可见数据行；需要开启 keyboardNavigation，找不到或忙碌时返回 false。"
+        "description": "按行键聚焦当前可见数据行。cellNavigation 开启时定位到行首数据单元格，否则需要开启 keyboardNavigation。无法定位时返回 false。"
+      },
+      {
+        "name": "focusCell",
+        "type": "(rowKey: HysDataGridKey, columnKey: string, focus?: boolean) => boolean",
+        "required": false,
+        "default": "",
+        "description": "focusCell(rowKey: string | number, columnKey: string, focus = true): boolean。cellNavigation 开启时定位单元格。传入 false 只滚动到目标位置，保留当前焦点。"
+      },
+      {
+        "name": "isCellVisible",
+        "type": "(rowKey: HysDataGridKey, columnKey: string) => boolean",
+        "required": false,
+        "default": "",
+        "description": "根据当前数据视图检查该行键和列键对应的单元格是否存在。受分页、折叠、列显隐和加载状态影响，无需开启键盘导航。"
+      },
+      {
+        "name": "getCellView",
+        "type": "() => HysDataGridCellView<object> | undefined",
+        "required": false,
+        "default": "",
+        "description": "读取当前页可见数据行与列的键序列及 getCell(rowKey, columnKey) 查询方法。分组标题与汇总行不参与，加载或失败时返回 undefined。"
       },
       {
         "name": "getCurrentRowKey",
@@ -8521,6 +9199,13 @@
         "description": "选择请求：(value,{source,dates,formatted,weeks?})；周模式附带每个端点的周起止日期"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个选择器"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -8547,13 +9232,6 @@
         "required": false,
         "default": "",
         "description": "对应状态的受控更新请求"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个选择器"
       },
       {
         "name": "invalid",
@@ -9705,6 +10383,13 @@
         "description": "选择请求：(value,{source,dates,formatted,weeks?})；周模式附带每个端点的周起止日期"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个选择器"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -9731,13 +10416,6 @@
         "required": false,
         "default": "",
         "description": "对应状态的受控更新请求"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个选择器"
       },
       {
         "name": "invalid",
@@ -10248,6 +10926,54 @@
         "default": "",
         "description": "对比的新文本，按行显示在右侧",
         "global": false
+      },
+      {
+        "name": "alignChanges",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "对齐相同文本行，便于识别插入和删除，默认 false。差异区域超过 100 万组行组合时保留首尾对齐，中间使用顺序对比。",
+        "global": false
+      },
+      {
+        "name": "changesOnly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "只显示新增、删除和修改的行，默认 false。",
+        "global": false
+      },
+      {
+        "name": "lineNumbers",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示修改前和修改后各自的原始行号，默认 false。",
+        "global": false
+      },
+      {
+        "name": "beforeLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"修改前\"",
+        "description": "原始文本标题，默认“修改前”。",
+        "global": false
+      },
+      {
+        "name": "afterLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"修改后\"",
+        "description": "新文本标题，默认“修改后”。",
+        "global": false
+      },
+      {
+        "name": "contextLines",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "只显示每处变化前后的指定行数。有限数值取非负整数，省略时显示全文，changesOnly 开启时优先只显示变更行。",
+        "global": false
       }
     ],
     "events": [],
@@ -10576,6 +11302,14 @@
         "global": false
       },
       {
+        "name": "zIndex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "层级起点；嵌套层与内部浮层始终高于当前层",
+        "global": false
+      },
+      {
         "name": "footer",
         "type": "boolean | undefined",
         "required": false,
@@ -10805,14 +11539,6 @@
         "required": false,
         "default": "",
         "description": "关闭延迟毫秒；重新打开取消等待",
-        "global": false
-      },
-      {
-        "name": "zIndex",
-        "type": "number | undefined",
-        "required": false,
-        "default": "",
-        "description": "层级起点；嵌套层与内部浮层始终高于当前层",
         "global": false
       },
       {
@@ -11570,6 +12296,54 @@
         "global": false
       },
       {
+        "name": "accept",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的文件扩展名、MIME 类型和 MIME 通配符，使用逗号分隔。选择及拖入均校验。",
+        "global": false
+      },
+      {
+        "name": "maxSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的单文件最大字节数，省略时不限。",
+        "global": false
+      },
+      {
+        "name": "maxCount",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "允许的总附件数量，包含 modelValue 中的已有附件，省略时不限。",
+        "global": false
+      },
+      {
+        "name": "multiple",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "允许每次选择或拖入多个文件，默认 true。",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无附件\"",
+        "description": "附件为空时的提示，默认“暂无附件”。",
+        "global": false
+      },
+      {
+        "name": "retryable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。为 status 为 error 的附件显示重试按钮。附件由宿主设置 status（uploading、error 或 ready）和 progress（0–100）。",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "ManagedFile[] | undefined",
         "required": false,
@@ -11587,6 +12361,13 @@
         "description": "文件清单的模型更新通道，上传、移除与下载由对应事件交给业务处理"
       },
       {
+        "name": "retry",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": "点击错误附件的重试按钮时触发，载荷为附件 ID。由宿主发起重试并更新附件状态。"
+      },
+      {
         "name": "remove",
         "type": "[id: string]",
         "required": false,
@@ -11594,11 +12375,18 @@
         "description": "点击移除附件时返回附件 id，由宿主更新列表"
       },
       {
+        "name": "reject",
+        "type": "[files: HysFileRejection[]]",
+        "required": false,
+        "default": "",
+        "description": "选择或拖入文件后返回被拒绝的列表。每项包含 file 和 reason，reason 为 type、size 或 count。"
+      },
+      {
         "name": "upload",
         "type": "[files: File[]]",
         "required": false,
         "default": "",
-        "description": "选择或拖入文件时返回原生 File 数组，宿主负责上传和更新附件"
+        "description": "选择或拖入文件时返回校验通过的原生 File 数组，宿主负责上传和更新附件。"
       },
       {
         "name": "download",
@@ -13489,6 +14277,13 @@
         "description": "名称、风格或状态变更，载荷为 HysIconContext。"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "图标获得焦点，载荷为原生 FocusEvent。"
+      },
+      {
         "name": "click",
         "type": "[event: MouseEvent]",
         "required": false,
@@ -13508,13 +14303,6 @@
         "required": false,
         "default": "",
         "description": "资源不存在、被限制或加载失败，参数为错误和 HysIconContext。"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "图标获得焦点，载荷为原生 FocusEvent。"
       },
       {
         "name": "load",
@@ -14086,6 +14874,13 @@
         "description": "原生确认或失焦后返回原始文本；同次提交不重复触发"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -14105,13 +14900,6 @@
         "required": false,
         "default": "",
         "description": "接受本次输入后返回解析后的原始文本"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
       },
       {
         "name": "pressEnter",
@@ -14318,6 +15106,54 @@
   "HysJsonEditor": {
     "props": [
       {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许选择文本，禁止编辑和格式化，默认 false。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用编辑器和操作按钮，默认 false。",
+        "global": false
+      },
+      {
+        "name": "compactable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示压缩按钮，默认 false。",
+        "global": false
+      },
+      {
+        "name": "indent",
+        "type": "number | undefined",
+        "required": false,
+        "default": "2",
+        "description": "格式化时使用的空格数，限制为 0–10，默认 2。",
+        "global": false
+      },
+      {
+        "name": "validate",
+        "type": "((value: unknown) => string | void) | undefined",
+        "required": false,
+        "default": "",
+        "description": "JSON 语法正确后调用的业务校验函数，接收解析值，返回错误字符串或不返回。",
+        "global": false
+      },
+      {
+        "name": "autoIndent",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。按 Enter 时继承当前行的前导空白，左花括号或左方括号后再增加 indent 个空格。输入法组合期间保留原生处理。",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "string | undefined",
         "required": false,
@@ -14333,6 +15169,13 @@
         "required": false,
         "default": "",
         "description": "文本编辑或格式化后的 JSON 文本，手动编辑期间可包含尚未有效的 JSON"
+      },
+      {
+        "name": "format",
+        "type": "[text: string, mode: \"compact\" | \"pretty\"]",
+        "required": false,
+        "default": "",
+        "description": "成功格式化或压缩时触发，载荷依次为转换后的 JSON 文本及 pretty / compact。"
       }
     ],
     "slots": [],
@@ -14342,10 +15185,10 @@
     "props": [
       {
         "name": "columns",
-        "type": "{ id: string; title: string; }[]",
+        "type": "HysKanbanColumn[]",
         "required": true,
         "default": "",
-        "description": "列定义",
+        "description": "看板列，字段为 id、title 和可选 limit。非负整数 limit 限制列容量，省略时不限。",
         "global": false
       },
       {
@@ -14353,7 +15196,39 @@
         "type": "KanbanCard[]",
         "required": true,
         "default": "",
-        "description": "看板卡片数据，每项的 column 字段决定所属栏位",
+        "description": "卡片数组，字段为 id、title、column、owner? 和 disabled?。disabled 锁定该卡片。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "禁用拖动和下拉移动，默认 false。",
+        "global": false
+      },
+      {
+        "name": "canMove",
+        "type": "((move: HysKanbanMove) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "移动权限回调，接收 { card, from, to }，返回 false 禁止下拉选项和拖动放置。",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "空列的提示，默认“暂无卡片”。",
+        "global": false
+      },
+      {
+        "name": "reorderable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示同列上移和下移按钮，默认 false。锁定卡片以及列表边界限制相邻交换。",
         "global": false
       }
     ],
@@ -14363,10 +15238,39 @@
         "type": "[id: string, column: string]",
         "required": false,
         "default": "",
-        "description": "拖动卡片或使用列选择器时返回卡片 id 和目标栏标识"
+        "description": "拖放或下拉移动通过校验后触发，返回卡片 id 和目标列 id。调用方更新 cards。"
+      },
+      {
+        "name": "moveRejected",
+        "type": "[move: HysKanbanMove]",
+        "required": false,
+        "default": "",
+        "description": "拖放被拒绝时触发，返回 { card, from, to }。"
+      },
+      {
+        "name": "reorder",
+        "type": "[column: string, cardIds: string[]]",
+        "required": false,
+        "default": "",
+        "description": "同列相邻交换通过检查后触发，载荷依次为列 ID 和该列调整后的全部卡片 ID。宿主更新 cards。"
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "card",
+        "type": "{ card: KanbanCard; column: HysKanbanColumn; }",
+        "required": false,
+        "default": "",
+        "description": "自定义卡片正文，接收 { card, column }。"
+      },
+      {
+        "name": "empty",
+        "type": "{ column: HysKanbanColumn; }",
+        "required": false,
+        "default": "",
+        "description": "自定义空列提示，接收 { column }。"
+      }
+    ],
     "exposed": []
   },
   "HysMention": {
@@ -15052,6 +15956,13 @@
         "description": "已接受的文本发生变化时返回纯文本内容"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "search",
         "type": "[query: string, prefix: string, context: HysMentionContext]",
         "required": false,
@@ -15080,18 +15991,18 @@
         "description": "用户选择候选时返回兼容成员数据、触发词和候选对象"
       },
       {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
-      },
-      {
         "name": "loadError",
         "type": "[error: unknown, context: HysMentionContext]",
         "required": false,
         "default": "",
         "description": "当前远程候选请求失败时返回原因和查询上下文"
+      },
+      {
+        "name": "openChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际候选面板显隐变化"
       },
       {
         "name": "create",
@@ -15106,13 +16017,6 @@
         "required": false,
         "default": "",
         "description": "请求更新完整实体集合，包含实体的标识和文本范围"
-      },
-      {
-        "name": "openChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际候选面板显隐变化"
       },
       {
         "name": "documentChange",
@@ -16496,6 +17400,30 @@
         "default": "false",
         "description": "禁止用户操作",
         "global": false
+      },
+      {
+        "name": "searchable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示搜索框，默认 false。标题、详情和 category 参与不区分大小写的匹配，可与未读过滤叠加。",
+        "global": false
+      },
+      {
+        "name": "dismissible",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "为每条通知显示移除按钮，默认 false。",
+        "global": false
+      },
+      {
+        "name": "categoryFilter",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示从通知 category 字段生成的分类筛选，默认 false。分类和未读及文本筛选可叠加，全部已读应用于所有通知。",
+        "global": false
       }
     ],
     "events": [
@@ -16519,9 +17447,38 @@
         "required": false,
         "default": "",
         "description": "点击全部已读时触发，由宿主更新通知数据"
+      },
+      {
+        "name": "dismiss",
+        "type": "[id: string]",
+        "required": false,
+        "default": "",
+        "description": "激活移除按钮时请求移除，载荷为通知 id，由宿主更新 items。"
+      },
+      {
+        "name": "categoryChange",
+        "type": "[category: string]",
+        "required": false,
+        "default": "",
+        "description": "选择分类时触发，载荷为分类名或代表全部分类的空字符串。"
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "notice",
+        "type": "{ item: Notice; }",
+        "required": false,
+        "default": "",
+        "description": "自定义通知正文，接收 { item }。"
+      },
+      {
+        "name": "empty",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "替换当前结果为空时的提示。"
+      }
+    ],
     "exposed": []
   },
   "HysNumberInput": {
@@ -16855,6 +17812,13 @@
         "description": "实际接受的新值，按模式返回 number、string 或 null"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入获得焦点的原生事件"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -16874,13 +17838,6 @@
         "required": false,
         "default": "",
         "description": "草稿解析后的值，空或无效草稿为 null；不代表已提交"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入获得焦点的原生事件"
       },
       {
         "name": "pressEnter",
@@ -17063,6 +18020,38 @@
         "default": "false",
         "description": "禁止用户操作；同时继承所属字段或表单的禁用状态",
         "global": false
+      },
+      {
+        "name": "expandedKeys",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控展开节点 id 列表，可配合 v-model:expanded-keys。",
+        "global": false
+      },
+      {
+        "name": "defaultExpandAll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "未受控时初始展开全部分支，默认 true。",
+        "global": false
+      },
+      {
+        "name": "showDescription",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "在节点名称后显示 description，默认 false。node 插槽可替换正文。",
+        "global": false
+      },
+      {
+        "name": "searchDetails",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "开启后搜索节点 name、description 和 keywords，忽略大小写，多个空格分隔词均需匹配。默认 false。",
+        "global": false
       }
     ],
     "events": [
@@ -17079,9 +18068,31 @@
         "required": false,
         "default": "",
         "description": "组织节点勾选发生变化时返回完整的新 id 列表"
+      },
+      {
+        "name": "update:expandedKeys",
+        "type": "[keys: string[]]",
+        "required": false,
+        "default": "",
+        "description": "展开状态变化时请求同步新的字符串 id 列表。"
+      },
+      {
+        "name": "nodeSelect",
+        "type": "[node: OrgNode]",
+        "required": false,
+        "default": "",
+        "description": "激活节点时触发，返回该节点的原始 OrgNode 对象。"
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "node",
+        "type": "{ node: OrgNode; }",
+        "required": false,
+        "default": "",
+        "description": "替换节点正文，接收 { node: OrgNode }。"
+      }
+    ],
     "exposed": []
   },
   "HysPagination": {
@@ -17143,11 +18154,35 @@
         "global": false
       },
       {
+        "name": "pageSizeStrategy",
+        "type": "\"first\" | \"preserve-page\" | \"preserve-item\" | undefined",
+        "required": false,
+        "default": "\"preserve-page\"",
+        "description": "每页条数生效后使用的页码策略。preserve-page（默认）保留页码并处理越界，first 回到首页，preserve-item 定位至原页首记录所在的新页面。宿主同时提供新页码时优先使用该页码。",
+        "global": false
+      },
+      {
         "name": "siblingCount",
         "type": "number | undefined",
         "required": false,
         "default": "1",
         "description": "当前页左右各保留的页码数量，取值 0–5。",
+        "global": false
+      },
+      {
+        "name": "jumpGaps",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "将页码省略号替换成跳页按钮，默认 false。紧凑模式只显示当前页与总页数。",
+        "global": false
+      },
+      {
+        "name": "gapStep",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "省略号每次跳转的页数，默认 5。正数向下取整，目标限制在有效页码范围内。",
         "global": false
       },
       {
@@ -17232,7 +18267,7 @@
       },
       {
         "name": "labels",
-        "type": "Partial<{ total: string; perPage: string; jump: string; page: string; pageItem: string; navigation: string; confirm: string; first: string; previous: string; next: string; last: string; }> | undefined",
+        "type": "Partial<{ total: string; perPage: string; jump: string; page: string; pageItem: string; navigation: string; confirm: string; first: string; previous: string; next: string; last: string; jumpBackward: string; jumpForward: string; }> | undefined",
         "required": false,
         "default": "",
         "description": "覆盖分页区域、按钮、字段标签和总数格式。",
@@ -17279,10 +18314,10 @@
       },
       {
         "name": "item",
-        "type": "{ type: \"page\" | NavigationItem; page: number; active: boolean; disabled: boolean; }",
+        "type": "{ type: \"page\" | NavigationItem | \"jump-backward\" | \"jump-forward\"; page: number; active: boolean; disabled: boolean; }",
         "required": false,
         "default": "",
-        "description": "自定义页码按钮内部内容，保留组件的选中、禁用和点击处理"
+        "description": "自定义页码及导航按钮。参数为 type、page、active、disabled。启用省略号跳页时 type 还包含 jump-backward 与 jump-forward，page 为目标页。"
       },
       {
         "name": "jump-button",
@@ -17343,6 +18378,38 @@
         "default": "true",
         "description": "显示全局、按角色和按资源的批量勾选入口",
         "global": false
+      },
+      {
+        "name": "cellDisabled",
+        "type": "((cell: HysPermissionCell) => boolean) | undefined",
+        "required": false,
+        "default": "",
+        "description": "按单元格锁定权限。接收 { resource, role, key, checked }，返回 true 时禁止单项和批量修改。批量勾选状态根据可编辑单元格计算。",
+        "global": false
+      },
+      {
+        "name": "caption",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "原生表格标题。省略时隐藏。",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"暂无可配置权限\"",
+        "description": "角色或资源为空时的提示，默认“暂无可配置权限”。empty 插槽优先。",
+        "global": false
+      },
+      {
+        "name": "filter",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "按资源名称筛选，忽略大小写和首尾空白，默认展示所有资源。开启筛选时，行、列及全选只修改可见且未锁定的权限。",
+        "global": false
       }
     ],
     "events": [
@@ -17359,9 +18426,38 @@
         "required": false,
         "default": "",
         "description": "用户切换单项或批量权限时触发，参数为修改后的完整权限映射"
+      },
+      {
+        "name": "cellsChange",
+        "type": "[cells: HysPermissionCell[]]",
+        "required": false,
+        "default": "",
+        "description": "单项或批量操作实际改变权限后触发，返回变动项数组。每项包含 resource、role、key 以及操作后的 checked。"
       }
     ],
-    "slots": [],
+    "slots": [
+      {
+        "name": "role",
+        "type": "{ role: string; }",
+        "required": false,
+        "default": "",
+        "description": "自定义角色列标题，接收 { role }。"
+      },
+      {
+        "name": "resource",
+        "type": "{ resource: string; }",
+        "required": false,
+        "default": "",
+        "description": "自定义资源行标题，接收 { resource }。"
+      },
+      {
+        "name": "empty",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "角色或资源为空时替换表体提示。"
+      }
+    ],
     "exposed": []
   },
   "HysPopconfirm": {
@@ -17687,6 +18783,14 @@
         "global": false
       },
       {
+        "name": "zIndex",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "浮层的起始层级，嵌套时遵守共享浮层栈",
+        "global": false
+      },
+      {
         "name": "color",
         "type": "string | undefined",
         "required": false,
@@ -17708,6 +18812,14 @@
         "required": false,
         "default": "9",
         "description": "气泡与锚点的间距，单位 px，默认 9。负值可让气泡与锚点重叠。",
+        "global": false
+      },
+      {
+        "name": "reference",
+        "type": "HysPopupReference | (() => HysPopupReference | undefined) | undefined",
+        "required": false,
+        "default": "",
+        "description": "独立 HTMLElement、虚拟矩形或返回它们的函数；虚拟矩形使用 manual/受控模式",
         "global": false
       },
       {
@@ -17759,14 +18871,6 @@
         "global": false
       },
       {
-        "name": "zIndex",
-        "type": "number | undefined",
-        "required": false,
-        "default": "",
-        "description": "浮层的起始层级，嵌套时遵守共享浮层栈",
-        "global": false
-      },
-      {
         "name": "overlayClass",
         "type": "string | undefined",
         "required": false,
@@ -17812,14 +18916,6 @@
         "required": false,
         "default": "true",
         "description": "点击外部请求关闭，默认 true",
-        "global": false
-      },
-      {
-        "name": "reference",
-        "type": "HysPopupReference | (() => HysPopupReference | undefined) | undefined",
-        "required": false,
-        "default": "",
-        "description": "独立 HTMLElement、虚拟矩形或返回它们的函数；虚拟矩形使用 manual/受控模式",
         "global": false
       },
       {
@@ -17897,6 +18993,13 @@
         "description": "检查和提交均完成后发出，载荷为 result、HysPopconfirmActionContext。"
       },
       {
+        "name": "openChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际展开状态变化的别名：boolean"
+      },
+      {
         "name": "opened",
         "type": "[]",
         "required": false,
@@ -17909,13 +19012,6 @@
         "required": false,
         "default": "",
         "description": "收起过渡完成"
-      },
-      {
-        "name": "openChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际展开状态变化的别名：boolean"
       },
       {
         "name": "dismiss",
@@ -18028,7 +19124,7 @@
       },
       {
         "name": "focus",
-        "type": "() => void | undefined",
+        "type": "(options?: { suppressTooltip?: boolean | undefined; } | undefined) => void",
         "required": false,
         "default": "",
         "description": "聚焦实际触发控件"
@@ -18421,6 +19517,13 @@
         "description": "实际开始收起"
       },
       {
+        "name": "openChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际展开状态变化的别名：boolean"
+      },
+      {
         "name": "opened",
         "type": "[]",
         "required": false,
@@ -18433,13 +19536,6 @@
         "required": false,
         "default": "",
         "description": "收起过渡完成"
-      },
-      {
-        "name": "openChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际展开状态变化的别名：boolean"
       }
     ],
     "slots": [
@@ -18517,10 +19613,327 @@
       },
       {
         "name": "focus",
-        "type": "() => void | undefined",
+        "type": "(options?: { suppressTooltip?: boolean | undefined; } | undefined) => void",
         "required": false,
         "default": "",
         "description": "聚焦实际触发控件"
+      }
+    ]
+  },
+  "HysProGrid": {
+    "props": [
+      {
+        "name": "rows",
+        "type": "readonly T[]",
+        "required": true,
+        "default": "",
+        "description": "宿主拥有的原始记录。保存成功后通过 cellCommit 更新。活动单元格的行对象或原始值变化时取消编辑。",
+        "global": false
+      },
+      {
+        "name": "columns",
+        "type": "readonly HysProGridColumn<T>[]",
+        "required": true,
+        "default": "",
+        "description": "继承 DataGrid 列配置，并支持 render、editor、canEdit、validate。列 key 应唯一；编辑过程中保留活动列配置对象的身份。",
+        "global": false
+      },
+      {
+        "name": "rowKey",
+        "type": "string | ((row: T) => HysDataGridKey)",
+        "required": true,
+        "default": "",
+        "description": "稳定的字符串或有限数字行标识，接受字段路径或 (row) => key。缺失或重复键的记录仍可展示，编辑入口禁用。",
+        "global": false
+      },
+      {
+        "name": "gridOptions",
+        "type": "HysProGridOptions<T> | undefined",
+        "required": false,
+        "default": "",
+        "description": "DataGrid 查询、分页、选中、列设置和显示配置。远程数据通过 serverMode 和 queryChange 由宿主提供。默认使用 DataGrid 自身默认值。",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "全表只读，默认 false。切换为 true 时结束活动编辑，仍可使用查询与导航。",
+        "global": false
+      },
+      {
+        "name": "showEditButton",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否显示单元格内的铅笔编辑入口，默认 true。双击和键盘编辑入口始终可用。",
+        "global": false
+      },
+      {
+        "name": "showEditActions",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "活动单元格内是否显示确认和取消按钮，默认 true。",
+        "global": false
+      },
+      {
+        "name": "commitOnBlur",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。文本或数字编辑器的焦点离开编辑区时提交，成功后保留新焦点。",
+        "global": false
+      },
+      {
+        "name": "typeToEdit",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。开启后，在聚焦的文本或数字单元格直接键入字符会以该字符开始编辑，仍需提交才更新数据。",
+        "global": false
+      },
+      {
+        "name": "enterToEdit",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认 true。关闭后 Enter 交由宿主处理，F2 仍可进入编辑。",
+        "global": false
+      },
+      {
+        "name": "saveCell",
+        "type": "HysProGridEditHandler<T> | undefined",
+        "required": false,
+        "default": "",
+        "description": "类型解析与列校验通过后调用 (change, { signal })。返回 true 或 void 通过，false 使用默认错误，字符串作为错误文案，可返回 Promise。未设置时直接发送 cellCommit。",
+        "global": false
+      },
+      {
+        "name": "clipboard",
+        "type": "HysProGridClipboardBinding<T> | undefined",
+        "required": false,
+        "default": "",
+        "description": "传入从 hys-ui/pro-grid/clipboard 创建的实例，启用矩形选区、复制与批量粘贴。每个表格使用独立实例，默认未启用。",
+        "global": false
+      },
+      {
+        "name": "messages",
+        "type": "Partial<HysProGridMessages> | undefined",
+        "required": false,
+        "default": "",
+        "description": "覆盖中文编辑、状态和错误文案。min / max 文案可使用 {value}。未配置的字段保留组件默认值。",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "selectionChange",
+        "type": "[keys: HysDataGridKey[]]",
+        "required": false,
+        "default": "",
+        "description": "选中键实际变化后触发，载荷为当前选中键数组。"
+      },
+      {
+        "name": "update:selectedRowKeys",
+        "type": "[keys: HysDataGridKey[]]",
+        "required": false,
+        "default": "",
+        "description": "请求更新 gridOptions.selectedRowKeys，载荷为下一份选中键数组。"
+      },
+      {
+        "name": "columnLayoutChange",
+        "type": "[layout: HysDataGridColumnLayoutSnapshot]",
+        "required": false,
+        "default": "",
+        "description": "列布局改变后发出独立快照，含 order、hidden、widths 和可选 pins。"
+      },
+      {
+        "name": "update:currentRowKey",
+        "type": "[key: HysDataGridKey | null]",
+        "required": false,
+        "default": "",
+        "description": "请求更新 gridOptions.currentRowKey，载荷为行键或 null。"
+      },
+      {
+        "name": "contextMenuSelect",
+        "type": "[key: HysMenuKey, context: HysDataGridContext<T>, info: HysMenuSelectInfo<HysContextMenuItem>]",
+        "required": false,
+        "default": "",
+        "description": "选择右键菜单项时发出命令键、表格上下文和菜单事件信息。"
+      },
+      {
+        "name": "update:groupBy",
+        "type": "[key: string]",
+        "required": false,
+        "default": "",
+        "description": "请求更新 gridOptions.groupBy，载荷为列键或空字符串。"
+      },
+      {
+        "name": "update:query",
+        "type": "[query: HysDataGridQuery]",
+        "required": false,
+        "default": "",
+        "description": "请求更新 gridOptions.query，载荷为下一份完整 HysDataGridQuery。"
+      },
+      {
+        "name": "queryChange",
+        "type": "[query: HysDataGridQuery]",
+        "required": false,
+        "default": "",
+        "description": "查询实际变化时触发，可用于请求远程当前页数据。"
+      },
+      {
+        "name": "editStart",
+        "type": "[cell: HysProGridCell<T>]",
+        "required": false,
+        "default": "",
+        "description": "打开一个可编辑单元格时触发，载荷为包含原始值、行、列和位置的 HysProGridCell。"
+      },
+      {
+        "name": "editCancel",
+        "type": "[cell: HysProGridCell<T>, reason: HysProGridCancelReason]",
+        "required": false,
+        "default": "",
+        "description": "手动取消或编辑被视图/数据变化中断时触发。载荷为单元格和 cancel、view-change 或 data-change。"
+      },
+      {
+        "name": "editError",
+        "type": "[failure: HysProGridFailure]",
+        "required": false,
+        "default": "",
+        "description": "解析、校验或保存失败后触发，载荷为 { rowKey, columnKey, stage, message, cause? }。"
+      },
+      {
+        "name": "cellCommit",
+        "type": "[change: HysProGridChange<T>]",
+        "required": false,
+        "default": "",
+        "description": "类型解析、校验和保存全部通过后触发。载荷含行、行键、列键、原值、editor 判别字段和类型化新值；宿主更新 rows。"
+      },
+      {
+        "name": "cellsCommit",
+        "type": "[changes: readonly HysProGridChange<T>[]]",
+        "required": false,
+        "default": "",
+        "description": "剪贴板粘贴的所有单元格通过权限、解析、校验和保存后一次触发。载荷为按行排列的只读 HysProGridChange 数组，宿主一次更新 rows。单格粘贴也通过此事件返回。"
+      }
+    ],
+    "slots": [
+      {
+        "name": "header-cell",
+        "type": "HysDataGridHeaderContext<T>",
+        "required": false,
+        "default": "",
+        "description": "自定义 DataGrid 列标题内容，接收列头上下文。"
+      },
+      {
+        "name": "row-number",
+        "type": "HysDataGridRowContext<T>",
+        "required": false,
+        "default": "",
+        "description": "自定义行号内容，接收当前行上下文，需开启 gridOptions.rowNumbers。"
+      },
+      {
+        "name": "row-number-header",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "自定义行号列标题，需开启 gridOptions.rowNumbers。"
+      },
+      {
+        "name": "context-menu-item-control",
+        "type": "HysMenuItemContext<HysContextMenuItem> & { select: (event?: KeyboardEvent | undefined) => void; }",
+        "required": false,
+        "default": "",
+        "description": "Interactive control beside a context menu item."
+      },
+      {
+        "name": "cell",
+        "type": "HysProGridCell<T> & { edit: () => boolean; editable: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "自定义显示，接收 HysProGridCell、editable 和 edit()。优先于 render 与 formatter。"
+      },
+      {
+        "name": "editor",
+        "type": "HysProGridEditorScope<T>",
+        "required": false,
+        "default": "",
+        "description": "用于 type=custom，渲染在活动单元格内。接收 cell、draft、phase、error、inputId、errorId 和 setDraft、commit、cancel。控件可通过 inputId 关联焦点，用 errorId 关联错误提示。"
+      },
+      {
+        "name": "toolbar-actions",
+        "type": "{ query: HysDataGridQuery; selectedKeys: HysDataGridKey[]; }",
+        "required": false,
+        "default": "",
+        "description": "在 DataGrid 工具栏末尾插入内容，参数为 query 和 selectedKeys。"
+      },
+      {
+        "name": "empty",
+        "type": "{ query: HysDataGridQuery; }",
+        "required": false,
+        "default": "",
+        "description": "替换无数据内容，接收当前 query。"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "editing",
+        "type": "HysProGridAddress | null",
+        "required": false,
+        "default": "",
+        "description": "活动单元格的 { rowKey, columnKey }，空闲时为 null。"
+      },
+      {
+        "name": "commitEdit",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "提交当前编辑，返回 Promise<boolean>。成功返回 true，无编辑、处理中、失败或失效返回 false。"
+      },
+      {
+        "name": "cancelEdit",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "关闭当前编辑并发出取消信号，尝试恢复单元格焦点。"
+      },
+      {
+        "name": "focusCell",
+        "type": "(rowKey: HysDataGridKey, columnKey: string, focus?: boolean) => boolean",
+        "required": false,
+        "default": "",
+        "description": "按行键和列键定位单元格。第三个参数 focus 默认 true，传入 false 只滚动到目标位置。"
+      },
+      {
+        "name": "getQuery",
+        "type": "() => HysDataGridQuery",
+        "required": false,
+        "default": "",
+        "description": "组件挂载后读取当前 DataGrid 查询快照。"
+      },
+      {
+        "name": "setQuery",
+        "type": "(query: Partial<HysDataGridQuery>) => void",
+        "required": false,
+        "default": "",
+        "description": "请求部分更新查询，合并到当前查询。"
+      },
+      {
+        "name": "getColumnLayout",
+        "type": "() => HysDataGridColumnLayoutSnapshot",
+        "required": false,
+        "default": "",
+        "description": "组件挂载后读取 DataGrid 列布局快照。"
+      },
+      {
+        "name": "applyColumnLayout",
+        "type": "(layout: HysDataGridColumnLayout) => void",
+        "required": false,
+        "default": "",
+        "description": "应用列布局预设，沿用 DataGrid 的列宽和显隐约束。"
       }
     ]
   },
@@ -18970,18 +20383,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开控件或整个分组"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
       }
     ],
     "slots": [
@@ -19225,18 +20638,18 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开控件或整个分组"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "控件或分组获得焦点的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开控件或整个分组"
       }
     ],
     "slots": [
@@ -19624,6 +21037,13 @@
         "description": "一次有效操作请求的新值；宿主可拒绝，实例方法结果反映最终接受情况"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入组件的原生事件"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -19636,13 +21056,6 @@
         "required": false,
         "default": "",
         "description": "焦点离开组件的原生事件"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入组件的原生事件"
       },
       {
         "name": "keydown",
@@ -19783,6 +21196,54 @@
         "global": false
       },
       {
+        "name": "edge",
+        "type": "\"start\" | \"end\" | undefined",
+        "required": false,
+        "default": "\"end\"",
+        "description": "拖动手柄所在的逻辑边缘，start 或 end，默认 end。自动适配从右向左的布局。",
+        "global": false
+      },
+      {
+        "name": "resetWidth",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "双击手柄或聚焦后按 Enter 恢复的像素宽度，受 minWidth 和 maxWidth 约束。省略时不重置。",
+        "global": false
+      },
+      {
+        "name": "snap",
+        "type": "readonly number[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "可选吸附宽度列表，单位像素。仅指针拖动时应用，越界值会被忽略。",
+        "global": false
+      },
+      {
+        "name": "snapThreshold",
+        "type": "number | undefined",
+        "required": false,
+        "default": "8",
+        "description": "吸附距离，默认 8 像素。取非负有限值。",
+        "global": false
+      },
+      {
+        "name": "resizeLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"调整面板宽度\"",
+        "description": "分隔条无障碍名称，默认“调整面板宽度”。",
+        "global": false
+      },
+      {
+        "name": "cancelable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。开启后，拖动时按 Esc 或发生 pointercancel 会请求恢复本次拖动开始时的宽度。",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "number | undefined",
         "required": false,
@@ -19812,15 +21273,22 @@
         "required": false,
         "default": "",
         "description": "拖动结束或取消时触发，参数为当前生效的宽度"
+      },
+      {
+        "name": "resizeCancel",
+        "type": "[width: number]",
+        "required": false,
+        "default": "",
+        "description": "可取消拖动被取消时触发，载荷为按边界限制后的恢复宽度。"
       }
     ],
     "slots": [
       {
         "name": "default",
-        "type": "{}",
+        "type": "{ width: number; }",
         "required": false,
         "default": "",
-        "description": "随可调整宽度一起布局的面板内容"
+        "description": "随可调整宽度一起布局的面板内容，接收 { width: number }。"
       }
     ],
     "exposed": []
@@ -19885,7 +21353,7 @@
       },
       {
         "name": "headingLevel",
-        "type": "2 | 3 | 4 | 5 | 6 | undefined",
+        "type": "3 | 2 | 4 | 5 | 6 | undefined",
         "required": false,
         "default": "2",
         "description": "结果标题使用的原生标题层级，支持 2–6。",
@@ -19906,9 +21374,64 @@
         "default": "",
         "description": "覆盖辅助技术播报文案。省略时由状态码、标题和副标题组成。自定义标题插槽时可显式传入。",
         "global": false
+      },
+      {
+        "name": "layout",
+        "type": "\"inline\" | \"stacked\" | undefined",
+        "required": false,
+        "default": "\"stacked\"",
+        "description": "stacked（默认）从上往下排列内容。inline 将图标放在正文起始侧，适合嵌入卡片或表单。",
+        "global": false
+      },
+      {
+        "name": "detailsLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"查看详情\"",
+        "description": "详情展开按钮的文字，默认“查看详情”。只在使用 details 插槽时显示。",
+        "global": false
+      },
+      {
+        "name": "detailsOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控的详情展开状态，可配合 v-model:details-open。",
+        "global": false
+      },
+      {
+        "name": "defaultDetailsOpen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控的初始展开状态，默认 false。",
+        "global": false
+      },
+      {
+        "name": "progress",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "pending 状态下显示的进度百分比。有限数值限制为 0–100，省略时隐藏进度条。",
+        "global": false
       }
     ],
-    "events": [],
+    "events": [
+      {
+        "name": "update:detailsOpen",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "激活详情按钮时请求更新展开状态，载荷为目标布尔值。"
+      },
+      {
+        "name": "detailsToggle",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "激活详情按钮时触发，载荷为本次请求的展开状态。"
+      }
+    ],
     "slots": [
       {
         "name": "default",
@@ -19944,6 +21467,13 @@
         "required": false,
         "default": "",
         "description": "结果后的操作区，接收结果上下文，例如返回、查看或重试。"
+      },
+      {
+        "name": "details",
+        "type": "HysResultContext",
+        "required": false,
+        "default": "",
+        "description": "可折叠的详情正文。接收结果上下文和 detailsOpen，收起时保留正文状态。"
       }
     ],
     "exposed": [
@@ -19998,6 +21528,30 @@
         "global": false
       },
       {
+        "name": "plainTextPaste",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "粘贴及拖入时仅保留纯文本，默认 false。HTML 模式清理粘贴、拖入及外部传入的内容。",
+        "global": false
+      },
+      {
+        "name": "showBlockTools",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示小标题、引用和清除样式按钮，默认 false。",
+        "global": false
+      },
+      {
+        "name": "showTextCount",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示正文字符数，默认 false。按 Unicode 码点计数，忽略空白。",
+        "global": false
+      },
+      {
         "name": "modelValue",
         "type": "string | undefined",
         "required": false,
@@ -20022,18 +21576,18 @@
         "description": "编辑内容发生变化时返回新的 HTML 字符串"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
       }
     ],
     "slots": [],
@@ -20058,6 +21612,13 @@
         "required": false,
         "default": "",
         "description": "读取当前编辑区的 HTML 字符串"
+      },
+      {
+        "name": "getText",
+        "type": "() => string",
+        "required": false,
+        "default": "",
+        "description": "getText(): string。读取编辑区域的纯文本，挂载前返回空字符串。"
       }
     ]
   },
@@ -20193,6 +21754,13 @@
         "description": "输入或清空后的关键词字符串，搜索触发时机由 trigger 控制"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "search",
         "type": "[value: string, event?: Event | undefined]",
         "required": false,
@@ -20212,13 +21780,6 @@
         "required": false,
         "default": "",
         "description": "输入控件失去焦点时触发，参数为原生 FocusEvent"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
       }
     ],
     "slots": [
@@ -20483,18 +22044,18 @@
         "description": "一次有效操作请求的新值；宿主可拒绝，实例方法结果反映最终接受情况"
       },
       {
-        "name": "blur",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点离开组件的原生事件"
-      },
-      {
         "name": "focus",
         "type": "[event: FocusEvent]",
         "required": false,
         "default": "",
         "description": "焦点进入组件的原生事件"
+      },
+      {
+        "name": "blur",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点离开组件的原生事件"
       }
     ],
     "slots": [
@@ -21064,6 +22625,14 @@
         "global": false
       },
       {
+        "name": "nativeLabelTooltip",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "是否使用浏览器原生提示展示选项和已选标签，默认 true。设为 false 关闭原生提示。",
+        "global": false
+      },
+      {
         "name": "bordered",
         "type": "boolean | undefined",
         "required": false,
@@ -21102,6 +22671,13 @@
         "required": false,
         "default": "",
         "description": "选择实际变化后触发：value、单个选项或选项数组"
+      },
+      {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
       },
       {
         "name": "search",
@@ -21144,13 +22720,6 @@
         "required": false,
         "default": "",
         "description": "选中选项：value、option"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "整个控件首次获得焦点；在触发器与浮层间移动不重复触发"
       },
       {
         "name": "searchError",
@@ -21407,10 +22976,34 @@
     "props": [
       {
         "name": "shortcuts",
-        "type": "{ keys: string; description: string; }[]",
+        "type": "HysShortcut[]",
         "required": true,
         "default": "",
-        "description": "要展示的快捷键列表，包含按键和对应操作说明",
+        "description": "快捷键数组。keys 和 description 必填，group 用于分组。sequence 和 macSequence 可传二维数组，每一项是一次同时按下的键，按数组顺序依次执行。普通显示回退到 keys 或 macKeys。",
+        "global": false
+      },
+      {
+        "name": "searchable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示搜索框，默认 false。支持按按键、说明和分组匹配。",
+        "global": false
+      },
+      {
+        "name": "platform",
+        "type": "\"default\" | \"mac\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "使用 default（默认）或 mac 的快捷键文案。缺少 macKeys 时使用 keys。",
+        "global": false
+      },
+      {
+        "name": "emptyText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "列表或搜索结果为空时的文案，默认“没有匹配的快捷键”。",
         "global": false
       }
     ],
@@ -21899,6 +23492,13 @@
         "description": "接受实际变化后确认；拖动在释放时触发一次，键盘、刻度和数字编辑在提交时触发"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "滑块获得焦点的原生事件"
+      },
+      {
         "name": "blur",
         "type": "[event: FocusEvent]",
         "required": false,
@@ -21911,13 +23511,6 @@
         "required": false,
         "default": "",
         "description": "拖动或调整值时立即触发；每个动画帧最多处理一次指针移动"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "滑块获得焦点的原生事件"
       },
       {
         "name": "dragStart",
@@ -22180,6 +23773,14 @@
         "global": false
       },
       {
+        "name": "save",
+        "type": "((change: HysSortChange<T>, signal: AbortSignal) => boolean | void | Promise<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "模型接受更新后调用，参数含各列表的前后快照和 AbortSignal。返回 false 或抛出错误时尝试回滚。跨列表优先调用源的 save。",
+        "global": false
+      },
+      {
         "name": "defaultItems",
         "type": "readonly T[] | undefined",
         "required": false,
@@ -22297,14 +23898,6 @@
         "required": false,
         "default": "",
         "description": "提交前的同步或异步校验，接收提议和 AbortSignal。false、原因字符串或拒绝的 Promise 阻止模型更新。",
-        "global": false
-      },
-      {
-        "name": "save",
-        "type": "((change: HysSortChange<T>, signal: AbortSignal) => boolean | void | Promise<boolean | void>) | undefined",
-        "required": false,
-        "default": "",
-        "description": "模型接受更新后调用，参数含各列表的前后快照和 AbortSignal。返回 false 或抛出错误时尝试回滚。跨列表优先调用源的 save。",
         "global": false
       },
       {
@@ -23117,7 +24710,7 @@
       },
       {
         "name": "animation",
-        "type": "\"infinity\" | \"gradient\" | \"pulse\" | \"breathing\" | \"heartbeat\" | \"circle\" | \"square\" | \"draw\" | \"grid\" | \"dual-ring\" | \"triple-ring\" | \"segment\" | \"arc\" | \"dot-spin\" | \"bouncing-dots\" | \"flashing-dots\" | \"dot-grid\" | \"orbit\" | \"wave\" | \"bars\" | \"bar-spin\" | \"cube-flip\" | \"ripple\" | \"ball\" | \"chase\" | \"scaling-dots\" | \"spiral\" | \"radar\" | \"progress-ring\" | \"custom\" | undefined",
+        "type": "\"infinity\" | \"gradient\" | \"pulse\" | \"breathing\" | \"heartbeat\" | \"circle\" | \"square\" | \"draw\" | \"grid\" | \"custom\" | \"dual-ring\" | \"triple-ring\" | \"segment\" | \"arc\" | \"dot-spin\" | \"bouncing-dots\" | \"flashing-dots\" | \"dot-grid\" | \"orbit\" | \"wave\" | \"bars\" | \"bar-spin\" | \"cube-flip\" | \"ripple\" | \"ball\" | \"chase\" | \"scaling-dots\" | \"spiral\" | \"radar\" | \"progress-ring\" | undefined",
         "required": false,
         "default": "",
         "description": "内置预设名，默认 circle。完整列表由 hysSpinAnimations 提供，custom 可搭配 indicator 插槽。",
@@ -23816,6 +25409,626 @@
       }
     ]
   },
+  "HysSpreadsheet": {
+    "props": [
+      {
+        "name": "modelValue",
+        "type": "HysSpreadsheetWorkbook | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控工作簿。通过 v-model 接收不可变更新，公式以等号开头的字符串保存。",
+        "global": false
+      },
+      {
+        "name": "defaultWorkbook",
+        "type": "HysSpreadsheetWorkbook | undefined",
+        "required": false,
+        "default": "",
+        "description": "非受控工作簿的初始值。默认创建 8 行 6 列的空表。",
+        "global": false
+      },
+      {
+        "name": "activeSheet",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控工作表 ID。省略时内部管理，未知 ID 回退到首张工作表。",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。启用后仍可切换工作表、选择和复制。",
+        "global": false
+      },
+      {
+        "name": "showEditActions",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "是否显示活动单元格中的确认和取消按钮，默认 false。隐藏按钮时离开编辑器即提交。Enter 始终可提交，Esc 始终可取消。",
+        "global": false
+      },
+      {
+        "name": "locale",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"zh-CN\"",
+        "description": "数字格式使用的语言区域，默认 zh-CN。",
+        "global": false
+      },
+      {
+        "name": "currency",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"CNY\"",
+        "description": "货币格式使用的 ISO 4217 代码，默认 CNY。",
+        "global": false
+      },
+      {
+        "name": "maxHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "360",
+        "description": "普通视图中表格滚动区的最大高度，数字单位为 px，默认 360。全屏时随可用高度伸缩。",
+        "global": false
+      },
+      {
+        "name": "historyLimit",
+        "type": "number | undefined",
+        "required": false,
+        "default": "50",
+        "description": "最多保留的撤销记录数，默认 50，范围 0–100。0 关闭历史。",
+        "global": false
+      },
+      {
+        "name": "persistence",
+        "type": "HysSpreadsheetPersistence | undefined",
+        "required": false,
+        "default": "",
+        "description": "工作簿读写适配器。load 和 save 接收 AbortSignal。配置时优先使用适配器。",
+        "global": false
+      },
+      {
+        "name": "storageKey",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "浏览器本地存储键。省略时不使用本地存储。",
+        "global": false
+      },
+      {
+        "name": "autosave",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "最后一次变更后的自动保存延迟，单位毫秒。默认关闭，须配置保存目标。",
+        "global": false
+      },
+      {
+        "name": "formulaFunctions",
+        "type": "Readonly<Record<string, HysSpreadsheetFormulaFunction>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按名称索引的自定义公式函数。参数为单值或一维区域，数组结果向下溢出。",
+        "global": false
+      },
+      {
+        "name": "sheetTemplates",
+        "type": "Readonly<Record<string, Omit<HysSpreadsheetSheet, \"name\" | \"id\">>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按模板名称索引的工作表初始配置。通过工作表管理创建新表。",
+        "global": false
+      },
+      {
+        "name": "styleTemplates",
+        "type": "Readonly<Record<string, HysSpreadsheetCellFormat>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义单元格样式模板。通过 applyStyle 按名称应用。",
+        "global": false
+      },
+      {
+        "name": "validators",
+        "type": "Readonly<Record<string, HysSpreadsheetValidator>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按名称索引的同步校验器。返回 false 或错误文案可拒绝提交。",
+        "global": false
+      },
+      {
+        "name": "cellTypes",
+        "type": "Readonly<Record<string, HysSpreadsheetCustomType>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义单元格类型的草稿转换和解析规则，使用 cells[address].typeName 选择。",
+        "global": false
+      },
+      {
+        "name": "filters",
+        "type": "Readonly<Record<string, HysSpreadsheetFilterFunction>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义筛选规则。由 filter.rule 指定名称，返回 true 保留当前行。",
+        "global": false
+      },
+      {
+        "name": "compare",
+        "type": "HysSpreadsheetCompare | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义排序比较函数。排序规则 by 为 custom 时使用。",
+        "global": false
+      },
+      {
+        "name": "formatValue",
+        "type": "((context: HysSpreadsheetCellContext & { text: string; }) => string) | undefined",
+        "required": false,
+        "default": "",
+        "description": "自定义显示文本。参数包含单元格坐标、计算结果与默认文本。",
+        "global": false
+      },
+      {
+        "name": "author",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "批注与本地版本的作者名称。",
+        "global": false
+      },
+      {
+        "name": "collaboration",
+        "type": "HysSpreadsheetCollaboration | undefined",
+        "required": false,
+        "default": "",
+        "description": "协作传输适配器，连接工作簿更新、选区和冲突反馈。",
+        "global": false
+      },
+      {
+        "name": "shortcuts",
+        "type": "Readonly<Record<string, (spreadsheet: HysSpreadsheetInstance) => void>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按组合键索引的快捷操作，例如 Mod+Shift+k。回调接收组件实例。",
+        "global": false
+      },
+      {
+        "name": "contextMenu",
+        "type": "false | HysSpreadsheetContextMenu | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "自定义单元格右键菜单及命令处理。false 关闭菜单。",
+        "global": false
+      },
+      {
+        "name": "dataSource",
+        "type": "HysSpreadsheetDataSource | undefined",
+        "required": false,
+        "default": "",
+        "description": "按需加载标记为 unloaded 的工作表。切换工作表会取消未完成的请求。",
+        "global": false
+      },
+      {
+        "name": "fileFormats",
+        "type": "readonly HysSpreadsheetFileFormat[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "按文件扩展名提供自定义解码和 Blob 导出，默认支持 JSON 和 XLSX。提供同名扩展可覆盖对应的读写方法。",
+        "global": false
+      },
+      {
+        "name": "plugins",
+        "type": "readonly HysSpreadsheetPlugin[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "挂载时安装的扩展。install 可返回卸载函数。",
+        "global": false
+      },
+      {
+        "name": "theme",
+        "type": "\"light\" | \"dark\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "组件主题，可选 light、dark。省略时沿用库主题配置。",
+        "global": false
+      },
+      {
+        "name": "messages",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false,
+        "default": "",
+        "description": "按原始文案索引的显示文案覆盖，例如 { 保存: \"Save\" }。",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[workbook: HysSpreadsheetWorkbook]",
+        "required": false,
+        "default": "",
+        "description": "编辑、粘贴、格式、结构或历史操作后发出新的工作簿。"
+      },
+      {
+        "name": "change",
+        "type": "[workbook: HysSpreadsheetWorkbook, action: HysSpreadsheetAction]",
+        "required": false,
+        "default": "",
+        "description": "工作簿变更时发出快照及原因 edit、paste、format、structure、undo、redo 或 open。"
+      },
+      {
+        "name": "open",
+        "type": "[workbook: HysSpreadsheetWorkbook]",
+        "required": false,
+        "default": "",
+        "description": "成功打开文件、对象或持久化工作簿时发出工作簿。"
+      },
+      {
+        "name": "selectionChange",
+        "type": "[selection: HysSpreadsheetSelection | null]",
+        "required": false,
+        "default": "",
+        "description": "选区变化时发出工作表 ID 和两个 A1 坐标，清空时为 null。"
+      },
+      {
+        "name": "save",
+        "type": "[workbook: HysSpreadsheetWorkbook]",
+        "required": false,
+        "default": "",
+        "description": "适配器或本地存储成功写入时发出保存的工作簿。"
+      },
+      {
+        "name": "conflict",
+        "type": "[message: string]",
+        "required": false,
+        "default": "",
+        "description": "收到协作冲突或取消正在进行的编辑时发出消息。"
+      },
+      {
+        "name": "update:activeSheet",
+        "type": "[sheetId: string]",
+        "required": false,
+        "default": "",
+        "description": "请求切换工作表时发出目标 ID。"
+      },
+      {
+        "name": "persistenceError",
+        "type": "[operation: \"open\" | \"save\", error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "打开或保存失败时发出操作名称与异常。"
+      },
+      {
+        "name": "validationError",
+        "type": "[errors: Record<string, string>]",
+        "required": false,
+        "default": "",
+        "description": "批量或主动校验发现问题时发出以 A1 坐标为键的错误字典。"
+      },
+      {
+        "name": "audit",
+        "type": "[version: HysSpreadsheetVersion]",
+        "required": false,
+        "default": "",
+        "description": "记录工作簿变更、保存或恢复时发出版本快照。"
+      }
+    ],
+    "slots": [
+      {
+        "name": "toolbar",
+        "type": "{ workbook: HysSpreadsheetWorkbook; selection: HysSpreadsheetSelection | null; spreadsheet: HysSpreadsheetInstance; }",
+        "required": false,
+        "default": "",
+        "description": "替换默认工作簿入口和快捷工具。工作表管理、单元格设置、批注、版本记录与更多操作保留在工具栏。作用域包含工作簿、选区与组件实例。"
+      },
+      {
+        "name": "toolbar-actions",
+        "type": "{ workbook: HysSpreadsheetWorkbook; selection: HysSpreadsheetSelection | null; }",
+        "required": false,
+        "default": "",
+        "description": "在工具栏加入操作，作用域包含工作簿与选区。"
+      },
+      {
+        "name": "status",
+        "type": "{ selection: HysSpreadsheetSelection | null; summary: HysSpreadsheetSelectionSummary | null; dirty: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "扩展状态栏，作用域包含选区、统计和未保存状态。"
+      },
+      {
+        "name": "status-bar",
+        "type": "{ selection: HysSpreadsheetSelection | null; summary: HysSpreadsheetSelectionSummary | null; dirty: boolean; }",
+        "required": false,
+        "default": "",
+        "description": "替换底部状态区的内容，右侧缩放仍可用。作用域包含选区、统计和未保存状态。"
+      },
+      {
+        "name": "cell",
+        "type": "HysSpreadsheetCellContext & { text: string; error?: string | undefined; }",
+        "required": false,
+        "default": "",
+        "description": "覆盖单元格渲染，作用域包含坐标、值、显示文本和错误。"
+      },
+      {
+        "name": "editor",
+        "type": "HysSpreadsheetCellContext & { draft: unknown; setDraft(value: unknown): void; commit(): Promise<boolean>; cancel(): void; inputId: string; }",
+        "required": false,
+        "default": "",
+        "description": "渲染 custom 类型的编辑器，作用域提供草稿、提交和取消函数。"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "getWorkbook",
+        "type": "() => HysSpreadsheetWorkbook",
+        "required": false,
+        "default": "",
+        "description": "读取当前工作簿快照。"
+      },
+      {
+        "name": "getSelection",
+        "type": "() => HysSpreadsheetSelection | null",
+        "required": false,
+        "default": "",
+        "description": "读取当前选区的工作表 ID 和 A1 坐标，无选区时返回 null。"
+      },
+      {
+        "name": "selectRange",
+        "type": "(anchor: string, focus?: string | undefined, append?: boolean | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "按两个 A1 坐标选择矩形区域，省略第二个坐标时选中一格。坐标无效或超出表格时返回 false。"
+      },
+      {
+        "name": "selectAll",
+        "type": "() => boolean",
+        "required": false,
+        "default": "",
+        "description": "选择当前工作表的所有数据单元格，成功返回 true。"
+      },
+      {
+        "name": "getSelectionSummary",
+        "type": "() => HysSpreadsheetSelectionSummary | null",
+        "required": false,
+        "default": "",
+        "description": "返回选区的格数、非空数、数值数、求和、平均值、最小值和最大值。无选区返回 null，无数值时 average、min、max 为 null。"
+      },
+      {
+        "name": "undo",
+        "type": "() => boolean",
+        "required": false,
+        "default": "",
+        "description": "撤销最近一次操作。没有历史记录或只读时返回 false。"
+      },
+      {
+        "name": "redo",
+        "type": "() => boolean",
+        "required": false,
+        "default": "",
+        "description": "重做最近一次撤销的操作。没有可重做记录或只读时返回 false。"
+      },
+      {
+        "name": "setSheet",
+        "type": "(id: string) => boolean",
+        "required": false,
+        "default": "",
+        "description": "按工作表 ID 切换。找不到该工作表时返回 false。"
+      },
+      {
+        "name": "manageSheet",
+        "type": "(command: HysSpreadsheetSheetCommand) => boolean",
+        "required": false,
+        "default": "",
+        "description": "新增、删除、复制、移动、重命名、隐藏、着色或保护工作表。"
+      },
+      {
+        "name": "newWorkbook",
+        "type": "(name?: string | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "创建空白工作簿并清空撤销栈，可指定名称。"
+      },
+      {
+        "name": "openWorkbook",
+        "type": "(workbook?: HysSpreadsheetWorkbook | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "载入指定对象，省略参数则从适配器或浏览器存储载入。"
+      },
+      {
+        "name": "importWorkbook",
+        "type": "(file: File) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "按文件扩展名打开工作簿。成功后发出 open，失败后保留原工作簿并发出 persistenceError。返回 Promise<boolean>。"
+      },
+      {
+        "name": "exportWorkbook",
+        "type": "(extension?: string | undefined) => Promise<Blob>",
+        "required": false,
+        "default": "",
+        "description": "导出当前工作簿快照为 Blob。默认扩展名为 xlsx，也支持 json 或 fileFormats 注册的格式。"
+      },
+      {
+        "name": "saveWorkbookFile",
+        "type": "(extension?: string | undefined, name?: string | undefined) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "触发浏览器下载，默认格式为 xlsx，第二个参数可指定文件名。发出 save 或 persistenceError。"
+      },
+      {
+        "name": "saveWorkbook",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "将当前快照保存到已配置的目标，返回 Promise<boolean>。"
+      },
+      {
+        "name": "saveWorkbookAs",
+        "type": "(name?: string | undefined) => HysSpreadsheetWorkbook",
+        "required": false,
+        "default": "",
+        "description": "返回可另存的工作簿快照，可覆盖名称。"
+      },
+      {
+        "name": "recalculate",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "重新计算公式。手动计算模式可由调用方触发。"
+      },
+      {
+        "name": "manageAxis",
+        "type": "(command: HysSpreadsheetAxisCommand) => boolean",
+        "required": false,
+        "default": "",
+        "description": "操作行列，参数索引从 0 开始。支持结构、布局、分组和冻结。"
+      },
+      {
+        "name": "setCells",
+        "type": "(changes: readonly HysSpreadsheetCellChange[]) => boolean",
+        "required": false,
+        "default": "",
+        "description": "提交一批从 0 开始的行列坐标及值，整批验证并作为一个历史操作。"
+      },
+      {
+        "name": "configureCells",
+        "type": "(options: HysSpreadsheetCellOptions) => boolean",
+        "required": false,
+        "default": "",
+        "description": "合并当前选区的类型、保护、链接、备注或验证配置。"
+      },
+      {
+        "name": "formatCells",
+        "type": "(format: HysSpreadsheetCellFormat | null) => boolean",
+        "required": false,
+        "default": "",
+        "description": "合并选区格式。传入 null 清除格式。"
+      },
+      {
+        "name": "validateCells",
+        "type": "() => Record<string, string>",
+        "required": false,
+        "default": "",
+        "description": "验证当前工作表中配置过的单元格，返回错误字典。"
+      },
+      {
+        "name": "fill",
+        "type": "(direction: \"right\" | \"down\", mode?: HysSpreadsheetFillMode | undefined, sequence?: readonly HysSpreadsheetValue[] | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "向下或向右填充选区。模式为 copy、series、smart，支持传入自定义序列。"
+      },
+      {
+        "name": "paste",
+        "type": "(text: string, mode?: HysSpreadsheetPasteMode | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "把 TSV 粘贴到选区，可选择全部、数值、公式、格式或转置。"
+      },
+      {
+        "name": "manageData",
+        "type": "(command: HysSpreadsheetDataCommand) => boolean",
+        "required": false,
+        "default": "",
+        "description": "按条件排序、筛选、去重、分列、合并文本或分类汇总。"
+      },
+      {
+        "name": "setConditionalFormats",
+        "type": "(rules: readonly HysSpreadsheetConditionalFormat[]) => boolean",
+        "required": false,
+        "default": "",
+        "description": "替换当前工作表的条件格式规则，传入空数组清除。"
+      },
+      {
+        "name": "find",
+        "type": "(query: string, options?: HysSpreadsheetFindOptions | undefined) => string[]",
+        "required": false,
+        "default": "",
+        "description": "在当前工作表的可见单元格中查找，返回匹配的 A1 坐标。options 支持 matchCase、wholeCell、formulas、wildcards、A1 ranges，以及 order（默认 row，按列为 column）。"
+      },
+      {
+        "name": "copyConditionalFormats",
+        "type": "(source: string, destination: string) => boolean",
+        "required": false,
+        "default": "",
+        "description": "将来源区域内的规则复制到目标 A1 坐标，平移规则范围及相对公式引用。"
+      },
+      {
+        "name": "applyStyle",
+        "type": "(name: string) => boolean",
+        "required": false,
+        "default": "",
+        "description": "将 title、amount 或自定义模板应用于选区。"
+      },
+      {
+        "name": "replace",
+        "type": "(query: string, replacement: string, options?: HysSpreadsheetFindOptions | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "使用与 find 相同的匹配选项替换，并一次提交。含有受保护单元格或校验失败时整批拒绝。"
+      },
+      {
+        "name": "mergeCells",
+        "type": "() => boolean",
+        "required": false,
+        "default": "",
+        "description": "合并选区。首格保持可编辑，其余单元格随解除合并恢复显示。"
+      },
+      {
+        "name": "unmergeCells",
+        "type": "() => boolean",
+        "required": false,
+        "default": "",
+        "description": "取消与选区相交的合并。"
+      },
+      {
+        "name": "getVersions",
+        "type": "() => readonly HysSpreadsheetVersion[]",
+        "required": false,
+        "default": "",
+        "description": "读取当前组件的版本记录。"
+      },
+      {
+        "name": "compareVersions",
+        "type": "(before: string, after?: string | undefined) => { sheetId: string; address: string; before: HysSpreadsheetValue; after: HysSpreadsheetValue; }[]",
+        "required": false,
+        "default": "",
+        "description": "按版本 ID 对比单元格内容，省略第二个 ID 时与当前工作簿对比。"
+      },
+      {
+        "name": "restoreVersion",
+        "type": "(id: string) => boolean",
+        "required": false,
+        "default": "",
+        "description": "恢复历史版本，可撤销恢复操作。"
+      },
+      {
+        "name": "addComment",
+        "type": "(text: string, parentId?: string | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "在活动单元格添加批注。传入父批注 ID 可回复。"
+      },
+      {
+        "name": "resolveComment",
+        "type": "(id: string, resolved?: boolean | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "更新活动单元格的批注状态，默认标记为已解决。"
+      },
+      {
+        "name": "defineName",
+        "type": "(name: string, range?: string | undefined, sheetId?: string | undefined) => boolean",
+        "required": false,
+        "default": "",
+        "description": "设置命名区域，默认使用当前选区和工作表。空范围删除名称。"
+      }
+    ]
+  },
   "HysSteps": {
     "props": [
       {
@@ -23823,7 +26036,7 @@
         "type": "(string | HysStepItem)[]",
         "required": true,
         "default": "",
-        "description": "展示项；每项的字段见公开类型",
+        "description": "步骤标题或 HysStepItem 对象数组。进行中步骤可设置 progress，有限数值限制为 0–100。",
         "global": false
       },
       {
@@ -23913,6 +26126,22 @@
         "default": "",
         "description": "辅助技术使用的组件名称",
         "global": false
+      },
+      {
+        "name": "linear",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "点击和键盘操作只可访问当前及之前的步骤，默认 false。业务可通过 current 推进流程。",
+        "global": false
+      },
+      {
+        "name": "beforeChange",
+        "type": "((next: number, current: number, item: HysStepItem) => boolean | void | PromiseLike<boolean | void>) | undefined",
+        "required": false,
+        "default": "",
+        "description": "用户切换步骤前调用，接收目标索引、当前索引和目标项，可返回 Promise。false 拦截切换，等待时忽略重复请求。",
+        "global": false
       }
     ],
     "events": [
@@ -23929,6 +26158,13 @@
         "required": false,
         "default": "",
         "description": "选择可用步骤时请求更新当前索引，索引从 0 开始"
+      },
+      {
+        "name": "changeError",
+        "type": "[error: unknown]",
+        "required": false,
+        "default": "",
+        "description": "切换校验抛错或拒绝时触发，载荷为错误对象。"
       }
     ],
     "slots": [
@@ -24206,6 +26442,13 @@
         "description": "一次有效操作请求的新值；兼容只用 change 更新模型的用法，受控宿主仍可拒绝"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "控件或分组获得焦点的原生事件"
+      },
+      {
         "name": "click",
         "type": "[value: T, event: MouseEvent]",
         "required": false,
@@ -24225,13 +26468,6 @@
         "required": false,
         "default": "",
         "description": "异步开关守卫抛错或拒绝时触发；取消或过期请求不触发"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "控件或分组获得焦点的原生事件"
       }
     ],
     "slots": [
@@ -24311,6 +26547,30 @@
   },
   "HysTabPane": {
     "props": [
+      {
+        "name": "panelClass",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "附加在对应 tabpanel 上的类名。",
+        "global": false
+      },
+      {
+        "name": "panelStyle",
+        "type": "CSSProperties | undefined",
+        "required": false,
+        "default": "",
+        "description": "应用于对应 tabpanel 的 CSSProperties，可设置高度及独立滚动。",
+        "global": false
+      },
+      {
+        "name": "panelTabIndex",
+        "type": "0 | -1 | undefined",
+        "required": false,
+        "default": "",
+        "description": "面板的 tabindex，默认 0。-1 从 Tab 顺序移除面板容器，内部控件保持正常焦点顺序。",
+        "global": false
+      },
       {
         "name": "label",
         "type": "string",
@@ -24528,6 +26788,27 @@
         "required": false,
         "default": "",
         "description": "该面板的内容，接收 { item, active, loading, error, content, reload }。"
+      },
+      {
+        "name": "loading",
+        "type": "HysTabPanelScope",
+        "required": false,
+        "default": "",
+        "description": "加载中的面板内容，接收面板上下文。"
+      },
+      {
+        "name": "error",
+        "type": "HysTabPanelScope",
+        "required": false,
+        "default": "",
+        "description": "面板加载失败的内容，接收错误和 reload 方法。"
+      },
+      {
+        "name": "empty",
+        "type": "HysTabPanelScope",
+        "required": false,
+        "default": "",
+        "description": "面板没有内容时显示，接收面板上下文。"
       },
       {
         "name": "label",
@@ -24969,6 +27250,22 @@
         "required": false,
         "default": "false",
         "description": "启用键盘行导航，默认 false。方向键移动，Home/End 到首末可见行，Enter 触发行点击，空格切换可选行。",
+        "global": false
+      },
+      {
+        "name": "cellNavigation",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "启用可见数据单元格的键盘导航，默认 false。开启后表体使用单元格焦点。方向键按合并后的表格位置移动，Home / End 到行首 / 行尾，Ctrl 或 Command + Home / End 到当前可见数据的首 / 末单元格。内嵌控件保留自己的按键操作。",
+        "global": false
+      },
+      {
+        "name": "emptyCellText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "默认单元格内容遇到 null、undefined 或空字符串时显示的文字，省略时为空。列 emptyText 优先，0 和 false 按原值显示。",
         "global": false
       },
       {
@@ -25524,6 +27821,20 @@
         "description": "单元格右键：上下文与原生事件"
       },
       {
+        "name": "cellMouseEnter",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "进入单元格：上下文与原生事件"
+      },
+      {
+        "name": "cellMouseLeave",
+        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "required": false,
+        "default": "",
+        "description": "离开单元格：上下文与原生事件"
+      },
+      {
         "name": "sortChange",
         "type": "[sort: HysTableSort | null, sorts: HysTableSort[]]",
         "required": false,
@@ -25573,18 +27884,11 @@
         "description": "宿主接受批量选择后，返回已选行、勾选状态和本次变化的行"
       },
       {
-        "name": "cellMouseEnter",
-        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
+        "name": "selectRange",
+        "type": "[rows: T[], rangeRows: T[], checked: boolean]",
         "required": false,
         "default": "",
-        "description": "进入单元格：上下文与原生事件"
-      },
-      {
-        "name": "cellMouseLeave",
-        "type": "[context: HysTableCellContext<T>, event: MouseEvent]",
-        "required": false,
-        "default": "",
-        "description": "离开单元格：上下文与原生事件"
+        "description": "接受区间选择：全部选中行、区间可用行、选中状态"
       },
       {
         "name": "update:sort",
@@ -25634,13 +27938,6 @@
         "required": false,
         "default": "",
         "description": "非空选择被清空且宿主接受后触发"
-      },
-      {
-        "name": "selectRange",
-        "type": "[rows: T[], rangeRows: T[], checked: boolean]",
-        "required": false,
-        "default": "",
-        "description": "接受区间选择：全部选中行、区间可用行、选中状态"
       },
       {
         "name": "update:expandedRowKeys",
@@ -25827,246 +28124,7 @@
         "description": "与列 key 对应的单元格插槽，参数来自模板中的 slot 绑定。"
       }
     ],
-    "exposed": [
-      {
-        "name": "element",
-        "type": "HTMLElement | undefined",
-        "required": true,
-        "default": "",
-        "description": "组件根元素"
-      },
-      {
-        "name": "viewport",
-        "type": "HTMLElement | undefined",
-        "required": true,
-        "default": "",
-        "description": "共享滚动区域元素"
-      },
-      {
-        "name": "selectedKeys",
-        "type": "HysTableKey[]",
-        "required": true,
-        "default": "",
-        "description": "当前选中编号"
-      },
-      {
-        "name": "currentRow",
-        "type": "T | undefined",
-        "required": true,
-        "default": "",
-        "description": "当前高亮行对象"
-      },
-      {
-        "name": "expandedKeys",
-        "type": "HysTableKey[]",
-        "required": true,
-        "default": "",
-        "description": "当前展开编号"
-      },
-      {
-        "name": "query",
-        "type": "HysTableQuery<T>",
-        "required": true,
-        "default": "",
-        "description": "当前已应用的排序、过滤、分页和数据"
-      },
-      {
-        "name": "columns",
-        "type": "HysTableColumn<T>[]",
-        "required": true,
-        "default": "",
-        "description": "当前显示的规范化叶列"
-      },
-      {
-        "name": "clearSelection",
-        "type": "() => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "请求清空选择，返回 Promise<boolean>"
-      },
-      {
-        "name": "getSelectionRows",
-        "type": "() => T[]",
-        "required": true,
-        "default": "",
-        "description": "读取已知的选中行，reserveSelection 时包含跨页缓存"
-      },
-      {
-        "name": "getHalfSelectionRows",
-        "type": "() => T[]",
-        "required": true,
-        "default": "",
-        "description": "读取树形半选行"
-      },
-      {
-        "name": "toggleRowSelection",
-        "type": "(\n    row: T | HysTableKey,\n    selected?: boolean,\n    options?: boolean | HysTableRowSelectionOptions,\n  ) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "按行对象或编号切换选择，options 可指定 range 或 ignoreSelectable。第三个布尔参数仍控制区间选择"
-      },
-      {
-        "name": "toggleAllSelection",
-        "type": "(selected?: boolean) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "切换当前根行页及已加载后代的可用选择"
-      },
-      {
-        "name": "invertSelection",
-        "type": "() => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "反选当前筛选页的可用行，保留跨页选择，返回宿主是否接受"
-      },
-      {
-        "name": "setCurrentRow",
-        "type": "(row?: T | HysTableKey | null) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "设置高亮行，省略或 null 清除"
-      },
-      {
-        "name": "toggleRowExpansion",
-        "type": "(\n    row: T | HysTableKey,\n    expanded?: boolean,\n  ) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "按行对象或编号展开/折叠，返回宿主是否接受"
-      },
-      {
-        "name": "loadRow",
-        "type": "(row: T | HysTableKey, force?: boolean) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "加载指定懒节点，force=true 重新加载，返回是否成功"
-      },
-      {
-        "name": "updateKeyChildren",
-        "type": "(\n    row: T | HysTableKey,\n    children: readonly T[],\n  ) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "替换指定行子项，不修改原始 rows，取消旧请求；返回 Promise<boolean>"
-      },
-      {
-        "name": "clearSort",
-        "type": "() => void",
-        "required": true,
-        "default": "",
-        "description": "清除排序请求"
-      },
-      {
-        "name": "setSort",
-        "type": "(sort: HysTableSort | readonly HysTableSort[] | null) => void",
-        "required": true,
-        "default": "",
-        "description": "请求设置单列或多列排序"
-      },
-      {
-        "name": "clearFilter",
-        "type": "(keys?: readonly string[]) => void",
-        "required": true,
-        "default": "",
-        "description": "清除全部或指定列的筛选"
-      },
-      {
-        "name": "setFilter",
-        "type": "(key: string, values: readonly HysTableFilterValue[]) => void",
-        "required": true,
-        "default": "",
-        "description": "请求设置列筛选值数组"
-      },
-      {
-        "name": "setSearch",
-        "type": "(search: string) => void",
-        "required": true,
-        "default": "",
-        "description": "应用搜索词并请求回到第 1 页。queryChange 的 action 为 search，服务端模式将查询交给宿主。"
-      },
-      {
-        "name": "clearSearch",
-        "type": "() => void",
-        "required": true,
-        "default": "",
-        "description": "清除跨列搜索词，保留列筛选和排序。"
-      },
-      {
-        "name": "focusRow",
-        "type": "(row: T | HysTableKey) => boolean",
-        "required": true,
-        "default": "",
-        "description": "按行键或行对象聚焦当前可见行；需要开启 keyboardNavigation，找不到或忙碌时返回 false。"
-      },
-      {
-        "name": "showFilter",
-        "type": "(key: string) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "按列 key 打开筛选，返回受控请求是否接受"
-      },
-      {
-        "name": "hideFilter",
-        "type": "() => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "请求关闭筛选，返回是否接受"
-      },
-      {
-        "name": "setPage",
-        "type": "(page: number) => void",
-        "required": true,
-        "default": "",
-        "description": "请求改变页码"
-      },
-      {
-        "name": "resizeColumn",
-        "type": "(key: string, width: number) => void",
-        "required": true,
-        "default": "",
-        "description": "请求将列调整到指定像素宽度"
-      },
-      {
-        "name": "resetColumnWidths",
-        "type": "() => void",
-        "required": true,
-        "default": "",
-        "description": "清空交互宽度快照并恢复自动布局"
-      },
-      {
-        "name": "doLayout",
-        "type": "() => Promise<void>",
-        "required": true,
-        "default": "",
-        "description": "下一次 DOM 更新后重新测量固定列"
-      },
-      {
-        "name": "scrollTo",
-        "type": "(options: ScrollToOptions) => void",
-        "required": true,
-        "default": "",
-        "description": "按 ScrollToOptions 滚动，不改变选择"
-      },
-      {
-        "name": "setScrollTop",
-        "type": "(top: number) => void",
-        "required": true,
-        "default": "",
-        "description": "设置表格纵向滚动位置"
-      },
-      {
-        "name": "setScrollLeft",
-        "type": "(left: number) => void",
-        "required": true,
-        "default": "",
-        "description": "设置表格横向滚动位置"
-      },
-      {
-        "name": "scrollToRow",
-        "type": "(\n    row: T | HysTableKey,\n    options?: HysTableScrollRowOptions,\n  ) => Promise<boolean>",
-        "required": true,
-        "default": "",
-        "description": "定位当前可见行，支持 block 与 behavior，不改变分页、展开或选择"
-      }
-    ]
+    "exposed": []
   },
   "HysTabs": {
     "props": [
@@ -26680,6 +28738,20 @@
         "description": "变更后的标签数组，供 v-model:items 同步。"
       },
       {
+        "name": "reorder",
+        "type": "[context: HysTabOrderContext]",
+        "required": false,
+        "default": "",
+        "description": "提交排序方案时发送 { value, from, to, items }，索引从 0 开始。"
+      },
+      {
+        "name": "edit",
+        "type": "[value: HysTabValue | undefined, action: \"add\" | \"remove\"]",
+        "required": false,
+        "default": "",
+        "description": "兼容新增与关闭通知，载荷为标识或 undefined，以及 add 或 remove。"
+      },
+      {
         "name": "restore",
         "type": "[item: HysTabItem]",
         "required": false,
@@ -26734,20 +28806,6 @@
         "required": false,
         "default": "",
         "description": "批量检查结束后发送允许关闭的标识数组。"
-      },
-      {
-        "name": "edit",
-        "type": "[value: HysTabValue | undefined, action: \"add\" | \"remove\"]",
-        "required": false,
-        "default": "",
-        "description": "兼容新增与关闭通知，载荷为标识或 undefined，以及 add 或 remove。"
-      },
-      {
-        "name": "reorder",
-        "type": "[context: HysTabOrderContext]",
-        "required": false,
-        "default": "",
-        "description": "提交排序方案时发送 { value, from, to, items }，索引从 0 开始。"
       },
       {
         "name": "pinChange",
@@ -27368,6 +29426,13 @@
         "description": "兼容的变更请求：新数组；受控宿主仍可拒绝"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "整个控件获得焦点的 FocusEvent"
+      },
+      {
         "name": "add",
         "type": "[value: string]",
         "required": false,
@@ -27394,13 +29459,6 @@
         "required": false,
         "default": "",
         "description": "草稿文字变化，不是标签数组变更"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "整个控件获得焦点的 FocusEvent"
       },
       {
         "name": "compositionend",
@@ -27939,6 +29997,13 @@
         "description": "原生确认或失焦后返回原始文本；同次提交不重复触发"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
+      },
+      {
         "name": "clear",
         "type": "[]",
         "required": false,
@@ -27958,13 +30023,6 @@
         "required": false,
         "default": "",
         "description": "接受本次输入后返回解析后的原始文本"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "输入控件获得焦点时触发，参数为原生 FocusEvent"
       },
       {
         "name": "pressEnter",
@@ -29245,6 +31303,13 @@
         "description": "实际开始收起"
       },
       {
+        "name": "openChange",
+        "type": "[open: boolean]",
+        "required": false,
+        "default": "",
+        "description": "实际展开状态变化的别名：boolean"
+      },
+      {
         "name": "opened",
         "type": "[]",
         "required": false,
@@ -29257,13 +31322,6 @@
         "required": false,
         "default": "",
         "description": "收起过渡完成"
-      },
-      {
-        "name": "openChange",
-        "type": "[open: boolean]",
-        "required": false,
-        "default": "",
-        "description": "实际展开状态变化的别名：boolean"
       }
     ],
     "slots": [
@@ -29334,10 +31392,10 @@
       },
       {
         "name": "focus",
-        "type": "() => void | undefined",
+        "type": "(options?: { suppressTooltip?: boolean | undefined; } | undefined) => void",
         "required": false,
         "default": "",
-        "description": "聚焦实际触发控件"
+        "description": "聚焦实际触发控件。传入 { suppressTooltip: true } 会取消延迟提示并请求收起已显示的提示。"
       }
     ]
   },
@@ -30057,6 +32115,13 @@
         "description": "兼容原有转移请求事件：目标编号、right / left、本次移动编号；调用方可拒绝受控更新"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个控件"
+      },
+      {
         "name": "search",
         "type": "[side: HysTransferSide, value: string]",
         "required": false,
@@ -30069,13 +32134,6 @@
         "required": false,
         "default": "",
         "description": "焦点离开整个控件"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个控件"
       },
       {
         "name": "scroll",
@@ -30847,6 +32905,13 @@
         "description": "当前激活的节点标识，勾选变化通过 update:checkedKeys 提供"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个树组件"
+      },
+      {
         "name": "search",
         "type": "[query: string]",
         "required": false,
@@ -30866,13 +32931,6 @@
         "required": false,
         "default": "",
         "description": "行选择请求：原始节点、完整选择信息，保留第一个参数"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个树组件"
       },
       {
         "name": "load",
@@ -30945,6 +33003,13 @@
         "description": "请求更新展开节点键列表，供 v-model:expandedKeys 使用"
       },
       {
+        "name": "data-change",
+        "type": "[info: { nodes: readonly N[]; action: string; key?: HysTreeKey | undefined; }]",
+        "required": false,
+        "default": "",
+        "description": "不可变编辑请求：nodes、action、key"
+      },
+      {
         "name": "update:loadedKeys",
         "type": "[keys: HysTreeKey[]]",
         "required": false,
@@ -31013,13 +33078,6 @@
         "required": false,
         "default": "",
         "description": "右键节点与原始坐标、事件"
-      },
-      {
-        "name": "data-change",
-        "type": "[info: { nodes: readonly N[]; action: string; key?: HysTreeKey | undefined; }]",
-        "required": false,
-        "default": "",
-        "description": "不可变编辑请求：nodes、action、key"
       }
     ],
     "slots": [
@@ -31880,6 +33938,13 @@
         "description": "选择更新请求，保留值作为第一个参数，第二参数补充原因、节点、值、标签及半选信息"
       },
       {
+        "name": "focus",
+        "type": "[event: FocusEvent]",
+        "required": false,
+        "default": "",
+        "description": "焦点进入整个选择器"
+      },
+      {
         "name": "search",
         "type": "[query: string]",
         "required": false,
@@ -31920,13 +33985,6 @@
         "required": false,
         "default": "",
         "description": "接受行选择：编号、原始节点、选择信息"
-      },
-      {
-        "name": "focus",
-        "type": "[event: FocusEvent]",
-        "required": false,
-        "default": "",
-        "description": "焦点进入整个选择器"
       },
       {
         "name": "load",
@@ -32013,18 +34071,18 @@
         "description": "复选更新被接受后的完整勾选和半选信息"
       },
       {
-        "name": "deselect",
-        "type": "[key: HysTreeKey, node: N, info: unknown]",
-        "required": false,
-        "default": "",
-        "description": "接受取消行选择：编号、原始节点、选择信息"
-      },
-      {
         "name": "update:expandedKeys",
         "type": "[keys: HysTreeKey[]]",
         "required": false,
         "default": "",
         "description": "请求更新下拉树的展开节点键列表"
+      },
+      {
+        "name": "deselect",
+        "type": "[key: HysTreeKey, node: N, info: unknown]",
+        "required": false,
+        "default": "",
+        "description": "接受取消行选择：编号、原始节点、选择信息"
       },
       {
         "name": "update:loadedKeys",

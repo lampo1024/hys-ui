@@ -95,6 +95,16 @@ export function usePopupSurface(
       floating.restoringFocus.value = false;
     }
   }
+
+  function focus(options?: { suppressTooltip?: boolean }) {
+    if (kind !== "tooltip" || !options?.suppressTooltip) {
+      focusReference();
+      return;
+    }
+    interactions.suppress();
+    if (floating.open.value) void request(false);
+    restoreReferenceFocus();
+  }
   const anchor = computed<FloatingAnchor | undefined>(() => {
     const value = external.value ?? referenceElement.value ?? wrapper.value;
     if (!value) return;
@@ -178,12 +188,16 @@ export function usePopupSurface(
     floating,
     restoreReferenceFocus,
     request,
+    hasOpenRequest: () => model.current.value,
     allowTabExit: hooks?.allowTabExit,
   });
   const { handlers, tab } = interactions;
   const externalBinding = createPopupReferenceBinding(kind, id, {
     pointerenter: handlers.pointerEnter,
     pointerleave: handlers.pointerLeave,
+    ...(kind === "tooltip"
+      ? { pointermove: handlers.pointerMove, pointerdown: handlers.pointerDown }
+      : {}),
     focusin: handlers.focusIn,
     focusout: handlers.focusOut,
     click: handlers.click,
@@ -276,6 +290,7 @@ export function usePopupSurface(
     if (actualReference.value) observer.observe(actualReference.value);
   }
   function cleanup() {
+    interactions.clearInteraction();
     interactions.reset();
     interactions.clearAuto();
     externalBinding.detach();
@@ -295,6 +310,7 @@ export function usePopupSurface(
     [available, wrapper, external],
     () => {
       if (!available.value) {
+        interactions.clearInteraction();
         interactions.reset();
         interactions.clearAuto();
       }
@@ -302,6 +318,16 @@ export function usePopupSurface(
       attachExternal();
     },
     { flush: "post", immediate: true },
+  );
+  watch(
+    available,
+    (ready) => {
+      if (
+        !ready && kind === "tooltip" && model.current.value &&
+        props.open === undefined && props.modelValue === undefined
+      ) void request(false);
+    },
+    { flush: "sync" },
   );
   watch(
     () => owner?.value,
@@ -317,6 +343,7 @@ export function usePopupSurface(
   watch(
     [actualReference, external],
     () => {
+      interactions.clearInteraction();
       interactions.reset();
       floating.schedule();
       attachExternal();
@@ -326,6 +353,7 @@ export function usePopupSurface(
   watch(
     () => props.trigger,
     () => {
+      interactions.clearInteraction();
       interactions.reset();
     },
   );
@@ -480,6 +508,6 @@ export function usePopupSurface(
     hide: () => request(false),
     toggle: () => request(!floating.open.value),
     updatePosition: floating.schedule,
-    focus: () => anchor.value?.focus(),
+    focus,
   };
 }

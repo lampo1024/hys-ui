@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import {
+  HysAccordion,
   HysCheckbox,
   HysSelect,
   HysSortableList,
@@ -88,16 +89,21 @@ const status = ref("首尾固定。财务复核不能被拖动。");
     <small v-if="!showHandle || whole" class="status">
       按住文字可选中复制，从行内空白处拖动排序。
     </small>
-    <details class="drag-options">
-      <summary>拖拽手势设置</summary>
-      <div class="demo-control-actions">
-        <HysCheckbox v-model="showHandle" label="显示拖拽手柄" />
-        <HysCheckbox v-model="whole" label="整行拖动" :disabled="!showHandle" />
-        <HysCheckbox v-model="delayed" label="按住 350 ms" />
-        <HysCheckbox v-model="snap" label="边缘吸附" />
-        <HysCheckbox v-model="bounded" label="限制在列表内" />
-      </div>
-    </details>
+    <HysAccordion :items="[{ title: '拖拽手势设置' }]" size="sm">
+      <template #content>
+        <div class="demo-control-actions">
+          <HysCheckbox v-model="showHandle" label="显示拖拽手柄" />
+          <HysCheckbox
+            v-model="whole"
+            label="整行拖动"
+            :disabled="!showHandle"
+          />
+          <HysCheckbox v-model="delayed" label="按住 350 ms" />
+          <HysCheckbox v-model="snap" label="边缘吸附" />
+          <HysCheckbox v-model="bounded" label="限制在列表内" />
+        </div>
+      </template>
+    </HysAccordion>
   </div>
 </template>
 
@@ -121,16 +127,5 @@ const status = ref("首尾固定。财务复核不能被拖动。");
 }
 .permissions {
   min-height: 38px;
-}
-.drag-options {
-  border: 1px solid var(--docs-border);
-  border-radius: 8px;
-}
-.drag-options > summary {
-  justify-content: flex-start;
-  padding: 8px 12px;
-}
-.drag-options > div {
-  padding: 8px 12px 12px;
 }
 </style>

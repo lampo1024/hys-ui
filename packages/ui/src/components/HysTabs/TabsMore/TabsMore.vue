@@ -2,6 +2,9 @@
 import { computed, ref, watch } from "vue";
 import { ChevronDown } from "lucide-vue-next";
 import HysPopover from "../../HysPopover/HysPopover.vue";
+import HysInput from "../../HysInput/HysInput.vue";
+import HysButton from "../../HysButton/HysButton.vue";
+import type { HysInputInstance } from "../../../composables/textInput";
 import TabsSlot from "../TabsSlot/TabsSlot";
 import type {
   HysTabItem,
@@ -21,7 +24,7 @@ const props = defineProps<{
 }>();
 const open = ref(false),
   query = ref(""),
-  searchBox = ref<HTMLInputElement>();
+  searchBox = ref<HysInputInstance>();
 const filter = ref<"all" | "recent" | "favorite">("all");
 const clipped = computed(() => {
   const keys = new Set(props.overflow);
@@ -73,8 +76,9 @@ const scope = computed<HysTabsMenuScope>(() => ({
     @opened="searchBox?.focus({ preventScroll: true })"
   >
     <template #trigger>
-      <button
-        type="button"
+      <HysButton
+        size="sm"
+        variant="ghost"
         class="hys-ui-tab-control hys-tab-more"
         aria-label="更多页签"
         :disabled="disabled"
@@ -82,45 +86,48 @@ const scope = computed<HysTabsMenuScope>(() => ({
         <TabsSlot :render="slots['more-icon']"
           ><ChevronDown :size="16" aria-hidden="true"
         /></TabsSlot>
-      </button>
+      </HysButton>
     </template>
     <TabsSlot :render="slots.more" :scope="scope">
       <div class="hys-tab-more-panel">
-        <input
+        <HysInput
           v-if="search !== false"
           ref="searchBox"
           v-model="query"
           type="search"
+          size="sm"
           aria-label="搜索页签"
           placeholder="搜索页签"
         />
         <div class="hys-tab-more-filters">
-          <button
+          <HysButton
+            size="sm"
+            variant="ghost"
             v-for="[key, label] in [
               ['all', '全部'],
               ['recent', '最近'],
               ['favorite', '收藏'],
             ] as const"
             :key="key"
-            type="button"
-            :aria-pressed="filter === key"
+            :pressed="filter === key"
             @click="filter = key"
           >
             {{ label }}
-          </button>
+          </HysButton>
         </div>
         <div class="hys-tab-more-list">
-          <button
+          <HysButton
+            size="sm"
+            variant="ghost"
             v-for="item in matching"
             :key="item.value"
-            type="button"
             :disabled="item.disabled"
             :aria-current="item.value === active ? 'true' : undefined"
             @click="choose(item.value)"
           >
             <span>{{ item.label }}</span
             ><small v-if="item.value === active">当前</small>
-          </button>
+          </HysButton>
           <p v-if="!matching.length">没有符合条件的页签</p>
         </div>
       </div>
@@ -134,17 +141,6 @@ const scope = computed<HysTabsMenuScope>(() => ({
   gap: 8px;
   min-width: 0;
   font-size: 13px;
-}
-.hys-tab-more-panel input {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  padding: 7px 8px;
-  color: inherit;
-  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
-  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
-  border-radius: 6px;
-  font: inherit;
 }
 .hys-tab-more-filters {
   display: flex;

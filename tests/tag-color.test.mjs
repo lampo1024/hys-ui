@@ -559,6 +559,28 @@ test("ColorPicker pointer cancellation restores the start value rather than acce
   await settle();
   assert.equal(a.props.modelValue, "#ff0000");
 });
+test("ColorPicker release mode publishes only the final pointer color", async () => {
+  const picker = await mount(ui.HysColorPicker, {
+    modelValue: "#ff0000",
+    inline: true,
+    immediate: "release",
+  });
+  const hue = picker.find(".hys-ui-pf-color-hue");
+  await pointer(hue, "pointerdown", 130, 24);
+  await pointer(hue, "pointermove", 175, 24);
+  await settle();
+  assert.notEqual(picker.vm.draft, "#ff0000");
+  assert.equal(picker.count("update:modelValue"), 0);
+  await pointer(hue, "pointercancel", 175, 24);
+  assert.equal(picker.vm.draft, "#ff0000");
+  assert.equal(picker.count("update:modelValue"), 0);
+  await pointer(hue, "pointerdown", 130, 24);
+  await pointer(hue, "pointermove", 175, 24);
+  await pointer(hue, "pointerup", 175, 24);
+  assert.notEqual(picker.props.modelValue, "#ff0000");
+  assert.equal(picker.props.modelValue, picker.vm.draft);
+  assert.equal(picker.count("update:modelValue"), 1);
+});
 test("ColorPicker keyboard alpha adjustment is a single accepted change per key", async () => {
   const a = await mount(ui.HysColorPicker, {
     modelValue: "rgba(255, 0, 0, 1)",

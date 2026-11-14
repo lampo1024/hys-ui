@@ -56,6 +56,8 @@ defineExpose({
     class="hys-ui-tooltip-wrap"
     @pointerenter="surface.pointerEnter"
     @pointerleave="surface.pointerLeave"
+    @pointermove="surface.pointerMove"
+    @pointerdown.capture="surface.pointerDown"
     @focusin="surface.focusIn"
     @focusout="surface.focusOut"
     @click="surface.click"

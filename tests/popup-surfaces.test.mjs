@@ -308,6 +308,74 @@ test("Tooltip preserves hover and focus defaults, and Escape never reopens it", 
   assert(!a.panel);
   assert.equal(document.activeElement, a.reference);
 });
+test("Tooltip can restore focus silently and cancel pending hover before a later genuine focus", async () => {
+  const a = await mount("Tooltip", { showDelay: 40 });
+  await fire(a.host.firstElementChild, "pointerenter");
+  a.vm.focus({ suppressTooltip: true });
+  assert.equal(document.activeElement, a.reference);
+  await wait(65);
+  assert.equal(a.vm.open, false);
+  a.reference.blur();
+  a.reference.focus();
+  await wait(65);
+  assert.equal(a.vm.open, true);
+  a.vm.focus({ suppressTooltip: true });
+  await settle();
+  assert.equal(a.vm.open, false);
+});
+test("Tooltip forgets pointer focus during a native drag even when an ancestor consumes dragstart", async () => {
+  const a = await mount("Tooltip", { hideDelay: 0 }, {
+    default: () => h("button", { draggable: true }, "Drag"),
+  });
+  const wrapper = a.host.firstElementChild;
+  a.host.addEventListener("dragstart", (event) => event.stopPropagation(), true);
+  await fire(wrapper, "pointerenter");
+  assert(a.vm.open);
+  await fire(a.reference, "pointerdown");
+  a.reference.focus();
+  a.reference.dispatchEvent(new MouseEvent("dragstart", { bubbles: true }));
+  await fire(a.reference, "pointercancel");
+  await fire(wrapper, "pointerleave");
+  a.reference.dispatchEvent(new MouseEvent("dragend", { bubbles: true }));
+  await fire(wrapper, "pointerenter");
+  assert.equal(document.activeElement, a.reference);
+  assert.equal(a.vm.open, false);
+  const move = new MouseEvent("pointermove", { clientX: 32, bubbles: true });
+  wrapper.dispatchEvent(move);
+  await settle();
+  assert(a.vm.open);
+  await fire(wrapper, "pointerleave");
+  assert.equal(a.vm.open, false);
+  a.reference.blur();
+  a.reference.focus();
+  await settle();
+  assert(a.vm.open);
+});
+
+test("Tooltip cancels a delayed external hint on dragstart without waiting for pointerleave", async () => {
+  const button = document.createElement("button");
+  button.draggable = true;
+  document.body.append(button);
+  const a = await mount("Tooltip", { reference: button, showDelay: 35 });
+  await fire(button, "pointerenter");
+  await fire(button, "dragstart", { bubbles: true });
+  await fire(button, "dragend", { bubbles: true });
+  await wait(55);
+  assert.equal(a.count("show"), 0);
+});
+
+test("Disabling an uncontrolled tooltip clears its open state before it is enabled again", async () => {
+  const a = await mount("Tooltip", { defaultOpen: true });
+  assert.equal(a.vm.open, true);
+  a.props.disabled = true;
+  await settle();
+  assert.equal(a.vm.open, false);
+  a.props.disabled = false;
+  await settle();
+  assert.equal(a.vm.open, false);
+  await fire(a.host.firstElementChild, "pointerenter");
+  assert.equal(a.vm.open, true);
+});
 test("Popover preserves click defaults, content, title and existing scope.close", async () => {
   const a = await mount(
     "Popover",

@@ -29,6 +29,8 @@ export function useTabsNav(
   const indicator = shallowRef<CSSProperties>({});
   const buttons = new Map<string, HTMLButtonElement>();
   const button = (value: HysTabValue) => buttons.get(tabToken(value));
+  const tabItem = (value: HysTabValue) =>
+    button(value)?.closest<HTMLElement>(".hys-ui-tab-item");
   function setButton(value: HysTabValue, element: HTMLButtonElement | null) {
     const token = tabToken(value);
     if (element) buttons.set(token, element);
@@ -64,9 +66,7 @@ export function useTabsNav(
       hasOverflow.value && needsMenu
         ? items()
             .filter((item) => {
-              const rect = button(item.value)
-                ?.closest(".hys-ui-tab-item")
-                ?.getBoundingClientRect();
+              const rect = tabItem(item.value)?.getBoundingClientRect();
               return (
                 rect &&
                 (isVertical
@@ -81,21 +81,21 @@ export function useTabsNav(
       clipped.some((key, index) => key !== overflowed.value[index])
     )
       overflowed.value = clipped;
-    const selected = button(active())
-      ?.closest(".hys-ui-tab-item")
-      ?.getBoundingClientRect();
-    if (!selected || !selected.width || !selected.height) {
+    const selected = tabItem(active());
+    if (!selected || !selected.offsetWidth || !selected.offsetHeight) {
       indicator.value = { opacity: 0 };
       return;
     }
+    // TransitionGroup temporarily transforms reordered tabs. The underline
+    // needs their final layout coordinates even while they are still moving.
     indicator.value = isVertical
       ? {
-          height: selected.height + "px",
-          transform: `translateY(${selected.top - trackBox.top}px)`,
+          height: selected.offsetHeight + "px",
+          transform: `translateY(${selected.offsetTop}px)`,
         }
       : {
-          width: selected.width + "px",
-          transform: `translateX(${selected.left - trackBox.left}px)`,
+          width: selected.offsetWidth + "px",
+          transform: `translateX(${selected.offsetLeft}px)`,
         };
   }
   function schedule() {
@@ -107,16 +107,19 @@ export function useTabsNav(
   }
   function scrollPixels(distance: number, smooth = false) {
     const element = nav.value;
-    if (!element || !distance || props().overflow === "wrap") return;
+    if (!element || !distance || props().overflow === "wrap") return false;
+    const axis = vertical() ? "scrollTop" : "scrollLeft";
     if (!smooth || typeof element.scrollBy !== "function") {
-      if (vertical()) element.scrollTop += distance;
-      else element.scrollLeft += distance;
+      const previous = element[axis];
+      element[axis] += distance;
+      if (element[axis] === previous) return false;
     } else
       element.scrollBy({
-        [vertical() ? "top" : "left"]: distance,
+        [axis === "scrollTop" ? "top" : "left"]: distance,
         behavior: motion() ? "smooth" : "auto",
       });
     schedule();
+    return true;
   }
   function scroll(direction: number) {
     const element = nav.value;

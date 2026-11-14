@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { HysButton, HysTour, type HysTourStep } from "hys-ui";
+import { HysButton, HysCheckbox, HysTour, type HysTourStep } from "hys-ui";
 
 const open = ref(false);
 const current = ref(0);
@@ -31,7 +31,7 @@ const steps: HysTourStep[] = [
   <div class="demo-panel tour-example">
     <HysButton @click="current = 0; open = true">开始操作引导</HysButton>
     <HysButton id="tour-spotlight-save" variant="secondary" @click="saved = true">保存草稿</HysButton>
-    <label><input v-model="allowTargetClick" type="checkbox" /> 允许点击高亮目标</label>
+    <HysCheckbox v-model="allowTargetClick" label="允许点击高亮目标" />
     <output v-if="saved" aria-live="polite">草稿已保存</output>
     <div class="tour-example-scroll" tabindex="0" aria-label="项目设置">
       <p>工作区名称</p>

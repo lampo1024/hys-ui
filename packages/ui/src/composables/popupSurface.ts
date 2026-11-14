@@ -78,7 +78,8 @@ export interface HysPopupSurfaceInstance {
   close: () => Promise<boolean>;
   toggle: () => Promise<boolean>;
   updatePosition: () => void;
-  focus: () => void;
+  /** Focus the reference. Set suppressTooltip to cancel a visible or pending tooltip during focus restoration. */
+  focus: (options?: { suppressTooltip?: boolean }) => void;
 }
 export type HysTooltipInstance = HysPopupSurfaceInstance;
 export type HysPopoverInstance = HysPopupSurfaceInstance;

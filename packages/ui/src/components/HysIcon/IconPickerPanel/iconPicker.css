@@ -11,8 +11,7 @@
   gap: 9px;
   align-items: end;
 }
-.hys-icon-picker-filters label,
-.hys-icon-picker-detail label {
+.hys-icon-picker-field {
   display: grid;
   gap: 4px;
   min-inline-size: 0;
@@ -21,8 +20,6 @@
 .hys-icon-picker-filters .hys-icon-picker-search {
   grid-column: 1 / -1;
 }
-.hys-icon-picker input,
-.hys-icon-picker select,
 .hys-icon-picker button {
   font: inherit;
   color: inherit;
@@ -30,25 +27,6 @@
   border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
   border-radius: 7px;
   background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
-}
-.hys-icon-picker input,
-.hys-icon-picker select {
-  inline-size: 100%;
-  box-sizing: border-box;
-  min-block-size: 34px;
-  padding: 5px 8px;
-}
-.hys-icon-picker label.hys-icon-picker-search {
-  position: relative;
-}
-.hys-icon-picker-search svg {
-  position: absolute;
-  inset-inline-start: 9px;
-  inset-block-start: 9px;
-  pointer-events: none;
-}
-.hys-icon-picker-search input {
-  padding-inline-start: 30px;
 }
 .hys-icon-picker button {
   display: inline-flex;
@@ -58,7 +36,7 @@
   padding: 5px 8px;
   cursor: pointer;
 }
-.hys-icon-picker :is(input, select, button):focus-visible {
+.hys-icon-picker button:focus-visible {
   outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
   outline-offset: 2px;
 }
@@ -82,6 +60,12 @@
 }
 .hys-icon-picker-upload {
   margin-inline-start: auto;
+}
+.hys-icon-picker-upload :deep(.hys-ui-upload-zone) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 .hys-icon-picker-main {
   display: grid;

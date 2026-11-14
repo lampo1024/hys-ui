@@ -575,7 +575,7 @@ defineExpose({
         <TabsSlot :render="slots.prefix" />
       </div>
       <button
-        v-if="options.showScrollButtons && nav.before.value"
+        v-if="options.showScrollButtons && (pointer.scrollControls.value?.before ?? nav.before.value)"
         type="button"
         class="hys-ui-tab-control"
         :aria-label="vertical ? '向上滚动页签' : '向前滚动页签'"
@@ -783,7 +783,7 @@ defineExpose({
         </div>
       </div>
       <button
-        v-if="options.showScrollButtons && nav.after.value"
+        v-if="options.showScrollButtons && (pointer.scrollControls.value?.after ?? nav.after.value)"
         type="button"
         class="hys-ui-tab-control"
         :aria-label="vertical ? '向下滚动页签' : '向后滚动页签'"

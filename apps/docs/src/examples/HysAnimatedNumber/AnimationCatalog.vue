@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import {
+  HysAccordion,
   HysButton,
   HysCheckbox,
   HysNumberInput,
@@ -170,109 +171,102 @@ async function importConfig() {
       :easing="easing"
       :digit-animations="digitAnimations"
     />
-    <details class="catalog-config">
-      <summary>播放与配置</summary>
-      <div class="catalog-settings demo-stack">
-        <div class="demo-control-fields">
-          <label class="demo-field"
-            >时长（ms）<HysNumberInput
-              v-model="duration"
-              :min="250"
-              :max="5000"
-              :step="100"
-          /></label>
-          <label class="demo-field"
-            >强度<HysNumberInput
-              v-model="intensity"
-              :min="0"
-              :max="2"
-              :step="0.1"
-          /></label>
-          <label class="demo-field"
-            >圈数<HysNumberInput v-model="cycles" :min="1" :max="12"
-          /></label>
-          <label class="demo-field"
-            >逐位交错<HysNumberInput
-              v-model="stagger"
-              :min="0"
-              :max="0.9"
-              :step="0.1"
-          /></label>
-          <label class="demo-field"
-            >随机种子<HysNumberInput v-model="seed" :min="0" :max="9999"
-          /></label>
-          <label class="demo-field">
-            方向
-            <HysSelect
-              v-model="axis"
-              :options="[
-                { value: 'vertical', label: '纵向' },
-                { value: 'horizontal', label: '横向' },
-              ]"
+    <HysAccordion
+      :items="[{ title: '播放与配置' }]"
+      size="sm"
+      :destroy-on-hide="false"
+    >
+      <template #content>
+        <div class="catalog-settings demo-stack">
+          <div class="demo-control-fields">
+            <label class="demo-field"
+              >时长（ms）<HysNumberInput
+                v-model="duration"
+                :min="250"
+                :max="5000"
+                :step="100"
+            /></label>
+            <label class="demo-field"
+              >强度<HysNumberInput
+                v-model="intensity"
+                :min="0"
+                :max="2"
+                :step="0.1"
+            /></label>
+            <label class="demo-field"
+              >圈数<HysNumberInput v-model="cycles" :min="1" :max="12"
+            /></label>
+            <label class="demo-field"
+              >逐位交错<HysNumberInput
+                v-model="stagger"
+                :min="0"
+                :max="0.9"
+                :step="0.1"
+            /></label>
+            <label class="demo-field"
+              >随机种子<HysNumberInput v-model="seed" :min="0" :max="9999"
+            /></label>
+            <label class="demo-field">
+              方向
+              <HysSelect
+                v-model="axis"
+                :options="[
+                  { value: 'vertical', label: '纵向' },
+                  { value: 'horizontal', label: '横向' },
+                ]"
+              />
+            </label>
+            <label class="demo-field">
+              缓动
+              <HysSelect
+                v-model="easing"
+                :options="[
+                  { value: 'linear', label: '线性' },
+                  { value: 'ease-in', label: '加速' },
+                  { value: 'ease-out', label: '减速' },
+                  { value: 'ease-in-out', label: '平滑' },
+                ]"
+              />
+            </label>
+            <label class="demo-field">
+              动效模式
+              <HysSelect
+                v-model="mode"
+                :options="[
+                  { value: 'full', label: '完整效果' },
+                  { value: 'simplified', label: '简化为计数' },
+                  { value: 'off', label: '立即显示' },
+                ]"
+              />
+            </label>
+          </div>
+          <div class="demo-control-actions">
+            <HysCheckbox
+              v-model="combine"
+              label="组合高亮"
+              @change="importedLayers = undefined"
             />
-          </label>
-          <label class="demo-field">
-            缓动
-            <HysSelect
-              v-model="easing"
-              :options="[
-                { value: 'linear', label: '线性' },
-                { value: 'ease-in', label: '加速' },
-                { value: 'ease-out', label: '减速' },
-                { value: 'ease-in-out', label: '平滑' },
-              ]"
-            />
-          </label>
-          <label class="demo-field">
-            动效模式
-            <HysSelect
-              v-model="mode"
-              :options="[
-                { value: 'full', label: '完整效果' },
-                { value: 'simplified', label: '简化为计数' },
-                { value: 'off', label: '立即显示' },
-              ]"
-            />
-          </label>
+            <HysCheckbox v-model="override" label="个位使用立方体旋转" />
+          </div>
+          <HysTextarea v-model="json" label="动画 JSON" :rows="3" />
+          <div class="demo-control-actions">
+            <HysButton size="sm" variant="secondary" @click="importConfig"
+              >导入配置</HysButton
+            >
+            <HysButton size="sm" variant="secondary" @click="exportConfig"
+              >导出配置</HysButton
+            >
+            <small v-if="message" role="status">{{ message }}</small>
+          </div>
         </div>
-        <div class="demo-control-actions">
-          <HysCheckbox
-            v-model="combine"
-            label="组合高亮"
-            @change="importedLayers = undefined"
-          />
-          <HysCheckbox v-model="override" label="个位使用立方体旋转" />
-        </div>
-        <HysTextarea v-model="json" label="动画 JSON" :rows="3" />
-        <div class="demo-control-actions">
-          <HysButton size="sm" variant="secondary" @click="importConfig"
-            >导入配置</HysButton
-          >
-          <HysButton size="sm" variant="secondary" @click="exportConfig"
-            >导出配置</HysButton
-          >
-          <small v-if="message" role="status">{{ message }}</small>
-        </div>
-      </div>
-    </details>
+      </template>
+    </HysAccordion>
   </div>
 </template>
 
 <style scoped>
 .catalog-fields {
   grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-}
-.catalog-config {
-  border: 1px solid var(--docs-border);
-  border-radius: 8px;
-  background: var(--docs-surface);
-}
-.catalog-config > summary {
-  justify-content: flex-start;
-  background: transparent;
-}
-.catalog-config[open] > summary {
-  border-bottom: 1px solid var(--docs-border);
 }
 .catalog-settings {
   padding: 14px;

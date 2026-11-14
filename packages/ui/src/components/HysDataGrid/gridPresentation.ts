@@ -34,6 +34,11 @@ export interface HysDataGridCellContext<
   columnIndex: number;
   value: unknown;
 }
+export interface HysDataGridCellView<T extends object> {
+  readonly rowKeys: readonly HysDataGridKey[];
+  readonly columnKeys: readonly string[];
+  getCell(rowKey: HysDataGridKey, columnKey: string): HysDataGridCellContext<T> | undefined;
+}
 export type HysDataGridContext<T extends object> =
   | ({ type: "header" } & HysDataGridHeaderContext<T>)
   | ({ type: "row" } & HysDataGridRowContext<T>)

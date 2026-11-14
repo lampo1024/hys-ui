@@ -110,6 +110,8 @@ const props = withDefaults(
       status?: "error" | "warning" | "success";
       showArrow?: boolean;
       showCheckmark?: boolean;
+      /** Whether option and selected labels expose native title tooltips. */
+      nativeLabelTooltip?: boolean;
       bordered?: boolean;
       autofocus?: boolean;
       name?: string;
@@ -144,6 +146,7 @@ const props = withDefaults(
     noMatchText: "没有匹配选项",
     loadingText: "加载中…",
     showArrow: true,
+    nativeLabelTooltip: true,
     showCheckmark: true,
     bordered: true,
   },
@@ -1261,7 +1264,7 @@ defineExpose({
                 :option="option"
                 :remove="() => remove(option)"
                 :disabled="controlDisabled || readonly || option.disabled"
-                ><span class="hys-ui-select-tag-text" :title="option.label">{{
+                ><span class="hys-ui-select-tag-text" :title="nativeLabelTooltip ? option.label : undefined">{{
                   maxTagTextLength && option.label.length > maxTagTextLength
                     ? option.label.slice(0, maxTagTextLength) + "…"
                     : option.label
@@ -1279,7 +1282,7 @@ defineExpose({
             ><span
               v-if="omittedTags.length"
               class="hys-ui-select-tag hys-ui-select-more"
-              :title="omittedTags.map((option) => option.label).join('、')"
+              :title="nativeLabelTooltip ? omittedTags.map((option) => option.label).join('、') : undefined"
               ><slot name="max-tag" :omitted="omittedTags"
                 >+{{ omittedTags.length }}</slot
               ></span
@@ -1288,7 +1291,7 @@ defineExpose({
             v-else
             class="hys-ui-select-single-label"
             :class="{ 'hys-ui-select-placeholder': !selected.length }"
-            :title="selected[0]?.label"
+            :title="nativeLabelTooltip ? selected[0]?.label : undefined"
             >{{ selected[0]?.label ?? placeholder }}</span
           ></slot
         ></span
@@ -1380,7 +1383,7 @@ defineExpose({
               class="hys-ui-select-bulk-count"
               aria-live="polite"
               :title="
-                selectAllScope === 'filtered'
+                !nativeLabelTooltip ? undefined : selectAllScope === 'filtered'
                   ? '批量操作仅作用于当前结果；禁用项保持不变'
                   : '批量操作所有已加载选项；禁用项保持不变'
               "
@@ -1528,7 +1531,7 @@ defineExpose({
                     >
                       <span
                         class="hys-ui-select-option-label"
-                        :title="row.option.label"
+                        :title="nativeLabelTooltip ? row.option.label : undefined"
                         ><slot
                           name="option"
                           :option="row.option"

@@ -20,7 +20,8 @@ export interface HysColorPickerProps extends HysPopupMotionProps {
   clearable?: boolean;
   showAlpha?: boolean;
   format?: HysColorFormat;
-  immediate?: boolean;
+  /** Apply on change by default, on pointer release with "release", or on confirmation with false. */
+  immediate?: boolean | "release";
   showInput?: boolean;
   showText?: boolean;
   showPresets?: boolean;

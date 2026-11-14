@@ -1,8 +1,12 @@
 import { onBeforeUnmount, onDeactivated, ref } from "vue";
-import { bounded, tabToken } from "./tabsItems";
+import { bounded } from "./tabsItems";
 import type { HysTabItem, HysTabsProps, HysTabValue } from "./tabsTypes";
 import type { useTabsNav } from "./useTabsNav";
 import { useTabsDragGhost } from "./useTabsDragGhost";
+
+const edgeSize = 24;
+const dragMargin = 12;
+const maxScrollSpeed = 560;
 
 export function useTabsPointer(
   props: () => HysTabsProps,
@@ -22,6 +26,7 @@ export function useTabsPointer(
   const ghost = useTabsDragGhost();
   const dragging = ref<HysTabValue>(),
     drop = ref<{ value: HysTabValue; after: boolean }>();
+  const scrollControls = ref<{ before: boolean; after: boolean }>();
   let start:
     | {
         id: number;
@@ -38,6 +43,9 @@ export function useTabsPointer(
     clickTimer: ReturnType<typeof setTimeout> | undefined;
   let suppress = false,
     scrolling = false;
+  let dragPoint: { x: number; y: number } | undefined;
+  let scrollFrame = 0;
+  let lastScrollTime: number | undefined;
   function clearLong() {
     clearTimeout(longTimer);
     longTimer = undefined;
@@ -117,6 +125,11 @@ export function useTabsPointer(
       viewport.setPointerCapture?.(event.pointerId);
       if (current.reorder) {
         const item = current.item!;
+        // Keep the viewport edges steady when an arrow reaches its limit.
+        scrollControls.value = {
+          before: nav.before.value,
+          after: nav.after.value,
+        };
         dragging.value = item.value;
         const box = nav
           .button(item.value)
@@ -132,51 +145,160 @@ export function useTabsPointer(
       return;
     }
     ghost.move(x, y);
-    const bounds = viewport.getBoundingClientRect();
-    if (
-      x < bounds.left - 12 ||
-      x > bounds.right + 12 ||
-      y < bounds.top - 12 ||
-      y > bounds.bottom + 12
-    ) {
-      drop.value = undefined;
+    dragPoint = { x, y };
+    updateDragTarget();
+  }
+
+  function stopEdgeScroll() {
+    if (scrollFrame) cancelAnimationFrame(scrollFrame);
+    scrollFrame = 0;
+    lastScrollTime = undefined;
+  }
+
+  function updateDragTarget(timestamp?: number) {
+    const viewport = nav.nav.value;
+    if (!dragPoint || dragging.value === undefined || !viewport) {
+      stopEdgeScroll();
       return;
     }
-    const hit = document
-      .elementFromPoint(x, y)
+    if (props().disabled || props().readonly || !props().draggable) {
+      finish(undefined, true);
+      return;
+    }
+    const { x, y } = dragPoint;
+    const bounds = viewport.getBoundingClientRect();
+    if (
+      x < bounds.left - dragMargin ||
+      x > bounds.right + dragMargin ||
+      y < bounds.top - dragMargin ||
+      y > bounds.bottom + dragMargin ||
+      !bounds.width ||
+      !bounds.height
+    ) {
+      drop.value = undefined;
+      stopEdgeScroll();
+      return;
+    }
+    const vertical = isVertical();
+    const point = vertical ? y : x;
+    const min = vertical ? bounds.top : bounds.left;
+    const max = vertical ? bounds.bottom : bounds.right;
+    const edge = Math.min(edgeSize, (max - min) / 2);
+    const proximity = (distance: number) =>
+      Math.min(1, Math.max(0, 1 - distance / edge));
+    const inLane = vertical
+      ? x >= bounds.left && x < bounds.right
+      : y >= bounds.top && y < bounds.bottom;
+    const speed =
+      props().overflow === "wrap" || !inLane
+        ? 0
+        : (proximity(max - point) - proximity(point - min)) * maxScrollSpeed;
+    let keepScrolling = speed !== 0;
+    if (keepScrolling && timestamp !== undefined) {
+      const elapsed = Math.min(
+        32,
+        timestamp - (lastScrollTime ?? timestamp - 16),
+      );
+      lastScrollTime = timestamp;
+      const delta =
+        Math.sign(speed) *
+        Math.max(1, Math.round((Math.abs(speed) * elapsed) / 1000));
+      keepScrolling = nav.scrollPixels(delta);
+    }
+    if (keepScrolling && !scrollFrame) {
+      scrollFrame = requestAnimationFrame((time) => {
+        scrollFrame = 0;
+        updateDragTarget(time);
+      });
+    } else if (!keepScrolling) stopEdgeScroll();
+
+    const clamp = (value: number, start: number, end: number) =>
+      Math.max(start, Math.min(end - 1, value));
+    const hit = viewport.ownerDocument
+      .elementFromPoint(
+        clamp(x, bounds.left, bounds.right),
+        clamp(y, bounds.top, bounds.bottom),
+      )
       ?.closest<HTMLElement>(".hys-ui-tab-item");
-    const token = hit?.dataset.tabGroup;
+    const rtl = !vertical && nav.rtl();
+    const targetElement =
+      hit && viewport.contains(hit)
+        ? hit
+        : speed
+          ? edgeTab(vertical, min, max, speed > 0, rtl)
+          : undefined;
+    const token = targetElement?.dataset.tabGroup;
     const target = token ? itemByToken(token) : undefined;
     if (
-      hit &&
-      viewport.contains(hit) &&
+      targetElement &&
       target &&
       canMove(target) &&
-      target.value !== current.item!.value
+      target.value !== dragging.value
     ) {
-      const rect = hit.getBoundingClientRect(),
+      const rect = targetElement.getBoundingClientRect(),
         mid = vertical
           ? (rect.top + rect.bottom) / 2
           : (rect.left + rect.right) / 2;
-      if (drop.value?.value !== target.value || Math.abs(point - mid) > 4)
-        drop.value = {
-          value: target.value,
-          after: vertical || !nav.rtl() ? point > mid : point < mid,
-        };
-    } else if (token !== tabToken(current.item!.value)) drop.value = undefined;
-    const min = vertical ? bounds.top : bounds.left,
-      max = vertical ? bounds.bottom : bounds.right;
-    if (point < min + 16) nav.scrollPixels(-8);
-    else if (point > max - 16) nav.scrollPixels(8);
+      const after = rtl ? point < mid : point > mid;
+      if (
+        drop.value?.value !== target.value ||
+        (drop.value.after !== after && Math.abs(point - mid) > 4)
+      )
+        drop.value = { value: target.value, after };
+    } else drop.value = undefined;
+  }
+
+  function edgeTab(
+    vertical: boolean,
+    min: number,
+    max: number,
+    endEdge: boolean,
+    rtl: boolean,
+  ) {
+    const items = nav.track.value?.firstElementChild?.children;
+    if (!items) return;
+    const reverse = endEdge !== rtl;
+    // Tabs form a single row while scrolling. Find the nearest edge item
+    // in a gap without measuring every offscreen tab.
+    let start = 0;
+    let end = items.length;
+    while (start < end) {
+      const middle = Math.floor((start + end) / 2);
+      const item = items[
+        reverse ? items.length - 1 - middle : middle
+      ] as HTMLElement;
+      const rect = item.getBoundingClientRect();
+      const before = (vertical ? rect.bottom : rect.right) <= min;
+      const after = (vertical ? rect.top : rect.left) >= max;
+      if (!before && !after) {
+        end = middle;
+      } else {
+        const searchBackward = endEdge ? before : after;
+        if (searchBackward) end = middle;
+        else start = middle + 1;
+      }
+    }
+    const item = items[reverse ? items.length - 1 - start : start] as
+      HTMLElement | undefined;
+    const bounds = item?.getBoundingClientRect();
+    if (
+      bounds &&
+      (vertical ? bounds.bottom : bounds.right) > min &&
+      (vertical ? bounds.top : bounds.left) < max
+    )
+      return item;
   }
   function finish(event?: PointerEvent, cancelled = false) {
     if (!start || (event && start.id !== event.pointerId)) return;
     clearLong();
+    stopEdgeScroll();
+    dragPoint = undefined;
     const value = dragging.value,
       target = drop.value;
     if (value !== undefined || scrolling) preventClick();
     start = undefined;
     dragging.value = undefined;
+    scrollControls.value = undefined;
     drop.value = undefined;
     scrolling = false;
     if (value !== undefined) {
@@ -231,6 +353,7 @@ export function useTabsPointer(
   return {
     dragging,
     drop,
+    scrollControls,
     ghost: ghost.ghost,
     ghostElement: ghost.element,
     down,

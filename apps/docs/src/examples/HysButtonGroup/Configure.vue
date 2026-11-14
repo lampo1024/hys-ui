@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { HysButton, HysButtonGroup } from "hys-ui";
+import { HysButton, HysButtonGroup, HysCheckbox } from "hys-ui";
 
 const disabled = ref(false);
 const joined = ref(true);
@@ -9,8 +9,8 @@ const action = ref("");
 
 <template>
   <div class="button-group-demo">
-    <label><input v-model="disabled" type="checkbox" /> 锁定操作</label>
-    <label><input v-model="joined" type="checkbox" /> 连接按钮</label>
+    <HysCheckbox v-model="disabled" label="锁定操作" />
+    <HysCheckbox v-model="joined" label="连接按钮" />
     <HysButtonGroup aria-label="文档操作" direction="vertical" variant="secondary" :disabled="disabled" :joined="joined" :gap="6">
       <HysButton @click="action = '已复制'">复制</HysButton>
       <HysButton @click="action = '已归档'">归档</HysButton>

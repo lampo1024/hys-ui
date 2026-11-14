@@ -24,6 +24,120 @@ const fire=async(element,type,options={})=>{assert(element,'Missing target for '
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 afterEach(async()=>{for(const item of [...mounts])item.unmount();await nextTick();document.body.innerHTML='';document.body.style.cssText=''})
 
+test('PermissionMatrix batch edits skip locked cells and report only changed permissions', async () => {
+  const matrix = await mount(ui.HysPermissionMatrix, {
+    roles: ['Owner', 'Support', 'Audit'],
+    resources: ['Refund'],
+    modelValue: { 'Refund:Owner': true },
+    cellDisabled: ({ role }) => role !== 'Support',
+  });
+  const group = matrix.find('[aria-label="全选资源 Refund"]');
+  assert.equal(group.indeterminate, false);
+  assert.equal(matrix.find('[aria-label="Refund - Owner"]').disabled, true);
+  group.checked = true;
+  await fire(group, 'change');
+  assert.deepEqual(matrix.props.modelValue, { 'Refund:Owner': true, 'Refund:Support': true });
+  assert.deepEqual(matrix.events.cellsChange[0][0], [
+    { resource: 'Refund', role: 'Support', key: 'Refund:Support', checked: true },
+  ]);
+  group.checked = false;
+  await fire(group, 'change');
+  assert.equal(matrix.props.modelValue['Refund:Owner'], true);
+});
+
+test('Pagination retains the former first record after an applied size change', async () => {
+  const pager = await mount(ui.HysPagination, { page: 4, pageSize: 10, total: 100, pageSizeStrategy: 'preserve-item' });
+  pager.props.pageSize = 20;
+  await nextTick();
+  assert.equal(pager.props.page, 2);
+  assert.deepEqual(pager.events.change, [[2]]);
+  pager.props.page = 3;
+  pager.props.pageSize = 25;
+  await nextTick();
+  assert.equal(pager.props.page, 3);
+  assert.deepEqual(pager.events.change, [[2]]);
+});
+
+test('CommentEditor retains failed drafts and preserves edits made during a successful request', async () => {
+  let succeed, fail;
+  const editor = await mount(ui.HysCommentEditor, {
+    comments: [],
+    draft: 'First comment',
+    submit: () => new Promise((resolve, reject) => { succeed = resolve; fail = reject; }),
+  });
+  await fire(editor.find('button'), 'click');
+  fail(new Error('Offline'));
+  await nextTick();
+  assert.equal(editor.props.draft, 'First comment');
+  assert.equal(editor.events.send, undefined);
+  assert.equal(editor.events.sendError[0][1], 'First comment');
+  await fire(editor.find('button'), 'click');
+  editor.props.draft = 'Next comment';
+  succeed();
+  await nextTick();
+  assert.equal(editor.props.draft, 'Next comment');
+  assert.deepEqual(editor.events.send, [['First comment']]);
+});
+
+test('CronEditor previews strictly later UTC times and supports restricted day or weekday matching', async () => {
+  const editor = await mount(ui.HysCronEditor, {
+    modelValue: '0 9 15 * 1',
+    previewFrom: new Date('2026-11-09T09:00:00Z'),
+    previewCount: 3,
+  });
+  assert.deepEqual(editor.all('time').map((node) => node.getAttribute('datetime')), [
+    '2026-11-15T09:00:00.000Z', '2026-11-16T09:00:00.000Z', '2026-11-23T09:00:00.000Z',
+  ]);
+});
+
+test('Steps finishes an async guard across equivalent item arrays and ignores a replaced target', async () => {
+  let allow;
+  const steps = await mount(ui.HysSteps, {
+    current: 0,
+    items: ['Draft', 'Review'],
+    clickable: true,
+    beforeChange: () => new Promise((resolve) => { allow = resolve; }),
+  });
+  await fire(steps.find('[data-step-index="1"]'), 'click');
+  steps.props.items = ['Draft', 'Review'];
+  await nextTick();
+  allow(true);
+  await nextTick();
+  assert.equal(steps.props.current, 1);
+  await fire(steps.find('[data-step-index="0"]'), 'click');
+  steps.props.items = ['Other', 'Review'];
+  await nextTick();
+  allow(true);
+  await nextTick();
+  assert.equal(steps.props.current, 1);
+});
+
+test('CalendarNavigation bounds year changes and emits UTC month starts', async () => {
+  const calendar = await mount(ui.HysCalendarNavigation, {
+    month: new Date('2026-12-10T20:00:00Z'),
+    min: '2026-11-01',
+    max: '2027-02-28',
+    showToday: true,
+    today: new Date('2027-02-08T20:00:00Z'),
+  });
+  await fire(calendar.find('[aria-label="选择月份"]'), 'click');
+  await fire(calendar.find('[aria-label="下一年"]'), 'click');
+  assert.equal(calendar.props.month.toISOString(), '2027-02-01T00:00:00.000Z');
+  assert.equal(calendar.find('[aria-label="下一年"]').disabled, true);
+  await fire(calendar.all('button').find(button => button.textContent.trim() === '回到本月'), 'click');
+  assert.equal(calendar.find('[aria-label="下个月"]').disabled, true);
+});
+
+test('RichTextEditor strips executable HTML while preserving formatting on mount and updates', async () => {
+  const editor = await mount(ui.HysRichTextEditor, {
+    modelValue: '<p onclick="alert(1)"><strong>Keep me</strong></p><script>alert(1)</script>',
+  });
+  assert.equal(editor.vm.getHTML(), '<p><strong>Keep me</strong></p>');
+  editor.props.modelValue = '<p><a href="javascript:alert(1)">Link</a></p>';
+  await nextTick();
+  assert.equal(editor.vm.getHTML(), '<p><a>Link</a></p>');
+});
+
 test('Button locks immediately and cancels its delayed visual loading on a fast completion', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const Loading = () => h('i', { 'data-custom-loading': '' });

@@ -1,0 +1,55 @@
+.hys-ui-pro-grid .hys-ui-pf-grid tbody td.hys-ui-pro-grid-format-info {
+  --hys-ui-pro-grid-format-color: var(
+    --hys-ui-primary,
+    var(--hys-ui-theme-primary)
+  );
+}
+
+.hys-ui-pro-grid .hys-ui-pf-grid tbody td.hys-ui-pro-grid-format-success {
+  --hys-ui-pro-grid-format-color: var(
+    --hys-ui-green,
+    var(--hys-ui-theme-green)
+  );
+}
+
+.hys-ui-pro-grid .hys-ui-pf-grid tbody td.hys-ui-pro-grid-format-warning {
+  --hys-ui-pro-grid-format-color: var(
+    --hys-ui-orange,
+    var(--hys-ui-theme-orange)
+  );
+}
+
+.hys-ui-pro-grid .hys-ui-pf-grid tbody td.hys-ui-pro-grid-format-danger {
+  --hys-ui-pro-grid-format-color: var(--hys-ui-red, var(--hys-ui-theme-red));
+}
+
+.hys-ui-pro-grid
+  .hys-ui-pf-grid
+  tbody
+  td:is(
+    .hys-ui-pro-grid-format-info,
+    .hys-ui-pro-grid-format-success,
+    .hys-ui-pro-grid-format-warning,
+    .hys-ui-pro-grid-format-danger
+  ) {
+  background-color: color-mix(
+    in srgb,
+    var(--hys-ui-pro-grid-format-color) 15%,
+    var(--hys-ui-grid-row-background)
+  );
+  box-shadow: inset 0 -2px var(--hys-ui-pro-grid-format-color);
+}
+
+@media (forced-colors: active) {
+  .hys-ui-pro-grid
+    .hys-ui-pf-grid
+    tbody
+    td:is(
+      .hys-ui-pro-grid-format-info,
+      .hys-ui-pro-grid-format-success,
+      .hys-ui-pro-grid-format-warning,
+      .hys-ui-pro-grid-format-danger
+    ) {
+    border-block-end-color: Highlight;
+  }
+}

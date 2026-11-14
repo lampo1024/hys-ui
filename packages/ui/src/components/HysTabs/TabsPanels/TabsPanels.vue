@@ -80,10 +80,12 @@ function componentProps(content: HysTabContent | undefined) {
         :id="panelId(item.value)"
         :aria-labelledby="tabId(item.value)"
         class="hys-ui-tab-panel"
+        :class="item.panelClass"
+        :style="item.panelStyle"
         :data-active="active === item.value"
         :aria-busy="context(item).loading || undefined"
         role="tabpanel"
-        tabindex="0"
+        :tabindex="item.panelTabIndex ?? 0"
       >
         <div
           :key="panels.versions.get(item.value) ?? 0"
@@ -95,7 +97,7 @@ function componentProps(content: HysTabContent | undefined) {
               class="hys-tab-panel-message"
               role="status"
             >
-              <TabsSlot :render="slots.loading" :scope="scope"
+              <TabsSlot :render="panes.get(item.value)?.loading ?? slots.loading" :scope="scope"
                 ><LoaderCircle
                   :size="17"
                   class="hys-tab-spinner"
@@ -109,7 +111,7 @@ function componentProps(content: HysTabContent | undefined) {
               class="hys-tab-panel-message"
               role="alert"
             >
-              <TabsSlot :render="slots.error" :scope="scope">
+              <TabsSlot :render="panes.get(item.value)?.error ?? slots.error" :scope="scope">
                 <span>页签加载失败。</span>
                 <HysButton size="sm" variant="secondary" @click="scope.reload()"
                   >重试</HysButton
@@ -133,7 +135,7 @@ function componentProps(content: HysTabContent | undefined) {
                   >{{ content }}</template
                 >
                 <div v-else class="hys-tab-panel-message">
-                  <TabsSlot :render="slots.empty" :scope="scope"
+                  <TabsSlot :render="panes.get(item.value)?.empty ?? slots.empty" :scope="scope"
                     >暂无页签内容</TabsSlot
                   >
                 </div>

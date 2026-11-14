@@ -144,6 +144,8 @@ export interface HysContextMenuSlots<N extends object = HysContextMenuItem> {
     attrs: Record<string, unknown>;
   }) => VNodeChild;
   item?: (scope: HysMenuItemContext<N>) => VNodeChild;
+  /** Interactive control beside a menu item. select runs the item's normal action. */
+  "item-control"?: (scope: HysMenuItemContext<N> & { select: (event?: KeyboardEvent) => void }) => VNodeChild;
   icon?: (scope: HysMenuItemContext<N>) => VNodeChild;
   link?: (
     scope: HysMenuItemContext<N> & { attrs: Record<string, unknown> },

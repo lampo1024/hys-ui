@@ -219,6 +219,7 @@ defineExpose({
     <div
       :ref="(el) => (state.zone.value = el as HTMLElement)"
       class="hys-ui-upload-zone"
+      :id="customTrigger ? undefined : (attrs.id as string) || state.field?.id.value"
       :class="{
         'hys-ui-upload-dragging': state.dragging.value,
         'hys-ui-upload-click': !drag,
@@ -258,7 +259,7 @@ defineExpose({
     </div>
     <input
       :ref="(el) => (state.input.value = el as HTMLInputElement)"
-      :id="(attrs.id as string) || state.field?.id.value"
+      :id="customTrigger ? (attrs.id as string) || state.field?.id.value : undefined"
       :form="attrs.form as string"
       hidden
       type="file"

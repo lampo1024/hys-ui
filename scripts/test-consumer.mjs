@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import {execFileSync} from 'node:child_process'
 import {fileURLToPath} from 'node:url'
 import {npm} from './npm.mjs'
+import {checkGridBundles} from './test-grid-bundles.mjs'
 const root=fileURLToPath(new URL('..',import.meta.url)),archive=JSON.parse(fs.readFileSync(path.join(root,'artifacts/package.json'),'utf8'))
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hys-ui-consumer-'))
 fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:'hys-ui-independent-consumer',private:true,type:'module',dependencies:{vue:'^3.5.13','hys-ui':'file:'+archive.file.replaceAll('\\','/')}}))
@@ -293,8 +294,14 @@ fs.copyFileSync(path.join(root,'scripts/consumer-tag-color.vue'),path.join(dir,'
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport TagColorFixture from './tag-color-fixture.vue'\nconst tagColorHost=document.createElement('section');tagColorHost.id='tag-color-fixture';document.body.append(tagColorHost);createApp(TagColorFixture).mount(tagColorHost)\n")
 fs.copyFileSync(path.join(root,'scripts/consumer-virtual-table.vue'),path.join(dir,'virtual-table-fixture.vue'))
 fs.appendFileSync(path.join(dir,'main.ts'),"\nimport VirtualTableFixture from './virtual-table-fixture.vue'\nconst virtualTableHost=document.createElement('section');virtualTableHost.id='virtual-table-fixture';document.body.append(virtualTableHost);createApp(VirtualTableFixture).mount(virtualTableHost)\n")
-fs.appendFileSync(path.join(dir,'main.ts'),`\nimport type {GridColumn,HysDataGridInstance,HysDataGridLoader,HysDataGridProps} from 'hys-ui'
+fs.appendFileSync(path.join(dir,'main.ts'),`\nimport type {GridColumn,HysDataGridInstance,HysDataGridLoader,HysDataGridProps,HysProGridColumn,HysProGridChange,HysProGridInstance} from 'hys-ui'
 type Invoice = {id: number; amount: number}
+import {createProGridConditionalFormat,type HysProGridFormatRule} from 'hys-ui/pro-grid/conditional-format'
+const formatRules: HysProGridFormatRule<Invoice>[] = [{columnKey:'amount',when:({row})=>row.amount>100,tone:'warning'}]
+const formatInvoice = createProGridConditionalFormat(formatRules)
+import {createProGridClipboard,type HysProGridPasteResult} from 'hys-ui/pro-grid/clipboard'
+const invoiceClipboard = createProGridClipboard<Invoice>({saveBatch: changes => changes.every(change => change.row.amount >= 0)})
+function pasteInvoice(text: string): Promise<HysProGridPasteResult> { return invoiceClipboard.pasteText(text) }
 const gridColumn: GridColumn<Invoice> = {key:'amount',label:'Amount',sortMethod:(a,b)=>a.amount-b.amount}
 const gridLoader: HysDataGridLoader<Invoice> = (query,{signal}) => {
   signal.throwIfAborted()
@@ -302,7 +309,10 @@ const gridLoader: HysDataGridLoader<Invoice> = (query,{signal}) => {
 }
 const gridProps: HysDataGridProps<Invoice> = {rows:[],columns:[gridColumn],loadRows:gridLoader,rowKey:row=>row.id}
 function gridSelection(grid: HysDataGridInstance) { return grid.getSelection() }
-void [gridProps,gridSelection]
+const proColumn: HysProGridColumn<Invoice> = {key:'amount',label:'Amount',editor:{type:'number',min:0},validate:change=>change.editor==='number' && (change.value ?? 0) >= 0}
+function proValue(change: HysProGridChange<Invoice>) { if(change.editor==='number') { const amount: number | null=change.value; return amount } }
+async function proCommit(grid: HysProGridInstance) { return await grid.commitEdit() }
+void [gridProps,gridSelection,proColumn,proValue,proCommit,formatInvoice,pasteInvoice]
 `)
 fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2022',module:'ESNext',moduleResolution:'Bundler',strict:true,skipLibCheck:true,lib:['ES2022','DOM']},include:['main.ts']}))
 npm(['install','--no-audit','--no-fund'],{cwd:dir,stdio:'inherit'})
@@ -312,5 +322,6 @@ assert(!fs.existsSync(path.join(dir,'node_modules/vue-router')))
 assert(!fs.existsSync(path.join(dir,'node_modules/hys-ui/node_modules/vue')))
 const scripts=fs.readdirSync(path.join(dir,'dist/assets')).filter(p=>p.endsWith('.js')).map(p=>fs.readFileSync(path.join(dir,'dist/assets',p),'utf8')).join('\n')
 assert(!scripts.includes('hys-ui-pf-grid-toolbar'),'Unused data grid was bundled')
+await checkGridBundles(dir)
 fs.writeFileSync(path.join(root,'artifacts/consumer-dir.txt'),dir)
 console.log('PASS: external tarball consumer, public types, single Vue, no router, tree shaking. Fixture: '+dir)

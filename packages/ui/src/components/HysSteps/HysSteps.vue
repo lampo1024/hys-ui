@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import {computed,ref} from 'vue'
+import {computed,ref,watch,onBeforeUnmount,onDeactivated} from 'vue'
 import {Check,CircleAlert} from 'lucide-vue-next'
 import {useHysRootAttrs} from '../../config'
+import HysButton from '../HysButton/HysButton.vue'
+import HysProgress from '../HysProgress/HysProgress.vue'
 export type HysStepStatus='process'|'error'|'finish'|'wait'
-export interface HysStepItem {title:string;description?:string;subtitle?:string;disabled?:boolean;status?:HysStepStatus}
+export interface HysStepItem {title:string;description?:string;subtitle?:string;disabled?:boolean;status?:HysStepStatus;progress?:number}
 const props=withDefaults(defineProps<{
   items:(string|HysStepItem)[]
   current?:number
@@ -17,24 +19,50 @@ const props=withDefaults(defineProps<{
   simple?:boolean
   responsive?:boolean
   ariaLabel?:string
+  linear?:boolean
+  beforeChange?:(next:number,current:number,item:HysStepItem)=>boolean|void|PromiseLike<boolean|void>
 }>(),{current:0,status:'process',size:'md',labelPlacement:'right',responsive:true})
-const emit=defineEmits<{'update:current':[index:number];change:[index:number]}>(),hysRootAttrs=useHysRootAttrs(),root=ref<HTMLOListElement>()
+const emit=defineEmits<{'update:current':[index:number];change:[index:number];changeError:[error:unknown]}>(),hysRootAttrs=useHysRootAttrs(),root=ref<HTMLOListElement>()
 const normalized=computed(()=>props.items.map(item=>typeof item==='string'?{title:item}:item))
 const currentIndex=computed(()=>Number.isFinite(props.current)?Math.max(-1,Math.min(props.items.length,Math.trunc(props.current))):0)
-const enabled=computed(()=>normalized.value.map((item,index)=>!props.disabled&&!item.disabled?index:-1).filter(index=>index>=0))
+function blocked(item:HysStepItem,index:number){return !!(props.disabled||item.disabled||(props.linear&&index>currentIndex.value))}
+const enabled=computed(()=>normalized.value.map((item,index)=>blocked(item,index)?-1:index).filter(index=>index>=0))
 function state(index:number):HysStepStatus{return normalized.value[index]?.status??(index<currentIndex.value?'finish':index===currentIndex.value?props.status:'wait')}
-function select(index:number){if(!props.clickable||!enabled.value.includes(index)||index===currentIndex.value)return;emit('update:current',index);emit('change',index)}
+function stepProgress(item:HysStepItem,index:number){return state(index)==='process'&&typeof item.progress==='number'&&Number.isFinite(item.progress)?Math.min(100,Math.max(0,item.progress)):undefined}
+const pending=ref(false)
+let revision=0
+function clearPending(){revision++;pending.value=false}
+watch([currentIndex,()=>props.disabled,()=>props.clickable,()=>props.linear,()=>props.beforeChange],clearPending)
+onDeactivated(clearPending)
+onBeforeUnmount(clearPending)
+async function select(index:number){
+  if(!props.clickable||pending.value||!enabled.value.includes(index)||index===currentIndex.value)return
+  if(props.beforeChange){
+    const ticket=++revision
+    const previous=currentIndex.value
+    const item=normalized.value[index]
+    pending.value=true
+    try{
+      if((await props.beforeChange(index,previous,item))===false||
+        ticket!==revision||normalized.value[index]?.title!==item.title||!enabled.value.includes(index)||currentIndex.value!==previous)return
+    }catch(error){if(ticket===revision)emit('changeError',error);return}
+    finally{if(ticket===revision)pending.value=false}
+  }
+  emit('update:current',index)
+  emit('change',index)
+}
 function keyboard(event:KeyboardEvent,index:number){if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)||!enabled.value.length)return;event.preventDefault();const offset=['ArrowLeft','ArrowUp'].includes(event.key)?-1:1,current=enabled.value.indexOf(index),next=event.key==='Home'?0:event.key==='End'?enabled.value.length-1:(current+offset+enabled.value.length)%enabled.value.length;root.value?.querySelector<HTMLButtonElement>('[data-step-index="'+enabled.value[next]+'"]')?.focus();select(enabled.value[next])}
 </script>
 <template>
-  <ol ref="root" v-bind="hysRootAttrs" class="hys-ui-ex-steps" :class="['hys-ui-steps-size-'+size,{'hys-ui-steps-vertical':vertical,'hys-ui-steps-bottom':labelPlacement==='bottom','hys-ui-steps-dots':progressDot,'hys-ui-steps-simple':simple,'hys-ui-steps-responsive':responsive}]" :aria-label="ariaLabel||'流程进度'">
-    <li v-for="(item,index) in normalized" :key="index" :class="['hys-ui-step-'+state(index),{'hys-ui-done':state(index)==='finish','hys-ui-active':state(index)==='process','hys-ui-step-disabled':disabled||item.disabled}]" :aria-current="index===currentIndex?'step':undefined">
+  <ol ref="root" v-bind="hysRootAttrs" class="hys-ui-ex-steps" :class="['hys-ui-steps-size-'+size,{'hys-ui-steps-vertical':vertical,'hys-ui-steps-bottom':labelPlacement==='bottom','hys-ui-steps-dots':progressDot,'hys-ui-steps-simple':simple,'hys-ui-steps-responsive':responsive}]" :aria-busy="pending||undefined" :aria-label="ariaLabel||'流程进度'">
+    <li v-for="(item,index) in normalized" :key="index" :class="['hys-ui-step-'+state(index),{'hys-ui-done':state(index)==='finish','hys-ui-active':state(index)==='process','hys-ui-step-disabled':blocked(item,index)}]" :aria-current="index===currentIndex?'step':undefined">
       <span class="hys-ui-step-marker" aria-hidden="true"><slot name="icon" :item="item" :index="index" :status="state(index)"><i v-if="progressDot" class="hys-ui-step-dot"/><Check v-else-if="state(index)==='finish'" :size="size==='sm'?12:15"/><CircleAlert v-else-if="state(index)==='error'" :size="size==='sm'?12:15"/><template v-else>{{index+1}}</template></slot></span>
-      <div class="hys-ui-step-content"><button v-if="clickable" type="button" :data-step-index="index" :disabled="disabled||item.disabled" :tabindex="(enabled.includes(currentIndex)?currentIndex:enabled[0])===index?0:-1" @click="select(index)" @keydown="keyboard($event,index)"><slot name="title" :item="item" :index="index" :status="state(index)">{{item.title}}</slot></button><strong v-else><slot name="title" :item="item" :index="index" :status="state(index)">{{item.title}}</slot></strong><small v-if="item.subtitle||$slots.subtitle" class="hys-ui-step-subtitle"><slot name="subtitle" :item="item" :index="index">{{item.subtitle}}</slot></small><div v-if="!simple&&(item.description||$slots.description)" class="hys-ui-step-description"><slot name="description" :item="item" :index="index" :status="state(index)">{{item.description}}</slot></div></div>
+      <div class="hys-ui-step-content"><HysButton v-if="clickable" size="sm" variant="ghost" :data-step-index="index" :disabled="blocked(item,index)" :tabindex="(enabled.includes(currentIndex)?currentIndex:enabled[0])===index?0:-1" @click="select(index)" @keydown="keyboard($event,index)"><slot name="title" :item="item" :index="index" :status="state(index)">{{item.title}}</slot></HysButton><strong v-else><slot name="title" :item="item" :index="index" :status="state(index)">{{item.title}}</slot></strong><small v-if="item.subtitle||$slots.subtitle" class="hys-ui-step-subtitle"><slot name="subtitle" :item="item" :index="index">{{item.subtitle}}</slot></small><div v-if="!simple&&(item.description||$slots.description)" class="hys-ui-step-description"><slot name="description" :item="item" :index="index" :status="state(index)">{{item.description}}</slot></div><template v-for="progress in [stepProgress(item,index)]" :key="0"><HysProgress v-if="progress !== undefined" class="hys-ui-step-progress" :value="progress" :stroke-width="6" :show-label="false" :aria-label="item.title+'进度'" /></template></div>
     </li>
   </ol>
 </template>
 <style scoped>
+.hys-ui-step-progress{width:min(100%,120px);margin-top:8px}
 .hys-ui-ex-steps{margin:0;gap:18px;flex-wrap:nowrap}.hys-ui-ex-steps>li{position:relative;align-items:flex-start;gap:10px;min-width:0;flex:1}.hys-ui-ex-steps>li:not(:last-child)::after{content:'';position:absolute;left:37px;right:0;top:14px;height:1px;background:var(--hys-ui-border,var(--hys-ui-theme-border));z-index:0}.hys-ui-ex-steps>li.hys-ui-done::after{background:var(--hys-ui-primary,var(--hys-ui-theme-primary))}.hys-ui-ex-steps .hys-ui-step-marker{position:relative;z-index:1;flex:none;width:28px;height:28px;border:1px solid var(--hys-ui-border,var(--hys-ui-theme-border));background:var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt));font-size:13px;color:var(--hys-ui-muted,var(--hys-ui-theme-muted))}.hys-ui-ex-steps>li.hys-ui-active>.hys-ui-step-marker,.hys-ui-ex-steps>li.hys-ui-done>.hys-ui-step-marker{border-color:var(--hys-ui-primary,var(--hys-ui-theme-primary));background:var(--hys-ui-primary,var(--hys-ui-theme-primary));color:#fff}.hys-ui-ex-steps>li.hys-ui-step-error>.hys-ui-step-marker{border-color:#ed4556;color:#ed4556;background:var(--hys-ui-surface,var(--hys-ui-theme-surface))}.hys-ui-step-content{position:relative;z-index:1;min-width:0;padding-top:3px;background:var(--hys-ui-surface,var(--hys-ui-theme-surface))}.hys-ui-step-content strong,.hys-ui-step-content button{font:inherit;font-weight:500;color:var(--hys-ui-text,var(--hys-ui-theme-text));overflow-wrap:anywhere}.hys-ui-step-content button{padding:0;border:0;background:transparent;cursor:pointer;text-align:start}.hys-ui-step-content button:disabled{cursor:not-allowed}.hys-ui-step-disabled{opacity:.45}.hys-ui-step-subtitle,.hys-ui-step-description{display:block;margin-top:5px;color:var(--hys-ui-muted,var(--hys-ui-theme-muted));font-size:12px;line-height:1.6}.hys-ui-step-error .hys-ui-step-content{color:#ed4556}.hys-ui-steps-size-sm .hys-ui-step-marker{width:22px;height:22px;font-size:11px}.hys-ui-steps-size-sm>li:not(:last-child)::after{left:31px;top:11px}.hys-ui-steps-size-sm .hys-ui-step-content{padding-top:1px;font-size:12px}.hys-ui-steps-vertical{flex-direction:column;gap:24px}.hys-ui-steps-vertical>li{width:100%;flex:auto;min-height:44px}.hys-ui-steps-vertical>li:not(:last-child)::after{left:14px;right:auto;top:34px;bottom:-18px;width:1px;height:auto}.hys-ui-steps-vertical.hys-ui-steps-size-sm>li:not(:last-child)::after{left:11px;top:28px}.hys-ui-steps-bottom:not(.hys-ui-steps-vertical)>li{flex-direction:column;align-items:center;text-align:center}.hys-ui-steps-bottom:not(.hys-ui-steps-vertical)>li:not(:last-child)::after{left:calc(50% + 22px);right:calc(-50% + 5px)}.hys-ui-steps-dots .hys-ui-step-marker{background:transparent!important;border:0!important;color:var(--hys-ui-muted,var(--hys-ui-theme-muted))!important}.hys-ui-step-dot{width:8px;height:8px;border-radius:50%;background:currentColor}.hys-ui-step-process .hys-ui-step-dot,.hys-ui-step-finish .hys-ui-step-dot{background:var(--hys-ui-primary,var(--hys-ui-theme-primary))}.hys-ui-step-process .hys-ui-step-dot{box-shadow:0 0 0 4px var(--hys-ui-primary-soft,var(--hys-ui-theme-primary-soft))}.hys-ui-step-error .hys-ui-step-dot{background:#ed4556}.hys-ui-steps-simple{padding:14px;border-radius:9px;background:var(--hys-ui-surface-alt,var(--hys-ui-theme-surface-alt))}.hys-ui-steps-simple .hys-ui-step-content{background:transparent}
 @media(max-width:532px){.hys-ui-steps-responsive{flex-direction:column;gap:20px}.hys-ui-steps-responsive>li{width:100%;flex:auto;min-height:44px;flex-direction:row!important;align-items:flex-start!important;text-align:start!important}.hys-ui-steps-responsive>li:not(:last-child)::after{left:14px!important;right:auto!important;top:34px!important;bottom:-14px;width:1px;height:auto}.hys-ui-steps-responsive.hys-ui-steps-size-sm>li:not(:last-child)::after{left:11px!important;top:28px!important}}
 </style>

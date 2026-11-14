@@ -18,6 +18,7 @@ export function usePopupSurfaceInteractions(
     floating,
     restoreReferenceFocus,
     request,
+    hasOpenRequest,
     allowTabExit,
   }: {
     available: Readonly<Ref<boolean>>;
@@ -34,6 +35,7 @@ export function usePopupSurfaceInteractions(
       restore?: boolean,
       source?: PopupCloseSource,
     ) => Promise<boolean>;
+    hasOpenRequest: () => boolean;
     allowTabExit?: boolean;
   },
 ) {
@@ -47,12 +49,24 @@ export function usePopupSurfaceInteractions(
     focusTrigger = false,
     focusPanel = false,
     pinned = false;
+  let pointer: { x: number; y: number } | undefined;
+  let suppressedPointer: typeof pointer;
+  let pressedPointer: number | undefined;
+  let drag: DragEvent | undefined;
+  let interactionDocument: Document | undefined;
   const triggers = computed(() => {
     const value =
       props.trigger ?? (kind === "tooltip" ? ["hover", "focus"] : ["click"]);
     const values = Array.isArray(value) ? value : [value];
     return new Set(values.includes("manual") ? [] : values);
   });
+  const dismissOnPointerInteraction = computed(
+    () =>
+      kind === "tooltip" &&
+      (triggers.value.has("hover") || triggers.value.has("focus")) &&
+      !triggers.value.has("click") &&
+      !triggers.value.has("contextmenu"),
+  );
   function clearDelays() {
     clearTimeout(showTimer);
     clearTimeout(hideTimer);
@@ -71,10 +85,13 @@ export function usePopupSurfaceInteractions(
     if (
       !available.value ||
       floating.restoringFocus.value ||
+      pressedPointer !== undefined ||
+      drag ||
       floating.open.value ||
       showTimer
     )
       return;
+    observeInteraction();
     const delay = wait(props.showDelay);
     if (delay)
       showTimer = setTimeout(() => {
@@ -97,7 +114,9 @@ export function usePopupSurfaceInteractions(
     showTimer = undefined;
     clearTimeout(hideTimer);
     hideTimer = undefined;
-    if (held() || !floating.open.value) return;
+    if (held()) return;
+    stopObservingIfIdle();
+    if (!floating.open.value) return;
     const hide = () => {
       hideTimer = undefined;
       // Hover and focus belong to this popup even when another overlay is above it.
@@ -107,15 +126,31 @@ export function usePopupSurfaceInteractions(
     if (delay) hideTimer = setTimeout(hide, delay);
     else hide();
   }
-  function pointerEnter() {
+  function pointerEnter(event: PointerEvent) {
+    updatePointer(event);
+    if (
+      suppressedPointer ||
+      (dismissOnPointerInteraction.value &&
+        (pressedPointer !== undefined || drag || event.buttons))
+    )
+      return;
     if (!triggers.value.has("hover")) return;
     hoverTrigger = true;
     scheduleShow();
   }
-  function pointerLeave() {
+  function pointerLeave(event: PointerEvent) {
+    updatePointer(event);
     if (!triggers.value.has("hover")) return;
     hoverTrigger = false;
     scheduleHide();
+  }
+  function pointerMove(event: PointerEvent) {
+    if (suppressedPointer) pointerEnter(event);
+  }
+  function updatePointer(event: PointerEvent) {
+    pointer = { x: event.clientX ?? 0, y: event.clientY ?? 0 };
+    if (suppressedPointer && (suppressedPointer.x !== pointer.x || suppressedPointer.y !== pointer.y))
+      suppressedPointer = undefined;
   }
   function panelEnter() {
     if (props.enterable === false) return;
@@ -129,7 +164,9 @@ export function usePopupSurfaceInteractions(
   }
   function focusIn(event: FocusEvent) {
     if (panel.value?.contains(event.target as Node)) return;
-    if (floating.restoringFocus.value) return;
+    if (floating.restoringFocus.value || pressedPointer !== undefined || drag)
+      return;
+    suppressedPointer = undefined;
     focusTrigger = true;
     if (triggers.value.has("focus")) scheduleShow();
   }
@@ -273,17 +310,92 @@ export function usePopupSurfaceInteractions(
   function reset() {
     clearDelays();
     resetReasons();
+    stopObservingIfIdle();
+  }
+  function suppress() {
+    // Layout changes can emit pointerenter even when the pointer hasn't moved.
+    suppressedPointer = pointer;
+    reset();
+  }
+  function observeInteraction() {
+    if (!dismissOnPointerInteraction.value || interactionDocument) return;
+    interactionDocument = actualReference.value?.ownerDocument;
+    interactionDocument?.addEventListener("dragstart", dragStart, true);
+    interactionDocument?.defaultView?.addEventListener("blur", endInteraction);
+  }
+  function clearInteraction() {
+    const doc = interactionDocument;
+    interactionDocument = undefined;
+    pressedPointer = undefined;
+    drag = undefined;
+    doc?.removeEventListener("pointerup", pointerRelease, true);
+    doc?.removeEventListener("pointercancel", pointerRelease, true);
+    doc?.removeEventListener("dragstart", dragStart, true);
+    doc?.removeEventListener("dragend", dragEnd, true);
+    doc?.defaultView?.removeEventListener("blur", endInteraction);
+  }
+  function stopObservingIfIdle() {
+    if (!drag && pressedPointer === undefined && !held())
+      clearInteraction();
+  }
+  function dismissInteraction() {
+    suppress();
+    if (hasOpenRequest() || floating.open.value)
+      void request(false, false, "trigger");
+  }
+  function pointerDown(event: PointerEvent) {
+    if (!dismissOnPointerInteraction.value || !available.value) return;
+    if (panel.value?.contains(event.target as Node)) return;
+    observeInteraction();
+    pressedPointer = event.pointerId ?? 0;
+    interactionDocument?.addEventListener("pointerup", pointerRelease, true);
+    interactionDocument?.addEventListener("pointercancel", pointerRelease, true);
+    updatePointer(event);
+    dismissInteraction();
+  }
+  function pointerRelease(event: PointerEvent) {
+    if ((event.pointerId ?? 0) !== pressedPointer) return;
+    pressedPointer = undefined;
+    updatePointer(event);
+    suppressedPointer = pointer;
+    stopObservingIfIdle();
+  }
+  function dragStart(event: DragEvent) {
+    drag = event;
+    interactionDocument?.addEventListener("dragend", dragEnd, true);
+    suppressedPointer = pointer = { x: event.clientX, y: event.clientY };
+    dismissInteraction();
+    // A cancelled native drag has no dragend.
+    setTimeout(() => {
+      if (event.defaultPrevented && drag === event) {
+        drag = undefined;
+        interactionDocument?.removeEventListener("dragend", dragEnd, true);
+        stopObservingIfIdle();
+      }
+    }, 0);
+  }
+  function dragEnd(event: DragEvent) {
+    suppressedPointer = pointer = { x: event.clientX, y: event.clientY };
+    clearInteraction();
+  }
+  function endInteraction() {
+    clearInteraction();
+    dismissInteraction();
   }
   return {
     clearDelays,
     clearAuto,
     resetReasons,
     reset,
+    suppress,
+    clearInteraction,
     startAuto,
     tab,
     handlers: {
       pointerEnter,
       pointerLeave,
+      pointerMove,
+      pointerDown,
       panelEnter,
       panelLeave,
       focusIn,

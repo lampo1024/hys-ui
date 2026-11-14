@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<HysContextMenuProps<N>>(), {
 });
 const slots = defineSlots<HysContextMenuSlots<N>>();
 const forwarded = computed(() =>
-  (["item", "icon", "link", "empty", "loading"] as const).filter(
+  (["item", "item-control", "icon", "link", "empty", "loading"] as const).filter(
     (name) => !!slots[name],
   ),
 );

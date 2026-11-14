@@ -107,11 +107,12 @@ const settings = computed(() => ({
     </div>
     <HysCheckbox v-model="active" label="播放预设预览" />
     <div class="spin-animation-grid">
-      <button
+      <HysButton
         v-for="item in hysSpinAnimations"
         :key="item.name"
-        type="button"
-        :aria-pressed="selected === item.name"
+        variant="secondary"
+        class="spin-animation-option"
+        :pressed="selected === item.name"
         @click="selected = item.name"
       >
         <HysSpin
@@ -126,7 +127,7 @@ const settings = computed(() => ({
           <template v-if="item.name === 'custom'" #indicator>◇</template>
         </HysSpin>
         <span>{{ item.label }}</span>
-      </button>
+      </HysButton>
     </div>
   </div>
 </template>
@@ -143,7 +144,7 @@ const settings = computed(() => ({
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 94px), 1fr));
   gap: 6px;
 }
-.spin-animation-grid button {
+.spin-animation-grid .spin-animation-option {
   display: grid;
   justify-items: center;
   align-content: center;
@@ -157,7 +158,7 @@ const settings = computed(() => ({
   font-size: 11px;
   cursor: pointer;
 }
-.spin-animation-grid button[aria-pressed="true"] {
+.spin-animation-grid .spin-animation-option[aria-pressed="true"] {
   border-color: var(--hys-ui-primary, var(--hys-ui-theme-primary));
   background: var(--docs-bg);
 }

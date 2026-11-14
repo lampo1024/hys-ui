@@ -283,13 +283,16 @@ const thumbTransform = (value: number) => ({
 });
 const selection = computed(() => {
   const first = position(isRange.value ? values.value[0] : minimum.value),
-    last = position(values.value[isRange.value ? 1 : 0]);
+    last = position(values.value[isRange.value ? 1 : 0]),
+    span = Math.abs(last - first) + "%";
   return props.vertical
     ? {
-        transform: `translate3d(-50%, ${100 - Math.max(first, last)}%, 0) scaleY(${Math.abs(last - first) / 100})`,
+        top: 100 - Math.max(first, last) + "%",
+        height: span,
       }
     : {
-        transform: `translate3d(${Math.min(first, last)}%, -50%, 0) scaleX(${Math.abs(last - first) / 100})`,
+        left: Math.min(first, last) + "%",
+        width: span,
       };
 });
 const stops = computed(() => {
@@ -945,7 +948,6 @@ defineExpose({
 .hys-ui-slider-selection {
   left: 0;
   width: 100%;
-  transform-origin: left center;
   background: var(--hys-ui-primary, var(--hys-ui-theme-primary));
 }
 .hys-ui-slider-selection-draggable {
@@ -1118,7 +1120,6 @@ defineExpose({
 .hys-ui-slider-vertical .hys-ui-slider-selection {
   top: 0;
   height: 100%;
-  transform-origin: center top;
 }
 .hys-ui-slider-vertical .hys-ui-slider-thumb {
   top: 0;

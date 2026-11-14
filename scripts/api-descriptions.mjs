@@ -70,7 +70,15 @@ const textInput = {
 };
 
 const annotations = {
-  HysAccordion: { slots: {
+  HysAccordion: {
+    props: { headingLevel: '面板标题使用的原生标题级别，接受 2–6，默认 3。' },
+    exposed: {
+      getOpenKeys: '返回当前已展开面板键的副本。',
+      expand: 'expand(key): Promise<boolean>。经 beforeToggle 请求展开，已展开、禁用或拦截时返回 false。',
+      collapse: 'collapse(key): Promise<boolean>。经 beforeToggle 请求收起，已收起、禁用或拦截时返回 false。',
+      focus: 'focus(key): boolean。聚焦可用面板的触发按钮，未知或禁用时返回 false。',
+    },
+    slots: {
     icon: '替换面板标题旁的展开图标，可根据展开状态改变方向',
     extra: '面板标题右侧的附加操作区域',
     content: '替换面板正文，按当前面板的数据渲染内容',
@@ -125,6 +133,9 @@ const annotations = {
     props: {
       round: '将徽章外形改为两端完全圆角',
       dot: '显示圆点标记，隐藏徽章计数文字',
+      formatValue: '自定义计数文字，接收原值与 max 截断后的显示值，返回字符串。content 插槽优先。',
+      announce: '计数或状态变化的 ARIA Live 优先级，默认 off。polite 等待空闲播报，assertive 立即播报。',
+      announcement: '自定义播报文字。省略时使用原始计数或状态 text。仅在 announce 开启时生效。',
     },
     events: { 'update:checked': '点击可选徽章时请求切换按下状态，参数为新的布尔值' },
   },
@@ -205,37 +216,98 @@ const annotations = {
     slots: { default: '要排列的 HysButton 子项，可在各按钮上覆盖尺寸与外观' },
   },
   HysCalendarNavigation: {
-    props: { month: '控制导航栏当前显示的月份，按 Date 的 UTC 年和月读取' },
-    events: { 'update:month': '翻页或选定年月后请求更新月份，参数为该月第一天的 UTC Date' },
-    slots: { default: '日期视图的正文区域，选择年份或月份时由对应选择面板替换' },
+    props: {
+      month: '当前显示月份，读取 Date 的 UTC 年月。',
+      min: '最早允许进入的月份，传入合法 YYYY-MM-DD，包含指定日期所在月。',
+      max: '最晚允许进入的月份，传入合法 YYYY-MM-DD，包含指定日期所在月。',
+      locale: '月份短名称的 BCP 47 语言标签，省略时显示 1月 至 12月。',
+      disabled: '禁止导航和切换选择面板，默认 false。',
+      showToday: '显示回到本月按钮，默认 false。本月超出 min/max 时禁用。',
+      today: '回到本月的基准 Date，默认取操作时的当前时间，按 UTC 年月读取。',
+    },
+    events: {
+      'update:month': '请求更新月份，载荷为目标月首日 00:00 UTC。仅在目标月变化且在范围内时触发。',
+      navigate: '有效的月份变更请求触发，依次返回目标 Date 与来源 previous、next、month、year 或 today。',
+      viewChange: '切换日期、月份或年份选择面板时触发，返回 days、months 或 years。',
+    },
+    slots: { default: '日期视图的正文，接收 { month: Date }。选择月份或年份时切换到对应面板。' },
   },
   HysCard: {
     props: {
       subtitle: '标题下方的补充文字',
       bordered: '是否绘制卡片外框',
       size: '调整卡片标题、正文和页脚的留白',
+      collapsible: '在卡片标题区显示折叠按钮，默认 false。收起时隐藏页签、正文、底部操作和页脚，保留已挂载内容。',
+      collapsed: '受控折叠状态，可配合 v-model:collapsed。',
+      defaultCollapsed: '非受控的初始折叠状态，默认 false。',
+      collapseLabel: '展开状态下的按钮文字，默认“收起卡片内容”。',
+      expandLabel: '收起状态下的按钮文字，默认“展开卡片内容”。',
     },
-    events: { 'update:activeTab': '选择可用页签时请求更新 activeTab，参数为该页签的 value' },
+    events: {
+      'update:activeTab': '选择可用页签时请求更新 activeTab，参数为该页签的 value',
+      'update:collapsed': '点击折叠按钮时请求更新 collapsed，载荷为目标布尔值。',
+      collapseChange: '点击折叠按钮时触发，载荷为本次请求的折叠状态。',
+    },
+    slots: { 'collapse-toggle': '替换折叠按钮的内容，接收 { collapsed: boolean }。只渲染文字或图标。' },
     exposed: { element: '卡片的原生根元素，挂载前为 undefined' },
   },
   HysChart: { props: {
-    data: '按绘图顺序提供标签和值，每项包含 label 与 value',
+    data: '按绘图顺序提供 { label, value, color? }。零轴随正负值调整，忽略非有限值。color 覆盖柱体或折线节点颜色。',
     type: 'bar 绘制柱状图，line 绘制折线图',
     height: '设置柱状图或折线图绘制区域的高度，单位为像素',
-  } },
+    showValues: '在数据点旁显示数值，默认 false。',
+    showTable: '显示同一组数据的语义表格，默认 false。',
+    valueFormatter: '格式化数值，接收 (value, point)，用于图上标签、提示和数据表。',
+    emptyText: '无有效数据时显示的文案，默认“暂无图表数据”。',
+  }, slots: { title: '绘图区上方标题。', empty: '替换无数据提示。' } },
+  HysColorTokenEditor: {
+    props: {
+      labels: '颜色键到显示名的映射，省略时显示颜色键。',
+      defaults: '颜色键到默认色值的映射，为对应的颜色提供重置按钮。',
+      lockedKeys: '锁定调色和重置的颜色键数组。',
+      disabled: '禁用所有颜色修改，默认 false。',
+    },
+    events: { change: '通过选色或重置改变颜色时触发，载荷为颜色键、新值和原值。' },
+  },
   HysCommandPalette: {
-    props: { actions: '可搜索的命令列表，每项需提供唯一 id 和可显示的 label' },
+    props: {
+      actions: '命令数组。id 唯一，label 为显示名，description 与 keywords 参与搜索。disabled 为 true 时保留展示并跳过键盘选择。',
+      hotkey: '打开和关闭浮层的按键，与 Ctrl 或 Command 组合，默认 k。false 关闭全局快捷键。',
+      placeholder: '搜索框的占位文案，默认“搜索操作…”。',
+      emptyText: '搜索无匹配项时的文案，默认“没有匹配的命令”。',
+    },
     events: { select: '确认当前命令时触发，参数为被选中的命令 id' },
+    slots: { action: '自定义选项内容，接收 { action, active }。' },
+    exposed: { open: '打开浮层并聚焦搜索框。', close: '关闭浮层。' },
   },
   HysCommentEditor: {
-    props: { comments: '展示的评论列表，每条包含 id、作者、正文和可选时间' },
+    props: {
+      comments: '评论数组，每条包含 id、author、text、time? 和 removable?。removable 为 false 时隐藏删除按钮。',
+      draft: '评论草稿，可配合 v-model:draft。默认空字符串，发送时请求清空。',
+      maxLength: '允许的最大 Unicode 码点数，省略时无上限。超限时保留草稿并阻止发送。',
+      submitting: '发送中状态，禁用发送和删除按钮。默认 false。',
+      disabled: '禁用输入和操作，默认 false。',
+      placeholder: '草稿占位文字。默认提示 Ctrl 或 Command + Enter 发送。',
+    },
     events: {
-      send: '点击发送或使用 Ctrl+Enter 时触发，返回去除首尾空格后的非空草稿',
+      send: '点击发送或使用 Ctrl / Command + Enter 时触发，返回去除首尾空格后的非空草稿。',
+      'update:draft': '输入或发送清空时请求更新草稿，载荷为新文本。',
       remove: '点击删除时发出评论 id，由宿主更新评论列表',
     },
   },
+  HysCronEditor: {
+    props: {
+      presets: '自定义预设，包含 { label, value }。省略时显示内置预设，传空数组隐藏预设按钮。',
+      disabled: '禁用输入和预设按钮，默认 false。',
+      readonly: '保留文本选择，禁止修改和选择预设，默认 false。',
+    },
+    exposed: { validate: 'validate(): boolean。验证五段数字格式、各段边界、范围与步长。' },
+  },
   HysDataGrid: {
     props: {
+      showToolbar: '显示搜索、分组与列设置工具栏，默认 true。',
+      pagination: '显示分页栏，默认 true。设为 false 时，本地数据全部显示；服务端模式仍使用宿主提供的数据。',
+      rowNumbers: '显示固定在左侧的行号列，默认 false。行号按数据源位置计算，行号列不参与选择或编辑数据单元格。',
       columns: '列定义。group 为 { key, label }，相邻同组且在同一固定区域的列合并表头。headerAlign 单独控制表头对齐，headerWrap 开启换行，pinnable: false 锁定 pinned 配置。',
       caption: '可见的原生表格标题。省略时不渲染 caption。',
       striped: '启用数据行斑马纹，默认 false。',
@@ -246,10 +318,20 @@ const annotations = {
       rowStyle: '行 CSSProperties 或接收行上下文的回调，适合设置行高和 CSS 变量。',
       cellClassName: '单元格类名或接收单元格上下文的回调；在行上下文基础上增加 column、columnIndex、value。',
       cellStyle: '单元格 CSSProperties 或接收单元格上下文的回调；固定位置与列对齐由组件设置。',
+      cellSpan: '返回单元格的行跨度与列跨度，rows 为 0 时省略被覆盖的单元格。',
+      cellTooltip: '默认显示原值的浏览器提示。设为 false 可由单元格插槽提供提示。',
+      virtualRows: '启用行窗口，height 返回每行高度，overscan 为视口两侧保留的行数。',
+      virtualColumns: '启用数据列窗口。固定列持续渲染。',
       headerClassName: '表头类名或接收 { column, columnIndex, sort, filter, pinned } 的回调。',
       headerStyle: '表头 CSSProperties 或接收表头上下文的回调；固定位置与表头对齐由组件设置。',
+      commitColumnWidth: '可选回调 (key, width) => boolean，接收拖动松手、键盘调整和 resizeColumn 产生的列宽，单位为 px，已按列的 minWidth 和 maxWidth 限制。提供回调时，宿主通过 columns 更新宽度并返回是否接受；默认由网格保存。',
+      fillRemainingWidth: '默认 false。开启后，用一列不可交互的空白填满数据列右侧的剩余宽度，数据列保留设定的宽度。',
       contextMenu: '默认保留浏览器菜单。true 启用表头、行和单元格内置菜单。回调 (context, items) 可增删菜单项，返回 false 或空数组时保留浏览器菜单。支持右键和 Shift+F10。',
+      headerMenuButton: '默认 true，启用右键菜单时显示表头的更多按钮。设为 false 后可通过右键或 Shift + F10 打开表头菜单。',
       keyboardNavigation: '启用当前页键盘行导航，默认 false。方向键移动，Home/End 到首末可见行，Enter 触发行点击，空格切换可选行。',
+      cellNavigation: '启用可见数据单元格的键盘导航，默认 false。开启后表体使用单元格焦点。方向键移动，Home / End 到行首 / 行尾，Ctrl 或 Command + Home / End 到当前可见数据的首 / 末单元格。F2 编辑允许编辑的单元格。内嵌控件保留自己的按键操作。',
+      emptyCellText: '默认单元格内容遇到 null、undefined 或空字符串时显示的文字，省略时为空。列 emptyText 优先，0 和 false 按原值显示。',
+      editable: '启用内置编辑，默认 false。列 editable 可为布尔值或 (context: HysDataGridCellContext) => boolean。回调用于单元格编辑、右键菜单及批量编辑校验。',
       groupBy: '受控分组列 key，配合 v-model:groupBy。空字符串清除分组；按当前页数据分组。',
       defaultGroupBy: '非受控的初始分组列 key，默认不分组。',
       groupSummary: '在各组标题中显示声明了 summary 的列小计，按当前页该组记录计算，折叠后仍显示。',
@@ -274,21 +356,26 @@ const annotations = {
       rowContextmenu: '右键点击数据行或单元格，载荷为行上下文和 MouseEvent。',
       cellClick: '点击单元格，载荷为单元格上下文和 MouseEvent。',
       cellDblclick: '双击单元格，载荷为单元格上下文和 MouseEvent。可调用 preventDefault() 拦截内置编辑。',
+      cellKeydown: '数据单元格本身收到未处理的 Enter 或 F2 时发出，载荷为单元格上下文和 KeyboardEvent。可通过 preventDefault() 拦截后续内置编辑。',
       cellContextmenu: '右键点击单元格，载荷为单元格上下文和 MouseEvent。可调用 preventDefault() 拦截内置菜单。',
+      cellMouseEnter: '鼠标进入数据单元格时触发，载荷依次为 HysDataGridCellContext 和原生 MouseEvent。',
+      cellMouseLeave: '鼠标离开数据单元格时触发，载荷依次为 HysDataGridCellContext 和原生 MouseEvent。',
       contextMenuSelect: '选择菜单项后触发，返回操作键、包含 type 的表头/行/单元格上下文和 HysMenuSelectInfo。自定义操作由宿主处理。',
       rowClick: '点击数据行时返回该行原始记录',
       columnsChange: '列布局发生变化时返回按显示顺序排列的可见列键',
       sortChange: '有效排序变化时返回首个排序规则，清除时返回 null',
       pageChange: '有效页码变化后触发，参数为新的页码',
       pageSizeChange: '有效每页条数变化后触发，参数为新的页大小',
-      cellEdit: '提交单元格编辑时返回原始记录、行键、列键和新文本',
-      batchEdit: '提交批量编辑时返回受影响的行键列表、列键和新文本',
+      cellEdit: '按 Enter 或离开编辑框时触发，载荷为 { row, rowKey, column, value }。value 为新文本，应用更新由调用方处理。Esc 放弃编辑。',
+      batchEdit: '提交批量编辑时触发，载荷为 { keys, column, value }。keys 仅包含符合列编辑权限的选中行，value 为新文本。',
     },
     slots: {
       'header-group': '自定义组表头内容，接收 group、columns 和 pinned。',
       'header-cell': '自定义数据列表头标签，接收表头上下文。列专属 header-[column.key] 插槽优先。',
       'body-cell': '自定义数据单元格内容，接收单元格上下文。列专属插槽优先。',
       'toolbar-actions': '在工具栏末尾追加操作。接收当前查询 query 和已选行键 selectedKeys。',
+      'row-number': '自定义行号内容，仅 rowNumbers 开启时渲染，接收行上下文。',
+      'row-number-header': '自定义行号表头，仅 rowNumbers 开启时渲染。',
       empty: '无数据记录时替换表体空状态',
       error: '远程数据加载失败时替换表体错误提示',
     },
@@ -303,19 +390,178 @@ const annotations = {
       resetColumnWidth: '移除指定列的宽度覆盖并恢复声明宽度。存在覆盖时返回 true。',
       setGroupBy: '请求切换到指定列分组，空字符串清除分组，受控时由宿主接收更新。',
       setGroupsExpanded: '展开或折叠当前页所有分组，接受布尔值。',
-      focusRow: '按行键聚焦当前可见数据行；需要开启 keyboardNavigation，找不到或忙碌时返回 false。',
+      focusRow: '按行键聚焦当前可见数据行。cellNavigation 开启时定位到行首数据单元格，否则需要开启 keyboardNavigation。无法定位时返回 false。',
+      focusCell: 'focusCell(rowKey: string | number, columnKey: string, focus = true): boolean。cellNavigation 开启时定位单元格。传入 false 只滚动到目标位置，保留当前焦点。',
+      isCellVisible: '根据当前数据视图检查该行键和列键对应的单元格是否存在。受分页、折叠、列显隐和加载状态影响，无需开启键盘导航。',
+      getCellView: '读取当前页可见数据行与列的键序列及 getCell(rowKey, columnKey) 查询方法。分组标题与汇总行不参与，加载或失败时返回 undefined。',
+    },
+  },
+  HysSpreadsheet: {
+    props: {
+      modelValue: '受控工作簿。通过 v-model 接收不可变更新，公式以等号开头的字符串保存。',
+      defaultWorkbook: '非受控工作簿的初始值。默认创建 8 行 6 列的空表。',
+      activeSheet: '受控工作表 ID。省略时内部管理，未知 ID 回退到首张工作表。',
+      readonly: '默认 false。启用后仍可切换工作表、选择和复制。',
+      showEditActions: '是否显示活动单元格中的确认和取消按钮，默认 false。隐藏按钮时离开编辑器即提交。Enter 始终可提交，Esc 始终可取消。',
+      locale: '数字格式使用的语言区域，默认 zh-CN。',
+      currency: '货币格式使用的 ISO 4217 代码，默认 CNY。',
+      maxHeight: '普通视图中表格滚动区的最大高度，数字单位为 px，默认 360。全屏时随可用高度伸缩。',
+      historyLimit: '最多保留的撤销记录数，默认 50，范围 0–100。0 关闭历史。',
+      persistence: '工作簿读写适配器。load 和 save 接收 AbortSignal。配置时优先使用适配器。',
+      storageKey: '浏览器本地存储键。省略时不使用本地存储。',
+      autosave: '最后一次变更后的自动保存延迟，单位毫秒。默认关闭，须配置保存目标。',
+      sheetTemplates: '按模板名称索引的工作表初始配置。通过工作表管理创建新表。',
+      styleTemplates: '自定义单元格样式模板。通过 applyStyle 按名称应用。',
+      formulaFunctions: '按名称索引的自定义公式函数。参数为单值或一维区域，数组结果向下溢出。',
+      validators: '按名称索引的同步校验器。返回 false 或错误文案可拒绝提交。',
+      cellTypes: '自定义单元格类型的草稿转换和解析规则，使用 cells[address].typeName 选择。',
+      filters: '自定义筛选规则。由 filter.rule 指定名称，返回 true 保留当前行。',
+      compare: '自定义排序比较函数。排序规则 by 为 custom 时使用。',
+      formatValue: '自定义显示文本。参数包含单元格坐标、计算结果与默认文本。',
+      author: '批注与本地版本的作者名称。',
+      collaboration: '协作传输适配器，连接工作簿更新、选区和冲突反馈。',
+      shortcuts: '按组合键索引的快捷操作，例如 Mod+Shift+k。回调接收组件实例。',
+      contextMenu: '自定义单元格右键菜单及命令处理。false 关闭菜单。',
+      dataSource: '按需加载标记为 unloaded 的工作表。切换工作表会取消未完成的请求。',
+      fileFormats: '按文件扩展名提供自定义解码和 Blob 导出，默认支持 JSON 和 XLSX。提供同名扩展可覆盖对应的读写方法。',
+      plugins: '挂载时安装的扩展。install 可返回卸载函数。',
+      theme: '组件主题，可选 light、dark。省略时沿用库主题配置。',
+      messages: '按原始文案索引的显示文案覆盖，例如 { 保存: "Save" }。',
+    },
+    events: {
+      'update:modelValue': '编辑、粘贴、格式、结构或历史操作后发出新的工作簿。',
+      'update:activeSheet': '请求切换工作表时发出目标 ID。',
+      change: '工作簿变更时发出快照及原因 edit、paste、format、structure、undo、redo 或 open。',
+      selectionChange: '选区变化时发出工作表 ID 和两个 A1 坐标，清空时为 null。',
+      save: '适配器或本地存储成功写入时发出保存的工作簿。',
+      open: '成功打开文件、对象或持久化工作簿时发出工作簿。',
+      persistenceError: '打开或保存失败时发出操作名称与异常。',
+      validationError: '批量或主动校验发现问题时发出以 A1 坐标为键的错误字典。',
+      audit: '记录工作簿变更、保存或恢复时发出版本快照。',
+      conflict: '收到协作冲突或取消正在进行的编辑时发出消息。',
+    },
+    exposed: {
+      getWorkbook: '读取当前工作簿快照。',
+      getSelection: '读取当前选区的工作表 ID 和 A1 坐标，无选区时返回 null。',
+      selectRange: '按两个 A1 坐标选择矩形区域，省略第二个坐标时选中一格。坐标无效或超出表格时返回 false。',
+      selectAll: '选择当前工作表的所有数据单元格，成功返回 true。',
+      getSelectionSummary: '返回选区的格数、非空数、数值数、求和、平均值、最小值和最大值。无选区返回 null，无数值时 average、min、max 为 null。',
+      undo: '撤销最近一次操作。没有历史记录或只读时返回 false。',
+      redo: '重做最近一次撤销的操作。没有可重做记录或只读时返回 false。',
+      setSheet: '按工作表 ID 切换。找不到该工作表时返回 false。',
+      manageSheet: '新增、删除、复制、移动、重命名、隐藏、着色或保护工作表。',
+      newWorkbook: '创建空白工作簿并清空撤销栈，可指定名称。',
+      openWorkbook: '载入指定对象，省略参数则从适配器或浏览器存储载入。',
+      importWorkbook: '按文件扩展名打开工作簿。成功后发出 open，失败后保留原工作簿并发出 persistenceError。返回 Promise<boolean>。',
+      exportWorkbook: '导出当前工作簿快照为 Blob。默认扩展名为 xlsx，也支持 json 或 fileFormats 注册的格式。',
+      saveWorkbookFile: '触发浏览器下载，默认格式为 xlsx，第二个参数可指定文件名。发出 save 或 persistenceError。',
+      saveWorkbook: '将当前快照保存到已配置的目标，返回 Promise<boolean>。',
+      saveWorkbookAs: '返回可另存的工作簿快照，可覆盖名称。',
+      recalculate: '重新计算公式。手动计算模式可由调用方触发。',
+      manageAxis: '操作行列，参数索引从 0 开始。支持结构、布局、分组和冻结。',
+      setCells: '提交一批从 0 开始的行列坐标及值，整批验证并作为一个历史操作。',
+      configureCells: '合并当前选区的类型、保护、链接、备注或验证配置。',
+      formatCells: '合并选区格式。传入 null 清除格式。',
+      validateCells: '验证当前工作表中配置过的单元格，返回错误字典。',
+      fill: '向下或向右填充选区。模式为 copy、series、smart，支持传入自定义序列。',
+      paste: '把 TSV 粘贴到选区，可选择全部、数值、公式、格式或转置。',
+      manageData: '按条件排序、筛选、去重、分列、合并文本或分类汇总。',
+      setConditionalFormats: '替换当前工作表的条件格式规则，传入空数组清除。',
+      copyConditionalFormats: '将来源区域内的规则复制到目标 A1 坐标，平移规则范围及相对公式引用。',
+      applyStyle: '将 title、amount 或自定义模板应用于选区。',
+      find: '在当前工作表的可见单元格中查找，返回匹配的 A1 坐标。options 支持 matchCase、wholeCell、formulas、wildcards、A1 ranges，以及 order（默认 row，按列为 column）。',
+      replace: '使用与 find 相同的匹配选项替换，并一次提交。含有受保护单元格或校验失败时整批拒绝。',
+      mergeCells: '合并选区。首格保持可编辑，其余单元格随解除合并恢复显示。',
+      unmergeCells: '取消与选区相交的合并。',
+      getVersions: '读取当前组件的版本记录。',
+      compareVersions: '按版本 ID 对比单元格内容，省略第二个 ID 时与当前工作簿对比。',
+      restoreVersion: '恢复历史版本，可撤销恢复操作。',
+      addComment: '在活动单元格添加批注。传入父批注 ID 可回复。',
+      resolveComment: '更新活动单元格的批注状态，默认标记为已解决。',
+      defineName: '设置命名区域，默认使用当前选区和工作表。空范围删除名称。',
+    },
+    slots: {
+      toolbar: '替换默认工作簿入口和快捷工具。工作表管理、单元格设置、批注、版本记录与更多操作保留在工具栏。作用域包含工作簿、选区与组件实例。',
+      'toolbar-actions': '在工具栏加入操作，作用域包含工作簿与选区。',
+      status: '扩展状态栏，作用域包含选区、统计和未保存状态。',
+      'status-bar': '替换底部状态区的内容，右侧缩放仍可用。作用域包含选区、统计和未保存状态。',
+      cell: '覆盖单元格渲染，作用域包含坐标、值、显示文本和错误。',
+      editor: '渲染 custom 类型的编辑器，作用域提供草稿、提交和取消函数。',
+    },
+  },
+  HysProGrid: {
+    props: {
+      rows: '宿主拥有的原始记录。保存成功后通过 cellCommit 更新。活动单元格的行对象或原始值变化时取消编辑。',
+      columns: '继承 DataGrid 列配置，并支持 render、editor、canEdit、validate。列 key 应唯一；编辑过程中保留活动列配置对象的身份。',
+      rowKey: '稳定的字符串或有限数字行标识，接受字段路径或 (row) => key。缺失或重复键的记录仍可展示，编辑入口禁用。',
+      gridOptions: 'DataGrid 查询、分页、选中、列设置和显示配置。远程数据通过 serverMode 和 queryChange 由宿主提供。默认使用 DataGrid 自身默认值。',
+      readonly: '全表只读，默认 false。切换为 true 时结束活动编辑，仍可使用查询与导航。',
+      saveCell: '类型解析与列校验通过后调用 (change, { signal })。返回 true 或 void 通过，false 使用默认错误，字符串作为错误文案，可返回 Promise。未设置时直接发送 cellCommit。',
+      clipboard: '传入从 hys-ui/pro-grid/clipboard 创建的实例，启用矩形选区、复制与批量粘贴。每个表格使用独立实例，默认未启用。',
+      showEditButton: '是否显示单元格内的铅笔编辑入口，默认 true。双击和键盘编辑入口始终可用。',
+      showEditActions: '活动单元格内是否显示确认和取消按钮，默认 true。',
+      commitOnBlur: '默认 false。文本或数字编辑器的焦点离开编辑区时提交，成功后保留新焦点。',
+      typeToEdit: '默认 false。开启后，在聚焦的文本或数字单元格直接键入字符会以该字符开始编辑，仍需提交才更新数据。',
+      enterToEdit: '默认 true。关闭后 Enter 交由宿主处理，F2 仍可进入编辑。',
+      messages: '覆盖中文编辑、状态和错误文案。min / max 文案可使用 {value}。未配置的字段保留组件默认值。',
+    },
+    events: {
+      editStart: '打开一个可编辑单元格时触发，载荷为包含原始值、行、列和位置的 HysProGridCell。',
+      editCancel: '手动取消或编辑被视图/数据变化中断时触发。载荷为单元格和 cancel、view-change 或 data-change。',
+      editError: '解析、校验或保存失败后触发，载荷为 { rowKey, columnKey, stage, message, cause? }。',
+      cellCommit: '类型解析、校验和保存全部通过后触发。载荷含行、行键、列键、原值、editor 判别字段和类型化新值；宿主更新 rows。',
+      cellsCommit: '剪贴板粘贴的所有单元格通过权限、解析、校验和保存后一次触发。载荷为按行排列的只读 HysProGridChange 数组，宿主一次更新 rows。单格粘贴也通过此事件返回。',
+      'update:query': '请求更新 gridOptions.query，载荷为下一份完整 HysDataGridQuery。',
+      queryChange: '查询实际变化时触发，可用于请求远程当前页数据。',
+      'update:selectedRowKeys': '请求更新 gridOptions.selectedRowKeys，载荷为下一份选中键数组。',
+      selectionChange: '选中键实际变化后触发，载荷为当前选中键数组。',
+      'update:groupBy': '请求更新 gridOptions.groupBy，载荷为列键或空字符串。',
+      'update:currentRowKey': '请求更新 gridOptions.currentRowKey，载荷为行键或 null。',
+      columnLayoutChange: '列布局改变后发出独立快照，含 order、hidden、widths 和可选 pins。',
+      contextMenuSelect: '选择右键菜单项时发出命令键、表格上下文和菜单事件信息。',
+    },
+    slots: {
+      cell: '自定义显示，接收 HysProGridCell、editable 和 edit()。优先于 render 与 formatter。',
+      editor: '用于 type=custom，渲染在活动单元格内。接收 cell、draft、phase、error、inputId、errorId 和 setDraft、commit、cancel。控件可通过 inputId 关联焦点，用 errorId 关联错误提示。',
+      'toolbar-actions': '在 DataGrid 工具栏末尾插入内容，参数为 query 和 selectedKeys。',
+      'header-cell': '自定义 DataGrid 列标题内容，接收列头上下文。',
+      'row-number': '自定义行号内容，接收当前行上下文，需开启 gridOptions.rowNumbers。',
+      'row-number-header': '自定义行号列标题，需开启 gridOptions.rowNumbers。',
+      empty: '替换无数据内容，接收当前 query。',
+    },
+    exposed: {
+      editing: '活动单元格的 { rowKey, columnKey }，空闲时为 null。',
+      commitEdit: '提交当前编辑，返回 Promise<boolean>。成功返回 true，无编辑、处理中、失败或失效返回 false。',
+      cancelEdit: '关闭当前编辑并发出取消信号，尝试恢复单元格焦点。',
+      focusCell: '按行键和列键定位单元格。第三个参数 focus 默认 true，传入 false 只滚动到目标位置。',
+      getQuery: '组件挂载后读取当前 DataGrid 查询快照。',
+      setQuery: '请求部分更新查询，合并到当前查询。',
+      getColumnLayout: '组件挂载后读取 DataGrid 列布局快照。',
+      applyColumnLayout: '应用列布局预设，沿用 DataGrid 的列宽和显隐约束。',
     },
   },
   HysDiffViewer: { props: {
     before: '对比的原始文本，按行显示在左侧',
     after: '对比的新文本，按行显示在右侧',
+    alignChanges: '对齐相同文本行，便于识别插入和删除，默认 false。差异区域超过 100 万组行组合时保留首尾对齐，中间使用顺序对比。',
+    changesOnly: '只显示新增、删除和修改的行，默认 false。',
+    lineNumbers: '显示修改前和修改后各自的原始行号，默认 false。',
+    beforeLabel: '原始文本标题，默认“修改前”。',
+    afterLabel: '新文本标题，默认“修改后”。',
   } },
   HysDrawer: { events: {
     'update:open': '抽屉请求打开或关闭时返回新的布尔状态，用于 v-model:open',
     'update:fullscreen': '请求进入或退出全屏时返回新的布尔状态',
   } },
-  HysFileManager: { events: {
-    upload: '选择或拖入文件时返回原生 File 数组，宿主负责上传和更新附件',
+  HysFileManager: { props: {
+    accept: '允许的文件扩展名、MIME 类型和 MIME 通配符，使用逗号分隔。选择及拖入均校验。',
+    maxSize: '允许的单文件最大字节数，省略时不限。',
+    maxCount: '允许的总附件数量，包含 modelValue 中的已有附件，省略时不限。',
+    multiple: '允许每次选择或拖入多个文件，默认 true。',
+    emptyText: '附件为空时的提示，默认“暂无附件”。',
+  }, events: {
+    upload: '选择或拖入文件时返回校验通过的原生 File 数组，宿主负责上传和更新附件。',
+    reject: '选择或拖入文件后返回被拒绝的列表。每项包含 file 和 reason，reason 为 type、size 或 count。',
     remove: '点击移除附件时返回附件 id，由宿主更新列表',
     download: '点击下载附件时返回附件 id，由宿主执行下载',
   } },
@@ -338,9 +584,29 @@ const annotations = {
     ...textInput,
     events: { ...textInput.events, 'update:passwordVisible': '请求切换密码明文可见状态，参数为新的布尔值' },
   },
+  HysJsonEditor: {
+    props: {
+      indent: '格式化时使用的空格数，限制为 0–10，默认 2。',
+      compactable: '显示压缩按钮，默认 false。',
+      validate: 'JSON 语法正确后调用的业务校验函数，接收解析值，返回错误字符串或不返回。',
+      readonly: '允许选择文本，禁止编辑和格式化，默认 false。',
+      disabled: '禁用编辑器和操作按钮，默认 false。',
+    },
+    events: { format: '成功格式化或压缩时触发，载荷依次为转换后的 JSON 文本及 pretty / compact。' },
+  },
   HysKanban: {
-    props: { cards: '看板卡片数据，每项的 column 字段决定所属栏位' },
-    events: { move: '拖动卡片或使用列选择器时返回卡片 id 和目标栏标识' },
+    props: {
+      columns: '看板列，字段为 id、title 和可选 limit。非负整数 limit 限制列容量，省略时不限。',
+      cards: '卡片数组，字段为 id、title、column、owner? 和 disabled?。disabled 锁定该卡片。',
+      canMove: '移动权限回调，接收 { card, from, to }，返回 false 禁止下拉选项和拖动放置。',
+      disabled: '禁用拖动和下拉移动，默认 false。',
+      emptyText: '空列的提示，默认“暂无卡片”。',
+    },
+    slots: { card: '自定义卡片正文，接收 { card, column }。', empty: '自定义空列提示，接收 { column }。' },
+    events: {
+      move: '拖放或下拉移动通过校验后触发，返回卡片 id 和目标列 id。调用方更新 cards。',
+      moveRejected: '拖放被拒绝时触发，返回 { card, from, to }。',
+    },
   },
   HysMention: {
     props: {
@@ -417,7 +683,14 @@ const annotations = {
     'update:open': '对话框请求展开或关闭时返回布尔状态，用于 v-model:open',
     'update:fullscreen': '请求切换全屏状态时返回新的布尔值，用于 v-model:fullscreen',
   } },
-  HysNotificationCenter: { events: {
+  HysNotificationCenter: {
+    props: {
+      searchable: '显示搜索框，默认 false。标题、详情和 category 参与不区分大小写的匹配，可与未读过滤叠加。',
+      dismissible: '为每条通知显示移除按钮，默认 false。',
+    },
+    slots: { notice: '自定义通知正文，接收 { item }。', empty: '替换当前结果为空时的提示。' },
+    events: {
+    dismiss: '激活移除按钮时请求移除，载荷为通知 id，由宿主更新 items。',
     read: '打开单条通知时请求标记已读，参数为通知 id',
     'read-all': '点击全部已读时触发，由宿主更新通知数据',
   } },
@@ -425,10 +698,22 @@ const annotations = {
     props: {
       checkable: '在组织节点前显示复选框，勾选与节点激活独立',
       checkedKeys: '受控勾选节点 id 列表，可配合 v-model:checkedKeys',
+      expandedKeys: '受控展开节点 id 列表，可配合 v-model:expanded-keys。',
+      defaultExpandAll: '未受控时初始展开全部分支，默认 true。',
+      showDescription: '在节点名称后显示 description，默认 false。node 插槽可替换正文。',
     },
-    events: { 'update:checkedKeys': '组织节点勾选发生变化时返回完整的新 id 列表' },
+    events: {
+      'update:checkedKeys': '组织节点勾选发生变化时返回完整的新 id 列表',
+      'update:expandedKeys': '展开状态变化时请求同步新的字符串 id 列表。',
+      nodeSelect: '激活节点时触发，返回该节点的原始 OrgNode 对象。',
+    },
+    slots: { node: '替换节点正文，接收 { node: OrgNode }。' },
   },
   HysPagination: {
+    props: {
+      jumpGaps: '将页码省略号替换成跳页按钮，默认 false。紧凑模式只显示当前页与总页数。',
+      gapStep: '省略号每次跳转的页数，默认 5。正数向下取整，目标限制在有效页码范围内。',
+    },
     events: {
       change: '翻页或跳页请求时触发，参数为边界归一后的目标页码',
       pageSizeChange: '选择新的每页条数时触发，参数为目标条数',
@@ -436,7 +721,7 @@ const annotations = {
       'update:pageSize': '请求更新受控每页条数，供 v-model:pageSize 同步',
     },
     slots: {
-      item: '自定义页码按钮内部内容，保留组件的选中、禁用和点击处理',
+      item: '自定义页码及导航按钮。参数为 type、page、active、disabled。启用省略号跳页时 type 还包含 jump-backward 与 jump-forward，page 为目标页。',
       'jump-button': '替换跳转表单的提交按钮内容',
     },
   },
@@ -446,25 +731,56 @@ const annotations = {
       resources: '矩阵的资源行，每个名称用于展示及构造权限键',
       readonly: '保留现有权限的显示与半选状态，禁止修改',
       showSelectAll: '显示全局、按角色和按资源的批量勾选入口',
+      cellDisabled: '按单元格锁定权限。接收 { resource, role, key, checked }，返回 true 时禁止单项和批量修改。批量勾选状态根据可编辑单元格计算。',
+      caption: '原生表格标题。省略时隐藏。',
+      emptyText: '角色或资源为空时的提示，默认“暂无可配置权限”。empty 插槽优先。',
     },
-    events: { change: '用户切换单项或批量权限时触发，参数为修改后的完整权限映射' },
+    events: {
+      change: '用户切换单项或批量权限时触发，参数为修改后的完整权限映射',
+      cellsChange: '单项或批量操作实际改变权限后触发，返回变动项数组。每项包含 resource、role、key 以及操作后的 checked。',
+    },
+    slots: {
+      role: '自定义角色列标题，接收 { role }。',
+      resource: '自定义资源行标题，接收 { resource }。',
+      empty: '角色或资源为空时替换表体提示。',
+    },
   },
   HysRating: { events: { 'update:hoverValue': '指针预览变化时请求更新受控悬停评分，离开时恢复无预览状态' } },
+  HysResult: {
+    props: {
+      layout: 'stacked（默认）从上往下排列内容。inline 将图标放在正文起始侧，适合嵌入卡片或表单。',
+      detailsLabel: '详情展开按钮的文字，默认“查看详情”。只在使用 details 插槽时显示。',
+      detailsOpen: '受控的详情展开状态，可配合 v-model:details-open。',
+      defaultDetailsOpen: '非受控的初始展开状态，默认 false。',
+    },
+    events: {
+      'update:detailsOpen': '激活详情按钮时请求更新展开状态，载荷为目标布尔值。',
+      detailsToggle: '激活详情按钮时触发，载荷为本次请求的展开状态。',
+    },
+    slots: { details: '可折叠的详情正文。接收结果上下文和 detailsOpen，收起时保留正文状态。' },
+  },
   HysResizablePanel: {
     props: {
       minWidth: '允许调整的最小宽度，单位为像素',
       maxWidth: '允许调整的最大宽度，单位为像素',
+      edge: '拖动手柄所在的逻辑边缘，start 或 end，默认 end。自动适配从右向左的布局。',
+      resetWidth: '双击手柄或聚焦后按 Enter 恢复的像素宽度，受 minWidth 和 maxWidth 约束。省略时不重置。',
+      snap: '可选吸附宽度列表，单位像素。仅指针拖动时应用，越界值会被忽略。',
+      snapThreshold: '吸附距离，默认 8 像素。取非负有限值。',
+      resizeLabel: '分隔条无障碍名称，默认“调整面板宽度”。',
     },
     events: {
       resizeStart: '主指针开始拖动边缘分隔条时触发',
       resizeEnd: '拖动结束或取消时触发，参数为当前生效的宽度',
     },
-    slots: { default: '随可调整宽度一起布局的面板内容' },
+    slots: { default: '随可调整宽度一起布局的面板内容，接收 { width: number }。' },
   },
   HysRichTextEditor: {
     props: {
       readonly: '保留富文本显示，关闭编辑区的文本修改能力',
       hideToolbar: '隐藏格式化操作工具栏',
+      plainTextPaste: '粘贴及拖入时仅保留纯文本，默认 false。HTML 模式清理粘贴、拖入及外部传入的内容。',
+      showBlockTools: '显示小标题、引用和清除样式按钮，默认 false。',
     },
     events: {
       change: '编辑内容发生变化时返回新的 HTML 字符串',
@@ -504,12 +820,19 @@ const annotations = {
       select: '选中搜索输入框内的全部关键词',
     },
   },
-  HysSelect: { events: {
+  HysSelect: { props: {
+    nativeLabelTooltip: '是否使用浏览器原生提示展示选项和已选标签，默认 true。设为 false 关闭原生提示。',
+  }, events: {
     clear: '点击清空时触发，单选使用 clearValue，多选请求空数组',
     'update:open': '请求改变浮层的展开状态，供 v-model:open 使用',
     'update:searchValue': '筛选输入或搜索重置请求时返回新的查询文本',
   } },
-  HysShortcutHelp: { props: { shortcuts: '要展示的快捷键列表，包含按键和对应操作说明' } },
+  HysShortcutHelp: { props: {
+    shortcuts: '快捷键数组。keys 与 description 必填，group 可分组，macKeys 为 macOS 的按键文案。',
+    searchable: '显示搜索框，默认 false。支持按按键、说明和分组匹配。',
+    platform: '使用 default（默认）或 mac 的快捷键文案。缺少 macKeys 时使用 keys。',
+    emptyText: '列表或搜索结果为空时的文案，默认“没有匹配的快捷键”。',
+  } },
   HysSkeleton: { props: {
     avatar: '在段落骨架旁显示头像占位',
     avatarSize: '头像占位的直径或边长，单位为像素',
@@ -640,6 +963,10 @@ const annotations = {
     },
   },
   HysSteps: {
+    props: {
+      items: '步骤标题或 HysStepItem 对象数组。进行中步骤可设置 progress，有限数值限制为 0–100。',
+      linear: '点击和键盘操作只可访问当前及之前的步骤，默认 false。业务可通过 current 推进流程。',
+    },
     events: { 'update:current': '选择可用步骤时请求更新当前索引，索引从 0 开始' },
     slots: {
       icon: '替换步骤标记，接收当前项目、索引和状态',
@@ -653,6 +980,8 @@ const annotations = {
     searchColumns: '限制搜索列 key。省略时搜索所有当前有效数据列；空数组不匹配任何数据行。',
     searchMethod: '本地自定义匹配 (search, row) => boolean，替换内置跨列匹配逻辑。',
     keyboardNavigation: '启用键盘行导航，默认 false。方向键移动，Home/End 到首末可见行，Enter 触发行点击，空格切换可选行。',
+    cellNavigation: '启用可见数据单元格的键盘导航，默认 false。开启后表体使用单元格焦点。方向键按合并后的表格位置移动，Home / End 到行首 / 行尾，Ctrl 或 Command + Home / End 到当前可见数据的首 / 末单元格。内嵌控件保留自己的按键操作。',
+    emptyCellText: '默认单元格内容遇到 null、undefined 或空字符串时显示的文字，省略时为空。列 emptyText 优先，0 和 false 按原值显示。',
     striped: '为相邻数据行交替绘制背景色',
     bordered: '显示表格与单元格边框',
     tableLayout: '设置 fixed 或 auto 布局，用户调整列宽后使用固定像素布局',
@@ -677,8 +1006,16 @@ const annotations = {
   }, exposed: {
     setSearch: '应用搜索词并请求回到第 1 页。queryChange 的 action 为 search，服务端模式将查询交给宿主。',
     clearSearch: '清除跨列搜索词，保留列筛选和排序。',
-    focusRow: '按行键或行对象聚焦当前可见行；需要开启 keyboardNavigation，找不到或忙碌时返回 false。',
+    focusRow: '按行键或行对象聚焦当前可见行。cellNavigation 开启时定位到行首数据单元格，否则需要开启 keyboardNavigation。无法定位时返回 false。',
+    focusCell: 'focusCell(rowOrKey, columnKey: string): boolean。cellNavigation 开启时按行对象或行键聚焦已显示的数据单元格。行列不可见、被合并覆盖或正在加载时返回 false。',
   } },
+  HysTabPane: {
+    slots: {
+      loading: '单个声明式面板的异步加载内容，优先于 HysTabs 的同名插槽。',
+      error: '单个声明式面板的错误反馈，接收 error 和 reload() 等面板上下文。',
+      empty: '单个声明式面板缺少正文时展示，优先于 HysTabs 的同名插槽。',
+    },
+  },
   HysTabs: {
     slots: {
       prefix: '页签导航前方的附加内容',
@@ -780,11 +1117,173 @@ const annotations = {
   } },
 };
 
+const interactionAnnotations =
+{
+  "HysBadge": {
+    "props": {
+      "beforeClose": "关闭前检查，接收原生 MouseEvent。可返回 Promise，返回 false 保留徽章，等待时关闭按钮禁用。"
+    },
+    "events": {
+      "closeError": "关闭检查抛错或拒绝时触发，载荷为错误对象。"
+    }
+  },
+  "HysCard": {
+    "props": {
+      "keepContentOnLoading": "默认 false。设为 true 时刷新保留正文组件状态，加载层覆盖正文并暂时禁止正文交互。"
+    }
+  },
+  "HysPagination": {
+    "props": {
+      "pageSizeStrategy": "每页条数生效后使用的页码策略。preserve-page（默认）保留页码并处理越界，first 回到首页，preserve-item 定位至原页首记录所在的新页面。宿主同时提供新页码时优先使用该页码。"
+    }
+  },
+  "HysPermissionMatrix": {
+    "props": {
+      "filter": "按资源名称筛选，忽略大小写和首尾空白，默认展示所有资源。开启筛选时，行、列及全选只修改可见且未锁定的权限。"
+    }
+  },
+  "HysTabPane": {
+    "props": {
+      "panelClass": "附加在对应 tabpanel 上的类名。",
+      "panelStyle": "应用于对应 tabpanel 的 CSSProperties，可设置高度及独立滚动。",
+      "panelTabIndex": "面板的 tabindex，默认 0。-1 从 Tab 顺序移除面板容器，内部控件保持正常焦点顺序。"
+    }
+  },
+  "HysCommandPalette": {
+    "props": {
+      "recent": "最近使用的命令 ID，从最近到最早，可通过 v-model:recent 管理，默认空数组。",
+      "recentLimit": "最多保留的最近使用项数，默认 0。空查询时将有效且可用的最近命令置顶，输入搜索词后恢复原始命令顺序。"
+    },
+    "events": {
+      "update:recent": "选中可用命令时请求更新最近使用列表，载荷为去重并截断后的 ID 数组。"
+    }
+  },
+  "HysNotificationCenter": {
+    "props": {
+      "categoryFilter": "显示从通知 category 字段生成的分类筛选，默认 false。分类和未读及文本筛选可叠加，全部已读应用于所有通知。"
+    },
+    "events": {
+      "categoryChange": "选择分类时触发，载荷为分类名或代表全部分类的空字符串。"
+    }
+  },
+  "HysShortcutHelp": {
+    "props": {
+      "shortcuts": "快捷键数组。keys 和 description 必填，group 用于分组。sequence 和 macSequence 可传二维数组，每一项是一次同时按下的键，按数组顺序依次执行。普通显示回退到 keys 或 macKeys。"
+    }
+  },
+  "HysResult": {
+    "props": {
+      "status": "支持 primary、info、success、warning、error、pending 和 403、404、500，默认 info。pending 对结果区域设置 aria-busy。",
+      "progress": "pending 状态下显示的进度百分比。有限数值限制为 0–100，省略时隐藏进度条。"
+    }
+  },
+  "HysCalendarNavigation": {
+    "props": {
+      "shortcuts": "底部月份快捷入口数组。每项为 { label, month: Date }，读取 UTC 年月，范围外的入口禁用。"
+    },
+    "events": {
+      "navigate": "有效的月份变更请求触发，载荷为目标月份的 UTC 首日 Date 和来源 previous、next、month、year、today、shortcut 或 api。"
+    },
+    "exposed": {
+      "goToMonth": "goToMonth(date: Date): boolean。请求切换至目标 UTC 月份并返回日期视图。禁用、越界或当前月份时返回 false。"
+    }
+  },
+  "HysChart": {
+    "props": {
+      "reference": "横向参考线 { value: number, label: string }，省略时不显示。有限的参考数值参与纵轴范围计算，适用于柱状和折线图。"
+    }
+  },
+  "HysDiffViewer": {
+    "props": {
+      "contextLines": "只显示每处变化前后的指定行数。有限数值取非负整数，省略时显示全文，changesOnly 开启时优先只显示变更行。"
+    }
+  },
+  "HysKanban": {
+    "props": {
+      "reorderable": "显示同列上移和下移按钮，默认 false。锁定卡片以及列表边界限制相邻交换。"
+    },
+    "events": {
+      "reorder": "同列相邻交换通过检查后触发，载荷依次为列 ID 和该列调整后的全部卡片 ID。宿主更新 cards。"
+    }
+  },
+  "HysOrgTree": {
+    "props": {
+      "searchDetails": "开启后搜索节点 name、description 和 keywords，忽略大小写，多个空格分隔词均需匹配。默认 false。"
+    }
+  },
+  "HysAccordion": {
+    "props": {
+      "mandatory": "防止通过点击、键盘或实例方法收起最后一个已展开面板，默认 false。初始展开项通过 defaultActive 或 modelValue 设置。"
+    }
+  },
+  "HysResizablePanel": {
+    "props": {
+      "cancelable": "默认 false。开启后，拖动时按 Esc 或发生 pointercancel 会请求恢复本次拖动开始时的宽度。"
+    },
+    "events": {
+      "resizeCancel": "可取消拖动被取消时触发，载荷为按边界限制后的恢复宽度。"
+    }
+  },
+  "HysSteps": {
+    "props": {
+      "beforeChange": "用户切换步骤前调用，接收目标索引、当前索引和目标项，可返回 Promise。false 拦截切换，等待时忽略重复请求。"
+    },
+    "events": {
+      "changeError": "切换校验抛错或拒绝时触发，载荷为错误对象。"
+    }
+  },
+  "HysColorTokenEditor": {
+    "props": {
+      "resetAll": "显示恢复全部默认色按钮，默认 false。只恢复已配置默认色且可编辑、值已变化的令牌。"
+    },
+    "events": {
+      "reset": "批量恢复后触发，载荷为变更的令牌键数组。批量操作发布一次模型更新，随后逐项发布 change。"
+    }
+  },
+  "HysCommentEditor": {
+    "props": {
+      "submit": "异步发送回调，接收去除首尾空白的文本和 AbortSignal。成功后清空未变化的草稿并触发 send，失败保留草稿。组件卸载或停用时中止信号。"
+    },
+    "events": {
+      "send": "未配置 submit 时在激活发送后触发。配置后在发送成功时触发。载荷为去除首尾空白后的草稿。",
+      "sendError": "异步发送失败时触发，依次返回错误和本次提交的文本。"
+    }
+  },
+  "HysCronEditor": {
+    "props": {
+      "previewCount": "显示未来运行时间条数，默认 0，上限 10。按五段数字 Cron 语法以 UTC 搜索未来五年。",
+      "previewFrom": "运行时间预览的基准 Date，默认组件创建时刻。预览只包含严格晚于基准的时间。"
+    }
+  },
+  "HysFileManager": {
+    "props": {
+      "retryable": "默认 false。为 status 为 error 的附件显示重试按钮。附件由宿主设置 status（uploading、error 或 ready）和 progress（0–100）。"
+    },
+    "events": {
+      "retry": "点击错误附件的重试按钮时触发，载荷为附件 ID。由宿主发起重试并更新附件状态。"
+    }
+  },
+  "HysJsonEditor": {
+    "props": {
+      "autoIndent": "默认 false。按 Enter 时继承当前行的前导空白，左花括号或左方括号后再增加 indent 个空格。输入法组合期间保留原生处理。"
+    }
+  },
+  "HysRichTextEditor": {
+    "props": {
+      "showTextCount": "显示正文字符数，默认 false。按 Unicode 码点计数，忽略空白。"
+    },
+    "exposed": {
+      "getText": "getText(): string。读取编辑区域的纯文本，挂载前返回空字符串。"
+    }
+  }
+};
+
 export function applyApiDescriptions(api) {
   for (const [component, sections] of Object.entries(api)) {
     for (const [section, rows] of Object.entries(sections)) {
       for (const row of rows) {
-        const description = annotations[component]?.[section]?.[row.name];
+        const description = interactionAnnotations[component]?.[section]?.[row.name] ??
+          annotations[component]?.[section]?.[row.name];
         if (description) row.description = description;
         else if (section === 'events' && row.name === 'update:modelValue' &&
           !row.description?.trim() && controlledModels[component]) {

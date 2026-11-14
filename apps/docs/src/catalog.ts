@@ -515,6 +515,27 @@ export const catalog=[
     ]
   },
   {
+    "name": "HysProGrid",
+    "shortName": "ProGrid",
+    "label": "可编辑数据表格",
+    "slug": "hys-pro-grid",
+    "category": "数据展示",
+    "description": "在 DataGrid 的查询和列布局上增加类型化编辑、异步校验和保存重试。",
+    "notes": [
+      "提供稳定且唯一的 rowKey，保存后在 cellCommit 中更新 rows。",
+      "在 DataGrid 基础样式之外按需引入 hys-ui/pro-grid.css。"
+    ]
+  },
+  {
+    "name": "HysSpreadsheet",
+    "shortName": "Spreadsheet",
+    "label": "电子表格",
+    "slug": "hys-spreadsheet",
+    "category": "数据展示",
+    "description": "用工作表、公式栏和矩形选区编辑预算、清单与日常台账。",
+    "notes": ["单击选中后直接键入新值，双击或按 F2 修改原内容。可从一格开始粘贴 Excel 的制表符文本。", "使用 v-model 保存工作簿，模型中的公式保留为以等号开头的字符串。"]
+  },
+  {
     "name": "HysDiffViewer",
     "shortName": "DiffViewer",
     "label": "差异对比",

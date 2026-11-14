@@ -18,6 +18,7 @@ const props = withDefaults(
     closable?: boolean;
     closeText?: string;
     closeLabel?: string;
+    beforeClose?: (event: MouseEvent) => boolean | void | PromiseLike<boolean | void>;
     dot?: boolean;
     value?: number | string;
     max?: number;
@@ -31,6 +32,9 @@ const props = withDefaults(
     status?: "success" | "processing" | "default" | "error" | "warning";
     text?: string;
     title?: string;
+    formatValue?: (value: number | string, displayValue: number | string) => string;
+    announce?: "off" | "polite" | "assertive";
+    announcement?: string;
     effect?: "light" | "dark" | "plain";
     checkable?: boolean;
     checked?: boolean;
@@ -46,23 +50,32 @@ const props = withDefaults(
     closeLabel: "关闭标签",
     checked: undefined,
     defaultChecked: false,
+    announce: "off",
   },
 );
 const emit = defineEmits<{
   close: [event: MouseEvent];
+  closeError: [error: unknown];
   "update:checked": [checked: boolean];
   change: [checked: boolean, event: MouseEvent];
 }>();
 const attrs = useHysRootAttrs(),
   local = ref(props.defaultChecked);
 const checked = computed(() => props.checked ?? local.value);
-const content = computed(() =>
+const capped = computed(() =>
   typeof props.value === "number" &&
   Number.isFinite(props.value) &&
   props.value > props.max
     ? props.max + "+"
     : props.value,
 );
+const content = computed(() => {
+  const value = props.value;
+  const displayValue = capped.value;
+  return value === undefined || displayValue === undefined
+    ? undefined
+    : (props.formatValue?.(value, displayValue) ?? displayValue);
+});
 const showCounter = computed(
   () =>
     !props.hidden &&
@@ -72,6 +85,12 @@ const showCounter = computed(
         (typeof props.value !== "number" || Number.isFinite(props.value)) &&
         (props.value !== 0 || props.showZero))),
 );
+const liveText = computed(() => {
+  if (props.hidden) return "";
+  if (props.announcement !== undefined) return props.announcement;
+  if (props.status) return props.text ?? "";
+  return showCounter.value && !props.dot ? String(props.value ?? "") : "";
+});
 const tagColor = computed(
   () =>
     props.color ??
@@ -125,6 +144,8 @@ const statusColor = computed(
 );
 let live = true,
   request = 0;
+const closing = ref(false);
+let closeRequest = 0;
 async function toggle(event: MouseEvent) {
   if (!live || props.disabled || !props.checkable) return;
   const next = !checked.value,
@@ -135,17 +156,31 @@ async function toggle(event: MouseEvent) {
   if (live && ticket === request && checked.value === next)
     emit("change", next, event);
 }
-function close(event: MouseEvent) {
-  if (!props.disabled) emit("close", event);
+async function close(event: MouseEvent) {
+  if (!live || props.disabled || closing.value) return;
+  if (!props.beforeClose) {
+    emit("close", event);
+    return;
+  }
+  const ticket = ++closeRequest;
+  closing.value = true;
+  try {
+    if ((await props.beforeClose(event)) !== false && live && ticket === closeRequest && !props.disabled)
+      emit("close", event);
+  } catch (error) {
+    if (live && ticket === closeRequest) emit("closeError", error);
+  } finally {
+    if (ticket === closeRequest) closing.value = false;
+  }
 }
-onDeactivated(() => {
+function deactivate() {
   live = false;
   request++;
-});
-onBeforeUnmount(() => {
-  live = false;
-  request++;
-});
+  closeRequest++;
+  closing.value = false;
+}
+onDeactivated(deactivate);
+onBeforeUnmount(deactivate);
 onActivated(() => (live = true));
 </script>
 <template>
@@ -202,7 +237,8 @@ onActivated(() => (live = true));
           v-if="closable"
           type="button"
           class="hys-ui-badge-close"
-          :disabled="disabled"
+          :disabled="disabled || closing"
+          :aria-busy="closing || undefined"
           :aria-label="closeLabel"
           @click.stop="close"
         >
@@ -231,9 +267,18 @@ onActivated(() => (live = true));
         }}</slot></sup
       >
     </template>
+    <span v-if="announce !== 'off'" class="hys-ui-badge-announcement" :aria-live="announce" aria-atomic="true">{{ liveText }}</span>
   </span>
 </template>
 <style scoped>
+.hys-ui-badge-announcement {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .hys-ui-badge-wrap {
   position: relative;
   display: inline-flex;

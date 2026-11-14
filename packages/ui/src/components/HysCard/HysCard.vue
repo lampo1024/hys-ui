@@ -23,6 +23,7 @@ const props = withDefaults(
     footer?: string;
     loading?: boolean;
     loadingText?: string;
+    keepContentOnLoading?: boolean;
     bordered?: boolean;
     shadow?: "always" | "hover" | "never";
     bodyStyle?: CSSProperties;
@@ -38,6 +39,11 @@ const props = withDefaults(
     activeTab?: string | number;
     defaultActiveTab?: string | number;
     tabsLabel?: string;
+    collapsible?: boolean;
+    collapsed?: boolean;
+    defaultCollapsed?: boolean;
+    collapseLabel?: string;
+    expandLabel?: string;
   }>(),
   {
     bordered: true,
@@ -46,17 +52,32 @@ const props = withDefaults(
     type: "default",
     loadingText: "加载中",
     tabsLabel: "卡片页签",
+    collapsed: undefined,
+    defaultCollapsed: false,
+    collapseLabel: "收起卡片内容",
+    expandLabel: "展开卡片内容",
   },
 );
 const emit = defineEmits<{
   "update:activeTab": [value: string | number];
   tabChange: [value: string | number];
+  "update:collapsed": [collapsed: boolean];
+  collapseChange: [collapsed: boolean];
 }>();
 const attrs = useHysRootAttrs(),
   id = useId(),
   nav = ref<HTMLElement>(),
   element = ref<HTMLElement>(),
   local = ref(props.defaultActiveTab);
+const localCollapsed = ref(props.defaultCollapsed);
+const folded = computed(() => !!props.collapsible && (props.collapsed ?? localCollapsed.value));
+const bodyId = id + "-fold";
+function toggleCollapse() {
+  const next = !folded.value;
+  localCollapsed.value = next;
+  emit("update:collapsed", next);
+  emit("collapseChange", next);
+}
 const enabled = computed(
   () => props.tabs?.filter((tab) => !tab.disabled) ?? [],
 );
@@ -141,7 +162,7 @@ defineExpose({ element, activeTab: current });
       <slot name="cover" />
     </div>
     <header
-      v-if="title || subtitle || $slots.title || $slots.header || $slots.action"
+      v-if="title || subtitle || $slots.title || $slots.header || $slots.action || collapsible"
       class="hys-ui-card-head"
       :class="headerClass"
       :style="headerStyle"
@@ -156,10 +177,15 @@ defineExpose({ element, activeTab: current });
           </p>
         </div></slot
       >
-      <div v-if="$slots.action" class="hys-ui-card-extra">
+      <div v-if="$slots.action || collapsible" class="hys-ui-card-extra">
         <slot name="action" />
+        <button v-if="collapsible" type="button" class="hys-ui-card-fold-button"
+          :aria-expanded="!folded" :aria-controls="bodyId" @click="toggleCollapse">
+          <slot name="collapse-toggle" :collapsed="folded">{{ folded ? expandLabel : collapseLabel }}</slot>
+        </button>
       </div>
     </header>
+    <div :id="bodyId" v-show="!folded" class="hys-ui-card-fold">
     <div v-if="tabs?.length" class="hys-ui-card-tabs-row">
       <div
         ref="nav"
@@ -206,10 +232,14 @@ defineExpose({ element, activeTab: current });
       :tabindex="tabs?.length ? 0 : undefined"
       :aria-busy="loading"
     >
-      <slot v-if="loading" name="loading"
-        ><HysSkeleton :loading-text="loadingText" :lines="3"
-      /></slot>
-      <slot v-else :active-tab="current" />
+      <div v-if="keepContentOnLoading" class="hys-card-refresh" :inert="loading || undefined">
+        <slot :active-tab="current" />
+      </div>
+      <div v-if="loading && keepContentOnLoading" class="hys-card-refresh-overlay">
+        <slot name="loading"><HysSkeleton :loading-text="loadingText" :lines="3" /></slot>
+      </div>
+      <slot v-else-if="loading" name="loading"><HysSkeleton :loading-text="loadingText" :lines="3" /></slot>
+      <slot v-else-if="!keepContentOnLoading" :active-tab="current" />
     </div>
     <div v-if="$slots.actions" class="hys-ui-card-actions">
       <slot name="actions" />
@@ -222,12 +252,40 @@ defineExpose({ element, activeTab: current });
     >
       <slot name="footer">{{ footer }}</slot>
     </footer>
+    </div>
   </section>
 </template>
 <style scoped>
 .hys-ui-card {
   color: var(--hys-ui-text, var(--hys-ui-theme-text, #27344b));
   box-shadow: none;
+}
+.hys-ui-card-fold {
+  display: contents;
+}
+.hys-ui-card-content:has(> .hys-card-refresh-overlay) {
+  position: relative;
+}
+.hys-card-refresh-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  padding: inherit;
+  background: color-mix(in srgb, var(--hys-ui-surface, var(--hys-ui-theme-surface)) 92%, transparent);
+}
+.hys-ui-card-fold-button {
+  padding: 4px 8px;
+  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.hys-ui-card-fold-button:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: 2px;
 }
 .hys-ui-card-borderless {
   border: 0;

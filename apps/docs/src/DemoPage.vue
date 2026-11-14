@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed,defineAsyncComponent,onActivated,onDeactivated,onBeforeUnmount,ref,shallowRef,watch} from 'vue'
+import {computed,defineAsyncComponent,onActivated,onDeactivated,onBeforeUnmount,ref,shallowRef,useId,watch} from 'vue'
 import {HysButton,HysBadge,HysTabs} from 'hys-ui'
 import {ArrowDown,ChevronDown,RotateCcw,Code2} from 'lucide-vue-next'
 import scenarioTitles from './scenario-titles.json'
@@ -18,6 +18,9 @@ import RatingSegmentedReference from './RatingSegmentedReference.vue'
 import GanttReference from './GanttReference.vue'
 import CalendarReference from './CalendarReference.vue'
 import TableReference from './TableReference.vue'
+import DataGridCellReference from './components/DataGridCellReference/DataGridCellReference.vue'
+import ProGridReference from './components/ProGridReference/ProGridReference.vue'
+import SpreadsheetReference from './components/SpreadsheetReference/SpreadsheetReference.vue'
 import MentionReference from './MentionReference.vue'
 import TransferReference from './TransferReference.vue'
 import TreeReference from './TreeReference.vue'
@@ -78,9 +81,9 @@ const animatedNumberOrder=['Basic','Configure','Controls','Effects','AnimationCa
 const spinOrder=['Basic','Animations','Timing','Tasks','Overlay','Business','Custom']
 const iconOrder=['Basic','Picker','Sources','Appearance','Motion','Interactions','Registry']
 const splitPaneOrder=['Basic','Configure','Resize','Snapping','Panels','Cascade','Responsive','Inspector','Workspace']
-const dataGridOrder=['Basic','Configure','GroupedHeaders','ColumnLayouts','RowStates','ContextActions','GroupingSummary','KeyboardReview','Selection','Resize','Editing','Tree','Controlled','Server','PopupMotion','States']
+const dataGridOrder=['Basic','Configure','GroupedHeaders','ColumnLayouts','RowStates','ContextActions','GroupingSummary','KeyboardReview','Selection','Resize','Editing','CellEditing','Tree','Controlled','Server','PopupMotion','States']
 const popconfirmOrder=['Basic','Async','Guard','Table','Controlled','Placement','Custom','PopupMotion']
-const layoutOrder:Record<string,string[]>={HysDescriptions:['Basic','Responsive','Custom'],HysResult:['Basic','Exceptions','Workflow'],HysSpace:['Basic','Responsive','Separators']}
+const layoutOrder:Record<string,string[]>={HysDescriptions:['Basic','Responsive','Custom'],HysResult:['Basic','InlineDetails','PendingProgress','Exceptions','Workflow'],HysSpace:['Basic','Responsive','Separators']}
 const tabsOrder=['Basic','Configure','AdvancedLayout','Overflow','Keyboard','Interaction','Guard','Lifecycle','AsyncContent','Dynamic','Workbench','Routing','Custom','States']
 const toastOrder=['Basic','Configure','Positions','Service','Queue','Tasks','Interactions','Stack','Motion','Appearance','Content']
 const sortableListOrder=['Basic','Configure','Layouts','Board','Table','Tree','History','Virtual','Custom']
@@ -93,10 +96,17 @@ function rankExample(path:string) {
  if(props.name==='HysDataGrid')return dataGridOrder.indexOf(scene)
  if(props.name==='HysTable'&&scene==='QuickSearch')return tableOrder.indexOf('Filters')-.5
  if(props.name==='HysTable'&&scene==='KeyboardRows')return tableOrder.indexOf('Selection')+.5
+ if(props.name==='HysTable'&&scene==='CellNavigation')return tableOrder.indexOf('Templates')+.5
  if(props.name==='HysPopconfirm')return popconfirmOrder.indexOf(scene)
+ if(props.name==='HysBadge'&&scene==='Unread')return surfaceOrder.HysBadge.indexOf('Counters')+.5
+ if(props.name==='HysBadge'&&scene==='CloseGuard')return surfaceOrder.HysBadge.indexOf('Appearance')+.5
+ if(props.name==='HysCard'&&scene==='Collapsible')return surfaceOrder.HysCard.indexOf('Content')+.5
+ if(props.name==='HysCard'&&scene==='RefreshContent')return surfaceOrder.HysCard.indexOf('Loading')+.5
+ if(props.name==='HysPagination'&&scene==='JumpGaps')return surfaceOrder.HysPagination.indexOf('Bounds')+.5
+ if(props.name==='HysPagination'&&scene==='PageSizeAnchor')return surfaceOrder.HysPagination.indexOf('Controlled')+.5
  if(layoutOrder[props.name])return layoutOrder[props.name].indexOf(scene)
  if(props.name==='HysTabs')return tabsOrder.indexOf(scene)
- if(props.name==='HysTabPane')return scene==='Basic'?0:1
+ if(props.name==='HysTabPane')return ['Basic','PanelLayout','AsyncState','Nested'].indexOf(scene)
  if(props.name==='HysToast')return toastOrder.indexOf(scene)
  if(props.name==='HysSortableList')return sortableListOrder.indexOf(scene)
  return props.name==='HysButton' ? buttonOrder.indexOf(scene) : rank(path)
@@ -110,8 +120,8 @@ const scenarios=Object.keys(modules)
   return {path,filename,scene,id:'scene-'+scene.toLowerCase(),component:defineAsyncComponent(modules[path] as ()=>Promise<any>),version:ref(0),loadSource:sources[path] as ()=>Promise<ExampleSourceData>}
  })
 const articleRoot=ref<HTMLElement>(),tocRoot=ref<HTMLElement>()
-const compactContents=ref<HTMLDetailsElement>()
-const hasCompactContents=computed(()=>['HysAnimatedNumber','HysInput','HysTextarea','HysSortableList','HysTabs','HysTable','HysDataGrid'].includes(props.name))
+const compactContents=ref(false), compactContentsId=useId()
+const hasCompactContents=computed(()=>scenarios.length>=5||['HysInput','HysTextarea'].includes(props.name))
 const tocState=useDocToc(articleRoot,tocRoot,()=>[...scenarios.map(s=>s.id),'api','capabilities','usage'])
 const section=ref('props')
 const rows=computed(()=>metadata.value[section.value as keyof typeof metadata.value] as {name:string;type:string;required:boolean;default:string;description:string}[])
@@ -124,7 +134,7 @@ function jumpToSection(event:MouseEvent){
  const target=document.getElementById(link.getAttribute('href')!.slice(1))
  if(!target)return
  event.preventDefault()
- if(compactContents.value?.open)compactContents.value.open=false
+ compactContents.value=false
  tocState.select(target.id)
  target.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})
  if(event.detail===0){target.tabIndex=-1;target.focus({preventScroll:true})}
@@ -136,14 +146,14 @@ function jumpToSection(event:MouseEvent){
   <header class="doc-heading"><div><h1>{{name}} <span>{{entry.label}}</span></h1><p>{{entry.description}}</p></div><HysBadge tone="blue">Vue 3.5+</HysBadge></header>
   <div class="usage"><Code2 :size="16"/><code>import { {{name}} } from 'hys-ui'</code></div>
   <nav v-if="hasCompactContents" class="doc-jump" aria-label="页内导航" @click="jumpToSection">
-   <details ref="compactContents" class="doc-jump-examples">
-    <summary>本页示例<ChevronDown :size="14" aria-hidden="true"/></summary>
-    <ul>
+   <div class="doc-jump-examples">
+    <HysButton size="sm" variant="ghost" class="doc-jump-toggle" :aria-expanded="compactContents" :aria-controls="compactContentsId" @click="compactContents=!compactContents">本页示例<ChevronDown :size="14" aria-hidden="true"/></HysButton>
+    <ul v-show="compactContents" :id="compactContentsId">
      <li v-for="scenario in scenarios" :key="scenario.id">
       <a :href="'#'+scenario.id" :aria-current="tocState.current.value===scenario.id?'location':undefined">{{titles[scenario.scene]}}</a>
      </li>
     </ul>
-   </details>
+   </div>
    <a href="#api" class="doc-jump-api">API 参考<ArrowDown :size="14" aria-hidden="true"/></a>
   </nav>
   <Teleport v-if="active" defer to="#docs-toc-host"><aside ref="tocRoot" class="doc-toc" aria-label="页内导航" @click="jumpToSection"><span>本页内容</span><a v-for="scenario in scenarios" :key="scenario.id" :class="{'toc-active':tocState.current.value===scenario.id}" :aria-current="tocState.current.value===scenario.id?'location':undefined" :href="'#'+scenario.id">{{titles[scenario.scene]}}</a><a :class="{'toc-active':tocState.current.value==='api'}" :aria-current="tocState.current.value==='api'?'location':undefined" href="#api">API 参考</a><a :class="{'toc-active':tocState.current.value==='capabilities'}" :aria-current="tocState.current.value==='capabilities'?'location':undefined" href="#capabilities">功能说明</a><a :class="{'toc-active':tocState.current.value==='usage'}" :aria-current="tocState.current.value==='usage'?'location':undefined" href="#usage">使用说明</a></aside></Teleport>
@@ -164,6 +174,9 @@ function jumpToSection(event:MouseEvent){
   <GanttReference v-if="name==='HysGantt'"/>
   <CalendarReference v-if="name==='HysCalendar'"/>
   <TableReference v-if="name==='HysTable'"/>
+  <DataGridCellReference v-if="name==='HysDataGrid'"/>
+  <ProGridReference v-if="name==='HysProGrid'"/>
+  <SpreadsheetReference v-if="name==='HysSpreadsheet'"/>
   <MentionReference v-if="name==='HysMention'"/>
   <TransferReference v-if="name==='HysTransfer'"/>
   <TreeReference v-if="name==='HysTree'"/>
@@ -204,7 +217,7 @@ function jumpToSection(event:MouseEvent){
   border-radius: 8px;
   background: var(--docs-surface);
 }
-.doc-jump summary,
+.doc-jump-toggle,
 .doc-jump-api {
   display: flex;
   align-items: center;
@@ -214,14 +227,12 @@ function jumpToSection(event:MouseEvent){
   font-size: 12px;
   font-weight: 600;
 }
-.doc-jump summary {
+.doc-jump-toggle {
+  inline-size: calc(100% - 108px);
   justify-content: flex-start;
-  padding-inline-end: 112px;
-  cursor: pointer;
-  list-style: none;
+  color: var(--docs-text);
 }
-.doc-jump summary::-webkit-details-marker { display: none; }
-.doc-jump details[open] summary svg { transform: rotate(180deg); }
+.doc-jump-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
 .doc-jump-api {
   position: absolute;
   inset-block-start: 1px;
@@ -255,7 +266,7 @@ function jumpToSection(event:MouseEvent){
   background: var(--docs-nav-active-bg);
 }
 .doc-jump a:focus-visible,
-.doc-jump summary:focus-visible {
+.doc-jump-toggle:focus-visible {
   outline: 2px solid var(--docs-nav-active-text);
   outline-offset: -2px;
   border-radius: 5px;

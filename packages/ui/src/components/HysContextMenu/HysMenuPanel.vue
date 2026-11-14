@@ -33,7 +33,7 @@ const props = defineProps<{
   tabbable: (row: MenuRow<N>) => number;
 }>();
 const emit = defineEmits<{
-  choose: [row: MenuRow<N>, event: MouseEvent];
+  choose: [row: MenuRow<N>, event?: MouseEvent | KeyboardEvent];
   focusRow: [row: MenuRow<N>];
   hoverRow: [row: MenuRow<N>];
   keyboard: [event: KeyboardEvent];
@@ -177,65 +177,71 @@ defineExpose({ element });
           }"
           :node-attrs="attrs(row)"
         />
-        <component
-          :is="
-            row.href && !row.disabled && !row.children.length ? 'a' : 'button'
-          "
-          v-else
-          v-bind="attrs(row)"
-          :type="
-            !row.href || row.disabled || row.children.length
-              ? 'button'
-              : undefined
-          "
-          :href="!row.disabled && !row.children.length ? row.href : undefined"
-          :target="row.target"
-          :rel="menuSafeRel(row.target, row.rel)"
-          :disabled="
-            !row.href || row.disabled || row.children.length
-              ? row.disabled || busy
-              : undefined
-          "
-        >
-          <span class="hys-ui-menu-prefix" aria-hidden="true"
-            ><slot name="icon" v-bind="context(row)"
-              ><component
-                :is="context(row).checked ? CircleDot : Circle"
-                v-if="row.type === 'radio' && !row.children.length"
-                :size="15" /><component
-                :is="context(row).checked ? SquareCheck : Square"
-                v-else-if="row.type === 'checkbox' && !row.children.length"
-                :size="15" /><Check
-                v-else-if="context(row).checked || context(row).selected"
-                :size="15" /><component
-                :is="row.icon"
-                v-else-if="row.icon"
-                :size="16" /></slot
-          ></span>
-          <span class="hys-ui-menu-copy"
-            ><span class="hys-ui-menu-label"
-              ><slot name="item" v-bind="context(row)">{{
-                row.label
-              }}</slot></span
-            ><small
-              v-if="row.description"
-              :id="rootId + '-description-' + row.id"
-              class="hys-ui-menu-description"
-              >{{ row.description }}</small
-            ></span
-          >
-          <kbd v-if="row.shortcut" class="hys-ui-menu-shortcut">{{
-            row.shortcut
-          }}</kbd
-          ><span v-else />
+        <div v-else class="hys-ui-menu-item-row" role="none">
           <component
-            :is="direction === 'rtl' ? ChevronLeft : ChevronRight"
-            v-if="row.children.length"
-            :size="14"
-            class="hys-ui-menu-chevron"
-            aria-hidden="true"
-          /><span v-else />
-        </component>
+            :is="
+              row.href && !row.disabled && !row.children.length ? 'a' : 'button'
+            "
+            v-bind="attrs(row)"
+            :type="
+              !row.href || row.disabled || row.children.length
+                ? 'button'
+                : undefined
+            "
+            :href="!row.disabled && !row.children.length ? row.href : undefined"
+            :target="row.target"
+            :rel="menuSafeRel(row.target, row.rel)"
+            :disabled="
+              !row.href || row.disabled || row.children.length
+                ? row.disabled || busy
+                : undefined
+            "
+          >
+            <span class="hys-ui-menu-prefix" aria-hidden="true"
+              ><slot name="icon" v-bind="context(row)"
+                ><component
+                  :is="context(row).checked ? CircleDot : Circle"
+                  v-if="row.type === 'radio' && !row.children.length"
+                  :size="15" /><component
+                  :is="context(row).checked ? SquareCheck : Square"
+                  v-else-if="row.type === 'checkbox' && !row.children.length"
+                  :size="15" /><Check
+                  v-else-if="context(row).checked || context(row).selected"
+                  :size="15" /><component
+                  :is="row.icon"
+                  v-else-if="row.icon"
+                  :size="16" /></slot
+            ></span>
+            <span class="hys-ui-menu-copy"
+              ><span class="hys-ui-menu-label"
+                ><slot name="item" v-bind="context(row)">{{
+                  row.label
+                }}</slot></span
+              ><small
+                v-if="row.description"
+                :id="rootId + '-description-' + row.id"
+                class="hys-ui-menu-description"
+                >{{ row.description }}</small
+              ></span
+            >
+            <kbd v-if="row.shortcut" class="hys-ui-menu-shortcut">{{
+              row.shortcut
+            }}</kbd
+            ><span v-else />
+            <component
+              :is="direction === 'rtl' ? ChevronLeft : ChevronRight"
+              v-if="row.children.length"
+              :size="14"
+              class="hys-ui-menu-chevron"
+              aria-hidden="true"
+            /><span v-else />
+          </component>
+          <slot
+            name="item-control"
+            v-bind="context(row)"
+            :select="(event?: KeyboardEvent) => emit('choose', row, event)"
+          />
+        </div>
       </template>
     </div>
     <div v-if="$slots.footer" class="hys-ui-menu-footer">
@@ -304,6 +310,15 @@ defineExpose({ element });
   text-decoration: none;
   cursor: pointer;
   outline: none;
+}
+.hys-ui-menu-item-row {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.hys-ui-menu-item-row > .hys-ui-menu-item {
+  flex: 1;
+  min-inline-size: 0;
 }
 .hys-ui-menu-prefix {
   display: inline-flex;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import {
+  HysButton,
   HysCheckbox,
   HysSelect,
   HysTabs,
@@ -76,8 +77,9 @@ const items: HysTabItem[] = [
       >
         <template #preview="{ item }">预览 · {{ item.content }}</template>
         <template #contextmenu="{ item, run, close }">
-          <button
-            type="button"
+          <HysButton
+            variant="ghost"
+            size="sm"
             role="menuitem"
             class="context-tab-action"
             @click="
@@ -87,7 +89,7 @@ const items: HysTabItem[] = [
             "
           >
             刷新 {{ item.label }}
-          </button>
+          </HysButton>
         </template>
       </HysTabs>
     </div>

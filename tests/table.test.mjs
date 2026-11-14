@@ -211,6 +211,40 @@ test("Table keyboard navigation focuses displayed rows and respects selection re
   assert.deepEqual(table.vm.selectedKeys, ["1"]);
   assert.equal(table.vm.focusRow(999), false);
 });
+test("Table moves between merged cells and distinguishes empty values from zero", async () => {
+  const table = await mount(ui.HysTable, {
+    columns: [
+      { key: "team", label: "Warehouse" },
+      { key: "stock", label: "Stock" },
+      { key: "note", label: "Note", wrap: 2, emptyText: "None" },
+    ],
+    rows: [
+      { id: 1, team: "A", stock: 0, note: "" },
+      { id: "1", team: "A", stock: null, note: "Second" },
+      { id: 3, team: "B", stock: 8, note: "Third" },
+    ],
+    spanMethod: ({ column, rowIndex }) =>
+      column.key === "team" && rowIndex === 0 ? [2, 1] : undefined,
+    cellNavigation: true,
+    selectable: true,
+    emptyCellText: "—",
+  });
+  assert.equal(table.all("[data-hys-cell-index][tabindex='0']").length, 1);
+  assert.equal(table.vm.focusCell("1", "team"), false);
+  assert.equal(table.vm.focusCell(1, "team"), true);
+  await fire(document.activeElement, "keydown", { key: "ArrowDown" });
+  assert.equal(document.activeElement.textContent.trim(), "B");
+  await fire(document.activeElement, "keydown", { key: "ArrowUp" });
+  assert.equal(document.activeElement.textContent.trim(), "A");
+  await fire(document.activeElement, "keydown", { key: "ArrowRight" });
+  assert.equal(document.activeElement.textContent.trim(), "0");
+  await fire(document.activeElement, "keydown", { key: "ArrowDown" });
+  assert.equal(document.activeElement.textContent.trim(), "—");
+  assert.equal(document.activeElement.closest("tr").dataset.hysCellRow, "string:1");
+  assert.equal(table.find(".hys-ui-cell-clamp").textContent.trim(), "None");
+  await fire(document.activeElement, "keydown", { key: "End", ctrlKey: true });
+  assert.equal(document.activeElement.textContent.trim(), "Third");
+});
 const rows = [
   { id: 1, name: "Alice", age: 30, team: "design" },
   { id: 2, name: "Bob", age: 20, team: "dev" },

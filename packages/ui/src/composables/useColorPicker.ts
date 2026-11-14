@@ -227,7 +227,8 @@ export function useColorPicker(
     hasColor.value = true;
     draft.value = serialized.value;
     emit("activeChange", serialized.value);
-    if (props.immediate !== false) void publish(final);
+    if (props.immediate !== false && (props.immediate !== "release" || final))
+      void publish(final);
   }
   async function confirm() {
     if (!live.value || locked.value || !valid.value) {
@@ -446,7 +447,7 @@ export function useColorPicker(
         draft.value = g.value;
         emit("activeChange", serialized.value);
         if (
-          props.immediate !== false &&
+          (props.immediate === true || props.immediate === undefined) &&
           (value.value === g.lastRequest || value.value === g.value)
         ) {
           const accepted = await model.commit(
@@ -537,7 +538,7 @@ export function useColorPicker(
   watch(
     value,
     () => {
-      if (!gesture.value && !dirty.value) sync();
+      if (!gesture.value && (!dirty.value || props.immediate === "release")) sync();
     },
     { flush: "post" },
   );

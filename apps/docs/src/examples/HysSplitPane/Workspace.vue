@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { FileText, FolderOpen, PanelLeft, RotateCcw } from "lucide-vue-next";
-import { HysButton, HysSplitPane, type HysSplitPaneInstance, type HysSplitPanePanel } from "hys-ui";
+import { HysButton, HysSplitPane, HysTextarea, type HysSplitPaneInstance, type HysSplitPanePanel } from "hys-ui";
 
 const split = ref<HysSplitPaneInstance>();
 const selected = ref("index.vue");
@@ -47,10 +47,9 @@ const panels: HysSplitPanePanel[] = [
           class="split-workspace-body"
         >
           <template #first>
-            <label class="split-workspace-pane">
-              {{ selected }}
-              <textarea :key="selected" aria-label="文件内容" spellcheck="false" />
-            </label>
+            <div class="split-workspace-pane">
+              <HysTextarea :key="selected" :label="selected" aria-label="文件内容" spellcheck="false" :rows="3" resize="none" />
+            </div>
           </template>
           <template #second>
             <div class="split-workspace-pane">输出</div>
@@ -90,15 +89,5 @@ const panels: HysSplitPanePanel[] = [
 }
 .split-workspace-files strong { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .split-workspace-body { height: 100%; }
-.split-workspace-pane textarea {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100px;
-  resize: none;
-  border: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));
-  border-radius: 6px;
-  padding: 8px;
-  color: inherit;
-  background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
-}
+.split-workspace-pane > :deep(.hys-ui-input-wrap) { width: 100%; min-width: 0; }
 </style>

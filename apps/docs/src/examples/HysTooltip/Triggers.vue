@@ -22,6 +22,9 @@ import { HysTooltip, HysButton } from "hys-ui";
           >点击可固定显示，再次点击关闭。</template
         ></HysTooltip
       >
+      <HysTooltip text="拖动开始后提示会收起。">
+        <HysButton variant="secondary" draggable="true">拖动试试</HysButton>
+      </HysTooltip>
     </div>
     <p class="scenario-note">
       支持悬停、焦点、点击、右键和组合触发；manual

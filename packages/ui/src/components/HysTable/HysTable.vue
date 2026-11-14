@@ -42,6 +42,8 @@ import { useFloating } from "../../composables/useFloating";
 import { useTable } from "../../composables/useTable";
 import { useTableSticky } from "../../composables/useTableSticky";
 import { useTabularRowNavigation } from "../../composables/useTabularRowNavigation";
+import { useTabularCellNavigation } from "../../composables/useTabularCellNavigation";
+import { tabularCellWrap, tabularEmptyValue } from "../../composables/tabularCellDisplay";
 import {
   tableColumns,
   tableBreakpoint,
@@ -533,7 +535,10 @@ function text(value: unknown): string {
   }
 }
 function formatted(ctx: HysTableCellContext<T>) {
-  const content = ctx.column.formatter
+  const empty = ctx.column.emptyText ?? props.emptyCellText;
+  const content = empty !== undefined && tabularEmptyValue(ctx.value)
+    ? empty
+    : ctx.column.formatter
     ? ctx.column.formatter(ctx.row, ctx.column, ctx.value, ctx.rowIndex)
     : text(ctx.value);
   return props.transformCellText
@@ -795,6 +800,7 @@ const tipAnchor = ref<HTMLElement>(),
   tipContext = shallowRef<HysTableCellContext<T>>(),
   sortTipColumn = shallowRef<HysTableColumn<T>>();
 function overflowTooltip(column: HysTableColumn<T>) {
+  if (column.wrap === true) return false;
   return column.showOverflowTooltip ?? props.showOverflowTooltip;
 }
 function sorterTooltip(column: HysTableColumn<T>) {
@@ -1174,8 +1180,36 @@ async function scrollToRow(
 }
 const visibleColumns = computed(() => layout.value.leaves);
 const navigableTokens = computed(() => display.value.map(({ token }) => token));
+const cellRowIndexes = computed(() => new Map(navigableTokens.value.map((token, index) => [token, index])));
+const cellColumnIndexes = computed(() => visibleColumns.value.flatMap((column, index) =>
+  !column.type || column.type === "default" ? [[column.key, index] as const] : [],
+));
+const cellColumnIndex = computed(() => new Map(cellColumnIndexes.value));
+function firstCell(rowIndex: number) {
+  return cellColumnIndexes.value.find(([, index]) => {
+    const cell = span(rowIndex, index);
+    return cell.colspan > 0 && cell.rowspan > 0;
+  })?.[0];
+}
+const cellNavigationState = useTabularCellNavigation({
+  enabled: () => !!props.cellNavigation && !busy.value && model.live.value,
+  table: () => table.value,
+  first() {
+    for (const [rowIndex, rowToken] of navigableTokens.value.entries()) {
+      const columnKey = firstCell(rowIndex);
+      if (columnKey !== undefined) return { rowToken, columnKey };
+    }
+  },
+  has(rowToken, columnKey) {
+    const rowIndex = cellRowIndexes.value.get(rowToken);
+    const columnIndex = cellColumnIndex.value.get(columnKey);
+    if (rowIndex === undefined || columnIndex === undefined) return false;
+    const cell = span(rowIndex, columnIndex);
+    return cell.rowspan > 0 && cell.colspan > 0;
+  },
+});
 const rowNavigation = useTabularRowNavigation({
-  enabled: () => !!props.keyboardNavigation && !busy.value && model.live.value,
+  enabled: () => !!props.keyboardNavigation && !props.cellNavigation && !busy.value && model.live.value,
   table: () => table.value,
   tokens: () => navigableTokens.value,
   attribute: "data-hys-navigation-row",
@@ -1213,7 +1247,15 @@ defineExpose({
   clearSearch: () => model.setSearch(""),
   focusRow: (row: T | HysTableKey) => {
     const node = model.find(row);
-    return !!node && rowNavigation.focusRow(node.token);
+    if (!node) return false;
+    if (!props.cellNavigation) return rowNavigation.focusRow(node.token);
+    const rowIndex = cellRowIndexes.value.get(node.token);
+    const columnKey = rowIndex === undefined ? undefined : firstCell(rowIndex);
+    return columnKey !== undefined && cellNavigationState.focusCell(node.token, columnKey);
+  },
+  focusCell: (row: T | HysTableKey, columnKey: string) => {
+    const node = model.find(row);
+    return !!node && cellNavigationState.focusCell(node.token, columnKey);
   },
   showFilter: (key: string) => requestFilter(key),
   hideFilter: () => requestFilter(null, true),
@@ -1638,6 +1680,7 @@ defineExpose({
                 :is="components?.body?.row ?? 'tr'"
                 v-bind="mergeProps(customAttrs(customRow?.(node.row, index)), rowNavigation.rowNavigationAttrs(node.token))"
                 :data-row-key="String(node.key)"
+                :data-hys-cell-row="cellNavigation ? node.token : undefined"
                 :data-hys-navigation-row="keyboardNavigation ? node.token : undefined"
                 :aria-selected="
                   highlightCurrentRow ? currentKey === node.key : undefined
@@ -1675,9 +1718,9 @@ defineExpose({
                       span(index, columnIndex).colspan
                     "
                     v-bind="
-                      customCellAttrs(
+                      mergeProps(customCellAttrs(
                         context(node.row, column, index, columnIndex),
-                      )
+                      ), cellNavigation && (!column.type || column.type === 'default') ? cellNavigationState.attrs(node.token, column.key, columnIndex) : {})
                     "
                     :scope="column.rowScope"
                     :data-column-key="column.key"
@@ -1896,10 +1939,11 @@ defineExpose({
                         /></template>
                         <span
                           class="hys-ui-table-cell-text"
-                          :class="{
+                          :style="tabularCellWrap(column.wrap).style"
+                          :class="[tabularCellWrap(column.wrap).class, {
                             'hys-ui-table-ellipsis':
-                              column.ellipsis || overflowTooltip(column),
-                          }"
+                              !tabularCellWrap(column.wrap).class && (column.ellipsis || overflowTooltip(column)),
+                          }]"
                           :tabindex="overflowTooltip(column) ? 0 : undefined"
                           :title="
                             typeof column.ellipsis === 'object' &&
@@ -2184,6 +2228,19 @@ defineExpose({
 </template>
 
 <style scoped>
+.hys-ui-table-cell-text.hys-ui-cell-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hys-ui-table-cell-text.hys-ui-cell-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hys-ui-data-table [data-hys-cell-index]:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+}
 .hys-ui-data-table [data-hys-navigation-row]:focus-visible {
   outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
   outline-offset: -2px;

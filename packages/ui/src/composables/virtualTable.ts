@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, VNodeChild } from "vue";
+import { gridKeyToken, isGridKey } from "./gridCore";
 export type HysVirtualTableKey = string | number;
 export type HysVirtualTableAlign = "start" | "center" | "end" | "nearest";
 export interface HysVirtualTableSort {
@@ -135,10 +136,8 @@ export const virtualFinite = (
       typeof value === "number" && Number.isFinite(value) ? value : fallback,
     ),
   );
-export const virtualKey = (key: unknown): key is HysVirtualTableKey =>
-  typeof key === "string" || (typeof key === "number" && Number.isFinite(key));
-export const virtualToken = (key: HysVirtualTableKey) =>
-  typeof key + ":" + String(key);
+export const virtualKey = isGridKey;
+export const virtualToken = gridKeyToken;
 export function virtualValue<T extends object>(
   row: T,
   column: HysVirtualTableColumn<T>,

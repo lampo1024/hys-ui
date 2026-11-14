@@ -16,6 +16,11 @@ import {
   Upload,
 } from "lucide-vue-next";
 import IconReferenceGraphic from "../IconReferenceGraphic/IconReferenceGraphic.vue";
+import HysAccordion from "../../HysAccordion/HysAccordion.vue";
+import HysButton from "../../HysButton/HysButton.vue";
+import HysInput from "../../HysInput/HysInput.vue";
+import HysSelect from "../../HysSelect/HysSelect.vue";
+import HysUpload from "../../HysUpload/HysUpload.vue";
 import { importHysIconSvg, serializeHysIconSvg } from "../iconSafety";
 import type {
   HysIconEntry,
@@ -58,8 +63,7 @@ const locale = computed<HysIconPickerLocale>(() => ({
   imported: (count) => "已导入 " + count + " 个图标",
   ...props.locale,
 }));
-const root = ref<HTMLElement>(),
-  fileInput = ref<HTMLInputElement>();
+const root = ref<HTMLElement>();
 const query = ref(""),
   library = ref(""),
   category = ref(""),
@@ -98,6 +102,10 @@ const categories = computed(() => [
 const variants = computed(() => [
   ...new Set(all.value.flatMap((record) => [...record.variants])),
 ]);
+const filterOptions = (values: readonly string[], empty = locale.value.all) => [
+  { value: "", label: empty },
+  ...values.map((value) => ({ value, label: value })),
+];
 const results = computed(() => {
   void props.registry.revision.value;
   const matches = props.registry.search(query.value, {
@@ -263,10 +271,8 @@ watch([favorites, recent], () => {
   }
 });
 watch(() => props.storageKey, readStorage);
-async function upload(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = [...(input.files ?? [])].slice(0, 32);
-  input.value = "";
+async function upload(selectedFiles: File[]) {
+  const files = selectedFiles.slice(0, 32);
   const parsed: { base: string; entry: HysIconEntry }[] = [];
   let failed = 0;
   for (const file of files) {
@@ -341,64 +347,75 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="hys-icon-picker">
     <div class="hys-icon-picker-filters">
-      <label class="hys-icon-picker-search"
-        ><Search :size="16" aria-hidden="true" />
-        <input
-          v-model="query"
-          type="search"
-          :aria-label="locale.search"
-          :placeholder="locale.search"
+      <HysInput
+        v-model="query"
+        class="hys-icon-picker-search"
+        size="sm"
+        type="search"
+        :prefix-icon="Search"
+        :aria-label="locale.search"
+        :placeholder="locale.search"
+      />
+      <div class="hys-icon-picker-field">
+        <span>{{ locale.library }}</span>
+        <HysSelect
+          v-model="library"
+          size="sm"
+          :aria-label="locale.library"
+          :options="filterOptions(namespaces)"
+          :empty-values="[null, undefined]"
         />
-      </label>
-      <label
-        ><span>{{ locale.library }}</span
-        ><select v-model="library" :aria-label="locale.library">
-          <option value="">{{ locale.all }}</option>
-          <option v-for="item in namespaces" :key="item">{{ item }}</option>
-        </select></label
-      >
-      <label
-        ><span>{{ locale.category }}</span
-        ><select v-model="category" :aria-label="locale.category">
-          <option value="">{{ locale.all }}</option>
-          <option v-for="item in categories" :key="item">{{ item }}</option>
-        </select></label
-      >
-      <label
-        ><span>{{ locale.variant }}</span
-        ><select v-model="variant" :aria-label="locale.variant">
-          <option value="">{{ locale.all }}</option>
-          <option v-for="item in variants" :key="item">{{ item }}</option>
-        </select></label
-      >
+      </div>
+      <div class="hys-icon-picker-field">
+        <span>{{ locale.category }}</span>
+        <HysSelect
+          v-model="category"
+          size="sm"
+          :aria-label="locale.category"
+          :options="filterOptions(categories)"
+          :empty-values="[null, undefined]"
+        />
+      </div>
+      <div class="hys-icon-picker-field">
+        <span>{{ locale.variant }}</span>
+        <HysSelect
+          v-model="variant"
+          size="sm"
+          :aria-label="locale.variant"
+          :options="filterOptions(variants)"
+          :empty-values="[null, undefined]"
+        />
+      </div>
     </div>
     <div class="hys-icon-picker-toolbar">
-      <button
+      <HysButton
         v-for="item in ['all', 'popular', 'favorites', 'recent'] as const"
         :key="item"
-        type="button"
-        :aria-pressed="view === item"
+        size="sm"
+        variant="secondary"
+        :pressed="view === item"
         @click="view = item"
       >
         {{ locale[item] }}
-      </button>
-      <button
+      </HysButton>
+      <HysUpload
         v-if="allowUpload"
-        type="button"
         class="hys-icon-picker-upload"
-        @click="fileInput?.click()"
-      >
-        <Upload :size="15" />{{ locale.upload }}
-      </button>
-      <input
-        v-if="allowUpload"
-        ref="fileInput"
-        hidden
-        type="file"
         accept=".svg,image/svg+xml"
         multiple
-        @change="upload"
-      />
+        :show-file-list="false"
+        @select="upload"
+      >
+        <template #trigger="{ open }">
+          <HysButton
+            size="sm"
+            variant="secondary"
+            :icon="Upload"
+            @click="open"
+            >{{ locale.upload }}</HysButton
+          >
+        </template>
+      </HysUpload>
     </div>
     <div class="hys-icon-picker-main">
       <div>
@@ -409,12 +426,13 @@ onBeforeUnmount(() => {
           :aria-label="locale.library"
           @keydown="keyboard"
         >
-          <button
+          <HysButton
+            size="sm"
+            variant="secondary"
             v-for="(record, index) in visible"
             :key="record.name"
             class="hys-icon-picker-tile"
             role="option"
-            type="button"
             :tabindex="index === focusIndex ? 0 : -1"
             :aria-selected="selected?.name === record.name"
             :aria-label="record.label + ' ' + record.name"
@@ -430,7 +448,7 @@ onBeforeUnmount(() => {
                 :allowed-origins="allowedOrigins"
             /></span>
             <span class="hys-icon-picker-label">{{ record.label }}</span>
-          </button>
+          </HysButton>
         </div>
         <p v-else class="hys-icon-picker-empty">{{ locale.empty }}</p>
         <nav
@@ -438,23 +456,25 @@ onBeforeUnmount(() => {
           class="hys-icon-picker-pages"
           aria-label="图标分页"
         >
-          <button
-            type="button"
+          <HysButton
+            size="sm"
+            variant="secondary"
             :aria-label="locale.previous"
             :disabled="page === 1"
             @click="page--"
           >
             <ChevronLeft :size="16" />
-          </button>
+          </HysButton>
           <span>{{ page }} / {{ pages }}</span>
-          <button
-            type="button"
+          <HysButton
+            size="sm"
+            variant="secondary"
             :aria-label="locale.next"
             :disabled="page === pages"
             @click="page++"
           >
             <ChevronRight :size="16" />
-          </button>
+          </HysButton>
         </nav>
       </div>
       <aside v-if="selected" class="hys-icon-picker-detail">
@@ -466,8 +486,9 @@ onBeforeUnmount(() => {
               :variant="selectedVariant"
               :allowed-origins="allowedOrigins"
           /></span>
-          <button
-            type="button"
+          <HysButton
+            size="sm"
+            variant="secondary"
             :aria-label="
               favorites.includes(selected.name)
                 ? locale.removeFavorite
@@ -477,35 +498,44 @@ onBeforeUnmount(() => {
             @click="toggleFavorite(selected.name)"
           >
             <Star :size="16" />
-          </button>
+          </HysButton>
         </div>
         <strong>{{ selected.label }}</strong>
         <code>{{ selected.name }}</code>
         <small v-if="selected.version"
           >{{ selected.namespace }} · {{ selected.version }}</small
         >
-        <label v-if="selected.variants.length > 1"
-          >{{ locale.variant
-          }}<select v-model="chosenVariant" :aria-label="locale.variant">
-            <option value="">{{ selectedVariant }}</option>
-            <option v-for="item in selected.variants" :key="item">
-              {{ item }}
-            </option>
-          </select></label
-        >
-        <div class="hys-icon-picker-actions">
-          <button type="button" @click="copy(selected.name)">
-            <Copy :size="13" />{{ locale.copyName }}
-          </button>
-          <button type="button" @click="copyCode">{{ locale.copyCode }}</button>
-          <button v-if="svg" type="button" @click="copy(svg)">
-            {{ locale.copySvg }}
-          </button>
+        <div v-if="selected.variants.length > 1" class="hys-icon-picker-field">
+          <span>{{ locale.variant }}</span>
+          <HysSelect
+            v-model="chosenVariant"
+            size="sm"
+            :aria-label="locale.variant"
+            :options="filterOptions(selected.variants, selectedVariant)"
+            :empty-values="[null, undefined]"
+          />
         </div>
-        <details v-if="svg">
-          <summary>SVG</summary>
-          <pre>{{ svg }}</pre>
-        </details>
+        <div class="hys-icon-picker-actions">
+          <HysButton size="sm" variant="secondary" @click="copy(selected.name)">
+            <Copy :size="13" />{{ locale.copyName }}
+          </HysButton>
+          <HysButton size="sm" variant="secondary" @click="copyCode">{{
+            locale.copyCode
+          }}</HysButton>
+          <HysButton
+            size="sm"
+            variant="secondary"
+            v-if="svg"
+            @click="copy(svg)"
+          >
+            {{ locale.copySvg }}
+          </HysButton>
+        </div>
+        <HysAccordion v-if="svg" size="sm" :items="[{ title: 'SVG' }]">
+          <template #content>
+            <pre>{{ svg }}</pre>
+          </template>
+        </HysAccordion>
       </aside>
     </div>
     <output

@@ -9,6 +9,13 @@ assert(names.length>0,'Component source is empty')
 assert.deepEqual(Object.keys(api).sort(),names)
 const routes=read('apps/docs/src/router.ts'),entry=read('packages/ui/src/index.ts')
 const scenarioTitles=JSON.parse(read('apps/docs/src/scenario-titles.json'))
+const nativeControl=/<(?:button|input|select|textarea|details|summary|datalist|meter|progress)\b(?=[\s/>])|\b(?:h|createElement)\(\s*['"](?:button|input|select|textarea|details|summary|datalist|meter|progress)['"]/i
+for(const folder of ['apps/docs/src',`${dir}/HysSpreadsheet`, `${dir}/HysIcon/IconPickerPanel`, `${dir}/HysNotificationCenter`, `${dir}/HysTabs/TabsMore`, `${dir}/HysFileManager`, `${dir}/HysResult`, `${dir}/HysSteps`]){
+ for(const file of fs.readdirSync(path.join(root,folder),{recursive:true}).filter(file=>/\.(vue|tsx?|jsx?)$/.test(file)&&!file.startsWith(`generated${path.sep}`))){
+  const source=path.join(folder,file),control=read(source).match(nativeControl)
+  assert(!control,`${source} should use a HYS UI component for ${control?.[0]}`)
+ }
+}
 for(const name of names){
  assert(name.startsWith('Hys'))
  const s=read(`${dir}/${name}/${name}.vue`)
@@ -20,7 +27,10 @@ for(const name of names){
  assert(routes.includes(`name:'${name}'`),name+' has no dedicated route')
  assert(fs.existsSync(path.join(root,`apps/docs/src/pages/${name}Page.vue`)))
  const examples=fs.readdirSync(path.join(root,'apps/docs/src/examples',name)).filter(x=>x.endsWith('.vue'))
- for(const example of examples){const scene=path.basename(example,'.vue'),title=scenarioTitles.components[name]?.[scene]??scenarioTitles.common[scene];assert(title?.trim()&&!title.includes('进阶用法'),`${name}/${example} needs a descriptive usage title`)}
+ for(const example of examples){
+  const scene=path.basename(example,'.vue'),title=scenarioTitles.components[name]?.[scene]??scenarioTitles.common[scene]
+  assert(title?.trim()&&!title.includes('进阶用法'),`${name}/${example} needs a descriptive usage title`)
+ }
  assert(examples.length>=2,name+' needs at least two concrete scenarios')
  assert(examples.some(file=>read(`apps/docs/src/examples/${name}/${file}`).includes(`<${name}`)))
 }

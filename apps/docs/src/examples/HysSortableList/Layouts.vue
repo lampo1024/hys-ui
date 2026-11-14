@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
-import { HysSelect, HysSortableList, type HysSortLayout } from "hys-ui";
+import {
+  HysButton,
+  HysSelect,
+  HysSortableList,
+  HysUpload,
+  type HysSortLayout,
+} from "hys-ui";
 import { Grip, Image, Menu, Tag } from "lucide-vue-next";
 
 const kind = ref<"photos" | "tags" | "menu">("photos");
@@ -44,9 +50,8 @@ const layout = computed<HysSortLayout>(() =>
 );
 let sequence = 0;
 
-function loadPhotos(event: Event) {
-  const input = event.currentTarget as HTMLInputElement;
-  const added = Array.from(input.files ?? [])
+function loadPhotos(files: File[]) {
+  const added = files
     .filter((file) => file.type.startsWith("image/"))
     .map((file) => ({
       id: `photo-${++sequence}`,
@@ -55,7 +60,6 @@ function loadPhotos(event: Event) {
       color: "",
     }));
   photos.value = [...photos.value, ...added];
-  input.value = "";
 }
 onBeforeUnmount(() =>
   photos.value.forEach((item) => {
@@ -78,16 +82,20 @@ onBeforeUnmount(() =>
           ]"
         />
       </label>
-      <label v-if="kind === 'photos'" class="choose-image">
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          aria-label="选择本地图片"
-          @change="loadPhotos"
-        />
-        添加本地图片
-      </label>
+      <HysUpload
+        v-if="kind === 'photos'"
+        class="choose-image"
+        accept="image/*"
+        multiple
+        :show-file-list="false"
+        @select="loadPhotos"
+      >
+        <template #trigger="{ open }">
+          <HysButton variant="secondary" size="sm" @click="open"
+            >添加本地图片</HysButton
+          >
+        </template>
+      </HysUpload>
     </div>
     <HysSortableList
       :key="kind"
@@ -162,23 +170,10 @@ onBeforeUnmount(() =>
 .tile svg {
   flex: none;
 }
-.choose-image {
-  position: relative;
-  padding: 8px 12px;
-  border: 1px solid var(--docs-border);
-  border-radius: 7px;
-  background: var(--docs-surface);
-  font-size: 12px;
-  cursor: pointer;
-}
-.choose-image input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  inline-size: 100%;
-  cursor: pointer;
-}
-.choose-image:focus-within {
-  outline: 2px solid var(--hys-ui-primary);
+.choose-image :deep(.hys-ui-upload-zone) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 </style>

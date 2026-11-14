@@ -1,7 +1,8 @@
 import type { HysPopupMotionProps } from "../motion/popup";
+import { gridKeyToken, isGridKey } from "./gridCore";
 import type { HysDataGridColumnLayout, HysDataGridColumnLayoutSnapshot } from "../components/HysDataGrid/gridColumnLayout";
 import type {
-  HysDataGridCellContext, HysDataGridClass, HysDataGridContextMenu,
+  HysDataGridCellContext, HysDataGridCellView, HysDataGridClass, HysDataGridContextMenu,
   HysDataGridHeaderContext, HysDataGridHeaderGroup, HysDataGridPin,
   HysDataGridRowContext, HysDataGridStyle,
 } from "../components/HysDataGrid/gridPresentation";
@@ -35,7 +36,10 @@ export interface GridColumn<T extends object = Record<string, unknown>> {
   headerWrap?: boolean;
   group?: HysDataGridHeaderGroup;
   summary?: "sum" | "avg" | "min" | "max" | "count";
-  editable?: boolean;
+  editable?: boolean | ((context: HysDataGridCellContext<T>) => boolean);
+  formatter?: (context: HysDataGridCellContext<T>) => string | number | null | undefined;
+  wrap?: boolean | number;
+  emptyText?: string;
 }
 export interface HysDataGridResult<T extends object> {
   rows: readonly T[];
@@ -53,6 +57,9 @@ export interface HysDataGridProps<
   rowKey?: string | ((row: T, index: number) => HysDataGridKey);
   page?: number;
   pageSize?: number;
+  showToolbar?: boolean;
+  pagination?: boolean;
+  rowNumbers?: boolean;
   query?: HysDataGridQuery;
   defaultQuery?: Partial<HysDataGridQuery>;
   immediateQuery?: boolean;
@@ -87,6 +94,8 @@ export interface HysDataGridProps<
   parentKey?: string;
   editable?: boolean;
   keyboardNavigation?: boolean;
+  cellNavigation?: boolean;
+  emptyCellText?: string;
   caption?: string;
   striped?: boolean;
   highlightCurrentRow?: boolean;
@@ -96,9 +105,19 @@ export interface HysDataGridProps<
   rowStyle?: HysDataGridStyle<HysDataGridRowContext<T>>;
   cellClassName?: HysDataGridClass<HysDataGridCellContext<T>>;
   cellStyle?: HysDataGridStyle<HysDataGridCellContext<T>>;
+  cellSpan?: (context: HysDataGridCellContext<T>) => { rows: number; columns: number } | undefined;
+  cellTooltip?: boolean;
+  virtualRows?: { height: (row: T) => number; overscan?: number };
+  virtualColumns?: boolean;
   headerClassName?: HysDataGridClass<HysDataGridHeaderContext<T>>;
   headerStyle?: HysDataGridStyle<HysDataGridHeaderContext<T>>;
+  /** Controlled column order. Omitted columns follow in declaration order. */
+  columnOrder?: readonly string[];
+  commitColumnWidth?: (key: string, width: number) => boolean;
+  fillRemainingWidth?: boolean;
   contextMenu?: HysDataGridContextMenu<T>;
+  /** Show a column menu button in each header when context menus are enabled. Defaults to true. */
+  headerMenuButton?: boolean;
 }
 export interface HysDataGridInstance {
   resetColumns(): void;
@@ -116,6 +135,9 @@ export interface HysDataGridInstance {
   scrollTo(options: ScrollToOptions): void;
   scrollToRow(key: HysDataGridKey): boolean;
   focusRow(key: HysDataGridKey): boolean;
+  focusCell(rowKey: HysDataGridKey, columnKey: string, focus?: boolean): boolean;
+  isCellVisible(rowKey: HysDataGridKey, columnKey: string): boolean;
+  getCellView(): HysDataGridCellView<object> | undefined;
   getCurrentRowKey(): HysDataGridKey | null;
   setCurrentRow(key: HysDataGridKey | null): void;
   setColumnVisibility(key: string, visible: boolean): boolean;
@@ -132,10 +154,8 @@ export type GridTreeRow<T extends object> = GridRow<T> & {
   depth: number;
   hasChildren: boolean;
 };
-export const gridKey = (value: unknown): value is HysDataGridKey =>
-  typeof value === "string" ||
-  (typeof value === "number" && Number.isFinite(value));
-export const gridToken = (key: HysDataGridKey) => typeof key + ":" + key;
+export const gridKey = isGridKey;
+export const gridToken = gridKeyToken;
 export const positiveInteger = (value: number | undefined, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) && value >= 1
     ? Math.floor(value)

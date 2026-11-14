@@ -24,6 +24,7 @@ import {
   type TableNode,
 } from "./table";
 import { tableSearchPredicate } from "../components/HysTable/tableSearch";
+import { gridPageCount, isGridKey } from "./gridCore";
 export function useTable<T extends object>(
   props: HysTableProps<T>,
   columns: () => readonly HysTableColumn<T>[],
@@ -78,11 +79,7 @@ export function useTable<T extends object>(
       typeof props.rowKey === "function"
         ? props.rowKey(row)
         : tableValue(row, props.rowKey ?? "id");
-    if (
-      typeof value === "string" ||
-      (typeof value === "number" && Number.isFinite(value))
-    )
-      return value;
+    if (isGridKey(value)) return value;
     if (!fallback.has(row)) fallback.set(row, "@hys-table-row:" + ++ordinal);
     return fallback.get(row)!;
   }
@@ -279,7 +276,7 @@ export function useTable<T extends object>(
     return Number.isFinite(total) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(total))) : 0;
   });
   const pageCount = computed(() =>
-    serverPageCount.value ?? Math.max(1, Math.ceil((paginationTotal.value ?? 0) / pageSize.value)),
+    serverPageCount.value ?? gridPageCount(paginationTotal.value ?? 0, pageSize.value),
   );
   const page = computed(() => {
     const n = props.page ?? pagination.value.page ?? localPage.value;

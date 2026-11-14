@@ -113,7 +113,7 @@ for(const name of fs.readdirSync(dir).sort()){
  const effectiveDefaults={trigger:name==='HysTooltip'?"['hover', 'focus']":"'click'",triggerKeys:"['Enter', ' ']",triggerTabindex:'0',offset:name==='HysTooltip'?'7':'8',autoClose:'0',maxWidth:name==='HysTooltip'?'320px':'360px',maxHeight:'calc(100vh - 20px)',arrowOffset:'10'};
  for(const prop of api[name].props){prop.description=descriptions[prop.name]||prop.description;if(Object.hasOwn(effectiveDefaults,prop.name))prop.default=effectiveDefaults[prop.name]}
  const events={'update:open':'显示请求：boolean，支持 v-model:open','update:modelValue':'显示请求别名：boolean',visibleChange:'实际展开状态变化：boolean',openChange:'实际展开状态变化的别名：boolean',show:'实际开始展开',hide:'实际开始收起',opened:'展开过渡完成',closed:'收起过渡完成'};for(const event of api[name].events)event.description=events[event.name]||event.description;
- const methods={element:'实际浮层 DOM；关闭销毁后为 undefined',referenceElement:'实际参考元素，可能来自外部 reference',open:'实际展开状态',placement:'经过边界调整后的最终位置',show:'立即请求展开，返回 Promise<boolean>',hide:'立即请求收起，返回 Promise<boolean>',close:'hide 的别名',toggle:'切换展开状态，返回 Promise<boolean>',updatePosition:'按动画帧合并位置更新，用于自定义布局变化',focus:'聚焦实际触发控件'};for(const method of api[name].exposed)method.description=methods[method.name]||method.description;
+ const methods={element:'实际浮层 DOM；关闭销毁后为 undefined',referenceElement:'实际参考元素，可能来自外部 reference',open:'实际展开状态',placement:'经过边界调整后的最终位置',show:'立即请求展开，返回 Promise<boolean>',hide:'立即请求收起，返回 Promise<boolean>',close:'hide 的别名',toggle:'切换展开状态，返回 Promise<boolean>',updatePosition:'按动画帧合并位置更新，用于自定义布局变化',focus:name==='HysTooltip'?'聚焦实际触发控件。传入 { suppressTooltip: true } 会取消延迟提示并请求收起已显示的提示。':'聚焦实际触发控件'};for(const method of api[name].exposed)method.description=methods[method.name]||method.description;
  const slots={default:name==='HysTooltip'?'触发内容；原生控件保持单一焦点入口':'浮层正文；接收 open/show/close/toggle/updatePosition',trigger:'Popover 触发内容，接收显示上下文',content:'Tooltip 自定义说明，接收显示上下文',title:'自定义浮层标题，保留辅助技术标题关联'};for(const slot of api[name].slots)slot.description=slots[slot.name]||slot.description;
  }
  if(name==='HysNumberInput'){
@@ -427,6 +427,22 @@ for(const name of fs.readdirSync(dir).sort()){
      if (prop.name === 'itemKey') prop.default = '"id"'
      if (prop.name === 'itemLabel') prop.default = '"label"'
    }
+ }
+ if (name === "HysProGrid") {
+   const file = ts.createSourceFile(
+     "proGridTypes.ts",
+     fs.readFileSync(path.join(dir, name, "proGridTypes.ts"), "utf8"),
+     ts.ScriptTarget.Latest, true,
+   )
+   const instance = file.statements.find(node =>
+     ts.isInterfaceDeclaration(node) && node.name.text === "HysProGridInstance")
+   api[name].exposed = instance.members.map(member => ({
+     name: member.name.getText(file),
+     type: ts.isMethodSignature(member)
+       ? `(${member.parameters.map(parameter => parameter.getText(file)).join(", ")}) => ${member.type.getText(file)}`
+       : member.type.getText(file),
+     required: false, default: "", description: "",
+   }))
  }
  if (name === "HysDataGrid") {
    const file = ts.createSourceFile(
