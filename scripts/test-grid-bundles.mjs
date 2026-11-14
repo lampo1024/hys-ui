@@ -5,11 +5,6 @@ import { build } from "vite";
 
 export async function checkGridBundles(root) {
   const entry = path.join(root, "grid-entry.js");
-  const html = path.join(root, "grid-entry.html");
-  fs.writeFileSync(
-    html,
-    '<div id="grid"></div><script type="module" src="./grid-entry.js"></script>',
-  );
 
   const fixtures = [
     { name: "HysTable" },
@@ -45,7 +40,7 @@ export async function checkGridBundles(root) {
       root,
       configFile: false,
       logLevel: "silent",
-      build: { write: false, rollupOptions: { input: html } },
+      build: { write: false, rollupOptions: { input: entry } },
       plugins: [
         {
           name: "verify-grid-boundaries",
