@@ -43,6 +43,7 @@ export const router=createRouter({history:createWebHistory(import.meta.env.BASE_
 {path:'/components/hys-json-editor',name:'HysJsonEditor',component:()=>import('./pages/HysJsonEditorPage.vue'),meta:{title:'HysJsonEditor JSON 编辑'}},
 {path:'/components/hys-kanban',name:'HysKanban',component:()=>import('./pages/HysKanbanPage.vue'),meta:{title:'HysKanban 看板'}},
 {path:'/components/hys-mention',name:'HysMention',component:()=>import('./pages/HysMentionPage.vue'),meta:{title:'HysMention 提及'}},
+{path:'/components/hys-markdown-editor',name:'HysMarkdownEditor',component:()=>import('./pages/HysMarkdownEditorPage.vue'),meta:{title:'HysMarkdownEditor Markdown 编辑器'}},
 {path:'/components/hys-modal',name:'HysModal',component:()=>import('./pages/HysModalPage.vue'),meta:{title:'HysModal 对话框'}},
 {path:'/components/hys-notification-center',name:'HysNotificationCenter',component:()=>import('./pages/HysNotificationCenterPage.vue'),meta:{title:'HysNotificationCenter 通知中心'}},
 {path:'/components/hys-number-input',name:'HysNumberInput',component:()=>import('./pages/HysNumberInputPage.vue'),meta:{title:'HysNumberInput 数字输入'}},

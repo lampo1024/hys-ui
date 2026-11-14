@@ -103,6 +103,7 @@ function rankExample(path:string) {
  if(props.name==='HysCard'&&scene==='Collapsible')return surfaceOrder.HysCard.indexOf('Content')+.5
  if(props.name==='HysCard'&&scene==='Fullscreen')return surfaceOrder.HysCard.indexOf('Tabs')+.5
  if(props.name==='HysScrollbar')return ['Basic','Timeline','Masks','MaxHeight','Manual','EdgeLoading'].indexOf(scene)
+ if(props.name==='HysMarkdownEditor')return ['Basic','ProjectDocument','DocumentFiles'].indexOf(scene)
  if(props.name==='HysCard'&&scene==='RefreshContent')return surfaceOrder.HysCard.indexOf('Loading')+.5
  if(props.name==='HysPagination'&&scene==='JumpGaps')return surfaceOrder.HysPagination.indexOf('Bounds')+.5
  if(props.name==='HysPagination'&&scene==='PageSizeAnchor')return surfaceOrder.HysPagination.indexOf('Controlled')+.5

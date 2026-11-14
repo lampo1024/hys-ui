@@ -988,6 +988,19 @@ export const catalog=[
     ]
   },
   {
+    "name": "HysMarkdownEditor",
+    "shortName": "MarkdownEditor",
+    "label": "Markdown 编辑器",
+    "slug": "hys-markdown-editor",
+    "category": "编辑工具",
+    "description": "编辑知识库、项目文档和发布说明，查看实时预览并保存 Markdown 源码。",
+    "notes": [
+      "容器达到 760px 时默认分栏，窄屏可在编辑与预览之间切换。",
+      "点击预览中的任务框可修改源码。支持标题大纲、查找替换、下载及导入 UTF-8 .md 文件。",
+      "图片使用 HTTPS 地址。Ctrl / ⌘ + B、I、K、F 分别用于粗体、斜体、链接和查找。"
+    ]
+  },
+  {
     "name": "HysRichTextEditor",
     "shortName": "RichTextEditor",
     "label": "富文本编辑",

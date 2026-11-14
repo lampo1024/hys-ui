@@ -1,10 +1,10 @@
-import { onBeforeUnmount, shallowRef, type Ref } from "vue";
+import { onBeforeUnmount, onDeactivated, shallowRef, type Ref } from "vue";
 import { clamp, scrollbarThumb, type ScrollbarAxis, type ScrollbarGeometry } from "./scrollbarGeometry";
 
 type Thumb = NonNullable<ReturnType<typeof scrollbarThumb>>;
 
 export function useScrollbarDrag(
-  viewport: Readonly<Ref<HTMLElement | null>>,
+  viewport: () => HTMLElement | null | undefined,
   geometry: Readonly<Ref<ScrollbarGeometry | undefined>>,
   thumbs: Readonly<Ref<Record<ScrollbarAxis, Thumb | undefined>>>,
 ) {
@@ -24,7 +24,7 @@ export function useScrollbarDrag(
 
   function move(event: PointerEvent) {
     const gesture = dragging.value;
-    const target = viewport.value;
+    const target = viewport();
     const area = geometry.value;
     if (!gesture || gesture.pointerId !== event.pointerId || !target || !area) return;
     const { track, axis, grabRatio } = gesture;
@@ -65,5 +65,6 @@ export function useScrollbarDrag(
   }
 
   onBeforeUnmount(stop);
+  onDeactivated(stop);
   return { dragging, start, move, finish, stop };
 }

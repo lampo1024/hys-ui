@@ -47,13 +47,13 @@ export interface HysScrollbarInstance {
 </script>
 
 <script setup lang="ts">
-import { computed, onActivated, onDeactivated, ref, shallowRef, useTemplateRef, watch } from "vue";
+import { computed, onActivated, onDeactivated, ref, useTemplateRef, watch } from "vue";
 import { useHysRootAttrs } from "../../config";
 import {
-  edgeTolerance, nonnegative, previousGaps, readScrollbarGeometry, scrollbarAxes, scrollbarEdges,
-  scrollbarThumb, type ScrollbarAxis, type ScrollbarGeometry,
+  edgeTolerance, nonnegative, previousGaps,
 } from "./scrollbarGeometry";
-import { useScrollbarDrag } from "./useScrollbarDrag";
+import ScrollbarOverlay from "./ScrollbarOverlay.vue";
+import { useScrollbarGeometry } from "./useScrollbarGeometry";
 
 const props = withDefaults(defineProps<HysScrollbarProps>(), {
   direction: "both",
@@ -73,7 +73,12 @@ const skin = useHysRootAttrs();
 const viewport = useTemplateRef<HTMLElement>("viewport");
 const view = useTemplateRef<HTMLElement>("view");
 const active = ref(true);
-const geometry = shallowRef<ScrollbarGeometry>();
+const { geometry, update: measure } = useScrollbarGeometry(() => viewport.value, () => view.value, {
+  direction: () => props.direction,
+  autoResize: () => !props.noresize && (!props.native || !!props.mask),
+  observeMutations: true,
+  listenScroll: false,
+});
 const reached = new Set<HysScrollbarEdge>();
 let previous: HysScrollbarPosition | undefined;
 
@@ -85,39 +90,21 @@ function length(value?: number | string) {
 const dimensions = computed(() => ({ height: length(props.height), maxHeight: length(props.maxHeight) }));
 const threshold = computed(() => nonnegative(props.distance) + edgeTolerance);
 const orientation = computed(() => props.ariaOrientation === "undefined" ? undefined : props.ariaOrientation);
-const overlay = computed(() => {
-  const area = geometry.value;
-  if (!area || (props.native && !props.mask)) return;
-  return { top: `${area.top}px`, left: `${area.left}px`, width: `${area.width}px`, height: `${area.height}px` };
-});
-const thumbs = computed(() => {
-  const area = geometry.value;
-  return {
-    vertical: area && scrollbarThumb(area, "vertical", props.minSize),
-    horizontal: area && scrollbarThumb(area, "horizontal", props.minSize),
-  };
-});
-const masks = computed(() => scrollbarEdges.filter(edge => props.mask === true || props.mask === edge));
-const drag = useScrollbarDrag(viewport, geometry, thumbs);
-
-function update() {
+watch([geometry, threshold], ([next, limit]) => {
   const target = viewport.value;
-  if (!target) return;
-  const next = readScrollbarGeometry(target, props.direction);
-  geometry.value = next;
+  if (!target || !next) return;
   for (const edge of reached) {
     const max = edge === "top" || edge === "bottom" ? next.maxY : next.maxX;
-    if (!max || next.gaps[edge] > threshold.value) reached.delete(edge);
+    if (!max || next.gaps[edge] > limit) reached.delete(edge);
   }
   previous ??= { scrollTop: target.scrollTop, scrollLeft: target.scrollLeft };
-  return next;
-}
+}, { flush: "sync" });
 
 function handleScroll() {
   const target = viewport.value;
   if (!target || !active.value) return;
   const before = previous;
-  const area = update();
+  const area = measure();
   const position = { scrollTop: target.scrollTop, scrollLeft: target.scrollLeft };
   previous = position;
   emit("scroll", position);
@@ -155,60 +142,15 @@ function setScrollLeft(value: number) {
   if (viewport.value && Number.isFinite(value)) viewport.value.scrollLeft = value;
 }
 
-watch([viewport, view, active, () => props.noresize, () => props.native, () => props.direction, () => props.distance, () => props.mask],
-  ([target, content, enabled, noresize], _, onCleanup) => {
-    if (!target || !content || !enabled) return;
-    update();
-    if (noresize || (props.native && !props.mask)) return;
-    const owner = target.ownerDocument.defaultView;
-    if (!owner) return;
-    let frame: number | undefined;
-    function schedule() {
-      if (!owner?.requestAnimationFrame) {
-        update();
-        return;
-      }
-      frame ??= owner.requestAnimationFrame(() => {
-        frame = undefined;
-        update();
-      });
-    }
-    const resize = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
-    resize?.observe(target);
-    resize?.observe(content);
-    const mutation = typeof MutationObserver === "undefined" ? undefined : new MutationObserver(schedule);
-    mutation?.observe(content, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class", "style", "hidden", "dir"] });
-    owner.addEventListener("resize", schedule);
-    content.addEventListener("load", schedule, true);
-    content.addEventListener("transitionend", schedule);
-    content.addEventListener("animationend", schedule);
-    onCleanup(() => {
-      if (frame !== undefined) owner.cancelAnimationFrame(frame);
-      resize?.disconnect();
-      mutation?.disconnect();
-      owner.removeEventListener("resize", schedule);
-      content.removeEventListener("load", schedule, true);
-      content.removeEventListener("transitionend", schedule);
-      content.removeEventListener("animationend", schedule);
-    });
-  }, { flush: "post" });
-
 onActivated(() => { active.value = true; });
-onDeactivated(() => {
-  active.value = false;
-  drag.stop();
-});
-watch(() => props.native, (native) => { if (native) drag.stop(); });
-
-const hasThumb = (axis: ScrollbarAxis) => !props.native && thumbs.value[axis];
-defineExpose({ viewport, wrapRef: viewport, handleScroll, scrollTo, scrollBy, setScrollTop, setScrollLeft, update: () => { update(); } });
+onDeactivated(() => { active.value = false; });
+defineExpose({ viewport, wrapRef: viewport, handleScroll, scrollTo, scrollBy, setScrollTop, setScrollLeft, update: () => { measure(); } });
 </script>
 
 <template>
   <div
     v-bind="skin"
     class="hys-ui-scrollbar-root"
-    :class="{ 'hys-ui-scrollbar-always': always, 'hys-ui-scrollbar-dragging': drag.dragging.value }"
     :style="dimensions"
   >
     <div
@@ -235,33 +177,7 @@ defineExpose({ viewport, wrapRef: viewport, handleScroll, scrollTo, scrollBy, se
         :aria-orientation="role ? orientation : undefined"
       ><slot /></component>
     </div>
-    <div v-if="overlay" class="hys-ui-scrollbar-overlay" :style="overlay" aria-hidden="true">
-      <div
-        v-for="edge in masks"
-        :key="edge"
-        class="hys-ui-scrollbar-mask"
-        :data-edge="edge"
-        :data-visible="geometry && geometry.gaps[edge] > edgeTolerance ? '' : undefined"
-      />
-      <template v-for="axis in scrollbarAxes" :key="axis">
-        <div
-          v-if="hasThumb(axis)"
-          class="hys-ui-scrollbar-track"
-          :data-axis="axis"
-          :data-corner="(axis === 'vertical' ? geometry?.maxX : geometry?.maxY) ? '' : undefined"
-          @pointerdown="drag.start($event, axis)"
-          @pointermove="drag.move"
-          @pointerup="drag.finish"
-          @pointercancel="drag.finish"
-          @lostpointercapture="drag.finish"
-        >
-          <div
-            class="hys-ui-scrollbar-thumb"
-            :style="{ '--hys-scrollbar-thumb-size': `${thumbs[axis]?.size}px`, '--hys-scrollbar-offset': `${thumbs[axis]?.offset}px` }"
-          />
-        </div>
-      </template>
-    </div>
+    <ScrollbarOverlay :viewport="viewport" :geometry="geometry" :always="always" :min-size="minSize" :native="native" :mask="mask" />
   </div>
 </template>
 

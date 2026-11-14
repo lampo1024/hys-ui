@@ -19,6 +19,7 @@ const controlledModels = {
   HysRating: '提交的评分值，精度由评分步长与半星配置决定',
   HysResizablePanel: '调整后的面板宽度，单位为像素',
   HysRichTextEditor: '编辑区更新后的 HTML 字符串',
+  HysMarkdownEditor: '用户修改后返回 Markdown 源码字符串。',
   HysSearch: '输入或清空后的关键词字符串，搜索触发时机由 trigger 控制',
   HysSegmented: '本次选中的分段选项值',
   HysSelect: '选择、移除或清空后的值，多选返回数组，labelInValue 开启时选中项包含值和标签',
@@ -841,6 +842,26 @@ const annotations = {
       resizeEnd: '拖动结束或取消时触发，参数为当前生效的宽度',
     },
     slots: { default: '随可调整宽度一起布局的面板内容，接收 { width: number }。' },
+  },
+  HysMarkdownEditor: {
+    props: {
+      modelValue: 'Markdown 源码，默认空字符串。',
+      view: '视图模式 edit、split 或 preview，默认 split。容器宽度不足 760px 时 split 显示为编辑。',
+      placeholder: '源码为空时显示的提示，默认“输入 Markdown…”。',
+      readonly: '默认 false。只读时可预览、查找、复制和下载。',
+      disabled: '默认 false。禁用编辑及所有操作入口。',
+      hideToolbar: '默认 false。隐藏工具栏，可通过 view 配置显示模式。',
+      syncScroll: '默认 true。分栏时按源码行同步左右滚动，可在工具栏中切换。',
+    },
+    events: {
+      'update:view': '用户切换视图时发出，参数为 edit、split 或 preview。',
+      change: '用户修改正文后发出，返回完整 Markdown 源码。外部回写不触发。',
+    },
+    exposed: {
+      focus: '聚焦源码区，当前为预览时先切换到编辑。',
+      blur: '移除源码区焦点。',
+      getMarkdown: '返回当前 Markdown 源码字符串。',
+    },
   },
   HysRichTextEditor: {
     props: {

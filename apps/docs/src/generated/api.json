@@ -15467,6 +15467,113 @@
     ],
     "exposed": []
   },
+  "HysMarkdownEditor": {
+    "props": [
+      {
+        "name": "placeholder",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"输入 Markdown…\"",
+        "description": "源码为空时显示的提示，默认“输入 Markdown…”。",
+        "global": false
+      },
+      {
+        "name": "readonly",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。只读时可预览、查找、复制和下载。",
+        "global": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。禁用编辑及所有操作入口。",
+        "global": false
+      },
+      {
+        "name": "hideToolbar",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。隐藏工具栏，可通过 view 配置显示模式。",
+        "global": false
+      },
+      {
+        "name": "syncScroll",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "默认 true。分栏时按源码行同步左右滚动，可在工具栏中切换。",
+        "global": false
+      },
+      {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"\"",
+        "description": "Markdown 源码，默认空字符串。",
+        "global": false
+      },
+      {
+        "name": "view",
+        "type": "HysMarkdownEditorView | undefined",
+        "required": false,
+        "default": "\"split\"",
+        "description": "视图模式 edit、split 或 preview，默认 split。容器宽度不足 760px 时 split 显示为编辑。",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "update:modelValue",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "用户修改后返回 Markdown 源码字符串。"
+      },
+      {
+        "name": "change",
+        "type": "[markdown: string]",
+        "required": false,
+        "default": "",
+        "description": "用户修改正文后发出，返回完整 Markdown 源码。外部回写不触发。"
+      },
+      {
+        "name": "update:view",
+        "type": "[value: HysMarkdownEditorView]",
+        "required": false,
+        "default": "",
+        "description": "用户切换视图时发出，参数为 edit、split 或 preview。"
+      }
+    ],
+    "slots": [],
+    "exposed": [
+      {
+        "name": "focus",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "聚焦源码区，当前为预览时先切换到编辑。"
+      },
+      {
+        "name": "blur",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "移除源码区焦点。"
+      },
+      {
+        "name": "getMarkdown",
+        "type": "() => string",
+        "required": false,
+        "default": "",
+        "description": "返回当前 Markdown 源码字符串。"
+      }
+    ]
+  },
   "HysMention": {
     "props": [
       {

@@ -1,0 +1,59 @@
+.hys-md-editor {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hys-ui-theme-text);
+  background: var(--hys-ui-theme-surface);
+  border: 1px solid var(--hys-ui-theme-border);
+  border-radius: 12px;
+}
+.hys-md-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: clamp(280px, 47vh, 480px);
+  min-width: 0;
+}
+.hys-md-toolbar + .hys-md-panes, .hys-md-find + .hys-md-panes { border-top: 1px solid var(--hys-ui-theme-border); }
+.hys-md-panes[data-view="split"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hys-md-panes[data-view="split"] .hys-md-source { border-inline-end: 1px solid var(--hys-ui-theme-border); }
+.hys-md-editor .hys-md-source, .hys-md-editor .hys-md-preview, .hys-md-editor .hys-md-code-host { position: relative; min-width: 0; min-height: 0; height: 100%; }
+.hys-md-editor .cm-editor { height: 100%; font-size: 14px; }
+.hys-md-editor .cm-editor.cm-focused { outline: none; box-shadow: inset 0 0 0 1px var(--hys-ui-theme-primary); }
+.hys-md-editor .cm-scroller {
+  outline: none; overflow: auto; scrollbar-width: none;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  line-height: 1.6;
+}
+.hys-md-editor .cm-scroller::-webkit-scrollbar { display: none; }
+.hys-md-editor .cm-content { padding: 14px; caret-color: var(--hys-ui-theme-text); }
+.hys-md-editor .cm-line { padding: 0; }
+.hys-md-editor .cm-editor .cm-placeholder { color: var(--hys-ui-theme-muted); }
+.hys-md-editor .cm-editor .cm-selectionBackground,
+.hys-md-editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background: color-mix(in srgb, var(--hys-ui-theme-primary) 26%, transparent);
+}
+.hys-md-editor .cm-line ::selection { background: color-mix(in srgb, var(--hys-ui-theme-primary) 28%, transparent); }
+.hys-md-editor .hys-md-prose {
+  padding: 14px 20px 22px; min-width: 0; line-height: 1.65; overflow-wrap: anywhere;
+}
+.hys-md-editor .hys-md-prose > :first-child { margin-top: 0; }
+.hys-md-editor .hys-md-prose :is(h1, h2, h3, h4, h5, h6) { margin-block: 1em .45em; line-height: 1.3; }
+.hys-md-editor .hys-md-prose h1 { font-size: 1.65em; }
+.hys-md-editor .hys-md-prose h2 { font-size: 1.35em; }
+.hys-md-editor .hys-md-prose h3 { font-size: 1.15em; }
+.hys-md-editor .hys-md-prose p { margin-block: .65em; }
+.hys-md-editor .hys-md-prose blockquote { margin-inline: 0; padding-inline: 12px; border-inline-start: 3px solid var(--hys-ui-theme-border); color: var(--hys-ui-theme-muted); }
+.hys-md-editor .hys-md-prose a { color: var(--hys-ui-theme-primary); text-underline-offset: 2px; }
+.hys-md-editor .hys-md-prose img { max-width: 100%; height: auto; }
+.hys-md-editor .hys-md-prose .task-list-item { list-style: none; }
+.hys-md-editor .hys-md-prose .task-list-item > .hys-ui-checkbox { vertical-align: middle; }
+.hys-md-editor .hys-md-prose :not(pre) > code { border-radius: 4px; padding: 2px 4px; background: var(--hys-ui-theme-surface-alt); }
+.hys-md-editor .hys-md-code { background: var(--hys-ui-theme-surface-alt); border: 1px solid var(--hys-ui-theme-border); border-radius: 8px; margin-block: 10px; }
+.hys-md-editor .hys-md-code-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 3px 7px 3px 12px; font-size: 12px; color: var(--hys-ui-theme-muted); }
+.hys-md-editor .hys-md-code pre { margin: 0; width: max-content; min-width: 100%; box-sizing: border-box; padding: 10px 12px; border-top: 1px solid var(--hys-ui-theme-border); }
+.hys-md-editor .hys-md-table-scroll { max-width: 100%; }
+.hys-md-editor .hys-md-prose table { border-collapse: collapse; min-width: 100%; }
+.hys-md-editor .hys-md-prose :is(th, td) { min-width: 65px; border: 1px solid var(--hys-ui-theme-border); padding: 5px 9px; }
+.hys-md-editor .hys-md-prose th { background: var(--hys-ui-theme-surface-alt); }
+.hys-md-editor .hys-md-prose hr { border: 0; border-top: 1px solid var(--hys-ui-theme-border); }
+.hys-md-editor .hys-md-empty, .hys-md-editor .hys-md-status { margin: 0; padding: 10px 14px; color: var(--hys-ui-theme-muted); font-size: 13px; }
+.hys-md-import-note { margin: 0; overflow-wrap: anywhere; }

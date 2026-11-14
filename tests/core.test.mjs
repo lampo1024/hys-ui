@@ -2,7 +2,7 @@ import {test,afterEach} from 'node:test'
 import assert from 'node:assert/strict'
 import {JSDOM} from 'jsdom'
 const dom=new JSDOM('<!doctype html><html><body></body></html>',{url:'http://localhost',pretendToBeVisual:true})
-for(const name of ['window','document','Document','ShadowRoot','Node','Element','HTMLElement','SVGElement','HTMLInputElement','HTMLTextAreaElement','HTMLButtonElement','HTMLSelectElement','HTMLFormElement','Event','FocusEvent','MouseEvent','KeyboardEvent','MutationObserver'])globalThis[name]=dom.window[name]
+for(const name of ['window','Window','document','Document','ShadowRoot','Node','Element','HTMLElement','SVGElement','HTMLInputElement','HTMLTextAreaElement','HTMLButtonElement','HTMLSelectElement','HTMLFormElement','Event','FocusEvent','MouseEvent','KeyboardEvent','MutationObserver'])globalThis[name]=dom.window[name]
 globalThis.getComputedStyle=dom.window.getComputedStyle.bind(dom.window)
 globalThis.requestAnimationFrame=dom.window.requestAnimationFrame.bind(dom.window)
 globalThis.cancelAnimationFrame=dom.window.cancelAnimationFrame.bind(dom.window)
@@ -10,6 +10,8 @@ window.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener()
 HTMLElement.prototype.getBoundingClientRect=function(){return {x:20,y:20,left:20,top:20,right:320,bottom:60,width:300,height:40,toJSON(){return {}}}}
 HTMLElement.prototype.getClientRects=function(){return [this.getBoundingClientRect()]}
 HTMLElement.prototype.scrollIntoView=function(){}
+window.Range.prototype.getClientRects=function(){return []}
+window.Range.prototype.getBoundingClientRect=function(){return new window.DOMRect()}
 if(!('inert' in HTMLElement.prototype))Object.defineProperty(HTMLElement.prototype,'inert',{configurable:true,get(){return this.hasAttribute('inert')},set(value){this.toggleAttribute('inert',!!value)}})
 const {createApp,h,reactive,ref,nextTick,KeepAlive,defineComponent}=await import('vue')
 const ui=await import('../packages/ui/dist/index.js')
@@ -185,6 +187,53 @@ test('CalendarNavigation bounds year changes and emits UTC month starts', async 
   assert.equal(calendar.find('[aria-label="下一年"]').disabled, true);
   await fire(calendar.all('button').find(button => button.textContent.trim() === '回到本月'), 'click');
   assert.equal(calendar.find('[aria-label="下个月"]').disabled, true);
+});
+
+test('MarkdownEditor task changes and undo publish the source once, and readonly still renders it', async () => {
+  const initial = '# 发布\n\n- [ ] 核对库存';
+  const editor = await mount(ui.HysMarkdownEditor, { modelValue: initial, view: 'preview' });
+  const checkbox = editor.find('input[type=checkbox]');
+  assert(checkbox);
+  await fire(checkbox, 'click');
+  await pause(125);
+  const updated = initial.replace('[ ]', '[x]');
+  assert.equal(editor.vm.getMarkdown(), updated);
+  assert.deepEqual(editor.events['update:modelValue'], [[updated]]);
+  assert.deepEqual(editor.events.change, [[updated]]);
+  assert.equal(editor.find('input[type=checkbox]').checked, true);
+  const button = name => editor.find(`button[aria-label="${name}"]`);
+  await fire(button('更多 Markdown 操作'), 'click');
+  const undo = [...document.querySelectorAll('[role=dialog] button')].find(element => element.textContent === '撤销');
+  await fire(undo, 'click');
+  assert.equal(editor.vm.getMarkdown(), initial);
+  editor.props.readonly = true;
+  editor.props.view = 'preview';
+  await nextTick();
+  await pause(125);
+  await fire(editor.find('input[type=checkbox]'), 'click');
+  assert.equal(editor.events.change.length, 2);
+  editor.props.modelValue = '# 外部替换';
+  await nextTick();
+  await pause(125);
+  assert.equal(editor.vm.getMarkdown(), '# 外部替换');
+  assert.equal(editor.find('.hys-md-prose h1').textContent, '外部替换');
+  assert.equal(editor.events.change.length, 2);
+});
+
+test('MarkdownEditor drops an open insertion when the parent replaces the source', async () => {
+  const form = await mount(ui.HysMarkdownEditor, { modelValue: 'Initial text' });
+  const source = form.find('.cm-content');
+  source.focus();
+  await fire(source, 'keydown', { key: 'k', code: 'KeyK', ctrlKey: true });
+  const dialog = document.querySelector('[role=dialog]');
+  assert.match(dialog.textContent, /插入链接/);
+  const insert = [...dialog.querySelectorAll('footer button')].find(button => button.textContent === '插入');
+  form.props.modelValue = '# Replacement';
+  await nextTick();
+  await fire(insert, 'click');
+  assert.equal(form.vm.getMarkdown(), '# Replacement');
+  assert.equal(source.textContent, '# Replacement');
+  assert.equal(form.events.change, undefined);
 });
 
 test('RichTextEditor strips executable HTML while preserving formatting on mount and updates', async () => {

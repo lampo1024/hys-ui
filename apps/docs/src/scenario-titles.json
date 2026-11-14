@@ -549,6 +549,11 @@
     "HysJsonEditor": {
       "IndentOnEnter": "配置编辑 · 换行自动缩进",
       "Configuration": "任务配置 · 压缩与业务校验" },
+    "HysMarkdownEditor": {
+      "Basic": "发布说明 · 排版、任务清单与实时预览",
+      "ProjectDocument": "项目文档 · 表格、代码、大纲与查找替换",
+      "DocumentFiles": "文档流转 · 导入、撤销与导出"
+    },
     "HysRichTextEditor": {
       "TextCount": "交付摘要 · 字符统计与纯文本",
       "BlockTools": "交付摘要 · 段落格式与粘贴模式" },
