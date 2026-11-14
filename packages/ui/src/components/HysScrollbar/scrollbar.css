@@ -1,0 +1,120 @@
+.hys-ui-scrollbar-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.hys-ui-scrollbar-viewport {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.hys-ui-scrollbar-viewport[data-direction="vertical"] { overflow-x: hidden; }
+.hys-ui-scrollbar-viewport[data-direction="horizontal"] { overflow-y: hidden; }
+.hys-ui-scrollbar-viewport:focus-visible {
+  outline: 2px solid var(--hys-ui-primary, var(--hys-ui-theme-primary));
+  outline-offset: -2px;
+}
+
+.hys-ui-scrollbar-custom { scrollbar-width: none; }
+.hys-ui-scrollbar-custom::-webkit-scrollbar { display: none; }
+.hys-ui-scrollbar-native { scrollbar-color: auto; }
+
+.hys-ui-scrollbar-overlay {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hys-ui-scrollbar-track {
+  position: absolute;
+  z-index: 1;
+  border-radius: 8px;
+  opacity: 0;
+  background: var(--hys-ui-scrollbar-track, transparent);
+  touch-action: none;
+  user-select: none;
+  cursor: default;
+  transition: opacity 160ms ease;
+}
+
+.hys-ui-scrollbar-root:is(:hover, .hys-ui-scrollbar-always, .hys-ui-scrollbar-dragging) .hys-ui-scrollbar-track {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hys-ui-scrollbar-track[data-axis="vertical"] {
+  inset: 4px 2px 4px auto;
+  width: 12px;
+}
+.hys-ui-scrollbar-track[data-axis="horizontal"] {
+  inset: auto 4px 2px 4px;
+  height: 12px;
+}
+.hys-ui-scrollbar-track[data-axis="vertical"][data-corner] { bottom: 14px; }
+.hys-ui-scrollbar-track[data-axis="horizontal"][data-corner] { right: 14px; }
+
+.hys-ui-scrollbar-thumb {
+  position: absolute;
+  border-radius: inherit;
+  background: var(--hys-ui-scrollbar-thumb, color-mix(in srgb, var(--hys-ui-muted, var(--hys-ui-theme-muted, #74829b)) 64%, transparent));
+}
+.hys-ui-scrollbar-track[data-axis="vertical"] .hys-ui-scrollbar-thumb {
+  inset: 0 3px auto;
+  height: var(--hys-scrollbar-thumb-size);
+  transform: translateY(var(--hys-scrollbar-offset));
+}
+.hys-ui-scrollbar-track[data-axis="horizontal"] .hys-ui-scrollbar-thumb {
+  inset: 3px auto 3px 0;
+  width: var(--hys-scrollbar-thumb-size);
+  transform: translateX(var(--hys-scrollbar-offset));
+}
+.hys-ui-scrollbar-track:hover .hys-ui-scrollbar-thumb,
+.hys-ui-scrollbar-dragging .hys-ui-scrollbar-thumb {
+  background: var(--hys-ui-scrollbar-thumb-hover, var(--hys-ui-scrollbar-thumb, var(--hys-ui-muted, var(--hys-ui-theme-muted, #74829b))));
+}
+
+.hys-ui-scrollbar-mask {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  --hys-scrollbar-mask-surface: var(--hys-ui-surface, var(--hys-ui-theme-surface, #fff));
+}
+.hys-ui-scrollbar-mask[data-visible] { opacity: 1; }
+.hys-ui-scrollbar-mask[data-edge="top"] {
+  inset: 0 0 auto;
+  height: var(--hys-ui-scrollbar-top-mask-height, 40px);
+  background: linear-gradient(to bottom, var(--hys-ui-scrollbar-top-mask-color, var(--hys-scrollbar-mask-surface)), transparent);
+}
+.hys-ui-scrollbar-mask[data-edge="bottom"] {
+  inset: auto 0 0;
+  height: var(--hys-ui-scrollbar-bottom-mask-height, 40px);
+  background: linear-gradient(to top, var(--hys-ui-scrollbar-bottom-mask-color, var(--hys-scrollbar-mask-surface)), transparent);
+}
+.hys-ui-scrollbar-mask[data-edge="left"] {
+  inset: 0 auto 0 0;
+  width: var(--hys-ui-scrollbar-left-mask-width, 40px);
+  background: linear-gradient(to right, var(--hys-ui-scrollbar-left-mask-color, var(--hys-scrollbar-mask-surface)), transparent);
+}
+.hys-ui-scrollbar-mask[data-edge="right"] {
+  inset: 0 0 0 auto;
+  width: var(--hys-ui-scrollbar-right-mask-width, 40px);
+  background: linear-gradient(to left, var(--hys-ui-scrollbar-right-mask-color, var(--hys-scrollbar-mask-surface)), transparent);
+}
+
+.hys-ui-scrollbar-root[data-hys-motion="off"] :is(.hys-ui-scrollbar-track, .hys-ui-scrollbar-mask) { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .hys-ui-scrollbar-track, .hys-ui-scrollbar-mask { transition: none; }
+}
+@media (forced-colors: active) {
+  .hys-ui-scrollbar-custom { scrollbar-width: auto; }
+  .hys-ui-scrollbar-custom::-webkit-scrollbar { display: block; }
+  .hys-ui-scrollbar-overlay { display: none; }
+}

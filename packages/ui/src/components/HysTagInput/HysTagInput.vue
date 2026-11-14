@@ -244,7 +244,7 @@ defineExpose({
           </button></template
         >
         <div
-          class="hys-ui-tag-overflow"
+          class="hys-ui-tag-overflow hys-ui-scrollbar"
           :style="{
             maxHeight: overflowHeight + 'px',
             height: Math.min(omitted.length * 36, overflowHeight) + 'px',
@@ -620,7 +620,6 @@ defineExpose({
 .hys-ui-tag-overflow {
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
 }
 .hys-ui-tag-overflow-row {
   display: flex;

@@ -120,6 +120,22 @@ test("XLSX writes typed values, cached formulas, metadata and layout to the expe
   assert.equal(book.sheets[1].rows[0][0], "='销售'!B3");
 });
 
+test("XLSX retains the default display formats of typed percentage, currency and multiline cells", () => {
+  const values = [0.125, 1248.5, "第一行\n第二行", "09:05:30", "2028-02-29T16:05:25"];
+  const bytes = encodeXlsx({ sheets: [{
+    id: "s", name: "Typed", rows: [values],
+    cells: {
+      A1: { type: "percent" }, B1: { type: "currency" }, C1: { type: "multiline" },
+      D1: { type: "time" }, E1: { type: "datetime-local" },
+    },
+  }] });
+  const [sheet] = decodeXlsx(bytes).sheets;
+  assert.deepEqual(sheet.rows[0], values);
+  assert.equal(sheet.formats.A1.number, "percent");
+  assert.equal(sheet.formats.B1.number, "currency");
+  assert.equal(sheet.formats.C1.overflow, "wrap");
+});
+
 test("XLSX rejects corrupt or over-limit data without a truncated workbook", () => {
   assert.throws(() => decodeXlsx(new Uint8Array([1, 2, 3, 4])));
   assert.throws(

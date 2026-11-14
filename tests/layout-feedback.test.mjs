@@ -16,7 +16,7 @@ for (const name of [
   globalThis[name] = dom.window[name];
 const { Comment, Fragment, createApp, h, nextTick, reactive, ref } =
   await import("vue");
-const { HysDescriptions, HysResult, HysSpace } =
+const { HysDescriptions, HysResult, HysScrollbar, HysSpace } =
   await import("../packages/ui/dist/index.js");
 const apps = [];
 function mount(render) {
@@ -31,6 +31,106 @@ afterEach(() => {
   for (const app of apps.splice(0)) app.unmount();
   document.body.replaceChildren();
   delete globalThis.ResizeObserver;
+});
+
+test("Scrollbar exposes its viewport and reports native scroll coordinates", async () => {
+  const scrollbar = ref();
+  const direction = ref("vertical");
+  const positions = [];
+  const host = mount(() =>
+    h(HysScrollbar, {
+      ref: scrollbar,
+      direction: direction.value,
+      ariaLabel: "Activity",
+      wrapClass: "test-wrap",
+      wrapStyle: { overscrollBehavior: "contain" },
+      viewClass: "test-view",
+      viewStyle: { color: "red" },
+      tag: "section",
+      id: "activity-view",
+      height: 180,
+      maxHeight: "50dvh",
+      onScroll: (position) => positions.push(position),
+    }, () => "Content"),
+  );
+  const root = host.firstElementChild;
+  const viewport = root.querySelector(".test-wrap");
+  assert.equal(scrollbar.value.viewport, viewport);
+  assert.equal(scrollbar.value.wrapRef, viewport);
+  assert.equal(viewport.getAttribute("role"), "region");
+  assert.equal(viewport.getAttribute("aria-label"), "Activity");
+  assert.equal(viewport.tabIndex, 0);
+  assert.equal(root.style.height, "180px");
+  assert.equal(root.style.maxHeight, "50dvh");
+  assert.equal(viewport.style.overscrollBehavior, "contain");
+  assert.equal(viewport.dataset.direction, "vertical");
+  assert.equal(viewport.querySelector("section#activity-view.test-view").textContent, "Content");
+  assert.equal(viewport.querySelector("#activity-view").style.color, "red");
+
+  const calls = [];
+  viewport.scrollTo = (...options) => calls.push(["to", ...options]);
+  viewport.scrollBy = (options) => calls.push(["by", options]);
+  scrollbar.value.scrollTo({ top: 80 });
+  scrollbar.value.scrollTo(12, 25);
+  scrollbar.value.scrollBy({ left: 12, behavior: "smooth" });
+  assert.deepEqual(calls, [["to", { top: 80 }], ["to", 12, 25], ["by", { left: 12, behavior: "smooth" }]]);
+
+  viewport.scrollTop = 80;
+  viewport.scrollLeft = 12;
+  viewport.dispatchEvent(new dom.window.Event("scroll"));
+  assert.deepEqual(positions, [{ scrollTop: 80, scrollLeft: 12 }]);
+
+  direction.value = "horizontal";
+  await nextTick();
+  assert.equal(viewport.dataset.direction, "horizontal");
+});
+
+test("Scrollbar reports each reached edge once per entry and handles physical RTL edges", async () => {
+  const end = [];
+  const scrollbar = ref();
+  const host = mount(() => h(HysScrollbar, {
+    ref: scrollbar,
+    mask: true,
+    distance: 20,
+    noresize: true,
+    wrapStyle: { direction: "rtl" },
+    onEndReached: edge => end.push(edge),
+  }));
+  const { viewport, handleScroll, setScrollLeft, setScrollTop, update } = scrollbar.value;
+  let contentHeight = 300;
+  Object.defineProperties(viewport, {
+    clientWidth: { value: 100 },
+    clientHeight: { value: 100 },
+    scrollWidth: { value: 300 },
+    scrollHeight: { get: () => contentHeight },
+  });
+  const visible = () => [...host.querySelectorAll("[data-edge][data-visible]")].map(el => el.dataset.edge);
+  update();
+  await nextTick();
+  assert.deepEqual(visible(), ["bottom", "left"]);
+
+  setScrollTop(185);
+  setScrollLeft(-195);
+  handleScroll();
+  setScrollTop(195);
+  setScrollLeft(-200);
+  handleScroll();
+  handleScroll();
+  await nextTick();
+  assert.deepEqual(end, ["bottom", "left"]);
+  assert.deepEqual(visible(), ["top", "bottom", "right"]);
+
+  setScrollTop(0);
+  setScrollLeft(0);
+  handleScroll();
+  assert.deepEqual(end, ["bottom", "left", "top", "right"]);
+  setScrollTop(200);
+  handleScroll();
+  contentHeight += 200;
+  update();
+  setScrollTop(400);
+  handleScroll();
+  assert.deepEqual(end, ["bottom", "left", "top", "right", "bottom", "bottom"]);
 });
 
 test("Space ignores conditional placeholders and keeps keyed controls across fragment updates", async () => {

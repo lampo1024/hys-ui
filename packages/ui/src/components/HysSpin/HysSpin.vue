@@ -366,7 +366,7 @@ defineExpose({
           v-if="showLayer"
           ref="panel"
           v-bind="skin"
-          class="hys-spin-layer"
+          class="hys-spin-layer hys-ui-scrollbar"
           :style="[
             rootStyle,
             { zIndex: overlay?.zIndex.value ?? options.zIndex },

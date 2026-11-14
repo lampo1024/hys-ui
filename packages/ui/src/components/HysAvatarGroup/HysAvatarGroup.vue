@@ -302,7 +302,7 @@ export default defineComponent({
                     role: "group",
                     "aria-label": "其余成员",
                     tabindex: -1,
-                    class: "hys-ui-avatar-group-popover",
+                    class: "hys-ui-avatar-group-popover hys-ui-scrollbar",
                     style: floating.style.value,
                     onPointerenter: clear,
                     onPointerleave: leave,

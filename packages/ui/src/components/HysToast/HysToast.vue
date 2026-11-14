@@ -478,7 +478,7 @@ defineExpose({
               }}</slot>
             </div>
             <div
-              class="hys-ui-toast-message"
+              class="hys-ui-toast-message hys-ui-scrollbar"
               :class="{ 'hys-ui-toast-clamped': options.maxLines && !expanded }"
             >
               <slot v-bind="actions.context()">{{ options.message }}</slot>

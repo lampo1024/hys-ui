@@ -1,16 +1,12 @@
 import {
   cellAddress,
   parseAddress,
-  sameSheetName,
   sheetLimits,
   sheetWidth,
   shiftWorkbook,
 } from "./spreadsheetModel";
-import {
-  offsetFormula,
-  rewriteReferences,
-  sheetName,
-} from "./spreadsheetReferences";
+import { offsetFormula } from "./spreadsheetReferences";
+import { moveAxisReferences } from "./spreadsheetAxisReferences";
 import { moveSortRowOrder } from "./spreadsheetSortOrder";
 import type {
   HysSpreadsheetAxis as Axis,
@@ -291,42 +287,14 @@ export function updateAxis(
   const order = Array.from({ length }, (_, position) => position);
   order.splice(to, 0, ...order.splice(index, count));
   const positions = new Map(order.map((old, position) => [old, position]));
-  function address(key: string, destination?: number) {
-    const point = parseAddress(key);
-    if (!point) return key;
-    point[axis] = destination ?? positions.get(point[axis]) ?? point[axis];
-    const columnMarker = key.startsWith("$") ? "$" : "";
-    const rowMarker = /\$\d/.test(key) ? "$" : "";
-    const label = cellAddress(point.row, point.column);
-    return columnMarker + label.replace(/\d+$/, rowMarker + (point.row + 1));
-  }
-  function reference(first: string, last?: string) {
-    if (!last) return address(first);
-    const start = parseAddress(first)?.[axis],
-      end = parseAddress(last)?.[axis];
-    if (start === undefined || end === undefined)
-      return `${address(first)}:${address(last)}`;
-    const lower = Math.min(start, end),
-      upper = Math.max(start, end);
-    // References remain rectangular. Include every moved position that was in the range.
-    let minimum = upper >= length ? Math.max(lower, length) : Infinity;
-    let maximum = upper >= length ? upper : -Infinity;
-    for (let index = lower; index <= Math.min(upper, length - 1); index++) {
-      const mapped = positions.get(index)!;
-      minimum = Math.min(minimum, mapped);
-      maximum = Math.max(maximum, mapped);
-    }
-    return start <= end
-      ? `${address(first, minimum)}:${address(last, maximum)}`
-      : `${address(first, maximum)}:${address(last, minimum)}`;
-  }
+  const references = moveAxisReferences(axis, positions, sheet.name);
   const rows =
     axis === "row"
       ? order.map((position) => sheet.rows[position])
       : sheet.rows.map((row) => order.map((position) => row[position] ?? null));
   const formats = Object.fromEntries(
     Object.entries(sheet.formats ?? {}).map(([key, value]) => [
-      address(key),
+      references.address(key),
       value,
     ]),
   );
@@ -351,7 +319,7 @@ export function updateAxis(
             key,
             {
               ...named,
-              range: reference(first, last),
+              range: references.rectangularReference(first, last),
             },
           ];
         }),
@@ -361,15 +329,7 @@ export function updateAxis(
       rows: item.rows.map((row) =>
         row.map((value) => {
           if (typeof value !== "string" || !value.startsWith("=")) return value;
-          return rewriteReferences(value, (first, last, qualifier) => {
-            const match = qualifier
-              ? sameSheetName(sheetName(qualifier), sheet.name)
-              : item.id === sheet.id;
-            const range = match
-              ? reference(first, last)
-              : first + (last ? ":" + last : "");
-            return (qualifier ? qualifier + "!" : "") + range;
-          });
+          return references.formula(value, item.id === sheet.id);
         }),
       ),
     })),

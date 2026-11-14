@@ -836,7 +836,7 @@ defineExpose({
     </div>
     <div
       v-if="panelVisible"
-      class="hys-ui-tabs-content"
+      class="hys-ui-tabs-content hys-ui-scrollbar"
       :data-swipe="options.swipe || undefined"
       @pointerdown="ownsGesture($event) && pointer.swipeDown($event)"
       @pointerup="ownsGesture($event) && pointer.swipeUp($event)"

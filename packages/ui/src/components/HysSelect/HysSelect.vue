@@ -1424,7 +1424,7 @@ defineExpose({
             :aria-label="ariaLabel || fieldLabel || '可选项'"
             :aria-multiselectable="multiple || undefined"
             :aria-busy="busy || undefined"
-            class="hys-ui-select-list"
+            class="hys-ui-select-list hys-ui-scrollbar"
             :style="{
               maxHeight: 'min(' + safeHeight + 'px, 45dvh)',
             }"

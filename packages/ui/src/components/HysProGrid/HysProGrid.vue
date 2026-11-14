@@ -196,8 +196,8 @@ const editorScope = computed<HysProGridEditorScope<T> | undefined>(() => {
     inputId,
     errorId: error.value ? inputId + "-feedback" : undefined,
     setDraft: edit.setDraft,
-    commit: () => edit.commit(),
-    cancel: () => edit.cancel(),
+    commit: (restoreFocus) => edit.commit(restoreFocus),
+    cancel: (restoreFocus) => edit.cancel("cancel", restoreFocus),
   };
 });
 
@@ -281,12 +281,19 @@ function typeInCell(event: KeyboardEvent) {
     return;
   const columnKey = cell.dataset.columnKey!;
   const editor = columnsByKey.value.get(columnKey)?.editor;
-  if (editor?.type !== "text" && editor?.type !== "number") return;
+  if (
+    editor?.type !== "text" && editor?.type !== "number" &&
+    !(editor?.type === "custom" && editor.typeToEdit)
+  ) return;
   const rowToken = cell.parentElement?.dataset.gridRow;
   const view = grid.value?.getCellView() as HysDataGridCellView<T> | undefined;
   const rowKey = view?.rowKeys.find((key) => gridKeyToken(key) === rowToken);
   const context =
     rowKey === undefined ? undefined : view?.getCell(rowKey, columnKey);
+  if (context && editor.type === "custom") {
+    const active = proCell(context);
+    if (!active || !editor.typeToEdit?.(active)) return;
+  }
   if (context && edit.begin(context, event.key)) event.preventDefault();
 }
 

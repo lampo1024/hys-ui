@@ -359,7 +359,7 @@ defineExpose({
     :aria-label="words.tree"
     :aria-multiselectable="store.multiple.value || undefined"
     :aria-busy="busy || loadingKeys.size > 0 || undefined"
-    class="hys-ui-tree-select-list"
+    class="hys-ui-tree-select-list hys-ui-scrollbar"
     :class="{ 'hys-ui-tree-select-virtual': virtual }"
     :style="{
       maxHeight: limit + 'px',
@@ -501,7 +501,6 @@ defineExpose({
   flex: 1 1 auto;
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
   padding: 2px;
   box-sizing: border-box;
 }

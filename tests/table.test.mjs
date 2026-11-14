@@ -425,6 +425,8 @@ test("Table sticky scrollbar does not overwrite pending input during a geometry 
     await pause(40);
     const bar = document.querySelector(".hys-ui-table-sticky-scrollbar");
     assert(bar);
+    assert(viewport.classList.contains("hys-ui-scrollbar"));
+    assert(bar.classList.contains("hys-ui-scrollbar"));
     assert.equal(a.find("thead").style.top, "108px");
     bar.scrollLeft = 120;
     window.dispatchEvent(new Event("scroll"));
@@ -438,6 +440,12 @@ test("Table sticky scrollbar does not overwrite pending input during a geometry 
     assert.equal(bar.scrollLeft, 200);
     viewport.scrollLeft = 240;
     await fire(bar, "scroll");
+    assert.equal(viewport.scrollLeft, 240);
+
+    a.props.nativeScrollbar = true;
+    await nextTick();
+    assert(viewport.classList.contains("hys-ui-table-native-scrollbar"));
+    assert(bar.classList.contains("hys-ui-table-native-scrollbar"));
     assert.equal(viewport.scrollLeft, 240);
 
     a.props.sticky = false;

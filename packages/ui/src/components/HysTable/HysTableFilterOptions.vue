@@ -102,6 +102,7 @@ function toggle(option: HysTableFilter, checked: boolean) {
     />
     <HysTree
       v-if="mode === 'tree'"
+      class="hys-ui-scrollbar"
       :searchable="false"
       :nodes="nodes"
       :checked-keys="values.map(token)"
@@ -125,7 +126,7 @@ function toggle(option: HysTableFilter, checked: boolean) {
           setKeys(key === null ? [] : Array.isArray(key) ? key : [key])
       "
     />
-    <div v-else class="hys-ui-table-filter-options">
+    <div v-else class="hys-ui-table-filter-options hys-ui-scrollbar">
       <template v-for="(option, index) in visible" :key="token(option.value)">
         <HysCheckbox
           v-if="multiple"

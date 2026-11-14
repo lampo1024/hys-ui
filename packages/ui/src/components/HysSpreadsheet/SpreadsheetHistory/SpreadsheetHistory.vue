@@ -70,7 +70,7 @@ function submit() {
     <template v-if="panel === 'comments'">
       <div v-if="address" class="entries">
         <p class="address">{{ address }}</p>
-        <ul v-if="comments?.length">
+        <ul v-if="comments?.length" class="hys-ui-scrollbar">
           <li
             v-for="comment in comments"
             :key="comment.id"
@@ -145,7 +145,7 @@ function submit() {
         </div>
         <div v-if="version" aria-live="polite">
           <p>{{ differences.length }} {{ message("格内容有变化") }}</p>
-          <ul>
+          <ul class="hys-ui-scrollbar">
             <li
               v-for="cell in differences.slice(0, 25)"
               :key="cell.sheetId + cell.address"

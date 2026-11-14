@@ -74,7 +74,6 @@ const workbook: HysSpreadsheetWorkbook = {
       storage-key="hys-ui-docs-inventory"
       :autosave="800"
       author="盘点员"
-      show-edit-actions
     />
     <p class="scenario-note">
       双击 B3 输入负数可查看校验提示。将 C3

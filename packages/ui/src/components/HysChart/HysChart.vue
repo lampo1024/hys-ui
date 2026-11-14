@@ -11,6 +11,7 @@ import {
 } from "vue";
 import { useHysRootAttrs } from "../../config";
 import HysButton from "../HysButton/HysButton.vue";
+import HysScrollbar from "../HysScrollbar/HysScrollbar.vue";
 import HysTooltip from "../HysTooltip/HysTooltip.vue";
 import { chartData, chartReferences, type ChartEntry } from "./chartModel";
 import { cartesianLayout } from "./cartesianLayout";
@@ -519,7 +520,7 @@ function axisLabel(value: number, axis: "x" | "y") {
       placement="top"
       class="hys-chart-tooltip"
     />
-    <div v-if="showTable && tableEntries.length" class="hys-chart-table">
+    <HysScrollbar v-if="showTable && tableEntries.length" aria-label="图表数据明细" class="hys-chart-table">
       <table>
         <thead>
           <tr>
@@ -542,7 +543,7 @@ function axisLabel(value: number, axis: "x" | "y") {
           </tr>
         </tbody>
       </table>
-    </div>
+    </HysScrollbar>
   </figure>
 </template>
 

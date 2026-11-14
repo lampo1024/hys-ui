@@ -57,6 +57,7 @@ export const router=createRouter({history:createWebHistory(import.meta.env.BASE_
 {path:'/components/hys-rating',name:'HysRating',component:()=>import('./pages/HysRatingPage.vue'),meta:{title:'HysRating 评分'}},
 {path:'/components/hys-resizable-panel',name:'HysResizablePanel',component:()=>import('./pages/HysResizablePanelPage.vue'),meta:{title:'HysResizablePanel 可调整面板'}},
 {path:'/components/hys-result',name:'HysResult',component:()=>import('./pages/HysResultPage.vue'),meta:{title:'HysResult 结果反馈'}},
+{path:'/components/hys-scrollbar',name:'HysScrollbar',component:()=>import('./pages/HysScrollbarPage.vue'),meta:{title:'HysScrollbar 滚动条'}},
 {path:'/components/hys-rich-text-editor',name:'HysRichTextEditor',component:()=>import('./pages/HysRichTextEditorPage.vue'),meta:{title:'HysRichTextEditor 富文本编辑'}},
 {path:'/components/hys-search',name:'HysSearch',component:()=>import('./pages/HysSearchPage.vue'),meta:{title:'HysSearch 搜索框'}},
 {path:'/components/hys-segmented',name:'HysSegmented',component:()=>import('./pages/HysSegmentedPage.vue'),meta:{title:'HysSegmented 分段选择'}},

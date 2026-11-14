@@ -470,7 +470,7 @@ defineExpose({
       '--hys-ui-split-preview': (preview ?? 0) / 100,
     }"
   >
-    <div :id="firstId" ref="firstPane" class="hys-ui-ent-split-first" :inert="firstScope.collapsed">
+    <div :id="firstId" ref="firstPane" class="hys-ui-ent-split-first hys-ui-scrollbar" :inert="firstScope.collapsed">
       <slot name="first" v-bind="firstScope" />
     </div>
     <div ref="bar" class="hys-ui-splitter-bar">
@@ -523,7 +523,7 @@ defineExpose({
         <slot name="second-collapse" v-bind="secondScope"><component :is="secondScope.collapsed ? prevIcon : nextIcon" :size="13" /></slot>
       </button>
     </div>
-    <div :id="secondId" ref="secondPane" class="hys-ui-ent-split-second" :inert="secondScope.collapsed">
+    <div :id="secondId" ref="secondPane" class="hys-ui-ent-split-second hys-ui-scrollbar" :inert="secondScope.collapsed">
       <slot name="second" v-bind="secondScope" />
     </div>
     <div v-if="preview !== undefined" class="hys-ui-splitter-preview" aria-hidden="true" />

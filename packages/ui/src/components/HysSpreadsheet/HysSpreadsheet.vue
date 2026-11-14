@@ -21,16 +21,18 @@ import {
   areaFromAddresses,
   canEdit,
   displayValue,
-  fillValues,
+  draftText,
   formatStyle,
   isCellValue,
   parseTyped,
   points,
   safeLink,
+  typedFormat,
   validPoint,
   validateCell,
   withValues,
 } from "./spreadsheetCells";
+import { fillValues } from "./spreadsheetFill";
 import {
   conditionalCells,
   filtered,
@@ -125,7 +127,6 @@ import {
   columnLabel,
   normalizeWorkbook,
   parseAddress,
-  parseCellInput,
   sheetLimits,
   sheetWidth,
   updateSheet,
@@ -149,6 +150,7 @@ import type {
   HysSpreadsheetFilterFunction,
   HysSpreadsheetFindOptions,
   HysSpreadsheetInstance,
+  HysSpreadsheetArea,
   HysSpreadsheetFillMode,
   HysSpreadsheetPasteMode,
   HysSpreadsheetPresence,
@@ -711,8 +713,8 @@ const lastCopy = shallowRef<{
   rows: HysSpreadsheetValue[][];
   formats: (HysSpreadsheetCellFormat | undefined)[][];
   values: HysSpreadsheetValue[][];
-  top: number;
-  left: number;
+  rowIndices: number[];
+  columnIndices: number[];
 }>();
 const formatBrush = shallowRef<HysSpreadsheetCellFormat>();
 const searchResults = shallowRef<string[]>([]);
@@ -770,6 +772,7 @@ const dragPoint = shallowRef<{
   column: number;
   sheetId: string;
 }>();
+const fillPreview = shallowRef<HysSpreadsheetArea>();
 const formulaText = ref("");
 const addressText = ref("");
 const storage = useSpreadsheetPersistence(
@@ -913,6 +916,7 @@ const gridOptions = computed(() => ({
   rowClassName: ({ row }: { row: GridRow }) =>
     sheet.value.rowOptions?.[row.index]?.size !== undefined ? "hys-ui-spreadsheet-row-sized" : undefined,
   cellStyle: spreadsheetCellStyle,
+  cellClassName: spreadsheetCellClass,
   headerClassName: ({ column }: { column: { key: string } }) =>
     columnDrag.headerClass(Number(column.key)),
   commitColumnWidth: resizeSheetColumn,
@@ -950,9 +954,9 @@ function spreadsheetCellStyle({
       top += active.rowOptions?.[line]?.size ?? 35;
   return {
     ...formatStyle(
-      appearance
+      typedFormat(active.cells?.[address], appearance
         ? { ...active.formats?.[address], ...appearance.format }
-        : active.formats?.[address],
+        : active.formats?.[address]),
     ),
     backgroundImage: appearance?.backgroundImage,
     "--hys-ui-spreadsheet-cell-image": appearance?.backgroundImage,
@@ -979,6 +983,16 @@ function spreadsheetCellStyle({
         }
       : {}),
   };
+}
+
+function spreadsheetCellClass({ row, column }: { row: GridRow; column: { key: string } }) {
+  const preview = fillPreview.value;
+  const origin = rectangle.value;
+  if (!preview || !origin) return;
+  const index = Number(column.key);
+  if (row.index >= preview.top && row.index <= preview.bottom && index >= preview.left && index <= preview.right &&
+      (row.index < origin.top || row.index > origin.bottom || index < origin.left || index > origin.right))
+    return "hys-ui-spreadsheet-fill-preview";
 }
 const tabs = computed(() =>
   book.value.sheets.map(({ id, name, hidden, protected: locked }) => ({
@@ -1283,41 +1297,39 @@ const columns = computed<HysProGridColumn<GridRow>[]>(() => [
       resizable: canReorderColumns.value,
       reorderable: false,
       field: (row) => row.cells[index] ?? null,
-      editor: Object.keys(sheet.value.cells ?? {}).some((address) => {
-        const type = sheet.value.cells?.[address]?.type;
-        return (
-          !!type && type !== "auto" && parseAddress(address)?.column === index
-        );
-      })
-        ? {
-            type: "custom",
-            parse(draft, { row }) {
-              return parseDraft(draft, row.index, index);
-            },
-            toDraft({ row, value }) {
-              const address = cellAddress(row.index, index);
-              const type = cellType(address);
-              if (type?.toDraft)
-                return type.toDraft({
-                  sheet: sheet.value,
-                  address,
-                  row: row.index,
-                  column: index,
-                  value: value as HysSpreadsheetValue,
-                });
-              return typeof value === "string" && value.startsWith("'")
-                ? value.slice(1)
-                : String(value ?? "");
-            },
+      editor: {
+        type: "custom",
+        typeToEdit: ({ row }) => acceptsTextEntry(row.index, index),
+        commitOnBlur: ({ row }) => {
+          const type = sheet.value.cells?.[cellAddress(row.index, index)]?.type;
+          return acceptsTextEntry(row.index, index) && type !== "autocomplete";
+        },
+        parse(draft, { row }) {
+          return parseDraft(draft, row.index, index);
+        },
+        toDraft({ row, value }) {
+          const address = cellAddress(row.index, index);
+          const type = cellType(address);
+          if (type?.toDraft)
+            return type.toDraft({
+              sheet: sheet.value,
+              address,
+              row: row.index,
+              column: index,
+              value: value as HysSpreadsheetValue,
+            });
+          const options = cellEditorOptions(row.index, index);
+          if (typeof value === "number" && (options?.type === "date" || options?.type === "datetime-local")) {
+            const date = new Date(value);
+            if (Number.isFinite(+date)) return date.toISOString().slice(0, options.type === "date" ? 10 : 19);
           }
-        : { type: "text" },
+          return draftText(value, options);
+        },
+      },
       canEdit: ({ row }) => editableCell(row.index, index),
       validate: (change) => {
         const row = change.row.index;
-        const value =
-          change.editor === "text"
-            ? parseCellInput(change.value)
-            : (change.value as HysSpreadsheetValue);
+        const value = change.value as HysSpreadsheetValue;
         const changes = [{ row, column: index, value }];
         const candidate = withValues(sheet.value, changes);
         for (const point of affectedCells(candidate, changes)) {
@@ -1334,11 +1346,11 @@ const columns = computed<HysProGridColumn<GridRow>[]>(() => [
         const address = cellAddress(row.index, index);
         const result = calculate.value(row.index, index);
         const appearance = conditional.value(row.index, index);
-        const format = {
+        const options = sheet.value.cells?.[address];
+        const format = typedFormat(options, {
           ...sheet.value.formats?.[address],
           ...appearance?.format,
-        };
-        const options = sheet.value.cells?.[address];
+        });
         const original =
           result.error ??
           displayValue(result.value, format, props.locale, props.currency);
@@ -1373,8 +1385,8 @@ const columns = computed<HysProGridColumn<GridRow>[]>(() => [
             "aria-invalid": error ? "true" : undefined,
             style: {
               ...formatStyle(format),
-              display: format.rotation ? "inline-block" : undefined,
-              transform: format.rotation
+              display: format?.rotation ? "inline-block" : undefined,
+              transform: format?.rotation
                 ? `rotate(${format.rotation}deg)`
                 : undefined,
             },
@@ -1415,6 +1427,25 @@ function cellType(address: string) {
     : undefined;
 }
 
+function acceptsTextEntry(row: number, column: number) {
+  const type = cellEditorOptions(row, column)?.type;
+  return !["select", "multiple", "boolean", "date", "datetime-local", "custom"].includes(type ?? "");
+}
+
+function cellEditorOptions(row: number, column: number) {
+  const active = sheet.value;
+  const address = cellAddress(row, column);
+  const options = active.cells?.[address];
+  if ((options?.type && options.type !== "auto") || active.formats?.[address]?.number !== "date")
+    return options;
+  const value = active.rows[row]?.[column];
+  if (typeof value === "string" && value.startsWith("=")) return options;
+  const type = typeof value === "string" && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)
+    ? "datetime-local" as const
+    : "date" as const;
+  return { ...options, type };
+}
+
 function editableCell(row: number, column: number) {
   const active = sheet.value;
   const address = cellAddress(row, column);
@@ -1427,7 +1458,7 @@ function editableCell(row: number, column: number) {
   );
 }
 
-function parseDraft(draft: unknown, row: number, column: number) {
+function parseDraft(draft: unknown, row: number, column: number, valuesOnly = false) {
   const address = cellAddress(row, column);
   const type = cellType(address);
   if (type)
@@ -1438,9 +1469,10 @@ function parseDraft(draft: unknown, row: number, column: number) {
       column,
       value: sheet.value.rows[row]?.[column] ?? null,
     });
+  const options = cellEditorOptions(row, column);
   return {
     ok: true as const,
-    value: parseTyped(String(draft ?? ""), sheet.value.cells?.[address]),
+    value: parseTyped(String(draft ?? ""), valuesOnly && options?.type === "formula" ? undefined : options),
   };
 }
 
@@ -1461,9 +1493,9 @@ function editingEnded() {
 watch([range, sheet], () => {
   const anchor = range.value?.anchor;
   formulaText.value = anchor
-    ? String(
-        sheet.value.rows[Number(anchor.rowKey)]?.[Number(anchor.columnKey)] ??
-          "",
+    ? draftText(
+        sheet.value.rows[Number(anchor.rowKey)]?.[Number(anchor.columnKey)],
+        sheet.value.cells?.[cellAddress(Number(anchor.rowKey), Number(anchor.columnKey))],
       )
     : "";
 });
@@ -1646,10 +1678,7 @@ function gridChanges(changes: readonly HysProGridChange<GridRow>[]) {
   return changes.map((change) => ({
     row: change.row.index,
     column: Number(change.columnKey),
-    value:
-      change.editor === "text"
-        ? parseCellInput(change.value)
-        : (change.value as HysSpreadsheetValue),
+    value: change.value as HysSpreadsheetValue,
   }));
 }
 
@@ -1672,34 +1701,36 @@ function editFailure(failure: HysProGridFailure) {
   emit("validationError", { [address]: failure.message });
 }
 
-function applyFormula() {
-  const anchor = range.value?.anchor;
-  if (!anchor || !Number.isFinite(Number(anchor.columnKey))) return;
-  const row = Number(anchor.rowKey),
-    column = Number(anchor.columnKey);
-  const parsed = parseDraft(formulaText.value, row, column);
-  if (!parsed.ok) {
-    editFailure({
-      stage: "validate",
-      rowKey: row,
-      columnKey: String(column),
-      message: parsed.message,
-    });
-    return;
+function editSelection(draft: string) {
+  return applyDraftToCells(draft, selectedCells.value);
+}
+
+function applyDraftToCells(
+  draft: string,
+  targets: readonly Pick<HysSpreadsheetCellChange, "row" | "column">[],
+) {
+  const anchor = selectedPoint.value;
+  if (!anchor || editingDisabled.value || editingAddress.value) return false;
+  const changes: HysSpreadsheetCellChange[] = [];
+  for (const { row, column } of targets) {
+    const parsed = parseDraft(draft, row, column);
+    if (!parsed.ok) {
+      editFailure({ stage: "validate", rowKey: row, columnKey: String(column), message: parsed.message });
+      return false;
+    }
+    const value = parsed.value;
+    changes.push({ row, column, value: typeof value === "string" && value.startsWith("=")
+      ? offsetFormula(value, row - anchor.row, column - anchor.column)
+      : value });
   }
-  if (
-    applyValues(
-      [
-        {
-          row,
-          column,
-          value: parsed.value,
-        },
-      ],
-      "edit",
-    )
-  )
-    feedback.value = "";
+  return applyValues(changes, "edit");
+}
+
+function applyFormula(event: KeyboardEvent) {
+  if (!selectedPoint.value) return;
+  event.preventDefault();
+  if (event.ctrlKey || event.metaKey) editSelection(formulaText.value);
+  else applyDraftToCells(formulaText.value, [selectedPoint.value]);
 }
 
 function clearCells() {
@@ -1776,13 +1807,35 @@ function fill(
   mode: HysSpreadsheetFillMode = "copy",
   sequence?: readonly HysSpreadsheetValue[],
 ) {
-  return (
-    !!rectangle.value &&
-    applyValues(
-      fillValues(sheet.value, rectangle.value, direction, mode, sequence),
-      "edit",
-    )
-  );
+  if (!rectangle.value) return false;
+  return applyFill(rectangle.value, direction, mode, sequence);
+}
+
+function applyFill(
+  area: HysSpreadsheetArea,
+  direction: "down" | "right",
+  mode: HysSpreadsheetFillMode,
+  sequence?: readonly HysSpreadsheetValue[],
+  source?: HysSpreadsheetArea,
+) {
+  if (additionalRanges.value.length || editingAddress.value) {
+    feedback.value = message("请结束当前编辑并选择连续区域后再填充。");
+    return false;
+  }
+  const vertical = direction === "down";
+  const rows = rowData.value.map(({ index }) => index).filter((row) => row >= area.top && row <= area.bottom);
+  const cols = columns.value.map(({ key }) => Number(key)).filter((col) => col >= area.left && col <= area.right);
+  const changes = fillValues(sheet.value, rows, cols, direction, mode, sequence, source && {
+    first: vertical ? source.top : source.left,
+    last: vertical ? source.bottom : source.right,
+  });
+  if (!changes.length) {
+    feedback.value = message("选区内没有可填充的单元格。");
+    return false;
+  }
+  if (!applyValues(changes, "edit")) return false;
+  feedback.value = message("已填充 {count} 格").replace("{count}", String(changes.length));
+  return true;
 }
 
 function manageAxis(
@@ -2238,11 +2291,50 @@ function onPointer(event: PointerEvent) {
   selectRange(address, address, true);
 }
 
+function fillDestination(area: HysSpreadsheetArea, target: { row: number; column: number }) {
+  const vertical = Math.max(area.top - target.row, target.row - area.bottom, 0);
+  const horizontal = Math.max(area.left - target.column, target.column - area.right, 0);
+  if (!vertical && !horizontal) return;
+  const direction = vertical >= horizontal ? "down" as const : "right" as const;
+  return {
+    direction,
+    area: {
+      top: direction === "down" ? Math.min(area.top, target.row) : area.top,
+      bottom: direction === "down" ? Math.max(area.bottom, target.row) : area.bottom,
+      left: direction === "right" ? Math.min(area.left, target.column) : area.left,
+      right: direction === "right" ? Math.max(area.right, target.column) : area.right,
+    },
+  };
+}
+
+function previewCellDrag(event: DragEvent) {
+  const drag = dragPoint.value;
+  const target = targetPoint(event.target);
+  if (!drag || !target || drag.sheetId !== sheet.value.id || editingDisabled.value) return;
+  event.preventDefault();
+  if (drag.type !== "fill" || !rectangle.value) return;
+  const area = fillDestination(rectangle.value, target)?.area;
+  const previous = fillPreview.value;
+  if (area?.top !== previous?.top || area?.bottom !== previous?.bottom ||
+      area?.left !== previous?.left || area?.right !== previous?.right)
+    fillPreview.value = area;
+}
+
+function finishCellDrag() {
+  dragPoint.value = undefined;
+  fillPreview.value = undefined;
+}
+
+function leaveCellDrag(event: DragEvent) {
+  if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null))
+    fillPreview.value = undefined;
+}
+
 function dropCells(event: DragEvent) {
   const drag = dragPoint.value;
   const target = targetPoint(event.target);
   const area = rectangle.value;
-  dragPoint.value = undefined;
+  finishCellDrag();
   if (
     !drag ||
     !target ||
@@ -2253,25 +2345,13 @@ function dropCells(event: DragEvent) {
     return;
   event.preventDefault();
   if (drag.type === "fill") {
-    const down = Math.max(0, target.row - area.bottom);
-    const right = Math.max(0, target.column - area.right);
-    if (!down && !right) return;
-    const direction = down >= right ? "down" : "right";
-    const destination = {
-      ...area,
-      bottom: direction === "down" ? target.row : area.bottom,
-      right: direction === "right" ? target.column : area.right,
-    };
-    const changes = fillValues(
-      sheet.value,
-      destination,
-      direction,
-      "smart",
-    ).filter(({ row, column }) => row > area.bottom || column > area.right);
-    if (applyValues(changes, "edit"))
+    const extension = fillDestination(area, target);
+    if (!extension) return;
+    const { direction, area: destination } = extension;
+    if (applyFill(destination, direction, "smart", undefined, area))
       void nextTick(() =>
         selectRange(
-          cellAddress(area.top, area.left),
+          cellAddress(destination.top, destination.left),
           cellAddress(destination.bottom, destination.right),
         ),
       );
@@ -2317,6 +2397,10 @@ function beginCellDrag(
   row: number,
   column: number,
 ) {
+  if (additionalRanges.value.length || editingAddress.value) {
+    event.preventDefault();
+    return;
+  }
   dragPoint.value = { type, row, column, sheetId: sheet.value.id };
   event.dataTransfer?.setData("application/x-hys-cell", type);
 }
@@ -2864,17 +2948,23 @@ function rememberCopy(text: string) {
   const rows: HysSpreadsheetValue[][] = [];
   const values: HysSpreadsheetValue[][] = [];
   const formats: (HysSpreadsheetCellFormat | undefined)[][] = [];
-  for (const { index: row } of rowData.value) {
-    if (row < area.top || row > area.bottom) continue;
-    const selected = columns.value
-      .map(({ key }) => Number(key))
-      .filter((column) => column >= area.left && column <= area.right);
+  const rowIndices = rowData.value.map(({ index }) => index)
+    .filter((row) => row >= area.top && row <= area.bottom);
+  const columnIndices = columns.value.map(({ key }) => Number(key))
+    .filter((column) => column >= area.left && column <= area.right);
+  for (const row of rowIndices) {
     rows.push(
-      selected.map((column) => sheet.value.rows[row]?.[column] ?? null),
+      columnIndices.map((column) => sheet.value.rows[row]?.[column] ?? null),
     );
-    values.push(selected.map((column) => calculate.value(row, column).value));
+    values.push(columnIndices.map((column) => {
+      const { value, error } = calculate.value(row, column);
+      return error ?? (typeof value === "string" && /^[=']/.test(value) ? "'" + value : value);
+    }));
     formats.push(
-      selected.map((column) => sheet.value.formats?.[cellAddress(row, column)]),
+      columnIndices.map((column) => {
+        const address = cellAddress(row, column);
+        return typedFormat(sheet.value.cells?.[address], sheet.value.formats?.[address]);
+      }),
     );
   }
   lastCopy.value = {
@@ -2882,16 +2972,23 @@ function rememberCopy(text: string) {
     rows,
     formats,
     values,
-    top: area.top,
-    left: area.left,
+    rowIndices,
+    columnIndices,
   };
 }
 
 function paste(text: string, mode: HysSpreadsheetPasteMode = "all") {
   const area = rectangle.value;
-  if (!area || editingDisabled.value) return false;
+  if (!area || editingDisabled.value || editingAddress.value) return false;
+  if (additionalRanges.value.length) {
+    feedback.value = message("请选择连续的目标选区后再粘贴。");
+    return false;
+  }
   const copied = lastCopy.value?.text === text ? lastCopy.value : undefined;
-  if (mode === "formats" && !copied) return false;
+  if (mode === "formats" && !copied) {
+    feedback.value = message("请先在此工作簿中复制包含格式的单元格。");
+    return false;
+  }
   let source: readonly (readonly HysSpreadsheetValue[])[];
   try {
     source = copied
@@ -2929,21 +3026,25 @@ function paste(text: string, mode: HysSpreadsheetPasteMode = "all") {
     return false;
   }
   const changes: HysSpreadsheetCellChange[] = [];
-  const formats = { ...sheet.value.formats };
+  const copyFormats = copied && (mode === "all" || mode === "formats" || mode === "transpose");
+  const formats = copyFormats ? { ...sheet.value.formats } : undefined;
   for (let i = 0; i < height; i++) {
     for (let j = 0; j < size; j++) {
       const row = rows[i],
         column = cols[j],
         address = cellAddress(row, column);
-      if (!editableCell(row, column)) {
-        feedback.value = `${address} 无法编辑。`;
-        return false;
-      }
       const y = i % source.length,
         x = j % source[0].length;
       let value = source[y][x];
-      if (!copied && typeof value === "string") {
-        const parsed = parseDraft(value, row, column);
+      const formula = typeof value === "string" && value.startsWith("=");
+      if (mode === "formulas" && !formula) continue;
+      if (mode === "values" && !copied && formula) continue;
+      if (!editableCell(row, column)) {
+        feedback.value = message("{address} 无法编辑。").replace("{address}", address);
+        return false;
+      }
+      if (!copied && typeof value === "string" && mode !== "formulas") {
+        const parsed = parseDraft(value, row, column, mode === "values");
         if (!parsed.ok) {
           editFailure({
             stage: "validate",
@@ -2954,21 +3055,17 @@ function paste(text: string, mode: HysSpreadsheetPasteMode = "all") {
           return false;
         }
         value = parsed.value;
+        if (mode === "values" && typeof value === "string" && value.startsWith("="))
+          value = "'" + value;
       }
-      const formula = typeof value === "string" && value.startsWith("=");
-      if (mode === "formulas" && !formula) continue;
-      if (mode === "values" && !copied && formula) continue;
       if (formula && copied && mode !== "values")
         value = offsetFormula(
           value as string,
-          row - copied.top - (mode === "transpose" ? x : y),
-          column - copied.left - (mode === "transpose" ? y : x),
+          row - copied.rowIndices[mode === "transpose" ? x : y],
+          column - copied.columnIndices[mode === "transpose" ? y : x],
         );
       if (mode !== "formats") changes.push({ row, column, value });
-      if (
-        copied &&
-        (mode === "all" || mode === "formats" || mode === "transpose")
-      ) {
+      if (copied && formats) {
         const format =
           mode === "transpose" ? copied.formats[x][y] : copied.formats[y][x];
         if (format) formats[address] = format;
@@ -2976,17 +3073,19 @@ function paste(text: string, mode: HysSpreadsheetPasteMode = "all") {
       }
     }
   }
+  if (!changes.length && !formats) {
+    feedback.value = message("剪贴板中没有符合此粘贴方式的内容。");
+    return false;
+  }
   const success = applyValues(
     changes,
     "paste",
-    copied && ["all", "formats", "transpose"].includes(mode)
-      ? (sheet) => ({ ...sheet, formats })
-      : undefined,
+    formats ? (sheet) => ({ ...sheet, formats }) : undefined,
   );
   if (success)
     feedback.value = message("已粘贴 {count} 格").replace(
       "{count}",
-      String(height * size),
+      String(formats ? height * size : changes.length),
     );
   return success;
 }
@@ -3235,6 +3334,7 @@ const instance: HysSpreadsheetInstance = {
   manageAxis,
   setCells: (changes: readonly HysSpreadsheetCellChange[]) =>
     applyValues(changes, "edit"),
+  editSelection,
   configureCells,
   formatCells,
   validateCells,
@@ -3431,6 +3531,7 @@ defineExpose(instance);
           @cut="useClipboard('cut')"
           @paste="useClipboard('paste', $event)"
           @fill="fill"
+          @edit-selection="editSelection"
           @merge="merge"
           @fit="fitAxis"
           @brush="applyBrush"
@@ -3548,7 +3649,7 @@ defineExpose(instance);
       />
       <div
         v-if="!editingDisabled && suggestions.length"
-        class="hys-ui-spreadsheet-suggestions"
+        class="hys-ui-spreadsheet-suggestions hys-ui-scrollbar"
         role="group"
         :aria-label="message('公式建议')"
       >
@@ -3563,7 +3664,7 @@ defineExpose(instance);
       </div>
       <small
         v-else-if="formulaSyntax"
-        class="hys-ui-spreadsheet-suggestions"
+        class="hys-ui-spreadsheet-suggestions hys-ui-scrollbar"
         role="status"
         >{{ formulaSyntax }}</small
       >
@@ -3588,7 +3689,8 @@ defineExpose(instance);
       @dragleave.capture="columnDrag.leave"
       @drop.capture="columnDrag.drop"
       @dragend.capture="columnDrag.end"
-      @dragover="dragPoint && $event.preventDefault()"
+      @dragover="previewCellDrag"
+      @dragleave="leaveCellDrag"
       @drop="dropCells"
     >
       <HysProGrid
@@ -3670,7 +3772,7 @@ defineExpose(instance);
                   Number(context.column.key),
                 )
               "
-              @dragend="dragPoint = undefined"
+              @dragend="finishCellDrag"
             />
             <HysButton
               size="sm"
@@ -3686,7 +3788,7 @@ defineExpose(instance);
                   Number(context.column.key),
                 )
               "
-              @dragend="dragPoint = undefined"
+              @dragend="finishCellDrag"
             />
           </span>
         </template>
@@ -3722,18 +3824,13 @@ defineExpose(instance);
             v-else
             :id="context.inputId"
             :draft="context.draft"
-            :options="
-              sheet.cells?.[
-                cellAddress(
-                  context.cell.row.index,
-                  Number(context.cell.column.key),
-                )
-              ]
-            "
+            :options="cellEditorOptions(context.cell.row.index, Number(context.cell.column.key))"
             :disabled="context.phase !== 'editing'"
+            :show-actions="showEditActions"
             :error-id="context.errorId"
             @change="context.setDraft"
             @commit="context.commit"
+            @cancel="context.cancel"
           />
         </template>
         <template #row-number-header>
@@ -3766,13 +3863,16 @@ defineExpose(instance);
               @pointerdown="rowPointer.down($event, row.index)"
               @click="rowPointer.click($event, row.index)"
             >
-              <span class="hys-ui-spreadsheet-axis-label">{{
-                sheet.rowOptions?.[row.index]?.label ?? row.index + 1
-              }}</span>
+              <span
+                class="hys-ui-spreadsheet-axis-label"
+                :data-row-number-digits="
+                  sheet.rowOptions?.[row.index]?.label == null ? String(row.index + 1).length : undefined
+                "
+              >{{ sheet.rowOptions?.[row.index]?.label ?? row.index + 1 }}</span>
               <LockKeyhole
                 v-if="sheet.rowOptions?.[row.index]?.locked"
-                class="hys-ui-spreadsheet-axis-lock"
-                :size="12"
+                class="hys-ui-spreadsheet-axis-lock hys-ui-spreadsheet-row-lock"
+                :size="8"
                 aria-hidden="true"
               />
             </HysButton>
@@ -3955,7 +4055,7 @@ defineExpose(instance);
     />
     <HysAccordion
       v-if="dataGroups.length"
-      class="hys-ui-spreadsheet-data-groups"
+      class="hys-ui-spreadsheet-data-groups hys-ui-scrollbar"
       size="sm"
       ghost
       :items="[{ title: message('数据分组') }]"
@@ -4262,6 +4362,10 @@ defineExpose(instance);
   height: 6px;
   background: var(--hys-ui-theme-primary);
 }
+.hys-ui-spreadsheet :deep(td.hys-ui-spreadsheet-fill-preview) {
+  background-color: color-mix(in srgb, var(--hys-sheet-selection-ink) 13%, var(--hys-ui-theme-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hys-sheet-selection-ink) 45%, transparent);
+}
 .hys-ui-spreadsheet-handles {
   position: absolute;
   inset-inline-end: 2px;
@@ -4533,6 +4637,12 @@ defineExpose(instance);
   outline: none;
 }
 .hys-ui-spreadsheet
+  :deep(.hys-ui-pro-grid-editor .hys-ui-pro-grid-control :is(.hys-ui-date-control, .hys-ui-select, .hys-ui-input-shell)) {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+.hys-ui-spreadsheet
   :deep(.hys-ui-pro-grid-editor :is(input, select, textarea):focus) {
   outline: none;
   box-shadow: none;
@@ -4638,12 +4748,6 @@ defineExpose(instance);
   pointer-events: none;
   background: var(--hys-ui-spreadsheet-selection, var(--hys-ui-theme-primary));
 }
-.hys-ui-spreadsheet :deep(.hys-ui-spreadsheet-row-select) {
-  flex: 1;
-  min-inline-size: 0;
-  cursor: crosshair;
-  overflow: hidden;
-}
 .hys-ui-spreadsheet-axis-label {
   min-inline-size: 0;
   overflow: hidden;
@@ -4652,6 +4756,19 @@ defineExpose(instance);
 .hys-ui-spreadsheet-axis-lock {
   flex: none;
   color: var(--hys-ui-theme-muted);
+}
+.hys-ui-spreadsheet-axis-label[data-row-number-digits="4"] {
+  font-size: 0.85em;
+}
+.hys-ui-spreadsheet-axis-label[data-row-number-digits="5"] {
+  font-size: 0.75em;
+}
+.hys-ui-spreadsheet-row-lock {
+  position: absolute;
+  inset-inline-end: 1px;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 .hys-ui-spreadsheet-column-state {
   display: inline-flex;
@@ -4818,6 +4935,13 @@ defineExpose(instance);
   gap: 3px;
   border-radius: 0;
   color: var(--hys-ui-spreadsheet-header-color, inherit);
+}
+.hys-ui-spreadsheet-row-header > :deep(.hys-ui-spreadsheet-row-select) {
+  flex: 1;
+  min-inline-size: 0;
+  padding-inline: 9px;
+  cursor: crosshair;
+  overflow: hidden;
 }
 .hys-ui-spreadsheet :deep(.hys-ui-spreadsheet-header-button:focus-visible) {
   outline-offset: -2px;

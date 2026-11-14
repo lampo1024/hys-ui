@@ -115,7 +115,7 @@ const scope = computed<HysTabsMenuScope>(() => ({
             {{ label }}
           </HysButton>
         </div>
-        <div class="hys-tab-more-list">
+        <div class="hys-tab-more-list hys-ui-scrollbar">
           <HysButton
             size="sm"
             variant="ghost"

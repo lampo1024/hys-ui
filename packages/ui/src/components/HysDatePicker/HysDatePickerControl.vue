@@ -984,7 +984,7 @@ defineExpose({
           :id="id + '-panel'"
           ref="panel"
           v-bind="skin"
-          class="hys-ui-date-popup"
+          class="hys-ui-date-popup hys-ui-scrollbar"
           :class="[
             popupClass,
             popupClassName,
@@ -1070,7 +1070,7 @@ defineExpose({
               <div
                 v-if="view !== 'time'"
                 ref="calendarStrip"
-                class="hys-ui-date-panels"
+                class="hys-ui-date-panels hys-ui-scrollbar"
               >
                 <HysDatePickerPanel
                   v-for="index in panelCount"

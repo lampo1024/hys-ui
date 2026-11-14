@@ -436,7 +436,7 @@ defineExpose({ scrollTo, focus });
   <section
     ref="element"
     v-bind="attrs"
-    class="hys-ui-v4-pane hys-ui-transfer-pane"
+    class="hys-ui-v4-pane hys-ui-transfer-pane hys-ui-scrollbar"
     :class="{ 'hys-ui-is-drop-target': dropTarget }"
     :data-side="side"
     :aria-label="title"
@@ -489,7 +489,7 @@ defineExpose({ scrollTo, focus });
     <div class="hys-ui-transfer-body">
       <div
         ref="viewport"
-        class="hys-ui-pf-transfer-list"
+        class="hys-ui-pf-transfer-list hys-ui-scrollbar"
         :class="{ 'hys-ui-transfer-virtual': virtual }"
         :style="{
           height: height + 'px',
@@ -725,7 +725,6 @@ defineExpose({ scrollTo, focus });
   box-sizing: border-box;
   max-height: none;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
   overflow: auto;
 }
 .hys-ui-transfer-rows {

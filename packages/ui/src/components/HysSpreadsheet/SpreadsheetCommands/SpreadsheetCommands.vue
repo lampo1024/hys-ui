@@ -16,6 +16,7 @@ import {
   Italic,
   Merge,
   Paintbrush,
+  Pencil,
   Ruler,
   Scissors,
   ShieldCheck,
@@ -32,12 +33,15 @@ import HysColorPicker from "../../HysColorPicker/HysColorPicker.vue";
 import HysInput from "../../HysInput/HysInput.vue";
 import HysNumberInput from "../../HysNumberInput/HysNumberInput.vue";
 import HysSelect from "../../HysSelect/HysSelect.vue";
+import HysTextarea from "../../HysTextarea/HysTextarea.vue";
 import SpreadsheetFieldHint from "../SpreadsheetFieldHint/SpreadsheetFieldHint.vue";
 import {
   columnFilterOptions,
   useSpreadsheetOptions,
 } from "../spreadsheetControlOptions";
 import { axisCount } from "../spreadsheetAxis";
+import { areaFromAddresses } from "../spreadsheetCells";
+import { parseCellInput } from "../spreadsheetModel";
 import type { CommandGroup } from "./commandGroups";
 import type {
   HysSpreadsheetAxisCommand,
@@ -49,6 +53,7 @@ import type {
   HysSpreadsheetPasteMode,
   HysSpreadsheetSelection,
   HysSpreadsheetSheet,
+  HysSpreadsheetValue,
 } from "../spreadsheetTypes";
 
 const props = defineProps<{
@@ -65,7 +70,8 @@ const emit = defineEmits<{
   data: [command: HysSpreadsheetDataCommand];
   format: [format: HysSpreadsheetCellFormat | null];
   configure: [options: HysSpreadsheetCellOptions];
-  fill: [direction: "down" | "right", mode: HysSpreadsheetFillMode];
+  fill: [direction: "down" | "right", mode: HysSpreadsheetFillMode, sequence?: readonly HysSpreadsheetValue[]];
+  editSelection: [value: string];
   paste: [mode: HysSpreadsheetPasteMode];
   cut: [];
   merge: [active: boolean];
@@ -86,13 +92,31 @@ const criterion = ref("");
 const axis = ref<"row" | "column">("column");
 const dimension = ref(124);
 const label = ref("");
-const fillMode = ref<HysSpreadsheetFillMode>("copy");
+const fillMode = ref<HysSpreadsheetFillMode | "custom">("copy");
+const sequenceText = ref("");
+const batchDraft = ref("");
+const sequence = computed(() => sequenceText.value.split(/\r?\n/)
+  .map((item) => item.trim()).filter(Boolean).map(parseCellInput));
+const fillArea = computed(() => props.selection && !props.selection.additional?.length
+  ? areaFromAddresses(props.selection.anchor, props.selection.focus) : undefined);
+function canFill(direction: "down" | "right") {
+  const area = fillArea.value;
+  return !props.disabled && !!area &&
+    (direction === "down" ? area.bottom > area.top : area.right > area.left) &&
+    (fillMode.value !== "custom" || sequence.value.length > 0);
+}
+function fillSelection(direction: "down" | "right") {
+  if (!canFill(direction)) return;
+  if (fillMode.value === "custom") emit("fill", direction, "copy", sequence.value);
+  else emit("fill", direction, fillMode.value);
+}
 const choicesFor = useSpreadsheetOptions();
 const fillOptions = computed(() =>
   choicesFor([
     ["copy", "复制"],
-    ["series", "序列"],
-    ["smart", "智能"],
+    ["series", "数字与日期序列"],
+    ["smart", "智能填充"],
+    ["custom", "自定义序列"],
   ]),
 );
 const axisOptions = computed(() =>
@@ -197,19 +221,29 @@ function filterSelection() {
               size="sm"
               variant="secondary"
               :icon="ArrowDown"
-              :disabled="disabled || !selection"
-              @click="emit('fill', 'down', fillMode)"
+              :disabled="!canFill('down')"
+              @click="fillSelection('down')"
               >{{ message("向下填充") }}</HysButton
             >
             <HysButton
               size="sm"
               variant="secondary"
               :icon="ArrowRight"
-              :disabled="disabled || !selection"
-              @click="emit('fill', 'right', fillMode)"
+              :disabled="!canFill('right')"
+              @click="fillSelection('right')"
               >{{ message("向右填充") }}</HysButton
             >
           </div>
+          <HysTextarea
+            v-if="fillMode === 'custom'"
+            v-model="sequenceText"
+            class="feature-edit-input"
+            size="sm"
+            :rows="3"
+            :disabled="disabled"
+            :aria-label="message('自定义序列，每行一项')"
+            :placeholder="message('每行一项，例如：待办、进行中、已完成各占一行')"
+          />
         </section>
         <HysAccordion
           class="feature-disclosure"
@@ -217,13 +251,14 @@ function filterSelection() {
           size="sm"
           multiple
           :items="[
+            { id: 'batch', title: message('批量编辑选区') },
             { id: 'paste', title: message('其他粘贴选项') },
             { id: 'protection', title: message('保护与验证') },
           ]"
         >
           <template #title="{ item }">
             <component
-              :is="item.id === 'paste' ? Copy : ShieldCheck"
+              :is="item.id === 'batch' ? Pencil : item.id === 'paste' ? Copy : ShieldCheck"
               :size="17"
               aria-hidden="true"
             />
@@ -233,7 +268,24 @@ function filterSelection() {
             <component :is="expanded ? ChevronDown : ChevronRight" :size="15" />
           </template>
           <template #content="{ item }">
-            <div v-if="item.id === 'paste'" class="command-grid two-controls">
+            <div v-if="item.id === 'batch'" class="command-grid paired-controls">
+              <HysTextarea
+                v-model="batchDraft"
+                size="sm"
+                :rows="2"
+                :disabled="disabled || !selection"
+                :aria-label="message('批量编辑内容')"
+                :placeholder="message('输入内容或公式')"
+              />
+              <HysButton
+                variant="secondary"
+                size="sm"
+                :disabled="disabled || !selection"
+                @click="emit('editSelection', batchDraft)"
+                >{{ message("应用到选区") }}</HysButton
+              >
+            </div>
+            <div v-else-if="item.id === 'paste'" class="command-grid two-controls">
               <HysButton
                 v-for="{ label, mode } in pasteModes"
                 :key="mode"
@@ -957,6 +1009,9 @@ function filterSelection() {
 }
 .feature-fill-controls > :deep(.hys-ui-btn) {
   padding-inline: 6px;
+}
+.feature-edit-input {
+  margin-block-start: 8px;
 }
 .feature-disclosure :deep(.hys-ui-accordion-item:first-child),
 .feature-disclosure :deep(.hys-ui-accordion-item + .hys-ui-accordion-item) {

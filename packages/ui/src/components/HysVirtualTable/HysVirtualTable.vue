@@ -693,7 +693,7 @@ defineExpose({
   >
     <div
       ref="viewport"
-      class="hys-ui-v4-table-viewport"
+      class="hys-ui-v4-table-viewport hys-ui-scrollbar"
       :style="viewportStyle"
       @scroll.passive="onScroll"
     >

@@ -474,6 +474,7 @@
       "Selectable": "可选标签与受控状态"
     },
     "HysCard": {
+      "Fullscreen": "专注查看 · 全屏与过渡",
       "RefreshContent": "报表设置 · 刷新时保留内容",
       "Collapsible": "交付备注 · 折叠与保留输入",
       "Content": "封面、内容分区与操作",
@@ -859,12 +860,22 @@
     },
     "HysSpreadsheet": {
       "Basic": "日常预算工作簿",
+      "CellEditing": "活动预订的单元格编辑",
+      "FillAndPaste": "发货计划的填充与选择性粘贴",
       "Formulas": "公式计算与错误定位",
       "Operations": "库存盘点与工作簿保存",
       "LargeSheet": "大工作表浏览与定位",
       "Collaboration": "预算复核与协作批注",
       "ExcelExchange": "Excel 报价单导入与导出",
       "DataReview": "订单排序、验证与热力图"
+    },
+    "HysScrollbar": {
+      "Basic": "在固定区域浏览交付记录",
+      "Timeline": "横向浏览排期并快速定位",
+      "Masks": "双向滚动与四边遮罩",
+      "MaxHeight": "动态清单与最大高度",
+      "Manual": "拖动滑块定位变更记录",
+      "EdgeLoading": "触底加载交付日志"
     },
     "HysProgress": {
       "Basic": "基础进度与数值",

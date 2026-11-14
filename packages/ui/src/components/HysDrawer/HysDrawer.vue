@@ -392,7 +392,7 @@ defineExpose({
           </button>
           <div
             ref="body"
-            class="hys-ui-dialog-body hys-ui-drawer-body"
+            class="hys-ui-dialog-body hys-ui-drawer-body hys-ui-scrollbar"
             :class="bodyClass"
             :style="bodyStyle"
             :tabindex="bodyTabindex ?? 0"
@@ -610,7 +610,6 @@ defineExpose({
   overflow: auto;
   overscroll-behavior: contain;
   padding: 24px;
-  scrollbar-width: thin;
   outline: none;
 }
 .hys-ui-drawer-body:focus-visible {

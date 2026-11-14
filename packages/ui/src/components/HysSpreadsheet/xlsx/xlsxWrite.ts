@@ -4,7 +4,7 @@ import {
   readWorkbook,
   sheetWidth,
 } from "../spreadsheetModel";
-import { safeLink } from "../spreadsheetCells";
+import { safeLink, typedFormat } from "../spreadsheetCells";
 import { evaluateWorkbook } from "../spreadsheetFormulas";
 import { sheetReference } from "../spreadsheetReferences";
 import type {
@@ -126,7 +126,7 @@ function writeSheet(
       const address = cellAddress(row, column);
       const config = sheet.cells?.[address];
       const raw = sheet.rows[row]?.[column] ?? null;
-      let format = sheet.formats?.[address];
+      let format = typedFormat(config, sheet.formats?.[address]);
       const isFormula = typeof raw === "string" && raw.startsWith("=");
       const computed = isFormula ? evaluate(sheet, row, column) : undefined;
       const isDate =

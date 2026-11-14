@@ -1261,7 +1261,7 @@ defineExpose({
     </div>
     <div
       ref="scroller"
-      class="hys-ui-pg-body hys-ui-pg-scroll"
+      class="hys-ui-pg-body hys-ui-pg-scroll hys-ui-scrollbar"
       :style="viewportStyle"
       role="region"
       tabindex="0"
@@ -1848,7 +1848,7 @@ ${entry.task.start} → ${entry.task.end}
         v-if="picker.open.value"
         ref="pickerPanel"
         v-bind="hysRootAttrs"
-        class="hys-ui-pg-dependency-picker hys-ui-floating-surface"
+        class="hys-ui-pg-dependency-picker hys-ui-floating-surface hys-ui-scrollbar"
         :style="picker.style.value"
         role="dialog"
         :aria-label="'选择前置依赖：' + (pickerEdges[0]?.targetTitle ?? '')"

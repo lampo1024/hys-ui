@@ -4186,6 +4186,54 @@
         "default": "\"展开卡片内容\"",
         "description": "收起状态下的按钮文字，默认“展开卡片内容”。",
         "global": false
+      },
+      {
+        "name": "fullscreenable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "在标题区显示进入全屏的按钮，默认 false。已全屏的卡片始终保留退出按钮。",
+        "global": false
+      },
+      {
+        "name": "fullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "undefined",
+        "description": "受控全屏状态，可配合 v-model:fullscreen。全屏时卡片覆盖网页视口。",
+        "global": false
+      },
+      {
+        "name": "defaultFullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控的初始全屏状态，默认 false。",
+        "global": false
+      },
+      {
+        "name": "fullscreenTransition",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "全屏进入与退出的缩放过渡，默认 true。设为 false 时立即切换，系统减少动态效果和 HYS-UI 的 motion: off 也会关闭过渡。",
+        "global": false
+      },
+      {
+        "name": "fullscreenLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"全屏查看卡片\"",
+        "description": "进入全屏按钮的无障碍名称与悬停提示，默认“全屏查看卡片”。",
+        "global": false
+      },
+      {
+        "name": "exitFullscreenLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"退出卡片全屏\"",
+        "description": "退出全屏按钮的无障碍名称与悬停提示，默认“退出卡片全屏”。",
+        "global": false
       }
     ],
     "events": [
@@ -4216,6 +4264,20 @@
         "required": false,
         "default": "",
         "description": "点击折叠按钮时触发，载荷为本次请求的折叠状态。"
+      },
+      {
+        "name": "update:fullscreen",
+        "type": "[fullscreen: boolean]",
+        "required": false,
+        "default": "",
+        "description": "按钮、Esc 或实例方法请求切换时触发，载荷为目标全屏状态。"
+      },
+      {
+        "name": "fullscreenChange",
+        "type": "[fullscreen: boolean]",
+        "required": false,
+        "default": "",
+        "description": "本次切换请求生效后触发，载荷为当前全屏状态。事件在过渡完成前触发。"
       }
     ],
     "slots": [
@@ -4303,7 +4365,21 @@
         "type": "HTMLElement | undefined",
         "required": false,
         "default": "",
-        "description": "卡片的原生根元素，挂载前为 undefined"
+        "description": "卡片的原生根元素，挂载前为 undefined。"
+      },
+      {
+        "name": "setFullscreen",
+        "type": "(value: boolean) => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求进入或退出全屏。返回 Promise<boolean>，为 true 时表示本次请求已改变状态。"
+      },
+      {
+        "name": "toggleFullscreen",
+        "type": "() => Promise<boolean>",
+        "required": false,
+        "default": "",
+        "description": "请求切换当前全屏状态。返回 Promise<boolean>，为 true 时表示本次请求已改变状态。"
       }
     ]
   },
@@ -11500,6 +11576,14 @@
         "global": false
       },
       {
+        "name": "defaultFullscreen",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "非受控初始全屏状态",
+        "global": false
+      },
+      {
         "name": "height",
         "type": "string | number | undefined",
         "required": false,
@@ -11537,14 +11621,6 @@
         "required": false,
         "default": "",
         "description": "遮罩透明度 0–1；未传使用默认样式，modal=false 时不显示遮罩",
-        "global": false
-      },
-      {
-        "name": "defaultFullscreen",
-        "type": "boolean | undefined",
-        "required": false,
-        "default": "false",
-        "description": "非受控初始全屏状态",
         "global": false
       },
       {
@@ -11925,18 +12001,25 @@
         "description": "抽屉请求打开或关闭时返回新的布尔状态，用于 v-model:open"
       },
       {
-        "name": "ok",
-        "type": "[context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "确认守卫通过，接收操作上下文"
-      },
-      {
         "name": "update:fullscreen",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": "请求进入或退出全屏时返回新的布尔状态"
+      },
+      {
+        "name": "fullscreenChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受新的全屏状态"
+      },
+      {
+        "name": "ok",
+        "type": "[context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "确认守卫通过，接收操作上下文"
       },
       {
         "name": "update:resizeValue",
@@ -11965,13 +12048,6 @@
         "required": false,
         "default": "",
         "description": "进入或退出完成：boolean；opened/closed 的合并通知"
-      },
-      {
-        "name": "fullscreenChange",
-        "type": "[value: boolean]",
-        "required": false,
-        "default": "",
-        "description": "宿主接受新的全屏状态"
       },
       {
         "name": "confirmError",
@@ -17207,18 +17283,25 @@
         "description": "本次位置更新，指针移动按帧合并"
       },
       {
-        "name": "ok",
-        "type": "[context: HysModalActionContext]",
-        "required": false,
-        "default": "",
-        "description": "确认守卫通过，接收操作上下文"
-      },
-      {
         "name": "update:fullscreen",
         "type": "[value: boolean]",
         "required": false,
         "default": "",
         "description": "请求切换全屏状态时返回新的布尔值，用于 v-model:fullscreen"
+      },
+      {
+        "name": "fullscreenChange",
+        "type": "[value: boolean]",
+        "required": false,
+        "default": "",
+        "description": "宿主接受新的全屏状态"
+      },
+      {
+        "name": "ok",
+        "type": "[context: HysModalActionContext]",
+        "required": false,
+        "default": "",
+        "description": "确认守卫通过，接收操作上下文"
       },
       {
         "name": "opened",
@@ -17233,13 +17316,6 @@
         "required": false,
         "default": "",
         "description": "退出、清理与焦点恢复完成"
-      },
-      {
-        "name": "fullscreenChange",
-        "type": "[value: boolean]",
-        "required": false,
-        "default": "",
-        "description": "宿主接受新的全屏状态"
       },
       {
         "name": "confirmError",
@@ -21740,6 +21816,245 @@
       }
     ]
   },
+  "HysScrollbar": {
+    "props": [
+      {
+        "name": "height",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "滚动区域的高度。有限数值以像素计，负数按 0 处理，也接受 CSS 长度。默认随内容和布局。",
+        "global": false
+      },
+      {
+        "name": "maxHeight",
+        "type": "string | number | undefined",
+        "required": false,
+        "default": "",
+        "description": "滚动区域的最大高度。有限数值以像素计，负数按 0 处理，也接受 CSS 长度。默认无限制。",
+        "global": false
+      },
+      {
+        "name": "direction",
+        "type": "HysScrollbarDirection | undefined",
+        "required": false,
+        "default": "\"both\"",
+        "description": "both（默认）允许双向滚动，vertical 允许纵向滚动，horizontal 允许横向滚动。",
+        "global": false
+      },
+      {
+        "name": "tabindex",
+        "type": "string | number | null | undefined",
+        "required": false,
+        "default": "0",
+        "description": "滚动区域的键盘焦点顺序，接受数字或数字字符串，默认 0。传 null 省略该属性。",
+        "global": false
+      },
+      {
+        "name": "id",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "内容视图的 ID。",
+        "global": false
+      },
+      {
+        "name": "role",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "赋予内容视图的 ARIA 角色。",
+        "global": false
+      },
+      {
+        "name": "ariaLabel",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "为内容视图的自定义角色命名。省略 role 时，为可聚焦的滚动区域命名并赋予 region 角色。",
+        "global": false
+      },
+      {
+        "name": "ariaOrientation",
+        "type": "\"undefined\" | \"vertical\" | \"horizontal\" | undefined",
+        "required": false,
+        "default": "",
+        "description": "ARIA 方向，接受 horizontal、vertical 或 undefined。指定 role 时应用到内容视图。",
+        "global": false
+      },
+      {
+        "name": "native",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false，显示 HYS-UI 自定义滑块和轨道。设为 true 时使用系统滚动条，边缘遮罩和事件仍然可用。",
+        "global": false
+      },
+      {
+        "name": "wrapClass",
+        "type": "ClassValue",
+        "required": false,
+        "default": "",
+        "description": "应用到实际滚动容器的类名，支持 Vue 的字符串、对象及数组格式。",
+        "global": false
+      },
+      {
+        "name": "wrapStyle",
+        "type": "StyleValue",
+        "required": false,
+        "default": "",
+        "description": "应用到实际滚动容器的样式，支持 Vue 的字符串、对象及数组格式。",
+        "global": false
+      },
+      {
+        "name": "viewClass",
+        "type": "ClassValue",
+        "required": false,
+        "default": "",
+        "description": "应用到内容视图的类名，支持 Vue 的字符串、对象及数组格式。",
+        "global": false
+      },
+      {
+        "name": "viewStyle",
+        "type": "StyleValue",
+        "required": false,
+        "default": "",
+        "description": "应用到内容视图的样式，支持 Vue 的字符串、对象及数组格式。",
+        "global": false
+      },
+      {
+        "name": "tag",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"div\"",
+        "description": "内容视图的 HTML 标签，默认 div。例如可用 ul 包裹列表项。",
+        "global": false
+      },
+      {
+        "name": "always",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false，鼠标悬停或拖动滑块时显示。启用后，有内容溢出时始终显示自定义滚动条。",
+        "global": false
+      },
+      {
+        "name": "noresize",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。启用后暂停自动检测尺寸和内容变化，调用 update 可手动刷新。",
+        "global": false
+      },
+      {
+        "name": "minSize",
+        "type": "number | undefined",
+        "required": false,
+        "default": "20",
+        "description": "自定义滑块长度的下限，单位为 CSS 像素，默认 20。过大的值会按轨道长度限制。",
+        "global": false
+      },
+      {
+        "name": "distance",
+        "type": "number | undefined",
+        "required": false,
+        "default": "0",
+        "description": "触边事件的提前量，使用非负 CSS 像素数，默认 0。只影响事件。",
+        "global": false
+      },
+      {
+        "name": "mask",
+        "type": "HysScrollbarMask | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。true 启用所有可继续滚动的边缘遮罩，也可用 top、bottom、left、right 仅启用一侧。左右为物理方向。",
+        "global": false
+      }
+    ],
+    "events": [
+      {
+        "name": "scroll",
+        "type": "[position: HysScrollbarPosition]",
+        "required": false,
+        "default": "",
+        "description": "浏览器滚动或调用 handleScroll 时发送 { scrollTop, scrollLeft }，单位为 CSS 像素，坐标沿用浏览器定义。"
+      },
+      {
+        "name": "end-reached",
+        "type": "[edge: ScrollbarEdge]",
+        "required": false,
+        "default": "",
+        "description": "朝某个边缘滚动并进入 distance 像素内时，发送 top、bottom、left 或 right。离开该范围后可以再次触发。"
+      }
+    ],
+    "slots": [
+      {
+        "name": "default",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "滚动区域内的内容。"
+      }
+    ],
+    "exposed": [
+      {
+        "name": "viewport",
+        "type": "HTMLElement | null",
+        "required": false,
+        "default": "",
+        "description": "滚动区域的 HTML 元素，挂载前为 null。"
+      },
+      {
+        "name": "wrapRef",
+        "type": "HTMLElement | null",
+        "required": false,
+        "default": "",
+        "description": "实际滚动容器的 HTML 元素，是 viewport 的别名。"
+      },
+      {
+        "name": "handleScroll",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "读取当前位置、同步滑块与遮罩，并发送 scroll 和满足条件的 end-reached 事件。"
+      },
+      {
+        "name": "scrollTo",
+        "type": "{ (options: ScrollToOptions): void; (left: number, top: number): void; }",
+        "required": false,
+        "default": "",
+        "description": "调用 scrollTo(options) 或 scrollTo(left, top) 滚动到指定坐标。options 支持 top、left 和 behavior。"
+      },
+      {
+        "name": "scrollBy",
+        "type": "(options: ScrollToOptions) => void",
+        "required": false,
+        "default": "",
+        "description": "按 ScrollToOptions 从当前位置滚动指定距离，支持 top、left 和 behavior。"
+      },
+      {
+        "name": "setScrollTop",
+        "type": "(value: number) => void",
+        "required": false,
+        "default": "",
+        "description": "设置纵向滚动坐标，单位为 CSS 像素。"
+      },
+      {
+        "name": "setScrollLeft",
+        "type": "(value: number) => void",
+        "required": false,
+        "default": "",
+        "description": "设置横向滚动坐标，单位为 CSS 像素，数值方向沿用浏览器定义。"
+      },
+      {
+        "name": "update",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "手动刷新滑块和遮罩，适用于禁用自动尺寸检测的滚动区域。"
+      }
+    ]
+  },
   "HysSearch": {
     "props": [
       {
@@ -25566,7 +25881,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "是否显示活动单元格中的确认和取消按钮，默认 false。隐藏按钮时离开编辑器即提交。Enter 始终可提交，Esc 始终可取消。",
+        "description": "默认 false。文本和数字类编辑器支持 Enter 提交。日期和日期时间进入编辑时打开日历，日期点选后提交，日期时间在面板确认后提交。单选和布尔值在选定后提交，多选用「应用多选」提交。设为 true 时显示确认和取消按钮。多行文本用 Enter 换行，Ctrl / ⌘ + Enter 提交。",
         "global": false
       },
       {
@@ -26013,6 +26328,13 @@
         "description": "提交一批从 0 开始的行列坐标及值，整批验证并作为一个历史操作。"
       },
       {
+        "name": "editSelection",
+        "type": "(draft: string) => boolean",
+        "required": false,
+        "default": "",
+        "description": "接收一个字符串草稿，按各目标格的编辑类型解析。公式以选区锚点为基准调整相对引用。整批校验，只读、校验失败或无选区时返回 false。成功时发出一次 edit 变更，可一次撤销。"
+      },
+      {
         "name": "configureCells",
         "type": "(options: HysSpreadsheetCellOptions) => boolean",
         "required": false,
@@ -26038,14 +26360,14 @@
         "type": "(direction: \"right\" | \"down\", mode?: HysSpreadsheetFillMode | undefined, sequence?: readonly HysSpreadsheetValue[] | undefined) => boolean",
         "required": false,
         "default": "",
-        "description": "向下或向右填充选区。模式为 copy、series、smart，支持传入自定义序列。"
+        "description": "向下或向右填充连续可见选区。默认 copy 复制首行或首列并调整相对公式引用。series 延伸数字或日期步长，smart 也支持编号和从相邻示例推断文本。第三个参数可传入循环序列。成功时发出一次 edit 变更。"
       },
       {
         "name": "paste",
         "type": "(text: string, mode?: HysSpreadsheetPasteMode | undefined) => boolean",
         "required": false,
         "default": "",
-        "description": "把 TSV 粘贴到选区，可选择全部、数值、公式、格式或转置。"
+        "description": "把 TSV 粘贴到连续选区，最多 10,000 格。默认 all，另有 values、formulas、formats、transpose。复制自组件时可使用公式结果和原格式，外部 TSV 可提供原始值和公式。成功时发出一次 paste 变更。"
       },
       {
         "name": "manageData",
@@ -27151,7 +27473,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "undefined",
-        "description": "false 使用主题细滚动条，默认沿用浏览器样式",
+        "description": "默认使用 HYS-UI 的滚动条样式。设为 true 时使用浏览器默认样式。",
         "global": false
       },
       {

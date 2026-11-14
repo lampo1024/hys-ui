@@ -533,7 +533,7 @@ onBeforeUnmount(() => {
         </div>
         <HysAccordion v-if="svg" size="sm" :items="[{ title: 'SVG' }]">
           <template #content>
-            <pre>{{ svg }}</pre>
+            <pre class="hys-ui-scrollbar">{{ svg }}</pre>
           </template>
         </HysAccordion>
       </aside>

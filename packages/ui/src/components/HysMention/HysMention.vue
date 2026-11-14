@@ -1302,7 +1302,7 @@ defineExpose({
           v-bind="{ ...nativeAttrs(), ...accessibility }"
           v-on="controlEvents"
           v-text="value"
-          class="hys-ui-mention-rich"
+          class="hys-ui-mention-rich hys-ui-scrollbar"
           :style="richSizing"
           :contenteditable="editable ? 'true' : 'false'"
           :tabindex="disabled ? -1 : 0"
@@ -1397,7 +1397,7 @@ defineExpose({
           <div
             :id="id"
             ref="listbox"
-            class="hys-ui-mention-options"
+            class="hys-ui-mention-options hys-ui-scrollbar"
             role="listbox"
             :aria-label="words.list"
             :aria-busy="busy || loadingMore || undefined"

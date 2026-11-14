@@ -130,7 +130,7 @@ defineExpose({ element });
       tabindex="-1"
       :aria-label="label"
       :aria-busy="loading || undefined"
-      class="hys-ui-menu-body"
+      class="hys-ui-menu-body hys-ui-scrollbar"
       @scroll="emit('scroll')"
     >
       <div v-if="loading" role="status" class="hys-ui-menu-message">

@@ -43,7 +43,7 @@ const visible = computed(() => {
 </script>
 
 <template>
-  <div v-bind="hysRootAttrs" class="hys-ui-ent-diff">
+  <div v-bind="hysRootAttrs" class="hys-ui-ent-diff hys-ui-scrollbar">
     <div class="hys-ui-ent-diff-title">
       {{ beforeLabel }} / {{ afterLabel }}
     </div>

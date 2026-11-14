@@ -1,5 +1,19 @@
 export const catalog=[
   {
+    "name": "HysScrollbar",
+    "shortName": "Scrollbar",
+    "label": "滚动条",
+    "slug": "hys-scrollbar",
+    "category": "基础组件",
+    "description": "为受限内容提供主题化滑块、横纵滚动和边缘遮罩，通过触边事件按需加载。",
+    "notes": [
+      "指定 height 或 maxHeight，或由布局限制可用高度。",
+      "默认鼠标悬停时显示滑块，可用 always 常显。隐藏时仍可用滚轮、触屏或键盘滚动。设为 native 可使用系统滚动条，高对比度模式会自动切换。",
+      "可用 --hys-ui-scrollbar-thumb、--hys-ui-scrollbar-thumb-hover 和 --hys-ui-scrollbar-track 设置滑块和轨道的颜色。",
+      "遮罩默认宽或高 40px。可用 --hys-ui-scrollbar-top-mask-height、--hys-ui-scrollbar-bottom-mask-height、--hys-ui-scrollbar-left-mask-width 和 --hys-ui-scrollbar-right-mask-width 调整尺寸。将变量末尾的 height 或 width 改为 color 可分别设置各边颜色。"
+    ]
+  },
+  {
     "name": "HysIcon",
     "shortName": "Icon",
     "label": "图标",
@@ -95,10 +109,10 @@ export const catalog=[
     "label": "卡片",
     "slug": "hys-card",
     "category": "基础组件",
-    "description": "卡片的独立交互示例、配置场景与类型参考。",
+    "description": "承载可折叠、可切换页签或可全屏浏览的内容。",
     "notes": [
       "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "用 fullscreenable 在标题区添加全屏按钮。全屏正文独立滚动，按 Esc 返回原位置。"
     ]
   },
   {

@@ -78,7 +78,7 @@ onMounted(() => {
   const control =
     editor?.querySelector<HTMLElement>("[data-pro-grid-input]") ??
     editor?.querySelector<HTMLElement>(
-      ".hys-ui-pro-grid-custom :is(input, select, textarea, [contenteditable='true'])",
+      ".hys-ui-pro-grid-custom :is(input:not([type='hidden']), select, textarea, [contenteditable='true'], [role='combobox'][tabindex='0'], button[role='combobox']:not(:disabled))",
     );
   (control ?? editor)?.focus();
 });
@@ -117,7 +117,8 @@ function onBlur(event: FocusEvent) {
     !props.commitOnBlur ||
     busy.value ||
     event.defaultPrevented ||
-    (props.editor.type !== "text" && props.editor.type !== "number") ||
+    (props.editor.type !== "text" && props.editor.type !== "number" &&
+      !(props.editor.type === "custom" && props.editor.commitOnBlur?.(props.scope.cell))) ||
     area.value?.contains(event.relatedTarget as Node | null)
   )
     return;

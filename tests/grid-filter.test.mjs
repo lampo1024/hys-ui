@@ -652,6 +652,173 @@ test("Spreadsheet hides editor actions by default, commits on blur and supports 
   assert.equal(grid.vm.getWorkbook().sheets[0].rows[0][1], 8);
 });
 
+test("Spreadsheet leaves an unchanged dropdown edit without saving or stealing focus", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [{
+    id: "s", name: "Choices", rows: [["投影", "会议室", false, 5]],
+    cells: {
+      A1: { type: "multiple", options: ["投影", "白板", "麦克风"] },
+      B1: { type: "select", options: ["会议室", "报告厅"] },
+      C1: { type: "boolean" },
+    },
+  }] } });
+  const cell = (column) => grid.find(`td[data-column-key="${column}"]`);
+  const editor = () => grid.find(".hys-ui-pro-grid-editor");
+  const openEditor = async (column) => {
+    cell(column).focus();
+    await fire(cell(column), "keydown", { key: "F2" });
+    const trigger = editor().querySelector('[role="combobox"]');
+    assert.equal(document.activeElement, trigger);
+    return trigger;
+  };
+
+  await openEditor(0);
+  cell(3).focus();
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.equal(document.activeElement, cell(3));
+
+  const single = await openEditor(1);
+  await fire(single, "click");
+  assert.equal(single.getAttribute("aria-expanded"), "true");
+  await fire(cell(3), "pointerdown");
+  assert.equal(editor(), null);
+
+  await openEditor(2);
+  cell(3).focus();
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.deepEqual(grid.vm.getWorkbook().sheets[0].rows[0], ["投影", "会议室", false, 5]);
+  assert.equal(grid.events.change, undefined);
+  assert.equal(grid.vm.undo(), false);
+
+  const multiple = await openEditor(0);
+  await fire(multiple, "click");
+  const apply = () => [...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "应用多选");
+  const footer = apply();
+  await fire(footer, "pointerdown");
+  footer.focus();
+  await nextTick();
+  assert(editor());
+  await fire(footer, "click");
+  assert.equal(editor(), null);
+  assert.equal(grid.events.change, undefined);
+
+  await fire(await openEditor(0), "click");
+  const option = document.querySelector('[role="option"][aria-label="白板"]');
+  await fire(option, "pointerdown");
+  option.focus();
+  await nextTick();
+  assert(editor());
+  await fire(option, "click");
+  await fire(apply(), "click");
+  assert.equal(editor(), null);
+  assert.equal(grid.vm.getWorkbook().sheets[0].rows[0][0], "投影\n白板");
+});
+
+test("Spreadsheet autocomplete releases the edit session on outside interaction and keeps suggestion selection available", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [{
+    id: "s", name: "Contacts", rows: [["陈晨", "林宁"]],
+    cells: {
+      A1: { type: "autocomplete", options: ["陈晨", "陈雨"] },
+      B1: { type: "autocomplete", options: ["林宁", "林晨"] },
+    },
+  }] } });
+  const cell = (column) => grid.find(`td[data-column-key="${column}"]`);
+  const editor = () => grid.find(".hys-ui-pro-grid-editor");
+  const values = () => grid.vm.getWorkbook().sheets[0].rows[0];
+  const open = async (column) => {
+    cell(column).focus();
+    await fire(cell(column), "keydown", { key: "F2" });
+    const input = editor().querySelector('input[role="combobox"]');
+    assert.equal(document.activeElement, input);
+    return input;
+  };
+
+  await open(1);
+  await fire(cell(0), "pointerdown");
+  cell(0).focus();
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.equal(document.activeElement, cell(0));
+  assert.equal(grid.vm.undo(), false);
+
+  let input = await open(1);
+  input.value = "林";
+  await fire(input, "input");
+  assert(input.getAttribute("aria-controls"));
+  await fire(input, "keydown", { key: "Escape" });
+  assert.equal(editor(), null);
+  assert.deepEqual(values(), ["陈晨", "林宁"]);
+  assert.equal(grid.vm.undo(), false);
+
+  input = await open(1);
+  input.value = "新联系人";
+  await fire(input, "input");
+  cell(0).focus();
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.equal(document.activeElement, cell(0));
+  assert.deepEqual(values(), ["陈晨", "新联系人"]);
+
+  input = await open(0);
+  input.value = "陈";
+  await fire(input, "input");
+  const option = [...document.querySelectorAll('.hys-ui-autocomplete-popup [role="option"]')]
+    .find((item) => item.textContent.trim() === "陈雨");
+  await fire(option, "pointerdown");
+  assert(editor());
+  await fire(option, "click");
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.deepEqual(values(), ["陈雨", "新联系人"]);
+});
+
+test("Spreadsheet date editors open the calendar and leave without committing untouched values", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [{
+    id: "s", name: "Dates", rows: [["2026-11-20", "2026-11-19T16:00", 5]],
+    formats: { A1: { number: "date" } },
+    cells: { B1: { type: "datetime-local" } },
+  }] } });
+  const cell = (column) => grid.find(`td[data-column-key="${column}"]`);
+  const editor = () => grid.find(".hys-ui-pro-grid-editor");
+  const calendar = () => document.querySelector(".hys-ui-date-popup");
+  const value = () => grid.vm.getWorkbook().sheets[0].rows[0];
+  const openDate = async (column) => {
+    cell(column).focus();
+    await fire(cell(column), "keydown", { key: "F2" });
+    await nextTick();
+    const trigger = editor().querySelector('button[role="combobox"]');
+    assert.equal(document.activeElement, trigger);
+    assert.equal(trigger.getAttribute("aria-expanded"), "true");
+    assert(calendar());
+    return trigger;
+  };
+  await openDate(0);
+  await fire(cell(2), "pointerdown");
+  cell(2).focus();
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.equal(document.activeElement, cell(2));
+
+  await openDate(1);
+  await fire(document.activeElement, "keydown", { key: "Escape" });
+  await nextTick();
+  assert.equal(editor(), null);
+  assert.deepEqual(value(), ["2026-11-20", "2026-11-19T16:00", 5]);
+  assert.equal(grid.events.change, undefined);
+  assert.equal(grid.vm.undo(), false);
+
+  await openDate(0);
+  const nextDay = calendar().querySelector('[aria-label="2026-11-21"]');
+  await fire(nextDay, "pointerdown");
+  nextDay.focus();
+  assert(editor());
+  await fire(nextDay, "click");
+  await pause(0);
+  assert.equal(editor(), null);
+  assert.equal(value()[0], "2026-11-21");
+});
+
 async function openSpreadsheetOperation(grid, label) {
   await fire(grid.find('button[aria-label="更多操作"]'), "click");
   await nextTick();
@@ -1342,6 +1509,45 @@ test("Spreadsheet dragging a selected row number moves only that row", async () 
 
 });
 
+test("Spreadsheet dragging a total between detail rows preserves its inputs without a circular reference", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [
+    { id: "expenses", name: "实际支出", rows: [["项目", "金额"], ["办公用品", 1020], ["培训课程", 2100], ["合计", "=SUM(B2:B3)"]] },
+    { id: "report", name: "汇总", rows: [["=IF(TRUE,SUM('实际支出'!$B$2:$B$3),0)", "=SUM(B1:B2)"]] },
+  ] } });
+  const header = (index) => grid.find(`[data-sheet-row="${index}"] button`);
+  const total = (index) => grid.find(`[data-grid-row="number:${index}"] td[data-column-key="1"]`);
+  const [expenses, report] = grid.vm.getWorkbook().sheets;
+  assert.equal(total(3).textContent.trim(), "3120");
+  const original = document.elementFromPoint;
+  document.elementFromPoint = (_, y) => header(Math.floor(y / 30));
+  for (let index = 0; index < 4; index++)
+    header(index).closest("tr").getBoundingClientRect = () => ({ top: index * 30, height: 30 });
+  try {
+    await fire(header(3), "click");
+    for (const [type, y, buttons] of [["pointerdown", 105, 1], ["pointermove", 64, 1], ["pointerup", 64, 0]]) {
+      const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientY: y, buttons });
+      Object.defineProperty(event, "pointerId", { value: 1 });
+      header(3).dispatchEvent(event);
+      await nextTick();
+    }
+    const [moved, linked] = grid.vm.getWorkbook().sheets;
+    assert.deepEqual(moved.rows[2], ["合计", "=SUM(B2,B4)"]);
+    assert.equal(total(2).textContent.trim(), "3120");
+    assert.equal(linked.rows[0][0], "=IF(TRUE,SUM('实际支出'!$B$2,'实际支出'!$B$4),0)");
+    assert.equal(linked.rows[0][1], report.rows[0][1]);
+    assert(grid.vm.undo());
+    await nextTick();
+    assert.deepEqual(grid.vm.getWorkbook().sheets[0].rows, expenses.rows);
+    assert.equal(total(3).textContent.trim(), "3120");
+    assert(grid.vm.redo());
+    await nextTick();
+    assert.equal(total(2).textContent.trim(), "3120");
+  } finally {
+    if (original) document.elementFromPoint = original;
+    else delete document.elementFromPoint;
+  }
+});
+
 test("Spreadsheet row resize previews and commits selected heights in one undo step", async () => {
   const grid = await mount(ui.HysSpreadsheet, {
     defaultWorkbook: {
@@ -1918,6 +2124,152 @@ test("Spreadsheet validates batch writes against the candidate data and rejects 
   await nextTick();
   assert.equal(grid.find('[data-grid-row="number:1"] td[data-column-key="0"]').colSpan, 3);
   assert.equal(grid.all('[data-grid-row="number:1"] td[data-column-key]').length, 1);
+});
+
+test("Spreadsheet editors preserve typed values, accept direct keyboard input, and validate a batch atomically", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [{
+    id: "s", name: "Editing", rows: [["001", 1, 0, 0, null, null, null, false, null, null, null, null, null], [null, 2]],
+    cells: {
+      A1: { type: "text" }, B1: { type: "number", validation: { max: 20 } },
+      C1: { type: "percent" }, D1: { type: "currency" }, E1: { type: "date" },
+      F1: { type: "time" }, G1: { type: "datetime-local" }, H1: { type: "boolean" },
+      I1: { type: "select", options: ["=标签"] }, J1: { type: "multiple", options: ["甲", "乙"] },
+      K1: { type: "autocomplete", options: ["联系人"] }, L1: { type: "formula" }, M1: { type: "multiline" },
+      B2: { type: "number", validation: { max: 10 } },
+    },
+  }] } });
+  const sheet = () => grid.vm.getWorkbook().sheets[0];
+  grid.vm.selectRange("B1");
+  const amount = grid.find('[data-grid-row="number:0"] td[data-column-key="1"]');
+  await fire(amount, "keydown", { key: "7" });
+  const input = grid.find(".hys-ui-pro-grid-editor input");
+  assert.equal(input.value, "7");
+  await fire(input, "keydown", { key: "Enter" });
+  await pause(0);
+  assert.equal(sheet().rows[0][1], 7);
+  grid.vm.selectRange("B1", "B2");
+  assert(!grid.vm.editSelection("11"));
+  assert.deepEqual([sheet().rows[0][1], sheet().rows[1][1]], [7, 2]);
+  assert(grid.vm.editSelection("9"));
+  await nextTick();
+  assert.deepEqual([sheet().rows[0][1], sheet().rows[1][1]], [9, 9]);
+  assert(grid.vm.undo());
+  await nextTick();
+  assert.deepEqual([sheet().rows[0][1], sheet().rows[1][1]], [7, 2]);
+  grid.vm.selectRange("L1", "L2");
+  assert(grid.vm.editSelection("=$B1*2"));
+  await nextTick();
+  assert.deepEqual([sheet().rows[0][11], sheet().rows[1][11]], ["=$B1*2", "=$B2*2"]);
+  grid.vm.selectRange("A1");
+  assert(grid.vm.paste('0002\t6\t12.5％\t¥1,248.50\t2028-02-29\t09:05:30\t2028-02-29 16:05:25\t是\t=标签\t"甲\n乙"\t自由输入\tB1+1\t"第一行\r\n第二行"'));
+  await nextTick();
+  assert.deepEqual(sheet().rows[0], ["0002", 6, 0.125, 1248.5, "2028-02-29", "09:05:30", "2028-02-29T16:05:25", true, "'=标签", "甲\n乙", "自由输入", "=B1+1", "第一行\r\n第二行"]);
+  grid.vm.selectRange("G1");
+  assert(!grid.vm.editSelection("2027-02-29T16:05"));
+  assert(!grid.vm.editSelection("2028-02-29T16:05:25Z"));
+});
+
+test("Spreadsheet fills numeric, date, custom, smart text and relative formula series through common entry points", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [{
+    id: "s", name: "Fill", columnCount: 8,
+    rows: [
+      [2, "2028-02-27", "AA009", "已发货", "alice@test.example", "alice", "=$A1", 3],
+      [5, "2028-02-29", "AA011", null, "ben@test.example", "ben"],
+      [null, null, null, null, "carol@test.example"],
+      [null, null, null, null, "dan@test.example"],
+      [],
+    ],
+  }] } });
+  const sheet = () => grid.vm.getWorkbook().sheets[0];
+  assert(grid.vm.selectRange("A1", "C2"));
+  await nextTick();
+  const handle = grid.find('button[aria-label="拖动填充选区"]');
+  const target = grid.find('[data-grid-row="number:3"] td[data-column-key="2"]');
+  await fire(handle, "dragstart");
+  await fire(target, "dragover");
+  assert(target.classList.contains("hys-ui-spreadsheet-fill-preview"));
+  await fire(target, "drop");
+  await nextTick();
+  assert.deepEqual(sheet().rows[2].slice(0, 3), [8, "2028-03-02", "AA013"]);
+  assert.deepEqual(sheet().rows[3].slice(0, 3), [11, "2028-03-04", "AA015"]);
+  assert(!target.classList.contains("hys-ui-spreadsheet-fill-preview"));
+  assert(grid.vm.selectRange("D1", "D4"));
+  assert(grid.vm.fill("down", "copy", ["待打包", "已发货", "已签收"]));
+  await nextTick();
+  assert.deepEqual(sheet().rows.slice(0, 4).map((row) => row[3]), ["已发货", "已签收", "待打包", "已发货"]);
+  assert(grid.vm.selectRange("F1", "F4"));
+  assert(grid.vm.fill("down", "smart"));
+  await nextTick();
+  assert.deepEqual(sheet().rows.slice(0, 4).map((row) => row[5]), ["alice", "ben", "carol", "dan"]);
+  assert(grid.vm.selectRange("G1", "G4"));
+  assert(grid.vm.fill("down"));
+  await nextTick();
+  assert.deepEqual(sheet().rows.slice(0, 4).map((row) => row[6]), ["=$A1", "=$A2", "=$A3", "=$A4"]);
+  assert(grid.vm.selectRange("G1", "H1"));
+  assert(grid.vm.fill("right"));
+  await nextTick();
+  assert.equal(sheet().rows[0][7], "=$A1");
+  assert(grid.vm.undo());
+  await nextTick();
+  assert.equal(sheet().rows[0][7], 3);
+  assert(grid.vm.selectRange("A3", "A4"));
+  await nextTick();
+  await fire(grid.find('button[aria-label="拖动填充选区"]'), "dragstart");
+  await fire(grid.find('[data-grid-row="number:0"] td[data-column-key="0"]'), "drop");
+  await nextTick();
+  assert.deepEqual(sheet().rows.map((row) => row[0]).slice(0, 4), [2, 5, 8, 11]);
+  assert(grid.vm.selectRange("C1", "C4"));
+  assert(grid.vm.setCells([{ row: 0, column: 2, value: "另一个编号" }, { row: 2, column: 2, value: null }, { row: 3, column: 2, value: null }]));
+  await nextTick();
+  assert(grid.vm.fill("down", "smart"));
+  await nextTick();
+  assert.deepEqual(sheet().rows.map((row) => row[2]).slice(0, 4), ["另一个编号", "AA011", "另一个编号", "AA011"]);
+});
+
+test("Spreadsheet paste modes preserve target values and formats independently and translate filtered source rows", async () => {
+  const grid = await mount(ui.HysSpreadsheet, { defaultWorkbook: { sheets: [{
+    id: "s", name: "Paste", columnCount: 6,
+    rows: [[2, "=$A1*3", 70, 80, 90, 100], [3, "=$A2*3"], [4, "=$A3*3"], [], []],
+    rowOptions: { 1: { hidden: true } },
+    formats: { B1: { bold: true }, B3: { italic: true }, C1: { underline: true } },
+    cells: { F1: { type: "formula" } },
+  }] } });
+  const sheet = () => grid.vm.getWorkbook().sheets[0];
+  const source = grid.find('[data-grid-row="number:0"] td[data-column-key="1"]');
+  source.focus();
+  assert(grid.vm.selectRange("B1", "B3"));
+  const data = new Map();
+  data.setData = data.set;
+  const copy = new Event("copy", { bubbles: true, cancelable: true });
+  Object.defineProperty(copy, "clipboardData", { value: data });
+  source.dispatchEvent(copy);
+  const text = data.get("text/plain");
+  assert(text);
+  assert(grid.vm.selectRange("C1"));
+  assert(grid.vm.paste(text, "values"));
+  await nextTick();
+  assert.equal(sheet().rows[0][2], 6);
+  assert.equal(sheet().rows[2][2], 12);
+  assert.equal(sheet().formats.C1.underline, true);
+  assert(grid.vm.selectRange("D4"));
+  assert(grid.vm.paste(text, "formulas"));
+  await nextTick();
+  assert.equal(sheet().rows[3][3], "=$A4*3");
+  assert.equal(sheet().rows[4][3], "=$A5*3");
+  assert.equal(sheet().formats.D4, undefined);
+  assert(grid.vm.selectRange("E1"));
+  assert(grid.vm.paste(text, "formats"));
+  await nextTick();
+  assert.equal(sheet().rows[0][4], 90);
+  assert.equal(sheet().formats.E1.bold, true);
+  assert.equal(sheet().formats.E3.italic, true);
+  assert(grid.vm.selectRange("F1"));
+  assert(!grid.vm.paste("=1+1", "values"));
+  assert(!grid.vm.paste("123", "formats"));
+  assert.equal(sheet().rows[0][5], 100);
+  assert(grid.vm.paste("123", "values"));
+  await nextTick();
+  assert.equal(sheet().rows[0][5], 123);
 });
 
 test("Spreadsheet keeps formulas incremental and focuses a cell outside both virtual windows", async () => {

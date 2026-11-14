@@ -1369,7 +1369,7 @@ defineExpose({
     <div class="hys-ui-table-viewport"><div
       ref="viewport"
       class="hys-ui-table-scroll"
-      :class="{ 'hys-ui-table-themed-scrollbar': nativeScrollbar === false }"
+      :class="nativeScrollbar ? 'hys-ui-table-native-scrollbar' : 'hys-ui-scrollbar'"
       :style="{
         height: length(height),
         maxHeight: length(maxHeight),
@@ -2097,7 +2097,7 @@ defineExpose({
         ref="stickyBarElement"
         v-bind="attrs"
         class="hys-ui-table-sticky-scrollbar"
-        :class="{ 'hys-ui-table-themed-scrollbar': nativeScrollbar === false }"
+        :class="nativeScrollbar ? 'hys-ui-table-native-scrollbar' : 'hys-ui-scrollbar'"
         :style="{
           top: stickyBar.top + 'px',
           left: stickyBar.left + 'px',
@@ -2298,9 +2298,8 @@ defineExpose({
   overflow-y: hidden;
   background: var(--hys-ui-surface, var(--hys-ui-theme-surface));
 }
-.hys-ui-table-themed-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--hys-ui-border, var(--hys-ui-theme-border)) transparent;
+.hys-ui-table-native-scrollbar {
+  scrollbar-color: auto;
 }
 .hys-ui-data-table {
   table-layout: fixed;

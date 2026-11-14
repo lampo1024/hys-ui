@@ -80,7 +80,7 @@ const skin = useHysRootAttrs();
           aria-hidden="true"
         />
         <div
-          class="hys-ui-popup-surface-content"
+          class="hys-ui-popup-surface-content hys-ui-scrollbar"
           :class="options.contentClass"
           :style="surface.contentStyle.value"
         >

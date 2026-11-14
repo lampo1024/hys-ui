@@ -122,6 +122,10 @@ const workbook = ref<HysSpreadsheetWorkbook>({
                 上方，仅移动第 3 行。
               </li>
               <li>
+                在「实际支出」选中第 4 行，再拖到第 3 行上方。选中 B3 可看到公式变为
+                <code>=SUM(B2,B4)</code>，合计仍为 3120。
+              </li>
+              <li>
                 用 <kbd>Shift</kbd> 扩展行列选区，用 <kbd>Ctrl</kbd> /
                 <kbd>⌘</kbd>
                 点击行号或列标可从选区移除该项。再次点击单独选中的行列或按

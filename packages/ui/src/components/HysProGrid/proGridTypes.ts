@@ -32,6 +32,8 @@ export type HysProGridEditor<T extends object> =
   | { type: "select"; options: readonly HysProGridChoice[] }
   | {
       type: "custom";
+      typeToEdit?: (cell: HysProGridCell<T>) => boolean;
+      commitOnBlur?: (cell: HysProGridCell<T>) => boolean;
       toDraft?: (context: HysProGridCell<T>) => unknown;
       parse?: (
         draft: unknown,
@@ -150,8 +152,8 @@ export interface HysProGridEditorScope<T extends object> {
   inputId: string;
   errorId: string | undefined;
   setDraft: (value: unknown) => void;
-  commit: () => Promise<boolean>;
-  cancel: () => void;
+  commit: (restoreFocus?: boolean) => Promise<boolean>;
+  cancel: (restoreFocus?: boolean) => void;
 }
 
 export interface HysProGridSlots<T extends object> {

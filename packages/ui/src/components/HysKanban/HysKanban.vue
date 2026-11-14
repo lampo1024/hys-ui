@@ -138,7 +138,7 @@ function reorder(card: KanbanCard, offset: number) {
 </script>
 
 <template>
-  <div v-bind="hysRootAttrs" class="hys-ui-ent-kanban">
+  <div v-bind="hysRootAttrs" class="hys-ui-ent-kanban hys-ui-scrollbar">
     <section
       v-for="column in columns"
       :key="column.id"

@@ -26,7 +26,7 @@ const workbook: HysSpreadsheetWorkbook = {
 
 <template>
   <div class="demo-stack">
-    <HysSpreadsheet :default-workbook="workbook" show-edit-actions />
+    <HysSpreadsheet :default-workbook="workbook" />
     <p class="scenario-note">
       C4 的目标为零，因此显示 #DIV/0!。将 B4 改成 100
       可恢复计算。选中计算结果可在公式栏查看或修改原公式。

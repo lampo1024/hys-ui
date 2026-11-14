@@ -196,7 +196,7 @@ defineExpose({ open: show, close });
             "
             @keydown="inputKey"
           />
-          <div :id="resultsId" role="listbox" class="hys-ui-v4-scroll">
+          <div :id="resultsId" role="listbox" class="hys-ui-v4-scroll hys-ui-scrollbar">
             <button
               v-for="(action, position) in filtered"
               :id="resultsId + '-' + position"

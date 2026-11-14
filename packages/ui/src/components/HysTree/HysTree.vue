@@ -774,7 +774,7 @@ defineExpose({
       :aria-busy="loading || loadingKeys.size > 0 || undefined"
       :aria-invalid="field.invalid.value || undefined"
       :aria-describedby="field.describedBy.value"
-      class="hys-ui-pf-tree-list"
+      class="hys-ui-pf-tree-list hys-ui-scrollbar"
       :class="{ 'hys-ui-tree-virtual': virtual }"
       :style="{
         maxHeight: viewport + 'px',
@@ -1012,7 +1012,6 @@ defineExpose({
 .hys-ui-pf-tree-list {
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
   position: relative;
   isolation: isolate;
 }

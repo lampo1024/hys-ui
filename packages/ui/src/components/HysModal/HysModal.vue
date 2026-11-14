@@ -22,6 +22,7 @@ import {
   CircleHelp,
 } from "lucide-vue-next";
 import HysButton from "../HysButton/HysButton.vue";
+import HysScrollbar from "../HysScrollbar/HysScrollbar.vue";
 import { useHysRootAttrs } from "../../config";
 import { useModal } from "../../composables/useModal";
 import {
@@ -261,7 +262,7 @@ defineExpose({
         v-if="modal.state.active.value && (forceRender || modal.rendered.value)"
         v-show="modal.shown.value"
         v-bind="skin"
-        class="hys-ui-overlay hys-ui-modal-overlay"
+        class="hys-ui-overlay hys-ui-modal-overlay hys-ui-scrollbar"
         :class="[
           overlayClass,
           {
@@ -422,7 +423,7 @@ defineExpose({
               </button>
             </div>
           </header>
-          <div class="hys-ui-dialog-body" :class="bodyClass" :style="bodyStyle">
+          <HysScrollbar :tabindex="null" class="hys-ui-dialog-body" :class="bodyClass" :style="bodyStyle">
             <div v-if="loading" class="hys-ui-modal-loading" role="status">
               <slot name="loading" v-bind="scope"
                 ><LoaderCircle
@@ -458,7 +459,7 @@ defineExpose({
             >
               {{ modal.error.value }}
             </p>
-          </div>
+          </HysScrollbar>
           <footer
             v-if="footerVisible"
             class="hys-ui-dialog-foot"
@@ -627,7 +628,6 @@ defineExpose({
 .hys-ui-dialog-body {
   min-height: 0;
   flex: 1;
-  overflow: auto;
   overscroll-behavior: contain;
   line-height: 1.7;
 }

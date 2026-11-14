@@ -1,0 +1,41 @@
+.hys-ui-scrollbar {
+  --hys-scrollbar-rest-thumb: var(
+    --hys-ui-scrollbar-thumb,
+    color-mix(in srgb, var(--hys-ui-muted, var(--hys-ui-theme-muted, #74829b)) 64%, transparent)
+  );
+  --hys-scrollbar-track-color: transparent;
+  --hys-scrollbar-current-thumb: transparent;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hys-scrollbar-current-thumb) var(--hys-scrollbar-track-color);
+}
+
+.hys-ui-scrollbar:hover {
+  --hys-scrollbar-track-color: var(--hys-ui-scrollbar-track, transparent);
+  --hys-scrollbar-current-thumb: var(
+    --hys-ui-scrollbar-thumb-hover,
+    var(--hys-scrollbar-rest-thumb)
+  );
+}
+
+@supports not (scrollbar-color: auto) {
+  .hys-ui-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .hys-ui-scrollbar::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--hys-scrollbar-current-thumb) padding-box;
+  }
+  .hys-ui-scrollbar::-webkit-scrollbar-track,
+  .hys-ui-scrollbar::-webkit-scrollbar-corner {
+    background: var(--hys-scrollbar-track-color);
+  }
+}
+
+@media (forced-colors: active) {
+  .hys-ui-scrollbar {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+}

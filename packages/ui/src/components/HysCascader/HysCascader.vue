@@ -796,7 +796,7 @@ defineExpose({
         :id="id + '-panel'"
         ref="panel"
         v-bind="rootAttrs"
-        class="hys-ui-cascader-menu"
+        class="hys-ui-cascader-menu hys-ui-scrollbar"
         :class="[
           popupClass,
           'hys-ui-cascader-' + control.size.value,
@@ -901,7 +901,7 @@ defineExpose({
             }}</slot>
           </div>
         </template>
-        <div v-else ref="columnsElement" class="hys-ui-cascader-columns">
+        <div v-else ref="columnsElement" class="hys-ui-cascader-columns hys-ui-scrollbar">
           <template
             v-for="(rows, level) in store.columns.value"
             :key="columnKey(level)"
@@ -1170,7 +1170,6 @@ defineExpose({
   overscroll-behavior: contain;
   flex: 0 0 auto;
   position: relative;
-  scrollbar-width: thin;
 }
 .hys-ui-cascader-empty-column {
   flex: 1 0 180px;

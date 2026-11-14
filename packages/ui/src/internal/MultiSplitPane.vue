@@ -380,7 +380,7 @@ defineExpose({ togglePane, setPaneCollapsed, getPanelSizes: panelSizes, getPaneE
     <template v-for="(entry, index) in slotsByPanel" :key="entry.panel.id">
       <div
         :id="panelId(index)"
-        class="hys-ui-splitter-pane"
+        class="hys-ui-splitter-pane hys-ui-scrollbar"
         :data-hys-pane="entry.panel.id"
         :inert="entry.collapsed"
         :style="{ '--hys-ui-split-ratio': ratios[index] / 100 }"

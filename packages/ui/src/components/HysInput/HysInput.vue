@@ -546,7 +546,7 @@ defineExpose({
           :id="inputId"
           :class="[
             inputProps?.class,
-            textarea ? 'hys-ui-input hys-ui-ex-control' : 'hys-ui-input',
+            textarea ? 'hys-ui-input hys-ui-ex-control hys-ui-scrollbar' : 'hys-ui-input',
           ]"
           data-hys-ui-field-managed
           :aria-label="

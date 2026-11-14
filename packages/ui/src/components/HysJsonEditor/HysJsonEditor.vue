@@ -104,7 +104,7 @@ function format(mode: "pretty" | "compact") {
     <textarea
       ref="input"
       v-model="model"
-      class="hys-ui-ent-code"
+      class="hys-ui-ent-code hys-ui-scrollbar"
       spellcheck="false"
       aria-label="JSON 编辑器"
       :aria-invalid="!!error"

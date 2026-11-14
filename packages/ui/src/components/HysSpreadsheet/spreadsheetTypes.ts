@@ -447,6 +447,7 @@ export interface HysSpreadsheetInstance {
   recalculate(): void;
   manageAxis(command: HysSpreadsheetAxisCommand): boolean;
   setCells(changes: readonly HysSpreadsheetCellChange[]): boolean;
+  editSelection(draft: string): boolean;
   configureCells(options: HysSpreadsheetCellOptions): boolean;
   formatCells(format: HysSpreadsheetCellFormat | null): boolean;
   validateCells(): Record<string, string>;

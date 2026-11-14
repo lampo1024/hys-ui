@@ -19,11 +19,12 @@ export function sheetName(token: string) {
 
 export function rewriteReferences(
   formula: string,
-  rewrite: (first: string, last?: string, qualifier?: string) => string,
+  rewrite: (first: string, last: string | undefined, qualifier: string | undefined, offset: number, length: number) => string,
 ) {
   return formula.replace(formulaPart, (...args) => {
     const { first, last, sheet } = args.at(-1);
-    return first ? rewrite(first, last, sheet) : args[0];
+    const match: string = args[0];
+    return first ? rewrite(first, last, sheet, args.at(-3), match.length) : match;
   });
 }
 

@@ -5,7 +5,6 @@ import {
   parseCellInput,
   sheetWidth,
 } from "./spreadsheetModel";
-import { offsetFormula } from "./spreadsheetReferences";
 import type {
   HysSpreadsheetArea as Area,
   HysSpreadsheetCellChange as Change,
@@ -14,7 +13,6 @@ import type {
   HysSpreadsheetSheet as Sheet,
   HysSpreadsheetValidator as Validator,
   HysSpreadsheetValue as Value,
-  HysSpreadsheetFillMode,
 } from "./spreadsheetTypes";
 
 export function areaFromAddresses(
@@ -121,14 +119,54 @@ export function parseTyped(input: string, options?: Options): Value {
     type === "autocomplete" ||
     type === "select" ||
     type === "multiple"
-  )
-    return /^[=']/.test(input) ? "'" + input : input;
+  ) {
+    const text = type === "multiple" ? input.replace(/\r\n?/g, "\n") : input;
+    return /^[=']/.test(text) ? "'" + text : text;
+  }
   if (type === "formula" && !input.startsWith("=")) return "=" + input;
-  if (type === "date" || type === "time" || type === "datetime-local")
-    return input;
-  if (type === "percent" && /^[-+]?\d*\.?\d+\s*%$/.test(input.trim()))
-    return parseFloat(input) / 100;
+  if (type === "boolean") {
+    const value = input.trim();
+    if (value === "是" || value === "1") return true;
+    if (value === "否" || value === "0") return false;
+  }
+  if (type === "date" || type === "time") return input.trim();
+  if (type === "datetime-local") return input.trim().replace(" ", "T");
+  if (type === "number" || type === "currency" || type === "percent") {
+    const raw = input.trim();
+    const amount = type === "currency"
+      ? raw.replace(/^(\s*[+-]?)\s*\p{Sc}\s*|\s*\p{Sc}\s*$/gu, "$1")
+      : raw;
+    const percentage = type === "percent" && /[%％]$/.test(amount);
+    const digits = percentage ? amount.slice(0, -1).trimEnd() : amount;
+    const grouped = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(digits);
+    const value = parseCellInput(grouped ? digits.replaceAll(",", "") : digits);
+    return percentage && typeof value === "number" ? value / 100 : value;
+  }
   return parseCellInput(input);
+}
+
+export function dateMillis(text: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return undefined;
+  const time = Date.parse(text);
+  return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === text
+    ? time
+    : undefined;
+}
+
+const clockTime = /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?$/;
+
+export function draftText(value: unknown, options?: Options) {
+  const text = String(value ?? "");
+  return ["text", "multiline", "autocomplete", "select", "multiple"].includes(options?.type ?? "") && text.startsWith("'")
+    ? text.slice(1)
+    : text;
+}
+
+export function typedFormat(options?: Options, format?: Format): Format | undefined {
+  const type = options?.type;
+  if (type === "multiline" || type === "multiple") return { overflow: "wrap", ...format };
+  if (type === "currency" || type === "percent") return { number: type, ...format };
+  return format;
 }
 
 function checkComparison(a: Value, b: Value, operator: string) {
@@ -167,16 +205,13 @@ export function validateCell(
     return invalid("请输入有效数字。");
   if (type === "boolean" && typeof value !== "boolean")
     return invalid("请选择布尔值。");
-  const isoDate =
-    /^\d{4}-\d{2}-\d{2}$/.test(text) &&
-    new Date(text).toString() !== "Invalid Date" &&
-    new Date(text).toISOString().slice(0, 10) === text;
-  if (type === "date" && !isoDate) return invalid("请输入有效日期。");
-  if (type === "time" && !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(text))
+  if (type === "date" && dateMillis(text) === undefined)
+    return invalid("请输入有效日期。");
+  if (type === "time" && !clockTime.test(text))
     return invalid("请输入有效时间。");
   if (
     type === "datetime-local" &&
-    (!text.includes("T") || !Number.isFinite(Date.parse(text)))
+    (text[10] !== "T" || dateMillis(text.slice(0, 10)) === undefined || !clockTime.test(text.slice(11)))
   )
     return invalid("请输入有效日期和时间。");
   if (
@@ -334,63 +369,4 @@ export function safeLink(value?: string) {
   return value && /^(?:https?:\/\/|mailto:|tel:|#)/i.test(value.trim())
     ? value.trim()
     : undefined;
-}
-
-export function fillValues(
-  sheet: Sheet,
-  area: Area,
-  direction: "down" | "right",
-  mode: HysSpreadsheetFillMode,
-  sequence?: readonly Value[],
-): Change[] {
-  const vertical = direction === "down";
-  const length = vertical
-    ? area.bottom - area.top + 1
-    : area.right - area.left + 1;
-  const changes: Change[] = [];
-  for (const { row, column } of points(area)) {
-    const offset = vertical ? row - area.top : column - area.left;
-    if (!offset) continue;
-    const firstRow = vertical ? area.top : row;
-    const firstColumn = vertical ? column : area.left;
-    const start = sheet.rows[firstRow]?.[firstColumn] ?? null;
-    const next =
-      sheet.rows[firstRow + (vertical ? 1 : 0)]?.[
-        firstColumn + (vertical ? 0 : 1)
-      ] ?? null;
-    let value = start;
-    if (sequence?.length) {
-      const first = sequence.indexOf(start);
-      value = sequence[(Math.max(0, first) + offset) % sequence.length];
-    } else if (typeof start === "string" && start.startsWith("=")) {
-      value = offsetFormula(start, row - firstRow, column - firstColumn);
-    } else if (mode !== "copy" && typeof start === "number") {
-      value =
-        start +
-        offset * (typeof next === "number" && length > 2 ? next - start : 1);
-    } else if (
-      mode !== "copy" &&
-      typeof start === "string" &&
-      /^\d{4}-\d{2}-\d{2}$/.test(start) &&
-      Number.isFinite(Date.parse(start))
-    ) {
-      const step =
-        typeof next === "string" &&
-        /^\d{4}-\d{2}-\d{2}$/.test(next) &&
-        Number.isFinite(Date.parse(next))
-          ? Date.parse(next) - Date.parse(start)
-          : 86400000;
-      value = new Date(Date.parse(start) + offset * step)
-        .toISOString()
-        .slice(0, 10);
-    } else if (mode === "smart" && typeof start === "string") {
-      const match = /^(.*?)(\d+)$/.exec(start);
-      if (match)
-        value =
-          match[1] +
-          String(Number(match[2]) + offset).padStart(match[2].length, "0");
-    }
-    changes.push({ row, column, value });
-  }
-  return changes;
 }

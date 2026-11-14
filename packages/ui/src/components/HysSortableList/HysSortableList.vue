@@ -445,7 +445,7 @@ defineExpose({
   >
     <div
       ref="viewport"
-      class="hys-sort-viewport"
+      class="hys-sort-viewport hys-ui-scrollbar"
       :class="{ 'hys-sort-virtual': virtual }"
       :style="{ maxBlockSize: length }"
       @scroll.passive="syncPosition"

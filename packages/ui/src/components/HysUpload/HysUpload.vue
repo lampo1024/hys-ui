@@ -328,7 +328,7 @@ defineExpose({
       </div>
       <ul
         v-if="state.files.value.length"
-        class="hys-ui-upload-list"
+        class="hys-ui-upload-list hys-ui-scrollbar"
         :class="'hys-ui-upload-list-' + listType"
         :style="listStyle"
         :aria-label="state.words.value.files"

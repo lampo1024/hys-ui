@@ -1031,7 +1031,7 @@ defineExpose({
         v-bind="attrs"
         role="dialog"
         :aria-label="moreCell.day + ' ' + words.more"
-        class="hys-ui-calendar-popup hys-ui-floating-surface"
+        class="hys-ui-calendar-popup hys-ui-floating-surface hys-ui-scrollbar"
         :style="style"
       >
         <header>
@@ -1044,7 +1044,7 @@ defineExpose({
             ><X :size="15"
           /></HysButton>
         </header>
-        <div class="hys-ui-calendar-popup-events">
+        <div class="hys-ui-calendar-popup-events hys-ui-scrollbar">
           <button
             v-for="(event, i) in moreCell.events"
             :key="event.id + ':' + i"

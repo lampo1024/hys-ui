@@ -136,7 +136,6 @@
 }
 .hys-chart-table {
   margin-block-start: 12px;
-  overflow: auto;
 }
 .hys-chart-table table {
   inline-size: 100%;

@@ -351,6 +351,79 @@ test("Card non-controlled defaults and RTL navigation track the available tab li
   assert.equal(a.find("[role=tab]").getAttribute("tabindex"), "0");
   assert.equal(a.vm.activeTab, "new");
 });
+test("Card fullscreen preserves its content and returns focus and page scrolling on Escape", async () => {
+  const a = await mount(ui.HysCard, { title: "Records", fullscreenable: true }, {
+    default: () => h("input", { defaultValue: "Initial" }),
+  });
+  const card = a.vm.element;
+  const button = card.querySelector("[data-card-fullscreen-toggle]");
+  const input = card.querySelector("input");
+  input.value = "Draft";
+  button.focus();
+  await fire(button, "click");
+  await nextTick();
+
+  assert.equal(a.vm.fullscreen, true);
+  assert.equal(card.parentElement, document.body);
+  assert.equal(card.getAttribute("role"), "dialog");
+  assert.equal(card.getAttribute("aria-modal"), "true");
+  assert.equal(document.activeElement, button);
+  assert.equal(document.body.style.overflow, "hidden");
+  assert.deepEqual(a.events.fullscreenChange, [[true]]);
+  assert.equal(card.querySelector("input"), input);
+  assert.equal(input.value, "Draft");
+
+  await fire(input, "keydown", { key: "Escape" });
+  await nextTick();
+  assert.equal(a.vm.fullscreen, false);
+  assert.equal(a.find("section"), card);
+  assert.equal(document.activeElement, button);
+  assert.equal(document.body.style.overflow, "");
+  assert.deepEqual(a.events.fullscreenChange, [[true], [false]]);
+  assert.equal(input.value, "Draft");
+
+  assert.equal(await a.vm.setFullscreen(true), true);
+  a.unmount();
+  assert.equal(document.body.style.overflow, "");
+  assert.equal(document.querySelector('[aria-modal="true"]'), null);
+});
+test("Card fullscreen keeps automatic focus silent and lets the user reopen the tooltip", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const a = await mount(ui.HysCard, { title: "Records", fullscreenable: true });
+  const button = a.vm.element.querySelector("[data-card-fullscreen-toggle]");
+  const tip = () => document.querySelector('[role="tooltip"]');
+  async function showDelay() {
+    await nextTick();
+    t.mock.timers.tick(601);
+    await nextTick();
+    await nextTick();
+  }
+
+  button.focus();
+  await showDelay();
+  assert.equal(tip()?.textContent, "全屏查看卡片");
+  const enter = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+  assert.equal(button.dispatchEvent(enter), true);
+  await fire(button, "click");
+  await showDelay();
+  assert.equal(a.vm.fullscreen, true);
+  assert.equal(document.activeElement, button);
+  assert.equal(tip(), null);
+
+  await fire(button.closest(".hys-ui-tooltip-wrap"), "pointerenter");
+  await showDelay();
+  assert.equal(tip()?.textContent, "退出卡片全屏");
+  await fire(button, "click");
+  await showDelay();
+  assert.equal(a.vm.fullscreen, false);
+  assert.equal(document.activeElement, button);
+  assert.equal(tip(), null);
+
+  button.blur();
+  button.focus();
+  await showDelay();
+  assert.equal(tip()?.textContent, "全屏查看卡片");
+});
 test("Divider keeps separator semantics and suppresses text in vertical mode", async () => {
   const a = await mount(ui.HysDivider, {
     label: "Configuration",

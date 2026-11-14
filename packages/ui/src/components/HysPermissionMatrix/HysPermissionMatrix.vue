@@ -85,7 +85,7 @@ function toggle(cells: readonly HysPermissionCell[], checked: boolean) {
 </script>
 
 <template>
-  <div v-bind="hysRootAttrs" class="hys-ui-ent-table-scroll">
+  <div v-bind="hysRootAttrs" class="hys-ui-ent-table-scroll hys-ui-scrollbar">
     <table class="hys-ui-ent-matrix">
       <caption v-if="caption">
         {{

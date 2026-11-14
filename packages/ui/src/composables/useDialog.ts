@@ -22,6 +22,8 @@ interface DialogOptions {
   lockScroll?: () => boolean;
   trapFocus?: () => boolean;
   restoreFocus?: () => boolean;
+  restoreFocusTo?: () => HTMLElement | null;
+  provideOwner?: boolean;
   initialFocus?: () => HTMLElement | false | undefined;
   zIndex?: () => number | undefined;
   onOpenAutoFocus?: (event: Event) => void;
@@ -38,10 +40,11 @@ export function useDialog(
     parent = inject(overlayOwnerKey, undefined),
     active = computed(() => lifecycle.value && parent?.value !== false),
     visible = computed(() => open.value && active.value);
-  provide(
-    overlayOwnerKey,
-    computed(() => visible.value && options.childVisible?.() !== false),
-  );
+  if (options.provideOwner !== false)
+    provide(
+      overlayOwnerKey,
+      computed(() => visible.value && options.childVisible?.() !== false),
+    );
   const registration = shallowRef<ReturnType<typeof registerOverlay>>();
   const zIndex = computed(
     () => registration.value?.zIndex.value ?? options.zIndex?.() ?? 100,
@@ -148,8 +151,9 @@ export function useDialog(
       const token = ++generation;
       if (value) {
         cleanup();
-        previous =
-          document.activeElement instanceof HTMLElement
+        previous = options.restoreFocusTo
+          ? options.restoreFocusTo()
+          : document.activeElement instanceof HTMLElement
             ? document.activeElement
             : null;
         registration.value = registerOverlay("dialog", close, options.zIndex);

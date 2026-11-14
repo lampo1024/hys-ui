@@ -1514,7 +1514,7 @@ onBeforeUnmount(cleanup);
           :popup-transition="props.popupTransition"
           :popup-transition-duration="props.popupTransitionDuration"
           @inactive="settingsOpen = false"
-          ><div v-if="settingsOpen" class="hys-ui-pf-grid-panel">
+          ><div v-if="settingsOpen" class="hys-ui-pf-grid-panel hys-ui-scrollbar">
             <strong>显示列与排序</strong
             ><HysSortableList
               class="hys-ui-pf-grid-settings-list"
@@ -1555,7 +1555,7 @@ onBeforeUnmount(cleanup);
     </div>
     <div
       ref="scrollRef"
-      class="hys-ui-pf-grid-scroll"
+      class="hys-ui-pf-grid-scroll hys-ui-scrollbar"
       :style="{ maxHeight: maxHeightStyle }"
       tabindex="0"
       role="region"

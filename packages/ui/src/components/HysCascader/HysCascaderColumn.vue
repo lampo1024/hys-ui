@@ -169,7 +169,7 @@ defineExpose({ focus, element: port });
 <template>
   <div
     ref="port"
-    class="hys-ui-cascader-column hys-ui-v4-level"
+    class="hys-ui-cascader-column hys-ui-v4-level hys-ui-scrollbar"
     :data-size="size"
     :class="{
       'hys-ui-cascader-column-virtual': virtual,
@@ -334,7 +334,6 @@ defineExpose({ focus, element: port });
   flex: 1 0 180px;
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
   padding: 3px;
   box-sizing: border-box;
   border-inline-end: 1px solid var(--hys-ui-border, var(--hys-ui-theme-border));

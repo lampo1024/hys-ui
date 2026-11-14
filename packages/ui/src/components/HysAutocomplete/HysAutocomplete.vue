@@ -785,7 +785,7 @@ defineExpose({
         :id="id"
         ref="list"
         role="listbox"
-        class="hys-ui-autocomplete-list"
+        class="hys-ui-autocomplete-list hys-ui-scrollbar"
         :style="{ maxHeight: height + 'px' }"
         :aria-label="ariaLabel || fieldLabel || '输入建议'"
         :aria-busy="busy || undefined"
