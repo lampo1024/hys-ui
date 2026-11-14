@@ -92,12 +92,12 @@ export async function checkGridBundles(root) {
       `${name} optional clipboard JS`,
     );
     assert.equal(
-      css.includes("[data-hys-pro-grid-range]"),
+      /(?:^|[{}])\s*\.hys-ui-pro-grid\s+\.hys-ui-pf-grid\s+tbody\s+td\[data-hys-pro-grid-range\]\s*\{/.test(css),
       clipboard,
       `${name} optional clipboard CSS`,
     );
     assert.equal(
-      css.includes(".hys-ui-pro-grid-editor"),
+      /(?:^|[{}])\s*\.hys-ui-pro-grid-editor\s*\{/.test(css),
       isPro,
       `${name} ProGrid CSS dependency`,
     );
