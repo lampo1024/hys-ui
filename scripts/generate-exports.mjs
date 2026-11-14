@@ -61,6 +61,7 @@ code+="export type {HysVirtualTableKey,HysVirtualTableAlign,HysVirtualTableSort,
 code+="export type {GridColumn,HysDataGridKey,HysDataGridSort,HysDataGridQuery,HysDataGridProps,HysDataGridResult,HysDataGridLoader,HysDataGridInstance} from './composables/dataGrid'\n"
 code+="export type {HysDataGridColumnLayout,HysDataGridColumnLayoutSnapshot} from './components/HysDataGrid/gridColumnLayout'\n"
 code+="export type * from './components/HysSpreadsheet/spreadsheetTypes'\n"
+code+="export type * from './components/HysChart/chartTypes'\n"
 code+="export type {HysProGridAddress,HysProGridBatchSave,HysProGridClipboardBinding,HysProGridCancelReason,HysProGridCell,HysProGridChange,HysProGridChoice,HysProGridChoiceValue,HysProGridColumn,HysProGridDecision,HysProGridEditHandler,HysProGridEditor,HysProGridEditorScope,HysProGridEditPhase,HysProGridFailure,HysProGridFailureStage,HysProGridInstance,HysProGridMessages,HysProGridOptions,HysProGridParseResult,HysProGridProps,HysProGridSlots} from './components/HysProGrid/proGridTypes'\n"
 code+="export type {HysDataGridPin,HysDataGridHeaderGroup,HysDataGridHeaderContext,HysDataGridRowContext,HysDataGridCellContext,HysDataGridCellView,HysDataGridContext,HysDataGridContextMenu,HysDataGridClass,HysDataGridStyle} from './components/HysDataGrid/gridPresentation'\n"
 code+="export {hysSpinAnimations} from './components/HysSpin/spinCatalog'\n"

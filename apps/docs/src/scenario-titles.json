@@ -519,6 +519,9 @@
       "Platform": "编辑器快捷键 · 搜索与系统切换"
     },
     "HysChart": {
+      "Composition": "采购预算 · 饼图与环形图",
+      "Conversion": "投放分析 · 散点与点选明细",
+      "Series": "销售计划 · 多系列与组合图",
       "ReferenceLine": "订单趋势 · 目标参考线",
       "Balance": "月度现金流 · 正负值与数据表" },
     "HysDiffViewer": {

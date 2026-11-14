@@ -45,6 +45,65 @@ test('PermissionMatrix batch edits skip locked cells and report only changed per
   assert.equal(matrix.props.modelValue['Refund:Owner'], true);
 });
 
+test('Chart preserves the legacy data format and handles mixed, zero and invalid values', async () => {
+  const chart = await mount(ui.HysChart, {
+    data: [{ label: 'Zero', value: 0 }, { label: 'Invalid', value: NaN }, { label: 'Debt', value: -4 }],
+    showTable: true, showValues: true,
+    reference: { value: 6, label: 'Goal' },
+    valueFormatter: (value, point) => `${point.label}: ${value}`,
+  });
+  assert.equal(chart.all('[data-chart-point]').length, 2);
+  assert.equal(chart.all('tbody tr').length, 2);
+  assert(chart.find('[aria-label="Goal"]'));
+  assert.match(chart.find('tbody').textContent, /Debt: -4/);
+  await fire(chart.all('[data-chart-point]')[1], 'keydown', { key: 'Enter' });
+  assert.equal(chart.events['point-click'][0][0].pointIndex, 2);
+  chart.props.data = [{ label: 'Small', value: Number.MIN_VALUE }, { label: 'Large', value: Number.MAX_VALUE }];
+  await nextTick();
+  assert.doesNotMatch(chart.find('svg').outerHTML, /NaN|Infinity/);
+  chart.props.type = 'scatter';
+  chart.props.data = [{ label: 'Origin', value: 0, x: 0 }];
+  await nextTick();
+  assert.equal(chart.all('[data-chart-point]').length, 1);
+  assert.doesNotMatch(chart.find('svg').outerHTML, /NaN|Infinity|undefined/);
+});
+
+test('Chart stacks positive and negative bars, aligns categories and hides series through the legend', async () => {
+  const chart = await mount(ui.HysChart, { stacked: true, type: 'combo', series: [
+    { id: 'first', name: 'First', data: [{ label: 'A', value: 4 }, { label: 'B', value: -3 }] },
+    { id: 'second', name: 'Second', data: [{ label: 'B', value: -2 }, { label: 'A', value: 6 }] },
+    { name: 'Target', type: 'line', dashed: true, data: [{ label: 'A', value: 8 }, { label: 'B', value: 5 }] },
+  ] });
+  const rect = (key) => chart.find(`[data-chart-point="${key}"] rect`);
+  const attr = (element, name) => Number(element.getAttribute(name));
+  assert.equal(attr(rect('first:0'), 'x'), attr(rect('second:1'), 'x'));
+  assert(Math.abs(attr(rect('first:0'), 'y') - attr(rect('second:1'), 'y') - attr(rect('second:1'), 'height')) < 1e-9);
+  assert(Math.abs(attr(rect('second:0'), 'y') - attr(rect('first:1'), 'y') - attr(rect('first:1'), 'height')) < 1e-9);
+  assert(chart.find('.hys-chart-line[stroke-dasharray]'));
+  await fire(chart.all('.hys-chart-legend button')[1], 'click');
+  assert.equal(rect('second:1'), null);
+  assert.deepEqual(chart.events['legend-change'][0][0], { key: 'second', visible: false });
+});
+
+test('Chart renders a full donut slice and reports scatter coordinates', async () => {
+  const chart = await mount(ui.HysChart, { type: 'donut', showTable: true, data: [
+    { label: 'One', value: 10 }, { label: 'Other', value: -2 },
+  ] }, { center: () => 'Total' });
+  const slice = chart.find('.hys-chart-slice');
+  assert.equal((slice.getAttribute('d').match(/A/g) ?? []).length, 4);
+  assert.match(chart.find('tbody').textContent, /100%/);
+  assert.match(chart.find('foreignObject').textContent, /Total/);
+  await fire(slice, 'click');
+  assert.equal(chart.events['point-click'][0][0].percentage, 1);
+  await fire(chart.find('.hys-chart-legend button'), 'click');
+  assert(chart.find('.hys-chart-empty'));
+  chart.props.type = 'scatter';
+  chart.props.data = [{ label: 'Dot', x: 24, value: 6 }];
+  await nextTick();
+  await fire(chart.find('[data-chart-point]'), 'click');
+  assert.equal(chart.events['point-click'][1][0].x, 24);
+});
+
 test('Pagination retains the former first record after an applied size change', async () => {
   const pager = await mount(ui.HysPagination, { page: 4, pageSize: 10, total: 100, pageSizeStrategy: 'preserve-item' });
   pager.props.pageSize = 20;

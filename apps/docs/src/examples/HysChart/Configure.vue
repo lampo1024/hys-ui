@@ -1,13 +1,63 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { HysChart } from 'hys-ui';
-import { reactive as demoReactive } from 'vue';
-import { HysSelect as DemoSelect, HysNumberInput as DemoNumber } from 'hys-ui';
-const toast = ref('');
-const demoConfig = demoReactive<{
-    type: "bar" | "line";
-    height: number;
-}>({ "type": "bar", "height": 220 });
+import { ref } from "vue";
+import {
+  HysChart,
+  HysCheckbox,
+  HysSelect,
+  type HysChartBarStyle,
+  type HysChartType,
+} from "hys-ui";
+
+const type = ref<HysChartType>("bar");
+const barStyle = ref<HysChartBarStyle>("gradient");
+const labels = ref(true);
+const data = [
+  { label: "搜索", value: 128 },
+  { label: "直接访问", value: 96 },
+  { label: "应用内推荐", value: 73 },
+  { label: "邮件", value: 42 },
+  { label: "合作伙伴", value: 26 },
+];
+const types = [
+  { value: "bar", label: "柱状" },
+  { value: "horizontal-bar", label: "横向条形" },
+  { value: "line", label: "折线" },
+  { value: "area", label: "面积" },
+];
+const styles = [
+  { value: "solid", label: "实心" },
+  { value: "gradient", label: "渐变" },
+  { value: "outline", label: "描边" },
+];
 </script>
-<template><div><div class="demo-controls"><section class="demo-control-section"><h3>参数设置</h3><div class="demo-control-fields"><label class="demo-field"><span class="demo-control-label"><span>类型</span><code>type</code></span><DemoSelect :model-value="demoConfig.type" @update:model-value="demoConfig.type=$event as typeof demoConfig.type" :options='[{"label":"bar","value":"bar"},{"label":"line","value":"line"}]'/></label>
-<label class="demo-field"><span class="demo-control-label"><span>高度</span><code>height</code></span><DemoNumber v-model="demoConfig.height" :show-controls="false"/></label></div></section></div><div class="demo-content"><section class="ent-gallery-section"><HysChart v-bind="demoConfig" :data="[{label:'一月',value:23},{label:'二月',value:52},{label:'三月',value:41}]"/></section><output v-if="toast" aria-live="polite">{{toast}}</output></div><pre class="state-output">{{JSON.stringify(demoConfig,null,2)}}</pre></div></template>
+
+<template>
+  <div class="demo-stack">
+    <HysChart
+      :data="data"
+      :type="type"
+      :bar-style="barStyle"
+      :show-values="labels"
+      :height="255"
+      smooth
+    >
+      <template #title>渠道带来的新增客户</template>
+    </HysChart>
+    <div class="demo-row">
+      <HysSelect
+        v-model="type"
+        :options="types"
+        aria-label="访问渠道图表类型"
+        style="width: 140px"
+      />
+      <HysSelect
+        v-if="type === 'bar' || type === 'horizontal-bar'"
+        v-model="barStyle"
+        :options="styles"
+        aria-label="柱体样式"
+        style="width: 140px"
+      />
+      <HysCheckbox v-model="labels" label="显示数值" />
+    </div>
+  </div>
+</template>

@@ -252,14 +252,29 @@ const annotations = {
     exposed: { element: '卡片的原生根元素，挂载前为 undefined' },
   },
   HysChart: { props: {
-    data: '按绘图顺序提供 { label, value, color? }。零轴随正负值调整，忽略非有限值。color 覆盖柱体或折线节点颜色。',
-    type: 'bar 绘制柱状图，line 绘制折线图',
-    height: '设置柱状图或折线图绘制区域的高度，单位为像素',
+    data: '单系列数据，按绘图顺序提供 { label, value, color?, x? }。忽略非有限数值，散点横坐标省略时使用从 1 开始的原始点序号。',
+    series: '多系列数据，提供 { id?, name, data, color?, type?, dashed? }。id 在图内唯一。优先于 data。分类图按标签对齐，重复标签按出现次序匹配。饼图和环形图取第一系列的正数。type 在组合图中可设 bar、line 或 area。',
+    type: '默认 bar。可选 bar、horizontal-bar、line、area、pie、donut、scatter、combo。',
+    height: '绘图区高度，单位为像素。默认 220，最小 48。',
     showValues: '在数据点旁显示数值，默认 false。',
     showTable: '显示同一组数据的语义表格，默认 false。',
+    showLegend: '控制点击图例。默认多序列和饼图、环形图显示。切换时隐藏对应系列或扇区。',
+    showGrid: '设置坐标网格线，默认 true。',
+    showTooltip: '悬停、聚焦或选中图形时显示数据提示，默认 true。',
+    stacked: '堆叠柱体，默认 false。支持柱状图、横向条形图和组合图中的柱体。正负值分别堆叠。',
+    smooth: '绘制平滑折线和面积边界，默认 false。',
+    barStyle: '可选 solid、gradient、outline，默认 solid。',
+    innerRadius: '环形图内圈半径占外圈半径的比例，默认 0.64，限制在 0.2–0.85。',
+    colors: '覆盖默认色板，按序循环。点的 color 优先于系列颜色和色板。',
     valueFormatter: '格式化数值，接收 (value, point)，用于图上标签、提示和数据表。',
+    axisFormatter: '格式化数值坐标轴刻度，接收 (value, axis)，axis 为 x 或 y。',
+    ariaLabel: '图形区域的无障碍名称，默认“图表数据”。',
+    references: '多条数值参考线，叠加到 reference，适用于带坐标轴的图表。可提供 color。',
     emptyText: '无有效数据时显示的文案，默认“暂无图表数据”。',
-  }, slots: { title: '绘图区上方标题。', empty: '替换无数据提示。' } },
+  }, events: {
+    'point-click': '点击数据图形或聚焦后按 Enter、空格触发。载荷包含 point、series、从 0 开始的 pointIndex 和 seriesIndex，饼图带 percentage（0–1），散点图带 x。',
+    'legend-change': '点击图例后触发，载荷为 { key: string, visible: boolean }。',
+  }, slots: { title: '绘图区上方标题。', empty: '替换无数据提示。', center: '环形图中心展示内容。' } },
   HysColorTokenEditor: {
     props: {
       labels: '颜色键到显示名的映射，省略时显示颜色键。',
@@ -1190,7 +1205,7 @@ const interactionAnnotations =
   },
   "HysChart": {
     "props": {
-      "reference": "横向参考线 { value: number, label: string }，省略时不显示。有限的参考数值参与纵轴范围计算，适用于柱状和折线图。"
+      "reference": "单条参考线 { value, label, color? }。有限数值参与数值轴范围计算，适用于带坐标轴的图表。"
     }
   },
   "HysDiffViewer": {
