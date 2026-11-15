@@ -547,8 +547,14 @@
       "TransferStatus": "订单附件 · 上传进度与重试",
       "Validation": "导入附件 · 类型、体积与数量校验" },
     "HysJsonEditor": {
+      "Basic": "订单响应 · 浏览树结构与复制路径",
+      "States": "源码检查 · 语法错误与重复键定位",
       "IndentOnEnter": "配置编辑 · 换行自动缩进",
-      "Configuration": "任务配置 · 压缩与业务校验" },
+      "Configuration": "任务配置 · 树视图编辑与业务校验",
+      "DocumentFiles": "文件流转 · 下载、导入与撤销",
+      "ConfigurationTools": "配置排错 · 修复与 Schema 校验",
+      "ResponseTools": "响应检查 · 表格、查询与对比",
+      "ConversionTools": "数据整理 · 去重及格式转换" },
     "HysMarkdownEditor": {
       "Basic": "发布说明 · 排版、任务清单与实时预览",
       "ProjectDocument": "项目文档 · 表格、代码、大纲与查找替换",

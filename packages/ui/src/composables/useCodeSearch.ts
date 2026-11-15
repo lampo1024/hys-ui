@@ -1,13 +1,13 @@
 import { computed, nextTick, ref, watch, type Ref } from "vue";
 import { SearchQuery } from "@codemirror/search";
 import { Text } from "@codemirror/state";
-import type { MarkdownRange } from "./markdownSource";
+type SourceRange = { from: number; to: number };
 
-export function useMarkdownSearch(
+export function useCodeSearch(
   source: Ref<string>,
-  selection: Ref<MarkdownRange>,
-  reveal: (range: MarkdownRange) => void,
-  replace: (edits: (MarkdownRange & { insert: string })[]) => boolean,
+  selection: Ref<SourceRange>,
+  reveal: (range: SourceRange) => void,
+  replace: (edits: (SourceRange & { insert: string })[]) => boolean,
 ) {
   const find = ref("");
   const replacement = ref("");
@@ -17,7 +17,7 @@ export function useMarkdownSearch(
     if (!find.value) return [];
     const cursor = new SearchQuery({ search: find.value, caseSensitive: sensitive.value, literal: true })
       .getCursor(Text.of(source.value.split("\n")));
-    const result: MarkdownRange[] = [];
+    const result: SourceRange[] = [];
     for (let next = cursor.next(); !next.done; next = cursor.next()) {
       result.push({ from: next.value.from, to: next.value.to });
     }

@@ -15304,7 +15304,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "允许选择文本，禁止编辑和格式化，默认 false。",
+        "description": "只读模式保留浏览、查找、复制和下载，默认 false。",
         "global": false
       },
       {
@@ -15320,7 +15320,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "显示压缩按钮，默认 false。",
+        "description": "启用工具栏的压缩操作，默认 false。",
         "global": false
       },
       {
@@ -15328,7 +15328,7 @@
         "type": "number | undefined",
         "required": false,
         "default": "2",
-        "description": "格式化时使用的空格数，限制为 0–10，默认 2。",
+        "description": "格式化和自动缩进的空格数，向下取整并限制为 0–10，默认 2。0 时格式化输出紧凑 JSON。",
         "global": false
       },
       {
@@ -15352,7 +15352,23 @@
         "type": "string | undefined",
         "required": false,
         "default": "\"{}\"",
-        "description": "受控值，配合 v-model 使用",
+        "description": "JSON 源码，包含未完成的语法草稿。",
+        "global": false
+      },
+      {
+        "name": "view",
+        "type": "HysJsonEditorView | undefined",
+        "required": false,
+        "default": "\"text\"",
+        "description": "视图模式，text 为源码（默认），tree 为树视图，table 为对象数组表格。支持 v-model:view。",
+        "global": false
+      },
+      {
+        "name": "schema",
+        "type": "JsonSchema | null | undefined",
+        "required": false,
+        "default": "null",
+        "description": "本地 JSON Schema 对象、布尔值或 null。支持 Draft 7 和 2020-12，未声明方言时使用 2020-12，默认 null。支持 v-model:schema。",
         "global": false
       }
     ],
@@ -15365,11 +15381,32 @@
         "description": "文本编辑或格式化后的 JSON 文本，手动编辑期间可包含尚未有效的 JSON"
       },
       {
+        "name": "change",
+        "type": "[text: string]",
+        "required": false,
+        "default": "",
+        "description": "用户修改文本、操作树节点、导入或撤销重做时发出，载荷为更新后的源码。"
+      },
+      {
         "name": "format",
         "type": "[text: string, mode: \"compact\" | \"pretty\"]",
         "required": false,
         "default": "",
         "description": "成功格式化或压缩时触发，载荷依次为转换后的 JSON 文本及 pretty / compact。"
+      },
+      {
+        "name": "update:view",
+        "type": "[value: HysJsonEditorView]",
+        "required": false,
+        "default": "",
+        "description": "切换视图或定位到源码时发出，载荷为 text、tree 或 table。"
+      },
+      {
+        "name": "update:schema",
+        "type": "[value: JsonSchema | null]",
+        "required": false,
+        "default": "",
+        "description": "在校验面板应用或移除 Schema 时发出，载荷为 Schema 对象、布尔值或 null。"
       }
     ],
     "slots": [],

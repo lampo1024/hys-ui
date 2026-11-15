@@ -654,13 +654,20 @@ const annotations = {
   },
   HysJsonEditor: {
     props: {
-      indent: '格式化时使用的空格数，限制为 0–10，默认 2。',
-      compactable: '显示压缩按钮，默认 false。',
+      view: '视图模式，text 为源码（默认），tree 为树视图，table 为对象数组表格。支持 v-model:view。',
+      schema: '本地 JSON Schema 对象、布尔值或 null。支持 Draft 7 和 2020-12，未声明方言时使用 2020-12，默认 null。支持 v-model:schema。',
+      indent: '格式化和自动缩进的空格数，向下取整并限制为 0–10，默认 2。0 时格式化输出紧凑 JSON。',
+      compactable: '启用工具栏的压缩操作，默认 false。',
       validate: 'JSON 语法正确后调用的业务校验函数，接收解析值，返回错误字符串或不返回。',
-      readonly: '允许选择文本，禁止编辑和格式化，默认 false。',
+      readonly: '只读模式保留浏览、查找、复制和下载，默认 false。',
       disabled: '禁用编辑器和操作按钮，默认 false。',
     },
-    events: { format: '成功格式化或压缩时触发，载荷依次为转换后的 JSON 文本及 pretty / compact。' },
+    events: {
+      'update:view': '切换视图或定位到源码时发出，载荷为 text、tree 或 table。',
+      'update:schema': '在校验面板应用或移除 Schema 时发出，载荷为 Schema 对象、布尔值或 null。',
+      change: '用户修改文本、操作树节点、导入或撤销重做时发出，载荷为更新后的源码。',
+      format: '成功格式化或压缩时触发，载荷依次为转换后的 JSON 文本及 pretty / compact。',
+    },
   },
   HysKanban: {
     props: {

@@ -22,7 +22,7 @@ import { formatMarkdown, insertMarkdownBlock, insertMarkdownLink, type MarkdownR
 import { useMarkdownCode } from "./useMarkdownCode";
 import { useMarkdownFiles } from "./useMarkdownFiles";
 import { useMarkdownScroll } from "./useMarkdownScroll";
-import { useMarkdownSearch } from "./useMarkdownSearch";
+import { useCodeSearch } from "../../composables/useCodeSearch";
 
 const props = withDefaults(defineProps<{
   placeholder?: string;
@@ -93,7 +93,7 @@ const files = useMarkdownFiles(source, editable, disabled, status, text => {
 });
 const { importing, busy, candidate } = files;
 const searchSource = computed(() => source.value.replace(/\r\n?/g, "\n"));
-const search = useMarkdownSearch(searchSource, code.selection, range => code.reveal(range), changes => code.transact(changes, undefined, false));
+const search = useCodeSearch(searchSource, code.selection, range => code.reveal(range), changes => code.transact(changes, undefined, false));
 const { find, replacement, sensitive, index, matches } = search;
 
 function setView(next: HysMarkdownEditorView) {

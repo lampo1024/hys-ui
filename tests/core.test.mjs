@@ -1966,6 +1966,185 @@ test('FileManager supports keyboard selection, host events and disabled state',a
 test('Accordion switches single panels and preserves multiple controlled values',async()=>{const accordion=await mount(ui.HysAccordion,{modelValue:[0],items:[{title:'First',content:'A'},{title:'Second',content:'B'},{title:'Blocked',disabled:true}]});await fire(accordion.all('button')[1],'click');assert.deepEqual([...accordion.props.modelValue],[1]);accordion.props.multiple=true;await nextTick();await fire(accordion.all('button')[0],'click');assert.deepEqual([...accordion.props.modelValue],[1,0]);await fire(accordion.all('button')[2],'click');assert.deepEqual([...accordion.props.modelValue],[1,0])})
 test('Table cycles sort state without mutating rows and emits the selected row',async()=>{const table=await mount(ui.HysTable,{columns:[{key:'value',label:'Value',sortable:true}],rows:[{id:'a',value:10},{id:'b',value:2}]},{value:({value})=>h('strong',String(value))});const header=table.find('th button');await fire(header,'click');assert.equal(table.find('tbody strong').textContent,'2');assert.equal(table.props.rows[0].id,'a');assert.equal(table.find('th').getAttribute('aria-sort'),'ascending');await fire(table.find('tbody tr'),'click');assert.equal(table.events.rowClick[0][0].id,'b');await fire(header,'click');assert.equal(table.find('tbody strong').textContent,'10');await fire(header,'click');assert.equal(table.events.sortChange.at(-1)[0],null)})
 test('JsonEditor formats valid input and leaves invalid text available for correction',async()=>{const json=await mount(ui.HysJsonEditor,{modelValue:'{"answer":42}'});await fire(json.find('button'),'click');assert(json.props.modelValue.includes('\n  "answer": 42'));json.props.modelValue='{broken';await nextTick();await fire(json.find('button'),'click');assert.equal(json.props.modelValue,'{broken');assert(json.host.textContent.includes('JSON 无效'))})
+
+function jsonButton(root, label) {
+  return [...root.querySelectorAll('button')].find(button => button.getAttribute('aria-label') === label || button.textContent.trim() === label);
+}
+
+test('JsonEditor tree changes publish once, are reversible, and respect readonly and disabled', async () => {
+  const source = '{"key/~":9007199254740993,"enabled":true,"items":[1,2]}';
+  const json = await mount(ui.HysJsonEditor, { modelValue: source, view: 'text' });
+  await fire(json.find('[data-value="tree"]'), 'click');
+  assert.equal(json.props.view, 'tree');
+  await fire(json.find('[data-json-node="root/key~1~0"]').closest('[role="treeitem"]'), 'click');
+  assert.match(json.find('.hys-json-node-path').textContent, /key~1~0/);
+  await fire(jsonButton(json.host, '编辑节点值'), 'click');
+  const input = document.querySelector('input[aria-label="节点值"]');
+  assert.equal(input.value, '9007199254740993');
+  input.value = '9007199254740995';
+  await fire(input, 'input');
+  await fire(jsonButton(document, '应用'), 'click');
+  const edited = source.replace('993', '995');
+  assert.equal(json.props.modelValue, edited);
+  assert.deepEqual(json.events.change, [[edited]]);
+  assert.deepEqual(json.events['update:modelValue'], [[edited]]);
+  await fire(jsonButton(json.host, '撤销'), 'click');
+  assert.equal(json.props.modelValue, source);
+  assert.equal(json.props.view, 'tree');
+  json.props.readonly = true;
+  await nextTick();
+  assert.equal(jsonButton(json.host, '编辑节点值'), undefined);
+  assert(jsonButton(json.host, '复制节点路径'));
+  await fire(jsonButton(json.host, '在源码中定位'), 'click');
+  assert.equal(json.find('.cm-content').getAttribute('contenteditable'), 'false');
+  assert.equal(json.props.view, 'text');
+  await fire(jsonButton(json.host, '查找与替换'), 'click');
+  assert(json.find('[aria-label="查找内容"]'));
+  assert.equal(json.find('[aria-label="替换为"]'), null);
+  json.props.disabled = true;
+  await nextTick();
+  assert.equal(json.find('.cm-content').tabIndex, -1);
+  assert(jsonButton(json.host, '查找与替换').disabled);
+});
+
+test('JsonEditor reports duplicate positions and treats replace-all as one undo step', async () => {
+  const source = '{\n "status":"old",\n "status":"old"\n}';
+  const json = await mount(ui.HysJsonEditor, { modelValue: source });
+  await fire(jsonButton(json.host, '1 处重复键'), 'click');
+  const warning = [...document.querySelectorAll('.hys-json-warning-entry')][0];
+  assert.match(warning.textContent, /第 3 行，第 2 列/);
+  assert.match(warning.textContent, /首次出现 第 2 行，第 2 列/);
+  await fire(warning.closest('button'), 'click');
+  assert.equal(document.activeElement, json.find('.cm-content'));
+  await fire(jsonButton(json.host, '查找与替换'), 'click');
+  const find = json.find('input[aria-label="查找内容"]');
+  find.value = 'old';
+  await fire(find, 'input');
+  const replace = json.find('input[aria-label="替换为"]');
+  replace.value = 'new';
+  await fire(replace, 'input');
+  await fire(jsonButton(json.host, '全部替换'), 'click');
+  assert.equal(json.props.modelValue, source.replaceAll('old', 'new'));
+  assert.equal(json.events.change.length, 1);
+  await fire(jsonButton(json.host, '撤销'), 'click');
+  assert.equal(json.props.modelValue, source);
+});
+
+test('JsonEditor confirms overwrites, preserves invalid imports as drafts, and leaves source on file failure', async () => {
+  const source = '{"existing":true}';
+  const json = await mount(ui.HysJsonEditor, { modelValue: source });
+  const openImport = async () => {
+    await fire(jsonButton(json.host, '更多 JSON 操作'), 'click');
+    await fire(jsonButton(document, '导入 JSON'), 'click');
+  };
+  const pick = async file => {
+    const input = document.querySelector('input[type="file"]');
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+    await fire(input, 'change');
+    await pause(8);
+  };
+  await openImport();
+  await pick(new File([new Uint8Array([195, 40])], 'invalid.json'));
+  assert.equal(json.props.modelValue, source);
+  assert.match(document.querySelector('[role="dialog"]').textContent, /UTF-8/);
+  const invalid = '{\r\n  broken\r\n}';
+  await pick(new File([invalid], 'draft.json'));
+  assert.equal(json.props.modelValue, source);
+  await fire(jsonButton(document, '替换源码'), 'click');
+  assert.equal(json.props.modelValue, invalid);
+  assert.match(json.host.textContent, /JSON 无效/);
+  assert.equal(json.events.change.length, 1);
+  await fire(jsonButton(json.host, '撤销'), 'click');
+  assert.equal(json.props.modelValue, source);
+});
+
+async function jsonWaitFor(find) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const result = find();
+    if (result) return result;
+    await pause(10);
+  }
+  assert.fail('Missing JSON editor state');
+}
+
+async function openJsonTool(json, label) {
+  await fire(jsonButton(json.host, 'JSON 工具') ?? jsonButton(json.host, '更多 JSON 操作'), 'click');
+  await fire(jsonButton(document, label), 'click');
+}
+
+test('JsonEditor repair previews are stale after a host edit and applying a new preview is undoable once', async () => {
+  const editor = await mount(ui.HysJsonEditor, { modelValue: "{id:9007199254740993, 'a':1, 'a':2,}" });
+  await openJsonTool(editor, '修复 JSON');
+  await fire(jsonButton(document, '生成预览'), 'click');
+  let apply = await jsonWaitFor(() => jsonButton(document, '应用修改'));
+  assert.equal(editor.events.change, undefined);
+  const base = "{other:9007199254740993, 'a':1, 'a':2,}";
+  editor.props.modelValue = base;
+  await nextTick();
+  assert.equal(jsonButton(document, '应用修改'), undefined);
+  assert.equal(apply.isConnected, false);
+  await fire(jsonButton(document, '生成预览'), 'click');
+  apply = await jsonWaitFor(() => jsonButton(document, '应用修改'));
+  await fire(apply, 'click');
+  assert.match(editor.props.modelValue, /"other":9007199254740993/);
+  assert.equal([...editor.props.modelValue.matchAll(/"a":/g)].length, 2);
+  assert.equal(editor.events.change.length, 1);
+  assert.equal(editor.events['update:modelValue'].length, 1);
+  await fire(jsonButton(editor.host, '1 处重复键'), 'click');
+  await fire(jsonButton(document, '删除此副本'), 'click');
+  assert.match(editor.props.modelValue, /"a":1/);
+  assert.doesNotMatch(editor.props.modelValue, /"a":2/);
+  await fire(jsonButton(editor.host, '撤销'), 'click');
+  assert.match(editor.props.modelValue, /"a":2/);
+  await fire(jsonButton(editor.host, '撤销'), 'click');
+  assert.equal(editor.props.modelValue, base);
+});
+
+test('JsonEditor expands and collapses tree nodes, and colors find and query hits independently', async () => {
+  const source = '{"items":[{"name":"target","enabled":true,"amount":42,"data":null}]}';
+  const editor = await mount(ui.HysJsonEditor, { modelValue: source, view: 'tree' });
+  assert.equal(editor.find('[data-json-node="root/items/0/name"]'), null);
+  await fire(jsonButton(editor.host, '展开全部节点'), 'click');
+  assert(editor.find('[data-json-node="root/items/0/name"]'));
+  await fire(jsonButton(editor.host, '折叠全部节点'), 'click');
+  assert.equal(editor.find('[data-json-node="root/items"]'), null);
+  await openJsonTool(editor, 'JSONPath 查询');
+  const query = editor.find('input[aria-label="JSONPath 表达式"]');
+  query.value = '$..name';
+  await fire(query, 'input');
+  await fire(jsonButton(editor.host, '运行查询'), 'click');
+  await fire(jsonButton(editor.host, '/items/0/name'), 'click');
+  assert.equal(editor.props.view, 'text');
+  assert(editor.find('.cm-content .hys-json-query-mark'));
+  for (const kind of ['key', 'string', 'number', 'boolean', 'null']) {
+    assert(editor.find('.cm-content .hys-json-' + kind), kind);
+  }
+  await fire(jsonButton(editor.host, '查找与替换'), 'click');
+  const search = editor.find('input[aria-label="查找内容"]');
+  search.value = 'target';
+  await fire(search, 'input');
+  assert(editor.find('.cm-content .hys-json-match-mark'));
+  assert.equal(editor.props.modelValue, source);
+});
+
+test('JsonEditor table sorting is presentation-only and an edit uses the source row identity', async () => {
+  const source = '[{"n":9007199254740993,"v":"a"},{"n":9007199254740992,"v":"b"}]';
+  const editor = await mount(ui.HysJsonEditor, { modelValue: source, view: 'table' });
+  await fire(jsonButton(editor.host, 'n'), 'click');
+  assert.equal(editor.props.modelValue, source);
+  assert.equal(editor.find('[role="gridcell"]').textContent.trim(), '9007199254740992');
+  const cell = editor.all('[role="gridcell"]').find(node => node.textContent.trim() === '"b"');
+  await fire(cell, 'click');
+  await fire(jsonButton(editor.host, '编辑单元格'), 'click');
+  const value = document.querySelector('textarea[aria-label="节点值"]');
+  value.value = 'updated';
+  await fire(value, 'input');
+  await fire(jsonButton(document, '应用'), 'click');
+  assert.equal(editor.props.modelValue, source.replace('"b"', '"updated"'));
+  assert.equal(editor.events.change.length, 1);
+  await fire(jsonButton(editor.host, '撤销'), 'click');
+  assert.equal(editor.props.modelValue, source);
+});
 test('Kanban emits a move request without changing host-owned cards',async()=>{const board=await mount(ui.HysKanban,{columns:[{id:'todo',title:'Todo'},{id:'done',title:'Done'}],cards:[{id:'a',title:'Task',column:'todo'}]});await fire(board.find('[role="combobox"]'),'click');await pause(10);await fire([...document.querySelectorAll('[role="option"]')].find(option=>option.textContent.trim()==='Done'),'click');assert.deepEqual(board.events.move[0],['a','done']);assert.equal(board.props.cards[0].column,'todo')})
 test('Form labels and validation focus composite controls instead of hidden inputs',async()=>{const form=await mount(ui.HysForm,{model:{choice:''},rules:{choice:{required:true,message:'Choose a value'}}},{default:()=>[h(ui.HysFormItem,{label:'Choice',prop:'choice'},()=>h(ui.HysRadioGroup,{modelValue:'',options:[{label:'One',value:'one'}]})),h(ui.HysFormItem,{label:'Score'},()=>h(ui.HysRating,{modelValue:0})),h(ui.HysFormItem,{label:'Files'},()=>h(ui.HysFileManager,{modelValue:[]}))]});await fire(form.find('form'),'submit');await pause(5);assert.equal(document.activeElement,form.find('input[type="radio"]'));const labels=form.all('.hys-ui-ent-field>label');await fire(labels[1],'click');assert.equal(document.activeElement,form.find('[role="slider"]'));await fire(labels[2],'click');const fileControl=form.find('[role="button"]');assert.equal(document.activeElement,fileControl);assert.equal(fileControl.id,labels[2].htmlFor);assert(form.find('input[type="file"]').hidden)})
 

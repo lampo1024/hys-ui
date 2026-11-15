@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysJsonEditor } from "hys-ui";
-const config = ref('{"region":"east","retries":3}');
+const config = ref('{"region":"east","retries":3,"enabled":true,"channels":["email","webhook"]}');
 function validate(value: unknown) {
   if (
     typeof value !== "object" ||
@@ -16,10 +16,8 @@ function validate(value: unknown) {
 }
 </script>
 <template>
-  <HysJsonEditor
-    v-model="config"
-    :validate="validate"
-    :indent="4"
-    compactable
-  />
+  <div class="demo-stack">
+    <HysJsonEditor v-model="config" view="tree" :validate="validate" :indent="4" compactable />
+    <p class="scenario-note">在树中选中 retries 并改为 6 查看业务校验。展开 channels，选中数组项即可上移或下移，再使用工具栏撤销。</p>
+  </div>
 </template>
