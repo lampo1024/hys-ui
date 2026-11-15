@@ -2,7 +2,33 @@
 
 HYS UI 是面向管理后台和业务应用的 Vue 3 组件库。用它搭建筛选表单、数据列表和项目排期界面。组件支持按需导入、TypeScript 类型提示和主题定制。
 
-[在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [npm](https://www.npmjs.com/package/hys-ui) · [更新记录](https://github.com/lampo1024/hys-ui/blob/main/packages/ui/CHANGELOG.md)
+[在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [快速开始](#快速开始) · [npm](https://www.npmjs.com/package/hys-ui) · [更新记录](https://github.com/lampo1024/hys-ui/blob/main/packages/ui/CHANGELOG.md)
+
+## 功能截图
+
+### 电子表格 · 预算工作簿
+
+按小计降序排列明细后，可在公式栏查看合计单元格的 SUM 公式。底部标签可在月度预算和实际支出之间切换。[试用电子表格](https://lampo1024.github.io/hys-ui/components/hys-spreadsheet/#scene-basic)
+
+![预算工作簿按小计降序排列，公式栏显示 D5 的 SUM 公式，底部可切换工作表](docs/assets/readme/spreadsheet-workbook.png)
+
+### 甘特图 · 排期与依赖
+
+沿时间轴调整任务日期，从连线查看前置依赖。新增或调整依赖后可撤销。[试用甘特图](https://lampo1024.github.io/hys-ui/components/hys-gantt/#scene-history)
+
+![甘特图展示需求确认、接口开发、联调验收和发布上线的进度及前置依赖连线](docs/assets/readme/gantt-dependencies.png)
+
+### JSON 编辑器 · 精确查询
+
+用 JSONPath 按大整数订单号筛选字段，点击结果路径可跳回源码并高亮对应位置。[试用 JSON 编辑器](https://lampo1024.github.io/hys-ui/components/hys-json-editor/#scene-responsetools)
+
+![JSONPath 按完整大整数订单号匹配三个字段，源码高亮显示订单状态](docs/assets/readme/json-editor-query.png)
+
+### 图表 · 柱线组合
+
+并排柱体对比门店和线上销售额，虚线标出销售目标。悬停柱体可查看当月数值。[试用柱线组合图](https://lampo1024.github.io/hys-ui/components/hys-chart/#scene-series)
+
+![柱线组合图同时展示门店、线上销售和销售目标，悬停提示显示五月门店销售额为 72 万元](docs/assets/readme/chart-combination.png)
 
 ## 按场景找组件
 
