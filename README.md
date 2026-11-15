@@ -1,8 +1,10 @@
 # HYS UI
 
-HYS UI 是面向管理后台和业务应用的 Vue 3 组件库。用它搭建筛选表单、数据列表和项目排期界面。组件支持按需导入、TypeScript 类型提示和主题定制。
+HYS UI 是面向管理后台和业务工作台的 Vue 3 组件库。用它可以搭建筛选表单、数据列表和审批界面，也可以在同一个应用中嵌入带公式和 Excel 文件交换的电子表格、支持依赖调整的甘特图，以及 Markdown 和 JSON 编辑器。组件支持 ESM 按需导入、TypeScript 类型提示和主题定制。
 
-[在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [快速开始](#快速开始) · [npm](https://www.npmjs.com/package/hys-ui) · [更新记录](https://github.com/lampo1024/hys-ui/blob/main/packages/ui/CHANGELOG.md)
+[在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [快速开始](#快速开始) · [高级能力](#高级能力) · [表格选型](#数据表格怎么选)
+
+`0.12.0` 完善了 JSON 编辑器的源码、树和表格视图，并加入 Schema 校验、JSONPath 查询和格式转换。[npm](https://www.npmjs.com/package/hys-ui) · [更新记录](packages/ui/CHANGELOG.md)
 
 ## 功能截图
 
@@ -29,27 +31,6 @@ HYS UI 是面向管理后台和业务应用的 Vue 3 组件库。用它搭建筛
 并排柱体对比门店和线上销售额，虚线标出销售目标。悬停柱体可查看当月数值。[试用柱线组合图](https://lampo1024.github.io/hys-ui/components/hys-chart/#scene-series)
 
 ![柱线组合图同时展示门店、线上销售和销售目标，悬停提示显示五月门店销售额为 72 万元](docs/assets/readme/chart-combination.png)
-
-## 按场景找组件
-
-每个组件的文档都可以直接试用。展开示例即可复制 Vue 源码，属性、事件和插槽见该页的 API 参考。
-
-| 场景 | 可以做什么 | 在线示例 |
-| --- | --- | --- |
-| 表单与输入 | 配置字段联动、异步校验、远程搜索和多选。 | [表单](https://lampo1024.github.io/hys-ui/components/hys-form/) · [下拉选择](https://lampo1024.github.io/hys-ui/components/hys-select/) · [自动补全](https://lampo1024.github.io/hys-ui/components/hys-autocomplete/) |
-| 层级与批量选择 | 按层级挑选分类，在两侧列表之间批量移动成员。 | [树形选择](https://lampo1024.github.io/hys-ui/components/hys-tree-select/) · [穿梭框](https://lampo1024.github.io/hys-ui/components/hys-transfer/) |
-| 日期与排期 | 按日期或周筛选，拖动甘特任务、连接前置依赖、查看排期冲突。 | [日期选择](https://lampo1024.github.io/hys-ui/components/hys-date-picker/) · [日期范围](https://lampo1024.github.io/hys-ui/components/hys-date-range-picker/) · [甘特图](https://lampo1024.github.io/hys-ui/components/hys-gantt/) |
-| 弹层与反馈 | 在对话框中编辑长表单，用抽屉查看详情，用轻提示反馈操作结果。 | [对话框](https://lampo1024.github.io/hys-ui/components/hys-modal/) · [抽屉](https://lampo1024.github.io/hys-ui/components/hys-drawer/) · [轻提示](https://lampo1024.github.io/hys-ui/components/hys-toast/) |
-| 文件与进度 | 选择文件、控制上传队列，显示进度、失败和重试状态。 | [文件上传](https://lampo1024.github.io/hys-ui/components/hys-upload/) · [进度条](https://lampo1024.github.io/hys-ui/components/hys-progress/) |
-
-### 三种表格怎么选
-
-- **`HysTable`** 适合常规列表和树形数据。支持固定列、展开行、合并单元格、表尾汇总和分页。[表格示例](https://lampo1024.github.io/hys-ui/components/hys-table/)
-- **`HysDataGrid`** 适合让用户自行筛选和整理数据。支持按列搜索、拖拽调整列顺序、列显隐、分组、CSV 导出和服务端查询。[高级表格示例](https://lampo1024.github.io/hys-ui/components/hys-data-grid/)
-- **`HysVirtualTable`** 适合需要连续滚动的大数据列表。按视口渲染行，也可开启列虚拟化。支持固定行列和滚动加载。[虚拟表格示例](https://lampo1024.github.io/hys-ui/components/hys-virtual-table/)
-- **`HysProGrid`** 适合预算审批等可编辑数据工作台。复用 DataGrid 的查询与列布局，提供类型化编辑、异步校验和保存重试。使用时在 `hys-ui/style.css` 之外引入 `hys-ui/pro-grid.css`。
-
-例如，任务管理页可以用日期范围和多选下拉框筛选任务，用高级表格展示结果，用对话框编辑记录。需要调整计划时，可以在甘特图里拖动任务、查看前置依赖和撤销排期修改。
 
 ## 快速开始
 
@@ -79,6 +60,78 @@ const options = [
 <template>
   <HysSelect v-model="status" :options="options" aria-label="任务状态" />
   <p>当前状态值：{{ status }}</p>
+</template>
+```
+
+## 高级能力
+
+### 电子表格与项目排期
+
+- **`HysSpreadsheet` 电子表格**支持多工作表、跨表公式、选区批量编辑和冻结行列。可用日期、下拉或多选等单元格编辑器录入数据，再拖拽填充序列、选择性粘贴、排序和筛选明细。工作簿支持 Excel `.xlsx` 和 JSON 导入导出。[试用类型化编辑](https://lampo1024.github.io/hys-ui/components/hys-spreadsheet/#scene-cellediting) · [试用 Excel 导入导出](https://lampo1024.github.io/hys-ui/components/hys-spreadsheet/#scene-excelexchange)
+- **`HysGantt` 甘特图**支持拖动任务、调整工期、连接和重连任务依赖。修改前可查看排期冲突，修改后可撤销重做。任务较多时可以使用虚拟列表。[预览排期冲突](https://lampo1024.github.io/hys-ui/components/hys-gantt/#scene-conflictpreview) · [试用大数据排期](https://lampo1024.github.io/hys-ui/components/hys-gantt/#scene-largedata)
+
+### 文档编辑与 JSON 工具
+
+- **`HysJsonEditor`**适合排查配置和检查 API 响应。源码有语法高亮，树节点可全部展开或折叠，对象数组可切换到虚拟表格。格式化保留数字原文（含大整数和高精度小数）、键顺序和重复键。修复前可预览差异，重复键可定位并删除指定副本。[试用配置排错](https://lampo1024.github.io/hys-ui/components/hys-json-editor/#scene-configurationtools)
+- **JSON 校验与查询**支持 Draft 7 和 2020-12 Schema、文档内 `$ref` 和错误定位。可用 JSONPath 查询字段和数组项，按原始数字精度比较，也可按字段比较两份 JSON 的结构差异。Schema 校验遇到 JavaScript 无法无损表示的数字时，会提示受影响的字段。[试用响应检查](https://lampo1024.github.io/hys-ui/components/hys-json-editor/#scene-responsetools)
+- **JSON 整理与转换**支持排序、去重、CSV 和 YAML 双向转换，以及从样本生成 TypeScript 类型。转换结果可以先预览，再复制、下载或应用到源码。[试用数据转换](https://lampo1024.github.io/hys-ui/components/hys-json-editor/#scene-conversiontools)
+- **`HysMarkdownEditor`**提供源码、分栏和实时预览模式，支持 GFM 表格和任务清单、标题大纲、查找替换、`.md` 导入导出。点击预览中的任务复选框可同步更新源码。[试用 Markdown 项目文档](https://lampo1024.github.io/hys-ui/components/hys-markdown-editor/#scene-projectdocument)
+- **`HysRichTextEditor`**适合以 HTML 保存公告和正文。支持常用文字与段落格式，可清理从外部粘贴的内容。[试用 HTML 段落工具](https://lampo1024.github.io/hys-ui/components/hys-rich-text-editor/#scene-blocktools)
+
+### 数据可视化与多任务工作台
+
+- **`HysChart` 图表**提供柱状、横向条形、折线、面积、饼图、环形、散点和组合图。多系列可分组或堆叠，可通过图例切换数据系列、悬停查看数值、用键盘选择数据点，也可用参考线标出目标值。[试用多系列图表](https://lampo1024.github.io/hys-ui/components/hys-chart/#scene-series) · [试用参考线](https://lampo1024.github.io/hys-ui/components/hys-chart/#scene-referenceline)
+- **`HysTabs` 标签页**可用于同时打开多条业务记录，支持固定和拖拽标签、切换守卫、异步加载、路由同步和会话恢复。**`HysSortableList`**支持跨列表与层级移动、批量排序、克隆、虚拟列表和异步保存失败回滚。[试用多标签工作台](https://lampo1024.github.io/hys-ui/components/hys-tabs/#scene-workbench) · [试用树形拖拽](https://lampo1024.github.io/hys-ui/components/hys-sortable-list/#scene-tree)
+- **`HysCard` 和 `HysScrollbar`**可用于需要聚焦查看的大面板。卡片支持带过渡的全屏切换，滚动条默认在悬停时显示，支持双向拖动、滚动到指定位置和触边加载。[试用卡片全屏](https://lampo1024.github.io/hys-ui/components/hys-card/#scene-fullscreen) · [试用滚动触边加载](https://lampo1024.github.io/hys-ui/components/hys-scrollbar/#scene-edgeloading)
+
+## 数据表格怎么选
+
+| 你的任务 | 组件 | 主要能力 |
+| --- | --- | --- |
+| 展示业务列表或树形明细 | `HysTable` | 固定列、展开行、合并单元格、表尾汇总和分页。[试用基础表格](https://lampo1024.github.io/hys-ui/components/hys-table/) |
+| 对业务数据执行多列查询和整理 | `HysDataGrid` | 服务端查询、分组小计、列显隐、列布局预设和 CSV 导出。[试用列布局](https://lampo1024.github.io/hys-ui/components/hys-data-grid/#scene-columnlayouts) |
+| 连续浏览大量数据或宽表 | `HysVirtualTable` | 按视口渲染行和列、固定行列、滚动加载。[试用宽表列虚拟化](https://lampo1024.github.io/hys-ui/components/hys-virtual-table/#scene-wide) |
+| 逐条编辑、校验并保存业务记录 | `HysProGrid` | 类型化单元格编辑、异步校验、保存重试，可选剪贴板和条件格式。[试用预算审批](https://lampo1024.github.io/hys-ui/components/hys-pro-grid/#scene-budgetapproval) |
+| 编辑多工作表、计算公式并交换 Excel 文件 | `HysSpreadsheet` | 跨表公式、选区操作、序列填充、行列冻结和工作簿导入导出。[试用预算工作簿](https://lampo1024.github.io/hys-ui/components/hys-spreadsheet/#scene-basic) |
+
+使用 `HysProGrid` 或 `HysSpreadsheet` 时，在基础样式之外引入 `hys-ui/pro-grid.css`。电子表格示例同时引入 `hys-ui/pro-grid/clipboard.css`。ProGrid 的剪贴板和条件格式可以按需从 `hys-ui/pro-grid/clipboard` 和 `hys-ui/pro-grid/conditional-format` 接入，并引入对应的 `.css`。[剪贴板接入示例](https://lampo1024.github.io/hys-ui/components/hys-pro-grid/#scene-clipboard)
+
+## 按场景找组件
+
+在线文档的示例可直接操作。展开「查看示例源码」可复制 Vue 代码，属性、事件、插槽和实例方法见各组件的 API 参考。
+
+| 场景 | 可以做什么 | 在线示例 |
+| --- | --- | --- |
+| 表单与输入 | 配置字段联动、异步校验、远程搜索和多选。 | [表单异步校验](https://lampo1024.github.io/hys-ui/components/hys-form/#scene-async) · [下拉选择](https://lampo1024.github.io/hys-ui/components/hys-select/) · [自动补全](https://lampo1024.github.io/hys-ui/components/hys-autocomplete/) |
+| 层级与批量选择 | 按层级挑选分类，在两侧列表之间批量移动成员。 | [树形选择](https://lampo1024.github.io/hys-ui/components/hys-tree-select/) · [穿梭框](https://lampo1024.github.io/hys-ui/components/hys-transfer/) |
+| 日期与筛选 | 选择日期或日期时间范围，配置快捷预设、禁用日期和双面板。 | [日期选择](https://lampo1024.github.io/hys-ui/components/hys-date-picker/) · [日期范围](https://lampo1024.github.io/hys-ui/components/hys-date-range-picker/) |
+| 弹层与反馈 | 在对话框中编辑长表单，用抽屉查看详情，用轻提示反馈操作结果。 | [对话框](https://lampo1024.github.io/hys-ui/components/hys-modal/) · [抽屉](https://lampo1024.github.io/hys-ui/components/hys-drawer/) · [轻提示](https://lampo1024.github.io/hys-ui/components/hys-toast/) |
+| 文件与进度 | 控制上传队列，接入业务上传请求，显示进度、失败和重试状态。 | [自定义上传请求](https://lampo1024.github.io/hys-ui/components/hys-upload/#scene-request) · [进度条](https://lampo1024.github.io/hys-ui/components/hys-progress/) |
+| 运维与开发工具 | 校验 Cron 表达式并预览执行时间，搜索常用命令，逐行比较配置差异。 | [Cron 执行预览](https://lampo1024.github.io/hys-ui/components/hys-cron-editor/#scene-runpreview) · [命令面板](https://lampo1024.github.io/hys-ui/components/hys-command-palette/#scene-recentcommands) · [文本差异](https://lampo1024.github.io/hys-ui/components/hys-diff-viewer/#scene-contextreview) |
+
+## 用 JSON Schema 编辑配置
+
+下面的示例把重试次数限制在 0 至 5。打开底部的 Schema 问题列表，点击错误可定位到 `retries`，改成 `3` 即可通过校验。`v-model` 始终保存 JSON 源码，切换视图后仍可以读取同一份文本。[完整配置排错示例](https://lampo1024.github.io/hys-ui/components/hys-json-editor/#scene-configurationtools)
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { HysJsonEditor, type HysJsonEditorSchema } from 'hys-ui'
+import 'hys-ui/style.css'
+
+const json = ref('{\n  "region": "east",\n  "retries": 7\n}')
+const schema = ref<HysJsonEditorSchema | null>({
+  type: 'object',
+  required: ['region', 'retries'],
+  properties: {
+    region: { enum: ['east', 'west'] },
+    retries: { type: 'integer', minimum: 0, maximum: 5 },
+  },
+})
+</script>
+
+<template>
+  <HysJsonEditor v-model="json" v-model:schema="schema" />
 </template>
 ```
 
