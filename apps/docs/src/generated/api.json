@@ -7520,11 +7520,19 @@
   "HysCronEditor": {
     "props": [
       {
+        "name": "modelValue",
+        "type": "string | undefined",
+        "required": false,
+        "default": "",
+        "description": "Cron 表达式。省略时 Unix 使用 0 0 * * *，Quartz 使用 0 0 0 * * ?。",
+        "global": false
+      },
+      {
         "name": "presets",
         "type": "readonly HysCronPreset[] | undefined",
         "required": false,
         "default": "",
-        "description": "自定义预设，包含 { label, value }。省略时显示内置预设，传空数组隐藏预设按钮。",
+        "description": "自定义预设数组，每项包含 label 和 value。省略时按格式显示内置预设，传空数组隐藏。",
         "global": false
       },
       {
@@ -7532,7 +7540,7 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "禁用输入和预设按钮，默认 false。",
+        "description": "禁用编辑、预览控件和复制，默认 false。",
         "global": false
       },
       {
@@ -7540,31 +7548,71 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "false",
-        "description": "保留文本选择，禁止修改和选择预设，默认 false。",
+        "description": "锁定表达式和格式，仍可浏览字段、复制和调整预览，默认 false。",
+        "global": false
+      },
+      {
+        "name": "showFormatSelector",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示 Unix 和 Quartz 的格式选择器，默认 true。",
+        "global": false
+      },
+      {
+        "name": "showBuilder",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示字段编辑视图入口和可视化配置浮层，默认 true。浮层内可预览草稿，保存后写回表达式。",
+        "global": false
+      },
+      {
+        "name": "defaultMode",
+        "type": "\"source\" | \"fields\" | undefined",
+        "required": false,
+        "default": "\"source\"",
+        "description": "初始视图 source 或 fields，默认 source。",
+        "global": false
+      },
+      {
+        "name": "showPreviewControls",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "true",
+        "description": "显示运行预览的时区、起点和从现在预览控件，默认 true。",
         "global": false
       },
       {
         "name": "previewCount",
         "type": "number | undefined",
         "required": false,
-        "default": "",
-        "description": "显示未来运行时间条数，默认 0，上限 10。按五段数字 Cron 语法以 UTC 搜索未来五年。",
+        "default": "0",
+        "description": "显示未来运行时间条数，默认 0，上限 10。无显式年份时搜索未来五年，Quartz 显式年份按字段选定年份搜索。",
+        "global": false
+      },
+      {
+        "name": "format",
+        "type": "CronFormat | undefined",
+        "required": false,
+        "default": "\"unix\"",
+        "description": "语法格式为 unix 或 quartz，默认 unix。支持 v-model:format。切换格式保留显式传入的原表达式。",
+        "global": false
+      },
+      {
+        "name": "timeZone",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"UTC\"",
+        "description": "运行预览的 IANA 时区名，默认 UTC。支持 v-model:timeZone。",
         "global": false
       },
       {
         "name": "previewFrom",
-        "type": "Date | undefined",
+        "type": "Date | null | undefined",
         "required": false,
         "default": "",
-        "description": "运行时间预览的基准 Date，默认组件创建时刻。预览只包含严格晚于基准的时间。",
-        "global": false
-      },
-      {
-        "name": "modelValue",
-        "type": "string | undefined",
-        "required": false,
-        "default": "\"0 0 * * *\"",
-        "description": "受控值，配合 v-model 使用",
+        "description": "运行预览的起点 Date。省略或为 null 时使用组件创建时刻。支持 v-model:previewFrom，预览只包含严格晚于起点的时间。",
         "global": false
       }
     ],
@@ -7575,6 +7623,41 @@
         "required": false,
         "default": "",
         "description": "编辑后的 Cron 表达式字符串"
+      },
+      {
+        "name": "change",
+        "type": "[expression: string]",
+        "required": false,
+        "default": "",
+        "description": "用户输入、应用字段、保存可视化配置、选择预设或规范化后，表达式实际变化时触发。载荷为新的原始表达式字符串。"
+      },
+      {
+        "name": "copy",
+        "type": "[expression: string]",
+        "required": false,
+        "default": "",
+        "description": "剪贴板写入成功后触发，载荷为已复制的表达式字符串。"
+      },
+      {
+        "name": "update:format",
+        "type": "[value: CronFormat]",
+        "required": false,
+        "default": "",
+        "description": "切换语法格式时触发，载荷为 unix 或 quartz。"
+      },
+      {
+        "name": "update:timeZone",
+        "type": "[value: string]",
+        "required": false,
+        "default": "",
+        "description": "改变预览时区时触发，载荷为时区名称。"
+      },
+      {
+        "name": "update:previewFrom",
+        "type": "[value: Date | null | undefined]",
+        "required": false,
+        "default": "",
+        "description": "改变预览起点时触发，载荷为绝对时刻 Date。"
       }
     ],
     "slots": [],
@@ -7584,7 +7667,21 @@
         "type": "() => boolean",
         "required": false,
         "default": "",
-        "description": "validate(): boolean。验证五段数字格式、各段边界、范围与步长。"
+        "description": "validate(): boolean。按当前语法验证字段格式、范围和日历规则。"
+      },
+      {
+        "name": "describe",
+        "type": "() => string",
+        "required": false,
+        "default": "",
+        "description": "describe(): string。返回有效表达式的可读说明，无效时返回空字符串。"
+      },
+      {
+        "name": "getNextRuns",
+        "type": "(from?: Date, limit?: number) => Date[]",
+        "required": false,
+        "default": "",
+        "description": "getNextRuns(from?: Date, limit?: number): Date[]。返回当前时区内严格晚于起点的实际时刻。默认使用预览起点和条数，条数为 0 时返回至多 5 条。显式条数上限 100。"
       }
     ]
   },

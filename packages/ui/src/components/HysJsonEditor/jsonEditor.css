@@ -29,7 +29,17 @@
 .hys-json-source { position: relative; min-inline-size: 0; }
 .hys-json-editor[aria-disabled="true"] .hys-json-source { pointer-events: none; }
 .hys-json-code-host, .hys-json-code-host .cm-editor { block-size: 100%; }
-.hys-json-code-host .cm-editor.cm-focused { outline: 1px solid var(--hys-ui-theme-primary); outline-offset: -1px; }
+.hys-json-code-host { position: relative; isolation: isolate; }
+.hys-json-code-host .cm-editor { isolation: isolate; }
+.hys-json-code-host .cm-editor.cm-focused { outline: none; }
+.hys-json-code-host:focus-within::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 1px solid var(--hys-ui-theme-primary);
+  pointer-events: none;
+}
 .hys-json-code-host .cm-scroller { overflow: auto; scrollbar-width: none; line-height: 1.6; }
 .hys-json-code-host .cm-scroller::-webkit-scrollbar { display: none; }
 .hys-json-code-host .cm-content { padding-block: 10px; caret-color: var(--hys-ui-theme-text); }

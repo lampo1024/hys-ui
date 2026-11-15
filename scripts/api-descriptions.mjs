@@ -326,11 +326,29 @@ const annotations = {
   },
   HysCronEditor: {
     props: {
-      presets: '自定义预设，包含 { label, value }。省略时显示内置预设，传空数组隐藏预设按钮。',
-      disabled: '禁用输入和预设按钮，默认 false。',
-      readonly: '保留文本选择，禁止修改和选择预设，默认 false。',
+      modelValue: 'Cron 表达式。省略时 Unix 使用 0 0 * * *，Quartz 使用 0 0 0 * * ?。',
+      format: '语法格式为 unix 或 quartz，默认 unix。支持 v-model:format。切换格式保留显式传入的原表达式。',
+      presets: '自定义预设数组，每项包含 label 和 value。省略时按格式显示内置预设，传空数组隐藏。',
+      disabled: '禁用编辑、预览控件和复制，默认 false。',
+      readonly: '锁定表达式和格式，仍可浏览字段、复制和调整预览，默认 false。',
+      showFormatSelector: '显示 Unix 和 Quartz 的格式选择器，默认 true。',
+      showBuilder: '显示字段编辑视图入口和可视化配置浮层，默认 true。浮层内可预览草稿，保存后写回表达式。',
+      defaultMode: '初始视图 source 或 fields，默认 source。',
+      showPreviewControls: '显示运行预览的时区、起点和从现在预览控件，默认 true。',
+      timeZone: '运行预览的 IANA 时区名，默认 UTC。支持 v-model:timeZone。',
     },
-    exposed: { validate: 'validate(): boolean。验证五段数字格式、各段边界、范围与步长。' },
+    events: {
+      change: '用户输入、应用字段、保存可视化配置、选择预设或规范化后，表达式实际变化时触发。载荷为新的原始表达式字符串。',
+      copy: '剪贴板写入成功后触发，载荷为已复制的表达式字符串。',
+      'update:format': '切换语法格式时触发，载荷为 unix 或 quartz。',
+      'update:timeZone': '改变预览时区时触发，载荷为时区名称。',
+      'update:previewFrom': '改变预览起点时触发，载荷为绝对时刻 Date。',
+    },
+    exposed: {
+      validate: 'validate(): boolean。按当前语法验证字段格式、范围和日历规则。',
+      describe: 'describe(): string。返回有效表达式的可读说明，无效时返回空字符串。',
+      getNextRuns: 'getNextRuns(from?: Date, limit?: number): Date[]。返回当前时区内严格晚于起点的实际时刻。默认使用预览起点和条数，条数为 0 时返回至多 5 条。显式条数上限 100。',
+    },
   },
   HysDataGrid: {
     props: {
@@ -1348,8 +1366,8 @@ const interactionAnnotations =
   },
   "HysCronEditor": {
     "props": {
-      "previewCount": "显示未来运行时间条数，默认 0，上限 10。按五段数字 Cron 语法以 UTC 搜索未来五年。",
-      "previewFrom": "运行时间预览的基准 Date，默认组件创建时刻。预览只包含严格晚于基准的时间。"
+      "previewCount": "显示未来运行时间条数，默认 0，上限 10。无显式年份时搜索未来五年，Quartz 显式年份按字段选定年份搜索。",
+      "previewFrom": "运行预览的起点 Date。省略或为 null 时使用组件创建时刻。支持 v-model:previewFrom，预览只包含严格晚于起点的时间。"
     }
   },
   "HysFileManager": {

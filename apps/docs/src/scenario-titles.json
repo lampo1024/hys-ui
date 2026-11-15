@@ -542,7 +542,11 @@
       "DraftLimit": "工单评论 · 草稿与长度限制" },
     "HysCronEditor": {
       "RunPreview": "自动巡检 · 下次运行时间",
-      "Validation": "巡检任务 · 业务预设与范围校验" },
+      "Validation": "巡检任务 · 业务预设与范围校验",
+      "Composer": "定时任务 · 浮层可视化配置",
+      "VisualSchedule": "维护窗口 · 按字段配置",
+      "QuartzRules": "财务结账 · Quartz 月末规则",
+      "TimeZones": "跨时区调度 · 夏令时运行预览" },
     "HysFileManager": {
       "TransferStatus": "订单附件 · 上传进度与重试",
       "Validation": "导入附件 · 类型、体积与数量校验" },

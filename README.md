@@ -4,7 +4,7 @@ HYS UI 是面向管理后台和业务工作台的 Vue 3 组件库。用它可以
 
 [在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [快速开始](#快速开始) · [高级能力](#高级能力) · [表格选型](#数据表格怎么选)
 
-`0.13.0` 改用内置 SVG 图标，按需加载 Markdown 预览和表单校验，并提供基础包与四个可独立安装的功能包。[npm](https://www.npmjs.com/package/hys-ui) · [更新记录](packages/ui/CHANGELOG.md)
+`0.14.0` 为 CronEditor 增加 Unix 和 Quartz 可视化配置、草稿预览与时区调度预览，并修复 JsonEditor 源码区的焦点边框。[npm](https://www.npmjs.com/package/hys-ui) · [更新记录](packages/ui/CHANGELOG.md)
 
 ## 功能截图
 
@@ -77,7 +77,7 @@ const options = [
 基础包和功能包使用同一版本。例如，为 Vue 项目安装基础包和 Excel 读写包。
 
 ```bash
-npm install hys-ui-core@0.13.0 hys-ui-xlsx@0.13.0
+npm install hys-ui-core@0.14.0 hys-ui-xlsx@0.14.0
 ```
 
 ```vue
@@ -142,7 +142,7 @@ const fileFormats = [createSpreadsheetExcelFormat()]
 | 日期与筛选 | 选择日期或日期时间范围，配置快捷预设、禁用日期和双面板。 | [日期选择](https://lampo1024.github.io/hys-ui/components/hys-date-picker/) · [日期范围](https://lampo1024.github.io/hys-ui/components/hys-date-range-picker/) |
 | 弹层与反馈 | 在对话框中编辑长表单，用抽屉查看详情，用轻提示反馈操作结果。 | [对话框](https://lampo1024.github.io/hys-ui/components/hys-modal/) · [抽屉](https://lampo1024.github.io/hys-ui/components/hys-drawer/) · [轻提示](https://lampo1024.github.io/hys-ui/components/hys-toast/) |
 | 文件与进度 | 控制上传队列，接入业务上传请求，显示进度、失败和重试状态。 | [自定义上传请求](https://lampo1024.github.io/hys-ui/components/hys-upload/#scene-request) · [进度条](https://lampo1024.github.io/hys-ui/components/hys-progress/) |
-| 运维与开发工具 | 校验 Cron 表达式并预览执行时间，搜索常用命令，逐行比较配置差异。 | [Cron 执行预览](https://lampo1024.github.io/hys-ui/components/hys-cron-editor/#scene-runpreview) · [命令面板](https://lampo1024.github.io/hys-ui/components/hys-command-palette/#scene-recentcommands) · [文本差异](https://lampo1024.github.io/hys-ui/components/hys-diff-viewer/#scene-contextreview) |
+| 运维与开发工具 | 可视化配置 Unix 或 Quartz Cron 表达式并按时区预览运行时间，搜索常用命令，逐行比较配置差异。 | [Cron 可视化配置](https://lampo1024.github.io/hys-ui/components/hys-cron-editor/#scene-composer) · [命令面板](https://lampo1024.github.io/hys-ui/components/hys-command-palette/#scene-recentcommands) · [文本差异](https://lampo1024.github.io/hys-ui/components/hys-diff-viewer/#scene-contextreview) |
 
 ## 用 JSON Schema 编辑配置
 

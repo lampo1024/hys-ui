@@ -160,6 +160,86 @@ test('CronEditor previews strictly later UTC times and supports restricted day o
   ]);
 });
 
+test("CronEditor composes Quartz fields and publishes exactly one expression change", async () => {
+  const editor = await mount(ui.HysCronEditor, { format: "quartz", defaultMode: "fields" });
+  const expression = editor.find('input[aria-label="Cron 表达式"]');
+  assert.equal(expression.value, "0 0 0 * * ?");
+  const minute = editor.all(".hys-cron-field-nav button").find(button => button.textContent.trim().startsWith("分钟"));
+  await fire(minute, "click");
+  const number = editor.find('input[aria-label="字段起点"]');
+  number.value = "30";
+  await fire(number, "input");
+  await fire(number, "blur");
+  await fire(editor.all("button").find(button => button.textContent.trim() === "应用字段"), "click");
+  assert.equal(expression.value, "0 30 0 * * ?");
+  assert.deepEqual(editor.events["update:modelValue"], [["0 30 0 * * ?"]]);
+  assert.deepEqual(editor.events.change, [["0 30 0 * * ?"]]);
+  assert.equal(editor.vm.validate(), true);
+  const from = new Date("2026-11-15T00:30:00Z");
+  assert.equal(editor.vm.getNextRuns(from, 1)[0].toISOString(), "2026-11-16T00:30:00.000Z");
+
+  editor.props.readonly = true;
+  await nextTick();
+  assert(expression.readOnly);
+  assert(editor.all("button").find(button => button.textContent.trim() === "应用字段").disabled);
+  assert.equal(editor.events.change.length, 1);
+});
+
+test("CronEditor saves the visual configuration as one change and discards cancelled or stale drafts", async () => {
+  const original = "0 30 9 * * ?";
+  const editor = await mount(ui.HysCronEditor, { modelValue: original, format: "quartz" });
+  const expression = editor.find('input[aria-label="Cron 表达式"]');
+  const trigger = editor.all("button").find(button => button.textContent.trim() === "可视化配置");
+  const panel = () => document.querySelector('[role="dialog"][aria-label="Cron 可视化配置"] .hys-cron-composer');
+  const action = name => [...panel().querySelectorAll("button")].find(button => button.textContent.trim() === name);
+  const open = async () => {
+    await fire(trigger, "click");
+    await waitForNode(panel);
+  };
+  const tab = async name => {
+    await fire(action(name), "click");
+    await waitForNode(() => action(name)?.getAttribute("aria-selected") === "true");
+  };
+  const rule = async name => {
+    const radio = await waitForNode(() => [...panel().querySelectorAll(".hys-cron-rule")]
+      .find(row => row.querySelector("label").textContent.trim() === name)?.querySelector('input[type="radio"]'));
+    radio.click();
+    await nextTick();
+  };
+
+  await open();
+  await tab("分");
+  await rule("按步长");
+  await waitForNode(() => panel().querySelector('input[aria-label="步长"]'));
+  await tab("月");
+  await rule("指定月份（可多选）");
+  await waitForNode(() => action("保存").disabled);
+  await rule("每月");
+  await tab("日");
+  await rule("每月最后一天");
+  await tab("分");
+  await waitForNode(() => panel().querySelector('input[aria-label="步长"]'));
+  await tab("日");
+  assert.match(panel().querySelector(".hys-cron-composer-result code").textContent, /^0 \*\/2 9 L \* \?$/);
+  assert.equal(expression.value, original);
+  assert.equal(editor.events.change, undefined);
+  await fire(action("保存"), "click");
+  assert.deepEqual(editor.events.change, [["0 */2 9 L * ?"]]);
+  assert.deepEqual(editor.events["update:modelValue"], [["0 */2 9 L * ?"]]);
+  await open();
+  await tab("年");
+  await rule("每年");
+  await fire(action("取消"), "click");
+  assert.equal(expression.value, "0 */2 9 L * ?");
+  await open();
+  await tab("年");
+  await rule("每年");
+  editor.props.modelValue = "0 15 10 * * ?";
+  await nextTick();
+  assert.equal(panel(), null);
+  assert.equal(editor.events.change.length, 1);
+});
+
 test('Steps finishes an async guard across equivalent item arrays and ignores a replaced target', async () => {
   let allow;
   const steps = await mount(ui.HysSteps, {

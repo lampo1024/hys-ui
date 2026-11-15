@@ -42,6 +42,7 @@ export {default as HysCommentEditor} from './components/HysCommentEditor/HysComm
 export type {Comment} from './components/HysCommentEditor/HysCommentEditor.vue'
 export {default as HysContextMenu} from './components/HysContextMenu/HysContextMenu.vue'
 export {default as HysCronEditor} from './components/HysCronEditor/HysCronEditor.vue'
+export type {HysCronFormat} from './components/HysCronEditor/HysCronEditor.vue'
 export type {HysCronPreset} from './components/HysCronEditor/HysCronEditor.vue'
 export {default as HysDataGrid} from './components/HysDataGrid/HysDataGrid.vue'
 export {default as HysDatePicker} from './components/HysDatePicker/HysDatePicker.vue'
