@@ -1,7 +1,5 @@
 import { computed, nextTick, ref, watch, type Ref } from "vue";
-import { SearchQuery } from "@codemirror/search";
-import { Text } from "@codemirror/state";
-type SourceRange = { from: number; to: number };
+import { findCodeMatches, type SourceRange } from "./codeSearch";
 
 export function useCodeSearch(
   source: Ref<string>,
@@ -13,16 +11,7 @@ export function useCodeSearch(
   const replacement = ref("");
   const sensitive = ref(false);
   const index = ref(-1);
-  const matches = computed(() => {
-    if (!find.value) return [];
-    const cursor = new SearchQuery({ search: find.value, caseSensitive: sensitive.value, literal: true })
-      .getCursor(Text.of(source.value.split("\n")));
-    const result: SourceRange[] = [];
-    for (let next = cursor.next(); !next.done; next = cursor.next()) {
-      result.push({ from: next.value.from, to: next.value.to });
-    }
-    return result;
-  });
+  const matches = computed(() => findCodeMatches(source.value, find.value, sensitive.value));
   function step(direction: 1 | -1) {
     if (!matches.value.length) return;
     let next = index.value + direction;

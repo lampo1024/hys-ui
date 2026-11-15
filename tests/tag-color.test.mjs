@@ -661,6 +661,11 @@ test("TagInput and ColorPicker inherit form state, associate labels and validate
     tags = ref(),
     color = ref();
   let checks = 0;
+  let resolveValidation;
+  const validated = new Promise(resolve => { resolveValidation = resolve; });
+  const onValidate = (path, valid) => {
+    if (path === "tags") resolveValidation(valid);
+  };
   const rules = {
     validator: () => {
       checks++;
@@ -674,7 +679,7 @@ test("TagInput and ColorPicker inherit form state, associate labels and validate
       return () =>
         h(
           ui.HysForm,
-          { ref: form, model, size: size.value, disabled: disabled.value },
+          { ref: form, model, size: size.value, disabled: disabled.value, onValidate },
           {
             default: () => [
               h(
@@ -717,7 +722,7 @@ test("TagInput and ColorPicker inherit form state, associate labels and validate
   await fire(input, "input");
   assert.equal(checks, 0);
   await tags.value.add();
-  await settle();
+  assert.equal(await validated, true);
   assert.equal(checks, 1);
   disabled.value = true;
   await settle();
@@ -788,6 +793,11 @@ test("ColorPicker defers form model validation across continuous frames and vali
     model = reactive({ color: "rgba(255, 0, 0, 1)" }),
     api = ref();
   let checks = 0;
+  let resolveValidation;
+  const validated = new Promise(resolve => { resolveValidation = resolve; });
+  const onValidate = (path, valid) => {
+    if (path === "color") resolveValidation(valid);
+  };
   const rules = {
     validator: () => {
       checks++;
@@ -799,7 +809,7 @@ test("ColorPicker defers form model validation across continuous frames and vali
     setup() {
       ui.provideHysConfig({ motion: "off" });
       return () =>
-        h(ui.HysForm, { model }, () =>
+        h(ui.HysForm, { model, onValidate }, () =>
           h(ui.HysFormItem, { prop: "color", rules }, () =>
             h(ui.HysColorPicker, {
               ref: api,
@@ -824,7 +834,7 @@ test("ColorPicker defers form model validation across continuous frames and vali
   }
   assert.equal(checks, 0);
   await pointer(track, "pointerup", 200, 20);
-  await settle();
+  assert.equal(await validated, true);
   assert.equal(checks, 1);
   await fire(track, "keydown", { key: "ArrowLeft" });
   await settle();

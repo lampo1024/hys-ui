@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import {UserRound,ClipboardCheck,Send} from 'lucide-vue-next'
+import {UserRound,ClipboardCheck,Send} from 'hys-ui/icons'
 import {HysSteps,HysBadge} from 'hys-ui'
 const current=ref(1),icons=[UserRound,ClipboardCheck,Send]
 const items=[{title:'申请',subtitle:'09:30',description:'提交申请资料'},{title:'审核',subtitle:'处理中',description:'等待审核结果'},{title:'发放',description:'审核完成后处理',disabled:true}]

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Folder, FileText, ChevronRight, ChevronDown } from "lucide-vue-next";
+import { Folder, FileText, ChevronRight, ChevronDown } from "hys-ui/icons";
 import { HysTree, HysBadge, HysButton } from "hys-ui";
 const selected = ref("spec"),
   message = ref("");

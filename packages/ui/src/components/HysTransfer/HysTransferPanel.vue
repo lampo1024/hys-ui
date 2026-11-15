@@ -12,7 +12,7 @@ import {
   type FunctionalComponent,
   type VNodeChild,
 } from "vue";
-import { Search, GripVertical, X, LoaderCircle } from "lucide-vue-next";
+import { Search, GripVertical, X, LoaderCircle } from "../HysIcon/svgIcons";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysInput from "../HysInput/HysInput.vue";

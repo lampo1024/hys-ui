@@ -8,7 +8,7 @@ import {
   type FunctionalComponent,
   type VNodeChild,
 } from "vue";
-import { ChevronDown, Ellipsis } from "lucide-vue-next";
+import { ChevronDown, Ellipsis } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import type { HysPopupMotionProps } from "../../motion/popup";
 import {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h, ref } from "vue";
-import { BellRing } from "lucide-vue-next";
+import { BellRing } from "hys-ui/icons";
 import {
   HysButton,
   HysCheckbox,

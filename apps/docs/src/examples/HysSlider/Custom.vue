@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysSlider } from "hys-ui";
-import { Volume2 } from "lucide-vue-next";
+import { Volume2 } from "hys-ui/icons";
 const volume = ref(40),
   progress = ref(60);
 </script>

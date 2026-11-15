@@ -4,7 +4,7 @@ export type HysMarkdownEditorView = MarkdownView;
 </script>
 
 <script setup lang="ts">
-import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, shallowRef, toRef, useId, watch } from "vue";
+import { computed, defineAsyncComponent, h, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, shallowRef, toRef, useId, watch } from "vue";
 import { useHysRootAttrs } from "../../config";
 import { useHysControlState } from "../../composables/formContext";
 import HysButton from "../HysButton/HysButton.vue";
@@ -15,14 +15,32 @@ import ScrollbarOverlay from "../HysScrollbar/ScrollbarOverlay.vue";
 import { useScrollbarGeometry } from "../HysScrollbar/useScrollbarGeometry";
 import MarkdownFind from "./MarkdownFind.vue";
 import MarkdownInsert, { type MarkdownInsertFields } from "./MarkdownInsert.vue";
-import MarkdownPreviewView from "./MarkdownPreview.vue";
 import MarkdownToolbar, { type MarkdownTool } from "./MarkdownToolbar.vue";
-import { findMarkdownLink, parseMarkdown, type MarkdownHeading } from "./markdownPreview";
+import type { MarkdownHeading } from "./markdownPreview";
 import { formatMarkdown, insertMarkdownBlock, insertMarkdownLink, type MarkdownRange } from "./markdownSource";
 import { useMarkdownCode } from "./useMarkdownCode";
 import { useMarkdownFiles } from "./useMarkdownFiles";
 import { useMarkdownScroll } from "./useMarkdownScroll";
+import { useMarkdownPreview } from "./useMarkdownPreview";
+import HysSpin from "../HysSpin/HysSpin.vue";
 import { useCodeSearch } from "../../composables/useCodeSearch";
+
+const MarkdownPreviewView = defineAsyncComponent({
+  loader: () => import("./MarkdownPreview.vue"),
+  loadingComponent: {
+    inheritAttrs: false,
+    render: () => h(HysSpin, { message: "正在加载 Markdown 预览…" }),
+  },
+  errorComponent: {
+    inheritAttrs: false,
+    render: () => h("p", { class: "hys-md-empty", role: "status" }, "无法加载 Markdown 预览。"),
+  },
+  delay: 0,
+  onError(_error, retry, fail, attempts) {
+    if (attempts === 1) retry();
+    else fail();
+  },
+});
 
 const props = withDefaults(defineProps<{
   placeholder?: string;
@@ -51,9 +69,7 @@ const disabled = computed(() => !active.value || controlDisabled.value);
 const editable = computed(() => !disabled.value && !props.readonly);
 const mode = computed(() => view.value === "split" && !wide.value ? "edit" : view.value);
 const previewViewport = computed(() => previewRef.value?.viewport ?? undefined);
-const renderedSource = ref(source.value);
-const rendered = shallowRef(parseMarkdown(renderedSource.value, id));
-let previewTimer: ReturnType<typeof setTimeout> | undefined;
+const preview = useMarkdownPreview(source, mode, active, id, status);
 let contained: ResizeObserver | undefined;
 let panelVersion = 0;
 
@@ -79,9 +95,8 @@ const code = useMarkdownCode(host, source, disabled, readonly, toRef(props, "pla
     return true;
   },
 });
-const currentPreview = computed(() => renderedSource.value === source.value);
 const scroll = useMarkdownScroll(code.editor, previewViewport,
-  computed(() => active.value && syncOn.value && mode.value === "split" && currentPreview.value), rendered);
+  computed(() => active.value && syncOn.value && mode.value === "split" && preview.current.value), preview.rendered);
 const { geometry } = useScrollbarGeometry(() => code.viewport.value, () => code.editor.value?.contentDOM, {
   enabled: () => mode.value !== "preview",
 });
@@ -102,17 +117,6 @@ function setView(next: HysMarkdownEditorView) {
 function ensureSource() {
   if (mode.value === "preview") setView("edit");
 }
-function refreshPreview() {
-  if (previewTimer !== undefined) clearTimeout(previewTimer);
-  previewTimer = undefined;
-  if (renderedSource.value === source.value) return;
-  rendered.value = parseMarkdown(source.value, id);
-  renderedSource.value = source.value;
-}
-watch(source, () => {
-  if (previewTimer !== undefined) clearTimeout(previewTimer);
-  previewTimer = setTimeout(refreshPreview, 100);
-});
 watch(model, value => {
   if (value === source.value) return;
   invalidate();
@@ -122,8 +126,7 @@ watch(model, value => {
 watch(() => props.syncScroll, value => { syncOn.value = value; });
 watch(disabled, value => { if (value) { invalidate(); findOpen.value = false; } });
 watch(editable, value => { if (!value) invalidate(); });
-watch(mode, value => {
-  if (value !== "edit") refreshPreview();
+watch(mode, () => {
   void nextTick(() => code.editor.value?.requestMeasure());
 });
 onMounted(() => {
@@ -140,18 +143,30 @@ onActivated(() => { active.value = true; });
 onDeactivated(() => { active.value = false; invalidate(); });
 onBeforeUnmount(() => {
   contained?.disconnect();
-  if (previewTimer !== undefined) clearTimeout(previewTimer);
+  panelVersion++;
 });
 
-function openPanel(kind: MarkdownInsertFields["kind"]) {
+async function openPanel(kind: MarkdownInsertFields["kind"]) {
   const document = code.editor.value?.state.doc;
   if (!document) return;
   const original = document.toString();
   const range = code.selection.value;
-  const existing = kind === "link" || kind === "image" ? findMarkdownLink(original, range, kind === "image") : undefined;
-  const selected = kind === "link" || kind === "image" ? document.sliceString(range.from, range.to) : "";
+  const version = ++panelVersion;
+  const linkPanel = kind === "link" || kind === "image";
+  let existing: ReturnType<typeof import("./markdownPreview").findMarkdownLink> | undefined;
+  if (linkPanel) {
+    try {
+      const { findMarkdownLink } = await import("./markdownPreview");
+      if (version !== panelVersion || !editable.value || code.editor.value?.state.doc.toString() !== original) return;
+      existing = findMarkdownLink(original, range, kind === "image");
+    } catch {
+      if (version === panelVersion) status.value = "无法加载 Markdown 链接工具，请重试。";
+      return;
+    }
+  }
+  const selected = linkPanel ? document.sliceString(range.from, range.to) : "";
   panel.value = {
-    range: existing?.range ?? range, title: existing?.title ?? "", labelSource: existing?.labelSource, original, version: panelVersion,
+    range: existing?.range ?? range, title: existing?.title ?? "", labelSource: existing?.labelSource, original, version,
     fields: { kind, text: existing?.text ?? selected, url: existing?.url ?? "", editing: !!existing },
   };
 }
@@ -178,6 +193,8 @@ function action(tool: MarkdownTool, level?: number) {
     findOpen.value = !findOpen.value;
     if (findOpen.value) ensureSource();
     else code.focus();
+  } else if (tool === "outline") {
+    void preview.prepareOutline();
   } else if (tool === "sync") {
     syncOn.value = !syncOn.value;
   } else if (tool === "copy") {
@@ -186,10 +203,9 @@ function action(tool: MarkdownTool, level?: number) {
     files.download();
   } else if (editable.value) {
     if (tool === "import") { files.open(); return; }
-    if (tool === "outline") return;
     ensureSource();
     if (tool === "undo" || tool === "redo") code.stepHistory(tool);
-    else if (tool === "link" || tool === "image" || tool === "code" || tool === "table") openPanel(tool);
+    else if (tool === "link" || tool === "image" || tool === "code" || tool === "table") void openPanel(tool);
     else if (code.editor.value) code.apply(formatMarkdown(code.editor.value.state.doc.toString(), code.selection.value, tool, level));
   }
 }
@@ -198,10 +214,10 @@ function goToId(target: string) {
   const element = Array.from(viewport?.querySelectorAll<HTMLElement>("[id]") ?? []).find(node => node.id === target);
   if (element && viewport) viewport.scrollTop += element.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
 }
-function goToHeading(heading: MarkdownHeading) {
-  refreshPreview();
-  const resolved = rendered.value.headings.find(item => item.line === heading.line && item.title === heading.title);
-  if (!resolved) return;
+async function goToHeading(heading: MarkdownHeading) {
+  const headings = await preview.prepareOutline();
+  const resolved = headings.find(item => item.line === heading.line && item.title === heading.title);
+  if (!resolved || !active.value) return;
   const doc = code.editor.value?.state.doc;
   if (doc) {
     const position = doc.line(Math.min(doc.lines, resolved.line)).from;
@@ -210,10 +226,11 @@ function goToHeading(heading: MarkdownHeading) {
   void nextTick(() => goToId(resolved.id));
 }
 function toggleTask(offset: number, checked: boolean) {
-  if (!editable.value || !currentPreview.value) return;
+  const renderedSource = preview.rendered.value?.source;
+  if (!editable.value || renderedSource !== source.value) return;
   const doc = code.editor.value?.state.doc;
   if (!doc) return;
-  const position = renderedSource.value.includes("\r") ? renderedSource.value.slice(0, offset).replace(/\r\n?/g, "\n").length : offset;
+  const position = renderedSource.includes("\r") ? renderedSource.slice(0, offset).replace(/\r\n?/g, "\n").length : offset;
   const before = doc.sliceString(position - 1, position + 2);
   if (!/^\[[ xX]\]$/.test(before)) return;
   code.transact({ from: position, to: position + 1, insert: checked ? "x" : " " }, undefined, false);
@@ -230,7 +247,7 @@ defineExpose({ focus, blur: code.blur, getMarkdown: () => source.value });
   <section ref="root" v-bind="skin" class="hys-md-editor" :aria-disabled="disabled || undefined">
     <MarkdownToolbar v-if="!hideToolbar" :mode="mode" :wide="wide" :editable="editable" :disabled="disabled || !code.ready.value"
       :undo="code.historyState.value.undo" :redo="code.historyState.value.redo" :find-open="findOpen" :synced="syncOn"
-      :headings="rendered.headings" @action="action" @view="setView" @heading="goToHeading" />
+      :headings="preview.headings.value" :outline-pending="preview.outlinePending.value" @action="action" @view="setView" @heading="goToHeading" />
     <MarkdownFind v-if="findOpen && !disabled" v-model:find="find" v-model:replacement="replacement" v-model:sensitive="sensitive"
       :readonly="readonly" :count="matches.length" :index="index" @step="search.step" @replace="search.replaceCurrent"
       @replace-all="search.replaceAll" @close="action('find')" />
@@ -241,7 +258,7 @@ defineExpose({ focus, blur: code.blur, getMarkdown: () => source.value });
       </div>
       <HysScrollbar v-show="mode !== 'edit'" ref="previewRef" class="hys-md-preview" height="100%"
         aria-label="Markdown 预览区域" :tabindex="disabled ? null : 0" @scroll="scroll.fromPreview">
-        <MarkdownPreviewView :content="rendered" :source="renderedSource" :current="currentPreview" :editable="editable"
+        <MarkdownPreviewView v-if="preview.visited.value" :id-prefix="id" :source="preview.previewSource.value" :current="preview.current.value" :editable="editable" @rendered="preview.receivePreview"
           :disabled="disabled" @task="toggleTask" @copy="files.copy($event, '代码')" @anchor="goToId" />
       </HysScrollbar>
     </div>

@@ -9,7 +9,7 @@ import {
   Square,
   SquareCheck,
   LoaderCircle,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysMenuSlot from "./HysMenuSlot";
 import {
   menuSafeRel,

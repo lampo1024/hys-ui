@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysTextarea, HysCheckbox } from "hys-ui";
-import { Eraser } from "lucide-vue-next";
+import { Eraser } from "hys-ui/icons";
 const value = ref("可清空的多行内容"),
   readonly = ref(false);
 </script>

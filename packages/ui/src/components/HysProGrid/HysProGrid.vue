@@ -12,7 +12,7 @@ import {
   type FunctionalComponent,
   type VNodeChild,
 } from "vue";
-import { Pencil } from "lucide-vue-next";
+import { Pencil } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysDataGrid from "../HysDataGrid/HysDataGrid.vue";
 import ProGridInlineEditor from "./ProGridInlineEditor/ProGridInlineEditor.vue";

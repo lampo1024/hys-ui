@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
 import { HysSwitch } from "hys-ui";
-import { Sun, Moon, Check, X, Star } from "lucide-vue-next";
+import { Sun, Moon, Check, X, Star } from "hys-ui/icons";
 const value = ref(true);
 </script>
 <template>

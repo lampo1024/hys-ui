@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import {Plus,Minus} from 'lucide-vue-next'
+import {Plus,Minus} from 'hys-ui/icons'
 import {HysAccordion,HysButton,HysBadge} from 'hys-ui'
 const saved=ref(0)
 const items=[{title:'通知偏好',content:'选择需要接收的通知类型。'},{title:'高级选项',content:'更多可选设置。'}]

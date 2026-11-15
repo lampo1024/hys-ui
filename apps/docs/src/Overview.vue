@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {version} from '../../../packages/ui/package.json'
 import {RouterLink} from 'vue-router'
-import {ArrowRight,Package,Palette,Code2} from 'lucide-vue-next'
+import {ArrowRight,Package,Palette,Code2} from 'hys-ui/icons'
 import {catalog} from './catalog'
 const groups=[...new Set(catalog.map(x=>x.category))]
 </script>

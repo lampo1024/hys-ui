@@ -11,7 +11,7 @@ import {
   type Component,
   type CSSProperties,
 } from "vue";
-import { LoaderCircle } from "lucide-vue-next";
+import { LoaderCircle } from "../HysIcon/svgIcons";
 import { fieldKey, useHysControlState } from "../../composables/formContext";
 import {
   useChoiceModel,

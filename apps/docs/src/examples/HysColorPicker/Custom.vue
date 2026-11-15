@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysColorPicker, HysButton, HysBadge } from "hys-ui";
-import { Palette } from "lucide-vue-next";
+import { Palette } from "hys-ui/icons";
 const color = ref("#3867f5");
 </script>
 <template>

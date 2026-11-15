@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive } from "vue";
-import { ChevronRight } from "lucide-vue-next";
+import { ChevronRight } from "hys-ui/icons";
 import { HysBreadcrumb, HysInput, HysCheckbox } from "hys-ui";
 const config = reactive({ separator: "/", icon: false });
 const items = [

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed,ref,watch,onBeforeUnmount,onDeactivated} from 'vue'
-import {Check,CircleAlert} from 'lucide-vue-next'
+import {Check,CircleAlert} from '../HysIcon/svgIcons'
 import {useHysRootAttrs} from '../../config'
 import HysButton from '../HysButton/HysButton.vue'
 import HysProgress from '../HysProgress/HysProgress.vue'

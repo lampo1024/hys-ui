@@ -3,7 +3,7 @@ import {
   computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted,
   ref, useId, watch,
 } from "vue";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-vue-next";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import { paneEpsilon, paneRatio } from "../../composables/splitPaneSizes";
 import { useSplitPaneDrag } from "../../composables/useSplitPaneDrag";

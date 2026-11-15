@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, type CSSProperties, type FunctionalComponent } from "vue";
-import { X } from "lucide-vue-next";
+import { X } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysModal from "../HysModal/HysModal.vue";
 import type { HysModalInstance } from "../../composables/modal";

@@ -6,7 +6,7 @@ import PopupMotion from "../../motion/PopupMotion";
 import { useHysRootAttrs } from "../../config";
 const hysRootAttrs = useHysRootAttrs();
 
-import { Command } from "lucide-vue-next";
+import { Command } from "../HysIcon/svgIcons";
 
 import {
   ref,

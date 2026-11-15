@@ -19,7 +19,7 @@ import {
   watch,
   type CSSProperties,
 } from "vue";
-import { Check, ChevronDown, LoaderCircle, Plus, X } from "lucide-vue-next";
+import { Check, ChevronDown, LoaderCircle, Plus, X } from "../HysIcon/svgIcons";
 import {
   fieldKey,
   formValue,

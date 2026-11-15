@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysEmpty, HysInput, HysButton, HysBadge } from "hys-ui";
-import { SearchX } from "lucide-vue-next";
+import { SearchX } from "hys-ui/icons";
 const query = ref("示例关键词");
 </script>
 <template>

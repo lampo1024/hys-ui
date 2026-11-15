@@ -9,7 +9,7 @@ import {
   provide,
   type CSSProperties,
 } from "vue";
-import { X, Maximize2, Minimize2, LoaderCircle } from "lucide-vue-next";
+import { X, Maximize2, Minimize2, LoaderCircle } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import { useHysRootAttrs } from "../../config";
 import { useModal } from "../../composables/useModal";

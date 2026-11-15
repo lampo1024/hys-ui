@@ -19,7 +19,7 @@ import {
   CircleAlert,
   LoaderCircle,
   CircleHelp,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysTooltip from "../HysTooltip/HysTooltip.vue";
 import {
   resolveFormCol,

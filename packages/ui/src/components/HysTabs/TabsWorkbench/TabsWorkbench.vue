@@ -22,7 +22,7 @@ import {
   Plus,
   Star,
   X,
-} from "lucide-vue-next";
+} from "../../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../../config";
 import { useContainerWidth } from "../../../composables/useContainerWidth";
 import { useMotion } from "../../../motion/useMotion";

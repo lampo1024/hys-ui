@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, Folder } from "lucide-vue-next";
+import { FileText, Folder } from "hys-ui/icons";
 import { HysSortableList, type HysSortChange } from "hys-ui";
 
 type Node = { id: string; label: string; folder?: boolean };

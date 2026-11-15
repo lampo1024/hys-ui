@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { HysTimeline, type HysTimelineItem } from "hys-ui";
-import { CheckCircle2, Flag } from "lucide-vue-next";
+import { CheckCircle2, Flag } from "hys-ui/icons";
 const items: HysTimelineItem[] = [
   { id: 0, title: "检查通过", tone: "success", icon: CheckCircle2, size: 22 },
   { id: 1, title: "当前阶段", tone: "primary", hollow: true, size: "lg" },

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysInput } from "hys-ui";
-import { CircleX, Eraser } from "lucide-vue-next";
+import { CircleX, Eraser } from "hys-ui/icons";
 const icon = ref("使用 clearIcon 属性"),
   slot = ref("使用 clear-icon 插槽");
 </script>

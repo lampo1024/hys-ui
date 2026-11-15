@@ -30,7 +30,7 @@ import {
   LoaderCircle,
   Search,
   GripVertical,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysInput from "../HysInput/HysInput.vue";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import HysButton from "../HysButton/HysButton.vue";

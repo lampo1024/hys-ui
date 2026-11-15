@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { FolderOpen } from "lucide-vue-next";
+import { FolderOpen } from "hys-ui/icons";
 import { HysCheckbox, HysTabPane, HysTabs, type HysTabValue } from "hys-ui";
 const active = ref<HysTabValue>("overview"),
   showNotes = ref(true);

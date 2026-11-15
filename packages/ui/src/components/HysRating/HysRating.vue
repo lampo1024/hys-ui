@@ -11,7 +11,7 @@ import {
   useId,
   watch,
 } from "vue";
-import { Star } from "lucide-vue-next";
+import { Star } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import { fieldKey, useHysControlState } from "../../composables/formContext";
 import {

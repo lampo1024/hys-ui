@@ -1,3 +1,4 @@
+import { defaultSpreadsheetExcelFormat } from "./spreadsheetExcelDefault";
 import type {
   HysSpreadsheetFileFormat,
   HysSpreadsheetFormulaFunction,
@@ -24,32 +25,9 @@ export function spreadsheetFiles(
           }),
       },
     ],
-    [
-      "xlsx",
-      {
-        label: "Excel (.xlsx)",
-        extension: "xlsx",
-        async decode(file) {
-          const { maxXlsxBytes } = await import("./xlsx/xlsxXml");
-          if (file.size > maxXlsxBytes)
-            throw new Error("Excel 文件不能超过 32 MiB。");
-          const { decodeXlsx } = await import("./xlsx/xlsxRead");
-          return decodeXlsx(
-            await file.arrayBuffer(),
-            file.name.replace(/\.xlsx$/i, ""),
-          );
-        },
-        async encode(workbook) {
-          const [{ encodeXlsx }, { workbookMime }] = await Promise.all([
-            import("./xlsx/xlsxWrite"),
-            import("./xlsx/xlsxXml"),
-          ]);
-          const bytes = encodeXlsx(workbook, options);
-          return new Blob([Uint8Array.from(bytes)], { type: workbookMime });
-        },
-      },
-    ],
   ]);
+  const excel = defaultSpreadsheetExcelFormat(options);
+  if (excel) available.set(excel.extension, excel);
   for (const format of formats) {
     const extension = fileExtension(format.extension);
     if (/^[a-z\d]+$/.test(extension))

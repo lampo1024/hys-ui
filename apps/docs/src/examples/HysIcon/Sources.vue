@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useId } from "vue";
 import metricsUrl from "./assets/metrics.svg?no-inline";
-import { CloudSun } from "lucide-vue-next";
+import { CloudSun } from "hys-ui/icons";
 import { HysIcon, type HysIconSource } from "hys-ui";
 const symbol = useId() + "-icon-sprite";
 const sources: { label: string; source: HysIconSource }[] = [
@@ -28,7 +28,7 @@ const sources: { label: string; source: HysIconSource }[] = [
   },
   { label: "Unicode", source: { type: "text", text: "∞" } },
   { label: "Emoji", source: { type: "text", text: "📊" } },
-  { label: "Lucide 组件", source: { type: "component", component: CloudSun } },
+  { label: "Vue 图标组件", source: { type: "component", component: CloudSun } },
 ];
 </script>
 
@@ -50,7 +50,7 @@ const sources: { label: string; source: HysIconSource }[] = [
     </div>
     <p class="scenario-note">
       字体来源使用应用已加载的字体族或类名。外部 SVG 通过图片元素显示，可通过
-      allowedOrigins 限制来源。
+      allowedOrigins 限制来源。需要以 Vue 组件使用内置图标时，可以从 <code>hys-ui/icons</code> 按名称导入。
     </p>
   </div>
 </template>

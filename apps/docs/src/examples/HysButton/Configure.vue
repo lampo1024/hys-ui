@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
-import { Send } from "lucide-vue-next";
+import { Send } from "hys-ui/icons";
 import { HysButton, HysCheckbox, HysSelect, type HysButtonVariant } from "hys-ui";
 
 const settings = reactive({

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Search } from "lucide-vue-next";
+import { Search } from "hys-ui/icons";
 import {
   HysTable,
   HysButton,

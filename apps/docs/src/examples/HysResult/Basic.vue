@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { PackageCheck } from "lucide-vue-next";
+import { PackageCheck } from "hys-ui/icons";
 import {
   HysButton,
   HysCheckbox,

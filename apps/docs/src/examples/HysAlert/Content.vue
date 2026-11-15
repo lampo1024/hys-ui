@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysAlert, HysButton } from "hys-ui";
-import { Bell, Check } from "lucide-vue-next";
+import { Bell, Check } from "hys-ui/icons";
 const result = ref("等待操作");
 </script>
 <template>

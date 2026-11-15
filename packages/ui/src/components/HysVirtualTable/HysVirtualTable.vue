@@ -10,7 +10,7 @@ import {
   watch,
   type FunctionalComponent,
 } from "vue";
-import { ChevronUp, ChevronDown, LoaderCircle } from "lucide-vue-next";
+import { ChevronUp, ChevronDown, LoaderCircle } from "../HysIcon/svgIcons";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import HysRadio from "../HysRadio/HysRadio.vue";
 import { useHysRootAttrs } from "../../config";

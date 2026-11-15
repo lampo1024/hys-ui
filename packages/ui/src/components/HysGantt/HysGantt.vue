@@ -49,7 +49,7 @@ import {
   Redo2,
   TriangleAlert,
   ChevronDown,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import { useGanttLabelResize } from "../../composables/useGanttLabelResize";
 import {
   useFloating,

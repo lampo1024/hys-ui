@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysAutocomplete } from "hys-ui";
-import { Eraser, Delete } from "lucide-vue-next";
+import { Eraser, Delete } from "hys-ui/icons";
 const icon = ref("Vue"),
   slot = ref("Vite"),
   options = ["Vue", "Vite", "Vitest"];

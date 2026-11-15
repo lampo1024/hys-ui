@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Home, Folder, FileText, ChevronRight } from "lucide-vue-next";
+import { Home, Folder, FileText, ChevronRight } from "hys-ui/icons";
 import { HysBreadcrumb } from "hys-ui";
 const items = [
   { label: "首页", href: "#home", icon: Home },

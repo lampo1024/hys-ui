@@ -4,7 +4,7 @@ import {
   onMounted, ref, shallowRef, Text, toValue, watch,
   type Component, type ComponentPublicInstance, type FunctionalComponent, type VNode,
 } from 'vue'
-import {LoaderCircle} from 'lucide-vue-next'
+import {LoaderCircle} from '../HysIcon/svgIcons'
 import {useHysConfig, useHysRootAttrs} from '../../config'
 import {useHysControlState} from '../../composables/formContext'
 import { useChoiceModel } from '../../composables/choiceModel'

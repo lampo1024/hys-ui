@@ -10,7 +10,7 @@ import {
   useTemplateRef,
   watch,
 } from "vue";
-import { ChevronDown, ChevronUp, X } from "lucide-vue-next";
+import { ChevronDown, ChevronUp, X } from "../../HysIcon/svgIcons";
 import SpreadsheetToolbarButton from "../SpreadsheetToolbarButton/SpreadsheetToolbarButton.vue";
 import HysPopover from "../../HysPopover/HysPopover.vue";
 import { useSpreadsheetMessages } from "../spreadsheetMessages";

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysAvatar, HysButton } from "hys-ui";
-import { Image } from "lucide-vue-next";
+import { Image } from "hys-ui/icons";
 const source =
   "data:image/svg+xml," +
   encodeURIComponent(

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysInput } from "hys-ui";
-import { Search, Mail, Check } from "lucide-vue-next";
+import { Search, Mail, Check } from "hys-ui/icons";
 const search = ref(""),
   email = ref("hello@example.com");
 </script>

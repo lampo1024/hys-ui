@@ -8,7 +8,7 @@ import {
   onBeforeUnmount,
   type CSSProperties,
 } from "vue";
-import { X } from "lucide-vue-next";
+import { X } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 const props = withDefaults(
   defineProps<{

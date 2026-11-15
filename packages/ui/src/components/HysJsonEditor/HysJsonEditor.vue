@@ -4,7 +4,7 @@ export type HysJsonEditorSchema = import("./jsonSchema").JsonSchema;
 </script>
 
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-vue-next";
+import { ChevronDown, ChevronUp, TriangleAlert, X } from "../HysIcon/svgIcons";
 import { computed, nextTick, onActivated, onDeactivated, ref, toRef, useId, watch } from "vue";
 import { useHysRootAttrs } from "../../config";
 import { useCodeSearch } from "../../composables/useCodeSearch";

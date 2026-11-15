@@ -6,7 +6,7 @@ import {
   HysCheckbox,
   type HysTimelineItem,
 } from "hys-ui";
-import { Clock3 } from "lucide-vue-next";
+import { Clock3 } from "hys-ui/icons";
 const state = ref("loading"),
   reverse = ref(false),
   position = ref<"start" | "end">("end"),

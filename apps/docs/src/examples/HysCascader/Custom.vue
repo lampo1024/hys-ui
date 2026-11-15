@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysCascader, HysBadge, HysButton } from "hys-ui";
-import { ArrowRight, CircleX } from "lucide-vue-next";
+import { ArrowRight, CircleX } from "hys-ui/icons";
 interface Category {
   value: string;
   label: string;

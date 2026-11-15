@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { BellOff } from "lucide-vue-next";
+import { BellOff } from "hys-ui/icons";
 import { HysButton, HysPopconfirm } from "hys-ui";
 const result = ref("工作区提醒已开启");
 const duration = ref<number>();

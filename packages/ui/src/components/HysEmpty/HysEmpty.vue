@@ -11,7 +11,7 @@ import {
   useAttrs,
   watch,
 } from "vue";
-import { Inbox, FolderOpen, LoaderCircle } from "lucide-vue-next";
+import { Inbox, FolderOpen, LoaderCircle } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import {
   feedbackImage,

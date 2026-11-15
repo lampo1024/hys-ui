@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { FileText, FolderOpen, PanelLeft, RotateCcw } from "lucide-vue-next";
+import { FileText, FolderOpen, PanelLeft, RotateCcw } from "hys-ui/icons";
 import { HysButton, HysSplitPane, HysTextarea, type HysSplitPaneInstance, type HysSplitPanePanel } from "hys-ui";
 
 const split = ref<HysSplitPaneInstance>();

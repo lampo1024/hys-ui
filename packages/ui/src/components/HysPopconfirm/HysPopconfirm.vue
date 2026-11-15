@@ -6,7 +6,7 @@ import {
   CircleHelp,
   Info,
   TriangleAlert,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import { useHysControlState } from "../../composables/formContext";
 import { usePopupSurface } from "../../composables/usePopupSurface";

@@ -1,3 +1,4 @@
+import { loadMentionPinyin } from "./mentionPinyin";
 import {
   computed,
   onBeforeUnmount,
@@ -483,25 +484,25 @@ export function useMentionOptions(
     const value = trigger.value?.searchMode ?? props.searchMode ?? "includes";
     return typeof value === "string" ? [value] : value;
   });
-  const pinyin = shallowRef<typeof import("pinyin-pro").pinyin>();
-  let pinyinLoading = false;
+  const pinyin = shallowRef<(text: string) => readonly string[]>();
+  const phonetics = new Map<string, { full: string; initials: string }>();
   watch(
-    () => modes.value.some((mode) => mode === "pinyin" || mode === "initials"),
-    (enabled) => {
-      if (!enabled || pinyin.value || pinyinLoading) return;
-      pinyinLoading = true;
-      void import("pinyin-pro")
-        .then((module) => {
-          pinyin.value = module.pinyin;
-        })
-        .catch(() => {})
-        .finally(() => {
-          pinyinLoading = false;
-        });
+    [() => modes.value.some(mode => mode === "pinyin" || mode === "initials"),
+      () => props.pinyinLoader ?? loadMentionPinyin],
+    ([enabled, load], previous, onCleanup) => {
+      if (load !== previous?.[1]) {
+        phonetics.clear();
+        pinyin.value = undefined;
+      }
+      if (!enabled || pinyin.value) return;
+      let current = true;
+      onCleanup(() => { current = false; });
+      void Promise.resolve().then(load).then(convert => {
+        if (current) pinyin.value = convert;
+      }).catch(() => {});
     },
     { immediate: true },
   );
-  const phonetics = new Map<string, { full: string; initials: string }>();
   function score(option: HysMentionOption, name: string, query: string) {
     if (!query) return 0;
     const fields = [
@@ -542,11 +543,7 @@ export function useMentionOptions(
       if (!/\p{Script=Han}/u.test(field)) continue;
       let phonetic = phonetics.get(field);
       if (!phonetic) {
-        const parts = pinyin.value(field, {
-          toneType: "none",
-          type: "array",
-          nonZh: "consecutive",
-        });
+        const parts = pinyin.value(field);
         phonetic = {
           full: compactPinyin(parts.join("")),
           initials: compactPinyin(parts.map((part) => part[0]).join("")),

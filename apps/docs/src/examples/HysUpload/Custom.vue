@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysUpload, HysButton, HysBadge, type HysUploadFile } from "hys-ui";
-import { Paperclip, Trash2 } from "lucide-vue-next";
+import { Paperclip, Trash2 } from "hys-ui/icons";
 const files = ref<HysUploadFile[]>([]);
 </script>
 <template>

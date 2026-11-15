@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysInput } from "hys-ui";
-import { Search } from "lucide-vue-next";
+import { Search } from "hys-ui/icons";
 const text = ref("");
 const password = ref("");
 const url = ref("hys-ui");

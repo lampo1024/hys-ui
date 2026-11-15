@@ -8,7 +8,7 @@ import {
   watch,
   type CSSProperties,
 } from "vue";
-import { Image as ImageIcon } from "lucide-vue-next";
+import { Image as ImageIcon } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import { useMotion } from "../../motion/useMotion";
 export type HysSkeletonVariant =

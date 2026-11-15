@@ -19,7 +19,7 @@ import {
   LoaderCircle,
   TriangleAlert,
   X,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import { registerToastEscape } from "../../composables/toastEscape";
 import {

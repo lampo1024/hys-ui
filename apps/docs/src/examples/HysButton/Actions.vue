@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onDeactivated, ref } from "vue";
-import { Check, Hourglass } from "lucide-vue-next";
+import { Check, Hourglass } from "hys-ui/icons";
 import { HysButton } from "hys-ui";
 
 const saving = ref(false);

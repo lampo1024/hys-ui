@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import {Inbox,Settings,FileText} from 'lucide-vue-next'
+import {Inbox,Settings,FileText} from 'hys-ui/icons'
 import {HysTabs,HysBadge,type HysTabValue} from 'hys-ui'
 const active=ref<HysTabValue>('messages')
 const items=[{value:'messages',label:'消息'},{value:'files',label:'文件'},{value:'settings',label:'设置'}]

@@ -17,7 +17,7 @@ import {
   watch,
   type InjectionKey,
 } from "vue";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysTransferPanel from "./HysTransferPanel.vue";
 import { useHysRootAttrs } from "../../config";

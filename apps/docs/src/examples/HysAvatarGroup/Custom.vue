@@ -5,7 +5,7 @@ import {
   HysBadge,
   type HysAvatarOption,
 } from "hys-ui";
-import { UserRound, MoreHorizontal } from "lucide-vue-next";
+import { UserRound, MoreHorizontal } from "hys-ui/icons";
 const members: HysAvatarOption[] = [
   { name: "Alex" },
   { name: "Lisa" },

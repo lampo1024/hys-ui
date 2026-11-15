@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysInput, HysCheckbox } from "hys-ui";
-import { LockKeyhole, UnlockKeyhole } from "lucide-vue-next";
+import { LockKeyhole, UnlockKeyhole } from "hys-ui/icons";
 const value = ref(""),
   visible = ref(false);
 </script>

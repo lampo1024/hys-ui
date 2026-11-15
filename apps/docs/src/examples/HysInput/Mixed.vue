@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysInput, HysSelect, HysButton } from "hys-ui";
-import { Search } from "lucide-vue-next";
+import { Search } from "hys-ui/icons";
 const domain = ref("hys-ui"),
   query = ref(""),
   category = ref("name"),

@@ -5,7 +5,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import {
   calendarDate,
   calendarISO,

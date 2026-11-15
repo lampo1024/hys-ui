@@ -24,7 +24,7 @@ import {
   type HysNumberEasing,
   type HysNumberValue,
 } from "hys-ui";
-import { Award } from "lucide-vue-next";
+import { Award } from "hys-ui/icons";
 import { numberAnimationSample } from "./samples";
 
 const props = defineProps<{

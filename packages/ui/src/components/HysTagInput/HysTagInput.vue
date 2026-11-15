@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, toRaw } from "vue";
-import { X, LoaderCircle, GripVertical } from "lucide-vue-next";
+import { X, LoaderCircle, GripVertical } from "../HysIcon/svgIcons";
 import HysPopover from "../HysPopover/HysPopover.vue";
 import type { HysPopoverInstance } from "../../composables/popupSurface";
 import { useHysRootAttrs } from "../../config";

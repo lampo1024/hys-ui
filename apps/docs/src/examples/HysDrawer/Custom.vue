@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { ArrowLeft, Check } from "lucide-vue-next";
+import { ArrowLeft, Check } from "hys-ui/icons";
 import { HysDrawer, HysButton, HysBadge } from "hys-ui";
 const open = ref(false),
   saved = ref(false);

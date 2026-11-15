@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysSegmented, HysAvatar } from "hys-ui";
-import { List, LayoutGrid, CalendarDays } from "lucide-vue-next";
+import { List, LayoutGrid, CalendarDays } from "hys-ui/icons";
 const mode = ref("list"),
   member = ref("alex"),
   options = [

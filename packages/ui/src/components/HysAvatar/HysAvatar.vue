@@ -13,7 +13,7 @@ import {
   useAttrs,
   watch,
 } from "vue";
-import { UserRound } from "lucide-vue-next";
+import { UserRound } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import {
   avatarGroupKey,

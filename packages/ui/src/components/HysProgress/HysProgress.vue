@@ -8,7 +8,7 @@ import {
   useId,
   type FunctionalComponent,
 } from "vue";
-import { CheckCircle2, AlertTriangle, CircleX } from "lucide-vue-next";
+import { CheckCircle2, AlertTriangle, CircleX } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import {
   progressPercent,

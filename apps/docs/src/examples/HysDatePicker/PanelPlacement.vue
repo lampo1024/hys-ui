@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { CalendarCheck, CircleX } from "lucide-vue-next";
+import { CalendarCheck, CircleX } from "hys-ui/icons";
 import { HysCheckbox, HysDatePicker } from "hys-ui";
 
 const month = ref("");

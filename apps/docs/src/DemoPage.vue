@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed,defineAsyncComponent,onActivated,onDeactivated,onBeforeUnmount,ref,shallowRef,useId,watch} from 'vue'
 import {HysButton,HysBadge,HysTabs} from 'hys-ui'
-import {ArrowDown,ChevronDown,RotateCcw,Code2} from 'lucide-vue-next'
+import {ArrowDown,ChevronDown,RotateCcw,Code2} from 'hys-ui/icons'
 import scenarioTitles from './scenario-titles.json'
 import apiLoaders from 'virtual:hys-docs-api'
 import type {ComponentApi} from './apiTypes'

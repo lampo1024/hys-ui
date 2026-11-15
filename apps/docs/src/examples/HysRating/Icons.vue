@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysRating } from "hys-ui";
-import { Heart, Smile, Frown, Meh } from "lucide-vue-next";
+import { Heart, Smile, Frown, Meh } from "hys-ui/icons";
 const score = ref(3);
 </script>
 <template>

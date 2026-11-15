@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysAutocomplete, HysButton } from "hys-ui";
-import { Search } from "lucide-vue-next";
+import { Search } from "hys-ui/icons";
 const value = ref(""),
   message = ref(""),
   options = ["交互设计", "接口联调", "发布流程", "测试规范"];

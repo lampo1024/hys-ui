@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Folder, Users } from "lucide-vue-next";
+import { Folder, Users } from "hys-ui/icons";
 import { HysTreeSelect, HysButton, HysBadge } from "hys-ui";
 const value = ref<string[]>(["backend"]);
 const nodes = [

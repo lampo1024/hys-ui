@@ -9,7 +9,7 @@ import {
   useId,
   type CSSProperties,
 } from "vue";
-import { Maximize2, Minimize2 } from "lucide-vue-next";
+import { Maximize2, Minimize2 } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import HysButton from "../HysButton/HysButton.vue";
 import HysSkeleton from "../HysSkeleton/HysSkeleton.vue";

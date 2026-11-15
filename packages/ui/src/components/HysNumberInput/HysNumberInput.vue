@@ -22,7 +22,7 @@ import {
   Minus,
   Plus,
   X,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import {
   fieldKey,
   formKey,

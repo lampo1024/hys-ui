@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Download, Search } from "lucide-vue-next";
+import { Check, Download, Search } from "hys-ui/icons";
 import { HysButton } from "hys-ui";
 </script>
 

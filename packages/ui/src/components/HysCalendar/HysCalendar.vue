@@ -11,7 +11,7 @@ import {
   ChevronsRight,
   LoaderCircle,
   X,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysSelect from "../HysSelect/HysSelect.vue";
 import HysSegmented from "../HysSegmented/HysSegmented.vue";

@@ -56,7 +56,7 @@ import {
   ListFilter,
   LockKeyhole,
   Plus,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysAccordion from "../HysAccordion/HysAccordion.vue";
 import HysInput from "../HysInput/HysInput.vue";
@@ -2748,13 +2748,14 @@ async function importWorkbook(file: File) {
   });
 }
 
-async function exportWorkbook(extension = "xlsx") {
+const defaultExportExtension = () => formats.value.has("xlsx") ? "xlsx" : "json";
+async function exportWorkbook(extension = defaultExportExtension()) {
   const format = formats.value.get(fileExtension(extension));
   if (!format?.encode) throw new Error(message("不支持此工作簿导出格式。"));
   return format.encode(book.value);
 }
 
-async function saveWorkbookFile(extension = "xlsx", name?: string) {
+async function saveWorkbookFile(extension = defaultExportExtension(), name?: string) {
   const snapshot = book.value;
   const key = fileExtension(extension);
   try {

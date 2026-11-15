@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, h, ref } from "vue";
-import { CircleAlert, TriangleAlert } from "lucide-vue-next";
+import { CircleAlert, TriangleAlert } from "hys-ui/icons";
 import {
   HysBadge,
   HysProGrid,

@@ -15814,6 +15814,14 @@
         "global": false
       },
       {
+        "name": "pinyinLoader",
+        "type": "HysMentionPinyinLoader | undefined",
+        "required": false,
+        "default": "",
+        "description": "开启拼音或首字母搜索时加载转换器，完整包默认使用内置转换器",
+        "global": false
+      },
+      {
         "name": "sortOptions",
         "type": "boolean | ((a: HysMentionOption, b: HysMentionOption, context: HysMentionContext) => number) | undefined",
         "required": false,
@@ -17284,7 +17292,7 @@
       },
       {
         "name": "dragMode",
-        "type": "\"live\" | \"preview\" | undefined",
+        "type": "\"preview\" | \"live\" | undefined",
         "required": false,
         "default": "\"live\"",
         "description": "live 直接跟手（默认）；preview 显示目标框，释放后实体动画到新位置",

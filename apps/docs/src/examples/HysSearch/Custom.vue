@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { ArrowRight, FolderSearch, RotateCcw } from "lucide-vue-next";
+import { ArrowRight, FolderSearch, RotateCcw } from "hys-ui/icons";
 import { HysButton, HysSearch } from "hys-ui";
 
 const result = ref<string>();

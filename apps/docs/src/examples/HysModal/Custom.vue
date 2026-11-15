@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { FileCheck, ArrowRight } from "lucide-vue-next";
+import { FileCheck, ArrowRight } from "hys-ui/icons";
 import { HysBadge, HysButton, HysInput, HysModal } from "hys-ui";
 const open = ref(false),
   note = ref("");

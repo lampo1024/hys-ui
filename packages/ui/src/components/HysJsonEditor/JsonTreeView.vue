@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, Braces, ChevronsDownUp, ChevronsUpDown, CodeXml, Copy, Link2, Pencil, Plus, TextCursor, Trash2 } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, Braces, ChevronsDownUp, ChevronsUpDown, CodeXml, Copy, Link2, Pencil, Plus, TextCursor, Trash2 } from "../HysIcon/svgIcons";
 import { computed, nextTick, ref, onMounted, watch } from "vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysTooltip from "../HysTooltip/HysTooltip.vue";

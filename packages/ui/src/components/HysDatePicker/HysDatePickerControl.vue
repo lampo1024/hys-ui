@@ -17,7 +17,7 @@ import {
   type CSSProperties,
   type InjectionKey,
 } from "vue";
-import { CalendarDays, X, Clock3 } from "lucide-vue-next";
+import { CalendarDays, X, Clock3 } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysSelect from "../HysSelect/HysSelect.vue";
 import HysDatePickerPanel from "./HysDatePickerPanel.vue";

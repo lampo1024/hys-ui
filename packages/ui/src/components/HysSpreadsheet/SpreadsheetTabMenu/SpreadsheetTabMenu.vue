@@ -12,7 +12,7 @@ import {
   Pencil,
   Plus,
   Trash2,
-} from "lucide-vue-next";
+} from "../../HysIcon/svgIcons";
 import HysColorPicker from "../../HysColorPicker/HysColorPicker.vue";
 import HysContextMenu from "../../HysContextMenu/HysContextMenu.vue";
 import HysInput from "../../HysInput/HysInput.vue";

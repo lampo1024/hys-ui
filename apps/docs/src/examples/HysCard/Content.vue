@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysCard, HysButton, HysAvatar, HysBadge } from "hys-ui";
-import { Layers, Star, Share2 } from "lucide-vue-next";
+import { Layers, Star, Share2 } from "hys-ui/icons";
 const saved = ref(false),
   message = ref("");
 </script>

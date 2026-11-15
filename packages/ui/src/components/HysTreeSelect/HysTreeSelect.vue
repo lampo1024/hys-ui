@@ -24,7 +24,7 @@ import {
   type CSSProperties,
   type InjectionKey,
 } from "vue";
-import { ChevronDown, LoaderCircle, Search, X } from "lucide-vue-next";
+import { ChevronDown, LoaderCircle, Search, X } from "../HysIcon/svgIcons";
 import HysInput from "../HysInput/HysInput.vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysTooltip from "../HysTooltip/HysTooltip.vue";

@@ -12,7 +12,7 @@ import {
   LockKeyholeOpen,
   Snowflake,
   Trash2,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import type { HysContextMenuItem } from "../../composables/menu";
 import { axisCount, axisHidden } from "./spreadsheetAxis";
 import { sheetLimits } from "./spreadsheetModel";

@@ -6,7 +6,7 @@ import {
   PencilRuler,
   Rows3,
   Search,
-} from "lucide-vue-next";
+} from "../../HysIcon/svgIcons";
 
 export const historyTool = {
   id: "history",

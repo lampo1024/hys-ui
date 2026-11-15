@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysBadge, HysButton, HysNumberInput } from "hys-ui";
-import { Bell } from "lucide-vue-next";
+import { Bell } from "hys-ui/icons";
 const x = ref(0),
   y = ref(0);
 const placements = [

@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Check,
   LoaderCircle,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import type { HysTreeSelectStore } from "../../composables/useTreeSelect";
 import type { HysTreeSelectNode } from "../../composables/treeSelect";

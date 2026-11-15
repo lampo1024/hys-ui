@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Plus, Minus } from "lucide-vue-next";
+import { Plus, Minus } from "hys-ui/icons";
 import { HysTable, HysCheckbox, type HysTableColumn } from "hys-ui";
 const show = ref(true);
 const rows = [

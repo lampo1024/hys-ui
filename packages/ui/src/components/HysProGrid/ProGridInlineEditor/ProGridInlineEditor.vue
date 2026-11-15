@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends object">
 import { computed, onMounted, shallowRef, useTemplateRef, watch } from "vue";
-import { Check, RotateCcw, X } from "lucide-vue-next";
+import { Check, RotateCcw, X } from "../../HysIcon/svgIcons";
 import HysButton from "../../HysButton/HysButton.vue";
 import HysInput from "../../HysInput/HysInput.vue";
 import HysSelect from "../../HysSelect/HysSelect.vue";

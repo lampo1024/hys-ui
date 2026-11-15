@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysDatePicker } from "hys-ui";
-import { CalendarCheck, CircleX } from "lucide-vue-next";
+import { CalendarCheck, CircleX } from "hys-ui/icons";
 const value = ref("2026-11-06");
 const notes = new Map([
   ["2026-11-11", "里程碑"],

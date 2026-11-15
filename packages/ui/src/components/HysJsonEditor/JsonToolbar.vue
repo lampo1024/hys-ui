@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Braces, Copy, Download, Ellipsis, FileUp, Minimize2, Redo2, Search, Undo2, Wrench } from "lucide-vue-next";
+import { Braces, Copy, Download, Ellipsis, FileUp, Minimize2, Redo2, Search, Undo2, Wrench } from "../HysIcon/svgIcons";
 import { computed, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysPopover from "../HysPopover/HysPopover.vue";

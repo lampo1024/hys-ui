@@ -17,7 +17,7 @@ import {
   useId,
   watch,
 } from "vue";
-import { Check, Minus } from "lucide-vue-next";
+import { Check, Minus } from "../HysIcon/svgIcons";
 import { fieldKey, useHysControlState } from "../../composables/formContext";
 import {
   checkboxGroupKey,

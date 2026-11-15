@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysAutocomplete, type HysAutocompleteFetch } from "hys-ui";
-import { Search, FileText, Folder } from "lucide-vue-next";
+import { Search, FileText, Folder } from "hys-ui/icons";
 const value = ref(""),
   result = ref("");
 const suggest: HysAutocompleteFetch = (query) =>

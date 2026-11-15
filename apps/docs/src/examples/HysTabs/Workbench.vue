@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { FileText, LayoutDashboard } from "lucide-vue-next";
+import { FileText, LayoutDashboard } from "hys-ui/icons";
 import {
   HysButton,
   HysCheckbox,

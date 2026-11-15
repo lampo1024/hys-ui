@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, X } from "lucide-vue-next";
+import { ChevronDown, ChevronUp, X } from "../HysIcon/svgIcons";
 import { onMounted, ref } from "vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysInput from "../HysInput/HysInput.vue";

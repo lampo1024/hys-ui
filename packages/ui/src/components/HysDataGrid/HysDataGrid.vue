@@ -22,7 +22,7 @@ import {
   Ellipsis,
   Search,
   Settings2,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import PopupMotion from "../../motion/PopupMotion";
 import {

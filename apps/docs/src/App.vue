@@ -3,7 +3,7 @@ import {version} from '../../../packages/ui/package.json'
 import {computed,ref,watch} from 'vue'
 import {RouterLink,RouterView,useRoute} from 'vue-router'
 import {HysSearch,HysSelect,HysButton,provideHysConfig,type HysTheme} from 'hys-ui'
-import {ArrowUpRight,Boxes,ChevronRight,Menu,X} from 'lucide-vue-next'
+import {ArrowUpRight,Boxes,ChevronRight,Menu,X} from 'hys-ui/icons'
 import {catalog} from './catalog'
 const query=ref(''),menu=ref(false),route=useRoute()
 const stored=localStorage.getItem('hys-docs-theme')||'blue'

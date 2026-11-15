@@ -14,7 +14,7 @@ import {
   Search,
   Star,
   Upload,
-} from "lucide-vue-next";
+} from "../svgIcons";
 import IconReferenceGraphic from "../IconReferenceGraphic/IconReferenceGraphic.vue";
 import HysAccordion from "../../HysAccordion/HysAccordion.vue";
 import HysButton from "../../HysButton/HysButton.vue";

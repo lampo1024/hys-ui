@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from "vue";
-import { LocateFixed } from "lucide-vue-next";
+import { LocateFixed } from "hys-ui/icons";
 import {
   HysButton,
   HysSpreadsheet,

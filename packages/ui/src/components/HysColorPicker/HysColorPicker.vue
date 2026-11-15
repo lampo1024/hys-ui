@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ChevronDown } from "lucide-vue-next";
+import { ChevronDown } from "../HysIcon/svgIcons";
 import HysColorPanel from "./HysColorPanel.vue";
 import PopupMotion from "../../motion/PopupMotion";
 import { useHysRootAttrs } from "../../config";

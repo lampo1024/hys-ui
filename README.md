@@ -4,7 +4,7 @@ HYS UI 是面向管理后台和业务工作台的 Vue 3 组件库。用它可以
 
 [在线文档与交互示例](https://lampo1024.github.io/hys-ui/) · [快速开始](#快速开始) · [高级能力](#高级能力) · [表格选型](#数据表格怎么选)
 
-`0.12.0` 完善了 JSON 编辑器的源码、树和表格视图，并加入 Schema 校验、JSONPath 查询和格式转换。[npm](https://www.npmjs.com/package/hys-ui) · [更新记录](packages/ui/CHANGELOG.md)
+`0.13.0` 改用内置 SVG 图标，按需加载 Markdown 预览和表单校验，并提供基础包与四个可独立安装的功能包。[npm](https://www.npmjs.com/package/hys-ui) · [更新记录](packages/ui/CHANGELOG.md)
 
 ## 功能截图
 
@@ -62,6 +62,41 @@ const options = [
   <p>当前状态值：{{ status }}</p>
 </template>
 ```
+
+## 按需安装
+
+完整组件库使用 `hys-ui`。如果项目只需要常用控件，可以选择 `hys-ui-core`。基础包包括表单、表格、甘特图、图表、富文本和电子表格。它的额外运行时依赖是表单校验器和富文本清理器。
+
+| 功能包 | 接入方式 |
+| --- | --- |
+| `hys-ui-markdown` | 导入 `HysMarkdownEditor`。 |
+| `hys-ui-json` | 导入 `HysJsonEditor`，包含 JSON Schema、修复、YAML 转换等工具。 |
+| `hys-ui-xlsx` | 调用 `createSpreadsheetExcelFormat()`，将返回值放入 `HysSpreadsheet` 的 `file-formats`。 |
+| `hys-ui-pinyin` | 将 `loadMentionPinyin` 传给 `HysMention` 的 `pinyin-loader`，并选择 `pinyin` 或 `initials` 匹配。 |
+
+基础包和功能包使用同一版本。例如，为 Vue 项目安装基础包和 Excel 读写包。
+
+```bash
+npm install hys-ui-core@0.13.0 hys-ui-xlsx@0.13.0
+```
+
+```vue
+<script setup lang="ts">
+import { HysSpreadsheet } from 'hys-ui-core'
+import { createSpreadsheetExcelFormat } from 'hys-ui-xlsx'
+import 'hys-ui-core/style.css'
+import 'hys-ui-core/pro-grid.css'
+import 'hys-ui-core/pro-grid/clipboard.css'
+
+const fileFormats = [createSpreadsheetExcelFormat()]
+</script>
+
+<template>
+  <HysSpreadsheet :file-formats="fileFormats" />
+</template>
+```
+
+运行 `npm run pack:features` 可在 `artifacts/` 生成同版本的本地压缩包。运行 `npm run check:features` 可验证独立安装、类型声明、主题继承及 Excel 往返。
 
 ## 高级能力
 

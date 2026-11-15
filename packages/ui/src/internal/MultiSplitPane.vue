@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, useId, watch } from "vue";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-vue-next";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "../components/HysIcon/svgIcons";
 import { useHysRootAttrs } from "../config";
 import type {
   HysSplitPaneHandleContext, HysSplitPaneLayout, HysSplitPaneLength, HysSplitPanePanel, HysSplitPanePanelContext,

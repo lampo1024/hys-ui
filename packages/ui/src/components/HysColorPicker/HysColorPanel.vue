@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, provide } from "vue";
-import { Check } from "lucide-vue-next";
+import { Check } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import { useHysRootAttrs } from "../../config";
 import { overlayOwnerKey } from "../../composables/overlayManager";

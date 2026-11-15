@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight } from "../HysIcon/svgIcons";
 import { computed, nextTick, ref } from "vue";
 import { calendarDay, calendarParts } from "../../composables/calendar";
 import { useHysRootAttrs } from "../../config";

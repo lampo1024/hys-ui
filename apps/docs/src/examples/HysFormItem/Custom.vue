@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {reactive} from 'vue'
-import {UserRound} from 'lucide-vue-next'
+import {UserRound} from 'hys-ui/icons'
 import {HysForm,HysFormItem,HysInput,HysButton} from 'hys-ui'
 const model=reactive({nickname:''})
 </script>

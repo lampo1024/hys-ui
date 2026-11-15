@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Grid2X2, List, PanelsTopLeft } from "lucide-vue-next";
+import { Grid2X2, List, PanelsTopLeft } from "hys-ui/icons";
 import { HysButton, HysButtonGroup } from "hys-ui";
 
 const view = ref("列表");

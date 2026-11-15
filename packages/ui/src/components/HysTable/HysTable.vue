@@ -30,7 +30,7 @@ import {
   ListFilter,
   LoaderCircle,
   RotateCw,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import HysRadio from "../HysRadio/HysRadio.vue";
 import HysButton from "../HysButton/HysButton.vue";

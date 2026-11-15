@@ -15,7 +15,7 @@ import {
   CaseSensitive,
   Underline,
   WrapText,
-} from "lucide-vue-next";
+} from "../../HysIcon/svgIcons";
 import type { HysSpreadsheetCellFormat } from "../spreadsheetTypes";
 
 export const wrapAction = {

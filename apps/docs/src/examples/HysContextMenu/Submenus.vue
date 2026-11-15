@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Copy, Download, FileText, Trash2 } from "lucide-vue-next";
+import { Copy, Download, FileText, Trash2 } from "hys-ui/icons";
 import {
   HysContextMenu,
   HysButton,

@@ -7,7 +7,7 @@ import {
   HysUpload,
   type HysSortLayout,
 } from "hys-ui";
-import { Grip, Image, Menu, Tag } from "lucide-vue-next";
+import { Grip, Image, Menu, Tag } from "hys-ui/icons";
 
 const kind = ref<"photos" | "tags" | "menu">("photos");
 const photos = ref([

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+
+- 用内置 SVG 图标替换 Lucide Vue 运行时，支持从 `hys-ui/icons` 按名称导入。
+- Markdown 预览和表单校验改为按需加载，JSON 与 Markdown 共用内置文本搜索。
+- 新增 `hys-ui-core`、`hys-ui-markdown`、`hys-ui-json`、`hys-ui-xlsx` 和 `hys-ui-pinyin`，可按需安装。
+
 ## 0.12.0
 
 - HysJsonEditor 新增源码、树和虚拟表格视图，提供语法分色、节点展开折叠、查找替换和撤销重做。

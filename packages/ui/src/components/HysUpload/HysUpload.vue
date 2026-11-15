@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Pause,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysProgress from "../HysProgress/HysProgress.vue";
 import HysModal from "../HysModal/HysModal.vue";

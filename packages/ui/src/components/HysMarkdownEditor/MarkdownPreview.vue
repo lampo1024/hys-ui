@@ -1,11 +1,11 @@
 <script lang="ts">
-import { defineComponent, h, shallowRef, type PropType, type VNodeChild } from "vue";
+import { computed, defineComponent, h, shallowRef, watch, type VNodeChild } from "vue";
 import type { Element, RootContent } from "hast";
-import { Copy } from "lucide-vue-next";
+import { Copy } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import HysScrollbar from "../HysScrollbar/HysScrollbar.vue";
-import { htmlText, taskMarker, type MarkdownPreview } from "./markdownPreview";
+import { htmlText, parseMarkdown, taskMarker, type MarkdownPreview } from "./markdownPreview";
 
 const tags = new Set("a blockquote br code del em h1 h2 h3 h4 h5 h6 hr img li ol p pre section strong table tbody td th thead tr ul sup".split(" "));
 const attributes = { className: "class", htmlFor: "for", ariaDescribedBy: "aria-describedby", ariaLabel: "aria-label",
@@ -13,19 +13,22 @@ const attributes = { className: "class", htmlFor: "for", ariaDescribedBy: "aria-
 
 export default defineComponent({
   props: {
-    content: { type: Object as PropType<MarkdownPreview>, required: true },
+    idPrefix: { type: String, required: true },
     source: { type: String, required: true },
     current: Boolean,
     editable: Boolean,
     disabled: Boolean,
   },
   emits: {
+    rendered: (_source: string, _content: MarkdownPreview) => true,
     task: (_offset: number, _checked: boolean) => true,
     copy: (_text: string) => true,
     anchor: (_id: string) => true,
   },
   setup(props, { emit }) {
     const broken = shallowRef(new Set<string>());
+    const parsed = computed(() => ({ source: props.source, content: parseMarkdown(props.source, props.idPrefix) }));
+    watch(parsed, ({ source, content }) => emit("rendered", source, content), { immediate: true });
     function render(node: RootContent, listItem?: Element["position"]): VNodeChild {
       if (node.type === "text") return node.value;
       if (node.type !== "element") return null;
@@ -52,7 +55,7 @@ export default defineComponent({
           event.preventDefault();
           let slug = href.slice(1);
           try { slug = decodeURIComponent(slug); } catch { /* leave malformed anchors as written */ }
-          emit("anchor", props.content.anchors.get(slug) ?? slug);
+          emit("anchor", parsed.value.content.anchors.get(slug) ?? slug);
         };
         else if (/^https?:\/\//i.test(href)) Object.assign(attrs, { target: "_blank", rel: "noopener noreferrer" });
       }
@@ -80,8 +83,8 @@ export default defineComponent({
       }
       return element;
     }
-    return () => props.content.root.children.length
-      ? h("article", { class: "hys-md-prose", "aria-label": "Markdown 预览" }, props.content.root.children.map(node => render(node)))
+    return () => parsed.value.content.root.children.length
+      ? h("article", { class: "hys-md-prose", "aria-label": "Markdown 预览" }, parsed.value.content.root.children.map(node => render(node)))
       : h("p", { class: "hys-md-empty" }, "暂无预览内容");
   },
 });

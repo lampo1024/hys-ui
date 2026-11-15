@@ -9,7 +9,7 @@ import {
   watch,
   type ComponentPublicInstance,
 } from "vue";
-import { ChevronRight, Check, LoaderCircle, RotateCw } from "lucide-vue-next";
+import { ChevronRight, Check, LoaderCircle, RotateCw } from "../HysIcon/svgIcons";
 import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
 import HysRadio from "../HysRadio/HysRadio.vue";
 import type {

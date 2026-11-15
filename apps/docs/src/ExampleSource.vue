@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount,onDeactivated,ref,useId } from 'vue'
 import { HysButton,HysTextarea,type HysInputInstance } from 'hys-ui'
-import { Check,ChevronDown,Code2,Copy,FileCode2 } from 'lucide-vue-next'
+import { Check,ChevronDown,Code2,Copy,FileCode2 } from 'hys-ui/icons'
 import type { ExampleSourceData } from './sourceTypes'
 const props=defineProps<{loadSource:()=>Promise<ExampleSourceData>;filename:string}>()
 const source=ref<ExampleSourceData>(),expanded=ref(false),loading=ref(false),error=ref(false),copying=ref(false),copied=ref(false),copyError=ref(false)

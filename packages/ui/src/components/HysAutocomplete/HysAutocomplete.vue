@@ -17,7 +17,7 @@ import {
   watch,
   type CSSProperties,
 } from "vue";
-import { LoaderCircle, RotateCw } from "lucide-vue-next";
+import { LoaderCircle, RotateCw } from "../HysIcon/svgIcons";
 import HysInput from "../HysInput/HysInput.vue";
 import { useHysRootAttrs } from "../../config";
 import {

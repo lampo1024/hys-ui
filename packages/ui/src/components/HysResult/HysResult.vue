@@ -12,7 +12,7 @@ import {
   ServerCrash,
   Sparkles,
   TriangleAlert,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import type {
   HysResultContext,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, toRaw, type Component } from "vue";
-import { LoaderCircle } from "lucide-vue-next";
+import { LoaderCircle } from "../../HysIcon/svgIcons";
 import TabsSlot from "../TabsSlot/TabsSlot";
 import HysButton from "../../HysButton/HysButton.vue";
 import type {

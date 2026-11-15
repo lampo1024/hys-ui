@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, useTemplateRef, watch } from "vue";
-import { Ellipsis, Minimize } from "lucide-vue-next";
+import { Ellipsis, Minimize } from "../../HysIcon/svgIcons";
 import HysModal from "../../HysModal/HysModal.vue";
 import HysPopover from "../../HysPopover/HysPopover.vue";
 import SpreadsheetToolbarButton from "../SpreadsheetToolbarButton/SpreadsheetToolbarButton.vue";

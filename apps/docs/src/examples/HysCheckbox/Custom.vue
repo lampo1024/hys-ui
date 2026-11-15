@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
 import { HysCheckbox } from "hys-ui";
-import { Star, Minus } from "lucide-vue-next";
+import { Star, Minus } from "hys-ui/icons";
 const value = ref(true);
 </script>
 <template>

@@ -7,7 +7,7 @@ import {
   TriangleAlert,
   CircleAlert,
   LoaderCircle,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import { useAlert } from "../../composables/useAlert";
 import type {
   HysAlertProps,

@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends object = HysTimelineItem">
 import { computed, onActivated, onDeactivated, ref, toRaw } from "vue";
-import { LoaderCircle } from "lucide-vue-next";
+import { LoaderCircle } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import {
   timelineRead,

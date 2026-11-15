@@ -685,6 +685,7 @@ const annotations = {
   },
   HysMention: {
     props: {
+      pinyinLoader: "开启拼音或首字母搜索时加载转换器，完整包默认使用内置转换器",
       throttle: '连续远程搜索两次启动的最短时间间隔，单位为毫秒',
       recentLimit: '所有触发前缀共用的最近选项记录上限',
       recommendations: '用于推荐区域的候选数据，打开推荐时与当前数据源合并',

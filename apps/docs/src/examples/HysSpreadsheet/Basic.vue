@@ -5,7 +5,7 @@ import {
   HysSpreadsheet,
   type HysSpreadsheetWorkbook,
 } from "hys-ui";
-import { BookOpen } from "lucide-vue-next";
+import { BookOpen } from "hys-ui/icons";
 import "hys-ui/pro-grid.css";
 import "hys-ui/pro-grid/clipboard.css";
 

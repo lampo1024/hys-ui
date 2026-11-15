@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from '../HysIcon/svgIcons'
 import { computed, ref, watch } from 'vue'
 import { useHysRootAttrs } from '../../config'
 import HysButton from '../HysButton/HysButton.vue'

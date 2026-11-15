@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, onBeforeUnmount, onDeactivated, ref, watch, type InputHTMLAttributes, type VNodeChild } from "vue";
-import { Search, X, LoaderCircle } from "lucide-vue-next";
+import { Search, X, LoaderCircle } from "../HysIcon/svgIcons";
 import { useHysRootAttrs } from "../../config";
 import { fieldKey, useHysControlState } from "../../composables/formContext";
 import HysButton from "../HysButton/HysButton.vue";

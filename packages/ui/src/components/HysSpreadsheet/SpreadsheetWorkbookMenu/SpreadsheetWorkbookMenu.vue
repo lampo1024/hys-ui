@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, FilePlus2, FolderOpen, Save } from "lucide-vue-next";
+import { Download, FilePlus2, FolderOpen, Save } from "../../HysIcon/svgIcons";
 import { useSpreadsheetMessages } from "../spreadsheetMessages";
 const message = useSpreadsheetMessages();
 import { computed, ref } from "vue";

@@ -13,7 +13,7 @@ import {
   watch,
   type CSSProperties,
 } from "vue";
-import { X, Eye, EyeOff } from "lucide-vue-next";
+import { X, Eye, EyeOff } from "../HysIcon/svgIcons";
 import {
   fieldKey,
   formKey,

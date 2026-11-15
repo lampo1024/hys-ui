@@ -20,7 +20,7 @@ import {
   TriangleAlert,
   CircleX,
   CircleHelp,
-} from "lucide-vue-next";
+} from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysScrollbar from "../HysScrollbar/HysScrollbar.vue";
 import { useHysRootAttrs } from "../../config";

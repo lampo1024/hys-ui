@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { ChevronDown } from "lucide-vue-next";
+import { ChevronDown } from "../../HysIcon/svgIcons";
 import HysPopover from "../../HysPopover/HysPopover.vue";
 import HysInput from "../../HysInput/HysInput.vue";
 import HysButton from "../../HysButton/HysButton.vue";

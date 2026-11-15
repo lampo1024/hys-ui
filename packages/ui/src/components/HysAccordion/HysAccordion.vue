@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed,onActivated,onBeforeUnmount,onDeactivated,ref,useId,watch} from 'vue'
-import {ChevronDown} from 'lucide-vue-next'
+import {ChevronDown} from '../HysIcon/svgIcons'
 import {useHysRootAttrs} from '../../config'
 import {useMotion} from '../../motion/useMotion'
 export type HysAccordionKey=string|number

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HysTagInput, HysBadge } from "hys-ui";
-import { Tags, Trash2, Minus } from "lucide-vue-next";
+import { Tags, Trash2, Minus } from "hys-ui/icons";
 const tags = ref(["设计", "研发"]);
 </script>
 <template>

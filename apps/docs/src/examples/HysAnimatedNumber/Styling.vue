@@ -9,7 +9,7 @@ import {
   type HysAnimatedNumberContext,
   type HysTheme,
 } from "hys-ui";
-import { Activity } from "lucide-vue-next";
+import { Activity } from "hys-ui/icons";
 
 const theme = ref<HysTheme>("blue");
 const rendering = ref("default");

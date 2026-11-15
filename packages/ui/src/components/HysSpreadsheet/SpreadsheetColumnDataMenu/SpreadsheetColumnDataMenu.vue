@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from "vue";
-import { ArrowDown, ArrowUp, FilterX, RotateCcw } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, FilterX, RotateCcw } from "../../HysIcon/svgIcons";
 import HysButton from "../../HysButton/HysButton.vue";
 import HysCheckbox from "../../HysCheckbox/HysCheckbox.vue";
 import HysInput from "../../HysInput/HysInput.vue";

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ChevronsLeftRight, ChevronsUpDown } from "lucide-vue-next";
+import { ChevronsLeftRight, ChevronsUpDown } from "../../HysIcon/svgIcons";
 import HysButton from "../../HysButton/HysButton.vue";
 import HysTooltip from "../../HysTooltip/HysTooltip.vue";
 import { columnLabel } from "../spreadsheetModel";

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { AlignCenter, AlignLeft, AlignRight } from "lucide-vue-next";
+import { AlignCenter, AlignLeft, AlignRight } from "hys-ui/icons";
 import { HysButton, HysButtonGroup } from "hys-ui";
 const selected = ref("左对齐");
 const options = [

@@ -24,6 +24,15 @@ async function mount(Component,values={},slots={},acceptModels=true){
 }
 const fire=async(element,type,options={})=>{assert(element,'Missing target for '+type);const EventClass=type.startsWith('key')?KeyboardEvent:type==='click'?MouseEvent:Event;element.dispatchEvent(new EventClass(type,{bubbles:true,cancelable:true,...options}));await nextTick()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))
+async function waitForNode(getNode) {
+  const deadline = Date.now() + 3000;
+  while (Date.now() < deadline) {
+    const node = getNode();
+    if (node) return node;
+    await pause(10);
+  }
+  throw new Error("Timed out waiting for the async editor tool");
+}
 afterEach(async()=>{for(const item of [...mounts])item.unmount();await nextTick();document.body.innerHTML='';document.body.style.cssText=''})
 
 test('PermissionMatrix batch edits skip locked cells and report only changed permissions', async () => {
@@ -192,8 +201,7 @@ test('CalendarNavigation bounds year changes and emits UTC month starts', async 
 test('MarkdownEditor task changes and undo publish the source once, and readonly still renders it', async () => {
   const initial = '# 发布\n\n- [ ] 核对库存';
   const editor = await mount(ui.HysMarkdownEditor, { modelValue: initial, view: 'preview' });
-  const checkbox = editor.find('input[type=checkbox]');
-  assert(checkbox);
+  const checkbox = await waitForNode(() => editor.find('input[type=checkbox]'));
   await fire(checkbox, 'click');
   await pause(125);
   const updated = initial.replace('[ ]', '[x]');
@@ -225,7 +233,7 @@ test('MarkdownEditor drops an open insertion when the parent replaces the source
   const source = form.find('.cm-content');
   source.focus();
   await fire(source, 'keydown', { key: 'k', code: 'KeyK', ctrlKey: true });
-  const dialog = document.querySelector('[role=dialog]');
+  const dialog = await waitForNode(() => document.querySelector('[role=dialog]'));
   assert.match(dialog.textContent, /插入链接/);
   const insert = [...dialog.querySelectorAll('footer button')].find(button => button.textContent === '插入');
   form.props.modelValue = '# Replacement';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, h } from "vue";
 import { HysProgress, HysSlider, HysCheckbox } from "hys-ui";
-import { Check } from "lucide-vue-next";
+import { Check } from "hys-ui/icons";
 const value = ref(35),
   show = ref(true);
 </script>

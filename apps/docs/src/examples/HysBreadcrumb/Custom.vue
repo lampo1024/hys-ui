@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Home, ChevronRight } from "lucide-vue-next";
+import { Home, ChevronRight } from "hys-ui/icons";
 import { HysBreadcrumb, HysButton } from "hys-ui";
 const selected = ref("组件详情");
 const items = [

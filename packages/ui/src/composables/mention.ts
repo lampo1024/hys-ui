@@ -65,6 +65,7 @@ export type HysMentionFilter =
   | ((query: string, option: HysMentionOption, prefix: string) => boolean);
 export type HysMentionSearchField =
   string | ((option: HysMentionOption) => unknown);
+export type HysMentionPinyinLoader = () => Promise<((text: string) => readonly string[]) | undefined>;
 export type HysMentionSearchMode = "includes" | "fuzzy" | "pinyin" | "initials";
 export type HysMentionMatch = (context: {
   text: string;
@@ -229,6 +230,8 @@ export interface HysMentionProps extends HysPopupMotionProps {
   filterOption?: HysMentionFilter;
   searchMode?: HysMentionTrigger["searchMode"];
   searchFields?: readonly HysMentionSearchField[];
+  /** 自定义拼音转换器的异步加载函数。仅在启用拼音或首字母匹配时调用。 */
+  pinyinLoader?: HysMentionPinyinLoader;
   sortOptions?:
     | boolean
     | ((

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from "vue";
-import { Bold, Italic, Strikethrough, Code, FileCode2, Heading, Quote, List, ListOrdered, ListTodo, Minus, Link, Image, Table, Undo2, Redo2, Search, ListTree, Link2, Ellipsis, FolderOpen, Download, Copy } from "lucide-vue-next";
+import { Bold, Italic, Strikethrough, Code, FileCode2, Heading, Quote, List, ListOrdered, ListTodo, Minus, Link, Image, Table, Undo2, Redo2, Search, ListTree, Link2, Ellipsis, FolderOpen, Download, Copy } from "../HysIcon/svgIcons";
 import HysButton from "../HysButton/HysButton.vue";
 import HysTooltip from "../HysTooltip/HysTooltip.vue";
 import HysPopover from "../HysPopover/HysPopover.vue";
@@ -11,7 +11,7 @@ import type { MarkdownHeading } from "./markdownPreview";
 
 const props = defineProps<{
   mode: HysMarkdownEditorView; wide: boolean; editable: boolean; disabled: boolean;
-  undo: boolean; redo: boolean; findOpen: boolean; synced: boolean; headings: MarkdownHeading[];
+  undo: boolean; redo: boolean; findOpen: boolean; synced: boolean; headings: MarkdownHeading[]; outlinePending: boolean;
 }>();
 export type MarkdownTool = MarkdownFormat | "undo" | "redo" | "link" | "image" | "code" | "table" | "find" | "outline" | "sync" | "import" | "export" | "copy";
 const emit = defineEmits<{
@@ -79,6 +79,7 @@ function select(tool: MarkdownTool, area: "main" | "more", level?: number) {
   if ((tool === "heading" || tool === "outline") && level == null) {
     open.value = area;
     pane.value = tool;
+    if (tool === "outline") emit("action", tool);
     if (area === "more") void nextTick(() => subMenu.value?.querySelector("button")?.focus());
     return;
   }
@@ -118,7 +119,8 @@ function chooseHeading(heading: MarkdownHeading) {
               <template v-else>
                 <HysButton v-for="heading in headings" :key="heading.id" size="sm" variant="ghost"
                   :style="{ paddingInlineStart: 8 + (heading.level - 1) * 10 + 'px' }" @click="chooseHeading(heading)">{{ heading.title }}</HysButton>
-                <p v-if="!headings.length">暂无标题</p>
+                <p v-if="outlinePending" role="status">正在加载标题…</p>
+                <p v-else-if="!headings.length">暂无标题</p>
               </template>
             </div>
           </HysScrollbar>
@@ -146,7 +148,8 @@ function chooseHeading(heading: MarkdownHeading) {
               <template v-else>
                 <HysButton v-for="heading in headings" :key="heading.id" size="sm" variant="ghost"
                   :style="{ paddingInlineStart: 8 + (heading.level - 1) * 10 + 'px' }" @click="chooseHeading(heading)">{{ heading.title }}</HysButton>
-                <p v-if="!headings.length">暂无标题</p>
+                <p v-if="outlinePending" role="status">正在加载标题…</p>
+                <p v-else-if="!headings.length">暂无标题</p>
               </template>
             </template>
             <HysButton v-for="tool in pane ? [] : overflow" :key="tool.id" size="sm" variant="ghost" :icon="tool.icon"

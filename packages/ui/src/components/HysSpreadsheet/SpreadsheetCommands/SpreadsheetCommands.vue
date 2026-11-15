@@ -24,7 +24,7 @@ import {
   Split,
   Underline,
   WrapText,
-} from "lucide-vue-next";
+} from "../../HysIcon/svgIcons";
 import HysAccordion from "../../HysAccordion/HysAccordion.vue";
 import SpreadsheetToolbarButton from "../SpreadsheetToolbarButton/SpreadsheetToolbarButton.vue";
 import HysButton from "../../HysButton/HysButton.vue";

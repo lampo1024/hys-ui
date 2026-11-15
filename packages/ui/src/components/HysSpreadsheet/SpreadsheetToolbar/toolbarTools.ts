@@ -10,7 +10,7 @@ import {
   SlidersHorizontal,
   Table2,
   Undo2,
-} from "lucide-vue-next";
+} from "../../HysIcon/svgIcons";
 import {
   commandGroups,
   historyTool,

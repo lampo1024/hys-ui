@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { HysAvatar } from "hys-ui";
-import { UserRound, Heart, Settings } from "lucide-vue-next";
+import { UserRound, Heart, Settings } from "hys-ui/icons";
 const picture =
   "data:image/svg+xml," +
   encodeURIComponent(

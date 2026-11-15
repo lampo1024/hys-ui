@@ -1,4 +1,3 @@
-import AsyncValidator from "async-validator";
 import type { RuleItem, Rules, ValidateError } from "async-validator";
 import { toRaw, unref } from "vue";
 import {
@@ -9,9 +8,19 @@ import {
   type HysFormRules,
   type HysFormValidationContext,
 } from "./formContext";
-const Schema =
-  (AsyncValidator as unknown as { default?: typeof AsyncValidator }).default ??
-  AsyncValidator;
+type FormSchema = typeof import("async-validator").default;
+let schema: FormSchema | undefined;
+let pendingSchema: Promise<FormSchema> | undefined;
+
+function loadFormSchema() {
+  pendingSchema ??= import("async-validator")
+    .then(({ default: ctor }) => {
+      schema = (ctor as unknown as { default?: FormSchema }).default ?? ctor;
+      return schema;
+    })
+    .finally(() => { pendingSchema = undefined; });
+  return pendingSchema;
+}
 
 export function snapshotForm(
   value: unknown,
@@ -273,7 +282,8 @@ export function runFormRules(
     }
     return { messages: [...new Set(Object.values(fields).flat())], fields };
   };
-  try {
+  function validate(Schema: FormSchema) {
+    if (context.signal.aborted) return { messages: [], fields: {} };
     const validator = new Schema({
       [name]: descriptor(rules, value, model, context),
     });
@@ -301,7 +311,8 @@ export function runFormRules(
     // The callback is our result channel; consume the engine's rejected promise.
     void validation.catch(() => {});
     return complete ? outcome : result;
-  } catch (error) {
+  }
+  function failure(error: unknown) {
     const errors = (error as { errors?: ValidateError[] })?.errors;
     return errors
       ? toResult(errors)
@@ -311,6 +322,11 @@ export function runFormRules(
             [name]: [error instanceof Error ? error.message : "校验失败"],
           },
         };
+  }
+  try {
+    return schema ? validate(schema) : loadFormSchema().then(validate).catch(failure);
+  } catch (error) {
+    return failure(error);
   }
 }
 /** Resolve a mounted leaf against object/array descriptors declared on parents. */

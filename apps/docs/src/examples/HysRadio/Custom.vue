@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
 import { HysRadio, HysBadge } from "hys-ui";
-import { Check } from "lucide-vue-next";
+import { Check } from "hys-ui/icons";
 const value = ref("team");
 </script>
 <template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Grip, Music2 } from "lucide-vue-next";
+import { Grip, Music2 } from "hys-ui/icons";
 import {
   HysCheckbox,
   HysSortableList,

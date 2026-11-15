@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { BellRing } from "lucide-vue-next";
+import { BellRing } from "hys-ui/icons";
 import { HysButton, HysToast, type HysToastType } from "hys-ui";
 const message = ref(""),
   type = ref<HysToastType>("success");
