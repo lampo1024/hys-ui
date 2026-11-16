@@ -34,6 +34,7 @@ import { useDatePicker } from "../../composables/useDatePicker";
 import { calendarISO, calendarParts } from "../../composables/calendar";
 import {
   dateNative,
+  dateEqual,
   dateFormat as formatDatePoint,
   datePoint,
   datePickerDefaults,
@@ -393,8 +394,9 @@ async function pick(day: number) {
 async function shortcut(index: number) {
   if (!store.pickShortcut(index)) return;
   if (!needsConfirm.value) {
-    const accepted = await store.request(store.encode(draft.value), "shortcut");
-    if (accepted) {
+    const value = store.encode(draft.value);
+    const accepted = await store.request(value, "shortcut");
+    if (accepted || dateEqual(value, store.current.value)) {
       syncText();
       hide(true);
     }

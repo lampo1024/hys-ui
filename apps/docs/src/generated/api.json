@@ -5392,7 +5392,7 @@
         "type": "readonly HysChartPoint[] | undefined",
         "required": false,
         "default": "",
-        "description": "单系列数据，按绘图顺序提供 { label, value, color?, x? }。忽略非有限数值，散点横坐标省略时使用从 1 开始的原始点序号。",
+        "description": "单系列数据点包含 label、value 及可选 id、color、x、time。null 由 missing 处理，忽略其他非有限数值。时间轴读取 time、x 或 ISO 格式的 label，数值轴默认横坐标为从 1 开始的原始点序号。",
         "global": false
       },
       {
@@ -5400,7 +5400,7 @@
         "type": "readonly HysChartSeries[] | undefined",
         "required": false,
         "default": "",
-        "description": "多系列数据，提供 { id?, name, data, color?, type?, dashed? }。id 在图内唯一。优先于 data。分类图按标签对齐，重复标签按出现次序匹配。饼图和环形图取第一系列的正数。type 在组合图中可设 bar、line 或 area。",
+        "description": "多系列数据优先于 data。id 在图内唯一，yAxis 取 0 或 1。分类图按标签及出现次序对齐，时间和数值轴按坐标对齐。饼图、环形图及漏斗取首系列，仪表盘取首系列首个有效值。组合图可为系列选择 bar、line 或 area。",
         "global": false
       },
       {
@@ -5408,7 +5408,7 @@
         "type": "HysChartType | undefined",
         "required": false,
         "default": "\"bar\"",
-        "description": "默认 bar。可选 bar、horizontal-bar、line、area、pie、donut、scatter、combo。",
+        "description": "默认 bar。可选 bar、horizontal-bar、line、area、pie、donut、scatter、combo、radar、funnel、gauge、heatmap。",
         "global": false
       },
       {
@@ -5417,6 +5417,102 @@
         "required": false,
         "default": "220",
         "description": "绘图区高度，单位为像素。默认 220，最小 48。",
+        "global": false
+      },
+      {
+        "name": "aspectRatio",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "绘图区宽高比。传入正数时随容器宽度计算高度，最小高度 48 像素。",
+        "global": false
+      },
+      {
+        "name": "xAxis",
+        "type": "HysChartXAxis | undefined",
+        "required": false,
+        "default": "",
+        "description": "横轴可设 category、value 或 time。范围支持 min/max，刻度支持 ticks 或 tickCount，另有 unit、formatter、includeZero。时间范围接受 ISO 时间、Date 或毫秒，刻度值使用毫秒。横向条形图的 xAxis 配置水平数值轴。",
+        "global": false
+      },
+      {
+        "name": "yAxis",
+        "type": "HysChartAxis | readonly [HysChartAxis, (HysChartAxis | undefined)?] | undefined",
+        "required": false,
+        "default": "",
+        "description": "单轴配置或最多两个轴的数组。支持 min/max、ticks、tickCount、unit、formatter、includeZero。系列以 yAxis: 1 使用右轴，横向条形图使用一个数值轴。",
+        "global": false
+      },
+      {
+        "name": "loading",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "显示加载状态并隐藏图形及明细，默认 false，优先于 error。",
+        "global": false
+      },
+      {
+        "name": "error",
+        "type": "string | Error | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "错误文案或 Error。显示错误状态和重试入口，点击重试触发 retry。",
+        "global": false
+      },
+      {
+        "name": "loadingText",
+        "type": "string | undefined",
+        "required": false,
+        "default": "\"正在加载图表\"",
+        "description": "加载文案，默认“正在加载图表”，可用 loading 插槽替换。",
+        "global": false
+      },
+      {
+        "name": "missing",
+        "type": "HysChartMissing | undefined",
+        "required": false,
+        "default": "\"gap\"",
+        "description": "null 的处理策略，默认 gap 保留缺口。connect 连接相邻有效的折线或面积点，zero 按 0 绘制。CSV 保留原始空值。",
+        "global": false
+      },
+      {
+        "name": "selectedKey",
+        "type": "string | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控点选中键，null 清除选中。键为系列 id 加冒号加数据点 id，各自省略时系列键为 series:索引，点使用源数据索引。支持 v-model:selectedKey。",
+        "global": false
+      },
+      {
+        "name": "hiddenKeys",
+        "type": "readonly string[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控隐藏键数组，普通图表使用系列键，饼图与环形图使用点键。支持 v-model:hiddenKeys。",
+        "global": false
+      },
+      {
+        "name": "range",
+        "type": "HysChartRange | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控可见区间 { start, end }，null 显示全部。分类用从 0 开始的索引，数值轴用原坐标，时间轴用 epoch 毫秒。两个边界均闭合。支持 v-model:range。",
+        "global": false
+      },
+      {
+        "name": "zoomable",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。为直角坐标图启用 X 轴下方的全量数据概览，支持绘制区间、拖动双端手柄和移动选区，释放后提交范围，方向键可调整端点。选区外单击可移动窗口。绘图区内支持滚轮缩放、Shift 框选及缩放后拖动平移。",
+        "global": false
+      },
+      {
+        "name": "sampling",
+        "type": "number | undefined",
+        "required": false,
+        "default": "",
+        "description": "启用折线、面积和散点的按桶极值采样。传入至少 4 的目标点数，保留首尾和桶内最小最大点，额外保留受控选中点。明细和 CSV 使用未采样数据。",
         "global": false
       },
       {
@@ -5440,7 +5536,15 @@
         "type": "boolean | undefined",
         "required": false,
         "default": "undefined",
-        "description": "控制点击图例。默认多序列和饼图、环形图显示。切换时隐藏对应系列或扇区。",
+        "description": "控制图例可见性。默认多序列和饼图、环形图显示。点击图例可显示或隐藏对应系列或扇区。",
+        "global": false
+      },
+      {
+        "name": "legendLayout",
+        "type": "HysChartLegendLayout | undefined",
+        "required": false,
+        "default": "\"compact\"",
+        "description": "图例布局，默认 compact。compact 为紧凑平铺，selected 为已选优先，grouped 为按组展示，sidebar 为侧边列表并在窄容器下放到图下，paged 为单行分页。切换布局保留 hiddenKeys。grouped 使用系列的 legendGroup，饼图和环形图使用数据点的 legendGroup，缺省时归入「未分组」。legendLabel 可为 selected 与 grouped 提供短名。",
         "global": false
       },
       {
@@ -5457,6 +5561,22 @@
         "required": false,
         "default": "true",
         "description": "悬停、聚焦或选中图形时显示数据提示，默认 true。",
+        "global": false
+      },
+      {
+        "name": "tooltipMode",
+        "type": "\"axis\" | \"point\" | undefined",
+        "required": false,
+        "default": "\"point\"",
+        "description": "point 显示单点，axis 对比当前类目、时间或数值位置的可见系列。默认 point。",
+        "global": false
+      },
+      {
+        "name": "tooltipInteractive",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "允许鼠标和焦点进入自定义提示内容，默认 false。",
         "global": false
       },
       {
@@ -5546,9 +5666,64 @@
         "default": "",
         "description": "多条数值参考线，叠加到 reference，适用于带坐标轴的图表。可提供 color。",
         "global": false
+      },
+      {
+        "name": "annotations",
+        "type": "readonly HysChartAnnotation[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "直角坐标图分析标注数组。band 配置 from、to 和可选 yAxis。min、max、trend 可按 seriesId 限定系列，基于当前窗口内未采样值。支持自定义 label 和 color。",
+        "global": false
+      },
+      {
+        "name": "rangePresets",
+        "type": "readonly HysChartRangePreset[] | undefined",
+        "required": false,
+        "default": "",
+        "description": "时间轴的可选快捷区间，配置后显示带快捷选项的日期范围选择器。每项含 label 和可选 days，days 取正整数或向下取整，按数据最晚一天向前计算 UTC 自然日。省略 days 代表全部。",
+        "global": false
+      },
+      {
+        "name": "showDateRange",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。时间轴显示起止日期选择器，日期按 UTC 解读并包含结束日，区间与缩放共用 v-model:range。",
+        "global": false
+      },
+      {
+        "name": "crosshair",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。直角坐标图启用吸附十字线，整块绘图区可悬停或点按。支持方向键、Home、End、Enter 和 Esc，锁定对比使用未采样的可见系列数据。",
+        "global": false
+      },
+      {
+        "name": "cursor",
+        "type": "HysChartCursor | null | undefined",
+        "required": false,
+        "default": "",
+        "description": "受控十字线状态 { value: number, locked: boolean }，支持 v-model:cursor。分类使用从 0 开始的索引，数值和时间使用原坐标。null 清除。多个图可共享同一坐标。",
+        "global": false
+      },
+      {
+        "name": "legendActions",
+        "type": "boolean | undefined",
+        "required": false,
+        "default": "false",
+        "description": "默认 false。显示图例时增加批量操作。可单独显示一个系列，显示某分组并保留其他可见系列，或恢复全部。",
+        "global": false
       }
     ],
     "events": [
+      {
+        "name": "retry",
+        "type": "[]",
+        "required": false,
+        "default": "",
+        "description": "点击重试或调用错误插槽的 retry 时触发。"
+      },
       {
         "name": "point-click",
         "type": "[selection: HysChartSelection]",
@@ -5557,37 +5732,129 @@
         "description": "点击数据图形或聚焦后按 Enter、空格触发。载荷包含 point、series、从 0 开始的 pointIndex 和 seriesIndex，饼图带 percentage（0–1），散点图带 x。"
       },
       {
+        "name": "point-hover",
+        "type": "[item: HysChartTooltipItem | null]",
+        "required": false,
+        "default": "",
+        "description": "悬停和键盘聚焦数据点时发出，包含点、系列、原始索引、键、颜色与格式化文本。离开时发出 null。"
+      },
+      {
         "name": "legend-change",
         "type": "[change: { key: string; visible: boolean; }]",
         "required": false,
         "default": "",
-        "description": "点击图例后触发，载荷为 { key: string, visible: boolean }。"
+        "description": "单次或批量图例操作中，每个变化的键都触发一次，载荷为 { key: string, visible: boolean }。"
+      },
+      {
+        "name": "update:selectedKey",
+        "type": "[key: string | null]",
+        "required": false,
+        "default": "",
+        "description": "点击或通过键盘选中其他数据点时发出点键。"
+      },
+      {
+        "name": "update:hiddenKeys",
+        "type": "[keys: readonly string[]]",
+        "required": false,
+        "default": "",
+        "description": "单次或批量图例操作完成后发出一次，提供新的全部隐藏键。"
+      },
+      {
+        "name": "update:range",
+        "type": "[range: HysChartRange | null]",
+        "required": false,
+        "default": "",
+        "description": "通过按钮、拖动或滚轮改变窗口时发出新范围，恢复全部时为 null。"
+      },
+      {
+        "name": "range-change",
+        "type": "[range: HysChartRange | null]",
+        "required": false,
+        "default": "",
+        "description": "可见区间由用户操作或 resetRange 改变时触发，载荷与 update:range 相同。"
+      },
+      {
+        "name": "update:cursor",
+        "type": "[cursor: HysChartCursor | null]",
+        "required": false,
+        "default": "",
+        "description": "悬停到新位置、按键移动、锁定或清除十字线时触发。载荷为 { value: number, locked: boolean } 或 null。"
       }
     ],
     "slots": [
       {
         "name": "title",
-        "type": "{}",
+        "type": "any",
         "required": false,
         "default": "",
         "description": "绘图区上方标题。"
       },
       {
+        "name": "empty",
+        "type": "any",
+        "required": false,
+        "default": "",
+        "description": "替换无数据提示。"
+      },
+      {
         "name": "center",
-        "type": "{}",
+        "type": "any",
         "required": false,
         "default": "",
         "description": "环形图中心展示内容。"
       },
       {
-        "name": "empty",
-        "type": "{}",
+        "name": "loading",
+        "type": "any",
         "required": false,
         "default": "",
-        "description": "替换无数据提示。"
+        "description": "自定义加载中的内容。"
+      },
+      {
+        "name": "error",
+        "type": "{ message: string; retry: () => void; }",
+        "required": false,
+        "default": "",
+        "description": "自定义加载失败内容，参数含 message 和 retry。"
+      },
+      {
+        "name": "tooltip",
+        "type": "HysChartTooltipContext",
+        "required": false,
+        "default": "",
+        "description": "自定义提示内容，参数含当前 item、对比 items 和关闭函数 close。"
       }
     ],
-    "exposed": []
+    "exposed": [
+      {
+        "name": "exportChart",
+        "type": "(format: HysChartExportFormat, value?: number | HysChartExportOptions | undefined) => Promise<Blob>",
+        "required": false,
+        "default": "",
+        "description": "接收 svg、png 或 csv 并异步返回 Blob。可选第二参数为旧版 PNG 像素比或 HysChartExportOptions。CSV 的 scope 默认为 all，visible 导出当前区间内可见系列的未采样数据，原始空值保留。PNG、SVG 的 includeContext 默认为 false，开启时带标题、区间与可见图例，可用 title 覆盖标题。"
+      },
+      {
+        "name": "download",
+        "type": "(format: HysChartExportFormat, filename?: string, options?: number | HysChartExportOptions | undefined) => Promise<void>",
+        "required": false,
+        "default": "",
+        "description": "接收格式、文件名和可选参数，参数与 exportChart 相同，生成并下载文件。"
+      },
+      {
+        "name": "copyImage",
+        "type": "(value?: number | HysChartExportOptions | undefined) => Promise<void>",
+        "required": false,
+        "default": "",
+        "description": "将图形写入剪贴板为 PNG，可传像素比或 HysChartExportOptions，需要浏览器支持和用户手势。"
+      },
+      {
+        "name": "resetRange",
+        "type": "() => void",
+        "required": false,
+        "default": "",
+        "description": "恢复完整区间，受控模式发出 null 供调用方更新。"
+      }
+    ]
   },
   "HysCheckbox": {
     "props": [

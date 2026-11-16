@@ -11,11 +11,8 @@ export function radialLayout(
   const radius = Math.max(1, Math.min(width, height) / 2 - 12);
   const inner = radius * innerRadius;
   let maximum = 0;
-  for (const entry of entries) maximum = Math.max(entry.point.value, maximum);
-  const total = entries.reduce(
-    (sum, { point }) => sum + point.value / maximum,
-    0,
-  );
+  for (const entry of entries) maximum = Math.max(entry.value, maximum);
+  const total = entries.reduce((sum, { value }) => sum + value / maximum, 0);
   const at = (angle: number, distance: number) =>
     `${x + distance * Math.cos(angle)},${y + distance * Math.sin(angle)}`;
   const full = Math.PI * 2;
@@ -31,7 +28,7 @@ export function radialLayout(
   }
   let start = -Math.PI / 2;
   return entries.map((entry) => {
-    const percentage = entry.point.value / maximum / total;
+    const percentage = entry.value / maximum / total;
     const end = start + full * percentage;
     const middle = (start + end) / 2;
     const labelRadius = inner ? (radius + inner) / 2 : radius * 0.58;
