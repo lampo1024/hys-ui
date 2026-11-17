@@ -1,6 +1,9 @@
 // SVG data from Lucide 0.468.0, licensed under ISC (see packages/ui/LICENSE).
 import { createSvgIcon } from "./createSvgIcon";
 
+export const RefreshCw = /* @__PURE__ */ createSvgIcon("lucide-refresh-cw-icon", [["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]]);
+export const ScanLine = /* @__PURE__ */ createSvgIcon("lucide-scan-line-icon", [["path",{"d":"M3 7V5a2 2 0 0 1 2-2h2"}],["path",{"d":"M17 3h2a2 2 0 0 1 2 2v2"}],["path",{"d":"M21 17v2a2 2 0 0 1-2 2h-2"}],["path",{"d":"M7 21H5a2 2 0 0 1-2-2v-2"}],["path",{"d":"M7 12h10"}]]);
+
 export const Activity = /* @__PURE__ */ createSvgIcon("lucide-activity-icon", [["path",{"d":"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"}]]);
 export const AlignCenter = /* @__PURE__ */ createSvgIcon("lucide-align-center-icon", [["path",{"d":"M17 12H7"}],["path",{"d":"M19 18H5"}],["path",{"d":"M21 6H3"}]]);
 export const AlignLeft = /* @__PURE__ */ createSvgIcon("lucide-align-left-icon", [["path",{"d":"M15 12H3"}],["path",{"d":"M17 18H3"}],["path",{"d":"M21 6H3"}]]);

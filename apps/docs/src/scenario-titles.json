@@ -74,6 +74,106 @@
     "PopupMotion": "浮层展开与收起动效"
   },
   "components": {
+    "HysRecordPicker": {
+      "Limits": "排班团队 · 跨页标签与数量限制",
+      "Typeahead": "服务团队 · 防抖搜索和选区保留",
+      "Basic": "发货配置 · 单选记录", "Local": "检查清单 · 跨页多选和停用选项",
+      "Remote": "采购供应商 · 外部分页与关键词", "Controlled": "资料引用 · 受控弹窗与空状态"
+    },
+    "HysTreeTable": {
+      "Lazy": "仓库组织 · 延迟读取和失败重试",
+      "SearchSelection": "服务目录 · 保留路径和父子联动",
+      "Basic": "库存分布 · 三级展开", "Controlled": "项目交付 · 受控展开与定位",
+      "Selection": "资料目录 · 同级排序与独立选择", "Scale": "支持队列 · 126 个节点与自定义空状态"
+    },
+    "HysFilterBar": {
+      "Presets": "发运订单 · 预设、数值区间与开关",
+      "Summary": "档案查找 · 隐藏条件摘要与移除",
+      "Basic": "订单查询 · 关键词与状态", "Schedule": "到货计划 · 单日与日期范围",
+      "Custom": "工单交接 · 折叠和自定义筛选", "Loading": "档案查找 · 查询中与禁用"
+    },
+    "HysActionBar": {
+      "AcrossPages": "归档批次 · 跨页全选和确认",
+      "Constraints": "采购报价 · 操作选择数限制",
+      "Basic": "待办处理 · 表格批量分派", "Confirm": "草稿管理 · 确认和取消删除",
+      "Overflow": "变更审核 · 更多操作和受限动作", "Processing": "财务核对 · 下载与处理中状态"
+    },
+    "HysDataView": {
+      "LocalCatalog": "工具目录 · 本地搜索、排序和分页",
+      "Recovery": "知识库 · 连接错误与恢复",
+      "Basic": "项目空间 · 列表与卡片", "Controlled": "交接文档 · 搜索和分页",
+      "States": "项目附件 · 空状态和重新加载", "Responsive": "文件归档 · 窄容器与长文件名"
+    },
+    "HysImageViewer": {
+      "Thumbnails": "交付验收 · 缩略图和循环浏览",
+      "Inspect": "截图核验 · 原始尺寸和拖动浏览",
+      "Basic": "图表审阅 · 单图缩放与旋转",
+      "Gallery": "发布验收 · 多图与指定起始索引",
+      "Recovery": "交付附件 · 加载失败和恢复",
+      "Large": "大图核验 · 4800 像素图源和视口适配"
+    },
+    "HysTimePicker": {
+      "Availability": "预约交接 · 不可用时段和快捷选时",
+      "ClockFormat": "访客接待 · 12 小时制和标准值",
+      "Basic": "提醒计划 · 键入时间与清空",
+      "Shift": "班次交接 · 同日边界与分钟步长",
+      "Seconds": "设备计划 · 秒级步长与只读",
+      "Form": "交付预约 · 表单校验和重置"
+    },
+    "HysDropdown": {
+      "Columns": "订单表格 · 多选显示列",
+      "Commands": "命令菜单 · 搜索缩写与子菜单",
+      "Basic": "订单清单 · 行操作与禁用项",
+      "Hover": "批量分配 · 悬停、触屏点击与子菜单",
+      "Controlled": "数据出口 · 受控状态与连续选择",
+      "Edge": "审批队列 · 窄容器与自定义菜单"
+    },
+    "HysMenu": {
+      "Finder": "工作台模块 · 搜索与祖先路径",
+      "Accordion": "服务侧栏 · 手风琴和按键跳转",
+      "Basic": "项目导航 · 当前页面与链接",
+      "Controlled": "配送工作台 · 多级菜单与受控展开",
+      "Operations": "权限管理 · 操作分组和状态标签",
+      "LongList": "归档目录 · 长列表与键盘定位"
+    },
+    "HysCopyButton": {
+      "Prepared": "文件分享 · 按需准备链接",
+      "Manual": "受限环境 · 选择文本手动复制",
+      "Connection": "环境配置 · 自定义复制入口",
+      "Basic": "交付链接 · 复制正文",
+      "States": "剪贴板 · 失败反馈与禁用"
+    },
+    "HysQRCode": {
+      "Brand": "品牌签到 · 图标、配色、纠错和渲染",
+      "Login": "扫码登录 · 过期刷新与扫码状态",
+      "Download": "物料制作 · 下载 PNG 和 SVG",
+      "Wifi": "访客联网 · 配置无线网络",
+      "ShareCard": "培训分享 · 弹层二维码与复制",
+      "PrintLabel": "包裹标签 · 深色背景与扫描留白",
+      "Basic": "自助签到 · 从链接生成",
+      "States": "扫码名片 · 纠错等级与容量"
+    },
+    "HysInputOtp": {
+      "Pairing": "设备配对 · 八位分组与大写规范",
+      "Protected": "交易核验 · 掩码和录入进度",
+      "Form": "设备配对 · 表单校验与重置",
+      "Basic": "登录验证 · 输入与粘贴",
+      "States": "备用口令 · 自定义字符和只读"
+    },
+    "HysStatistic": {
+      "Comparison": "服务监控 · 基准对比与正向趋势",
+      "Reporting": "地区报表 · 货币与大数单位",
+      "Format": "财务核对 · 高精度与地区格式",
+      "Basic": "销售概览 · 指标与趋势",
+      "States": "同步面板 · 加载与空值"
+    },
+    "HysPageHeader": {
+      "Workflow": "交付验收 · 操作折叠与业务状态",
+      "Sticky": "发布检查 · 吸顶标题与负责人",
+      "Custom": "发布说明 · 自定义标题与审批操作",
+      "Basic": "订单详情 · 标题与面包屑",
+      "States": "订单流程 · 紧凑布局与返回"
+    },
     "HysSpin": {
       "Basic": "独立、行内与容器加载",
       "Animations": "加载动效与播放控制",

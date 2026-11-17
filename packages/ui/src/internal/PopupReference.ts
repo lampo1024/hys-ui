@@ -56,7 +56,9 @@ export default defineComponent({
                   ? props.id
                   : node.props?.["aria-controls"],
                 "aria-expanded": props.open,
-                "aria-haspopup": node.props?.["aria-haspopup"] ?? "dialog",
+                "aria-haspopup":
+                  node.props?.["aria-haspopup"] ??
+                  (props.kind === "menu" ? "menu" : "dialog"),
               }),
         },
         true,

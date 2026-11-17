@@ -10,6 +10,7 @@ import {
   onUpdated,
   provide,
   ref,
+  shallowRef,
   useId,
   useSlots,
   watch,
@@ -107,10 +108,11 @@ const hysRootAttrs = useHysRootAttrs(),
   warningId = id + "-warning",
   slots = useSlots();
 const grouped = ref(!!props.group);
+const controlRules = shallowRef<HysFormRule[]>([]);
 const path = computed(() =>
     props.prop === undefined ? "" : formPath(props.prop),
   ),
-  localRules = computed(() => [props.rules ?? []].flat()),
+  localRules = computed(() => [props.rules ?? [], controlRules.value].flat()),
   label = computed(() => props.label);
 const error = computed(() =>
   props.error !== undefined
@@ -310,6 +312,14 @@ provide(fieldKey, {
   disabled,
   size,
   validate,
+  registerControlRule(rule) {
+    controlRules.value = [...controlRules.value, rule];
+    return () => {
+      controlRules.value = controlRules.value.filter(
+        (current) => current !== rule,
+      );
+    };
+  },
   deferChangeValidation() {
     deferredChangeChecks.value++;
     let released = false;
@@ -416,8 +426,12 @@ function blur(event: FocusEvent) {
 }
 function nativeChange(event: Event) {
   const target = event.target as HTMLElement;
-  if (!form?.model.value && target.closest(".hys-ui-ent-field") === root.value &&
-      !target.closest('[data-hys-ui-validate-event="off"]')) void validate("change");
+  if (
+    !form?.model.value &&
+    target.closest(".hys-ui-ent-field") === root.value &&
+    !target.closest('[data-hys-ui-validate-event="off"]')
+  )
+    void validate("change");
 }
 const field: HysFormField = {
   path,

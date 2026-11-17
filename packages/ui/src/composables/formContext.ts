@@ -148,6 +148,8 @@ export interface HysFieldContext {
   validate?: (trigger?: HysFormTrigger) => Promise<boolean>;
   /** Temporarily defer model-watch validation during a continuous control gesture. */
   deferChangeValidation?: () => () => void;
+  /** Attach validation for a composite control with an uncommitted draft. */
+  registerControlRule?: (rule: HysFormRule) => () => void;
   disabled?: ComputedRef<boolean>;
   size?: ComputedRef<"sm" | "md" | "lg">;
 }

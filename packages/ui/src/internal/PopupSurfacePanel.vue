@@ -13,6 +13,7 @@ const props = defineProps<{
   labelledBy?: string;
   describedBy?: string;
   tabindex?: number;
+  panelRole?: "presentation";
 }>();
 // Only floating content owns nested popups; the reference keeps its original owner.
 provide(
@@ -51,13 +52,18 @@ const skin = useHysRootAttrs();
           { 'hys-ui-popup-enterable': options.enterable !== false },
         ]"
         :style="surface.style.value"
-        :role="kind === 'tooltip' ? 'tooltip' : 'dialog'"
+        :role="panelRole ?? (kind === 'tooltip' ? 'tooltip' : 'dialog')"
         :aria-label="
-          options.ariaLabel ||
-          (kind === 'popover' && !labelledBy ? title || '浮层' : undefined)
+          (!panelRole &&
+            (options.ariaLabel ||
+              (kind === 'popover' && !labelledBy
+                ? title || '浮层'
+                : undefined))) ||
+          undefined
         "
         :aria-labelledby="
-          (!options.ariaLabel &&
+          (!panelRole &&
+            !options.ariaLabel &&
             (labelledBy ??
               (kind === 'popover' && (title || $slots.title)
                 ? surface.titleId

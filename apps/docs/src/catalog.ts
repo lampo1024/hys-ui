@@ -1013,5 +1013,158 @@ export const catalog=[
       "通过下面的交互示例体验组件，配置区可即时调整属性。",
       "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
     ]
+  },
+  {
+    "name": "HysCopyButton",
+    "shortName": "CopyButton",
+    "label": "复制按钮",
+    "slug": "hys-copy-button",
+    "category": "基础组件",
+    "description": "复制纯文本，可异步准备内容、接入系统剪贴板及提供手动复制。",
+    "notes": [
+      "连续触发时只执行一次。prepareText 可接收取消信号，copy 仅在成功写入后触发。",
+      "开启 manualFallback 后，复制失败可选择原文并使用系统复制。"
+    ]
+  },
+  {
+    "name": "HysQRCode",
+    "shortName": "QRCode",
+    "label": "二维码",
+    "slug": "hys-qr-code",
+    "category": "数据展示",
+    "description": "本地编码链接、中文和文本，支持 SVG、Canvas、图标、扫码状态和图片导出。",
+    "notes": [
+      "默认 SVG、白底和 4 模块静区。支持 L、M、Q、H 纠错，中心图标会保留定位模块并按纠错预算缩放。",
+      "过期刷新发出 refresh，由应用更新内容和状态。导出使用原始像素和静区，带图标导出要求图片允许跨域读取。"
+    ]
+  },
+  {
+    "name": "HysInputOtp",
+    "shortName": "InputOtp",
+    "label": "验证码输入",
+    "slug": "hys-input-otp",
+    "category": "表单输入",
+    "description": "用一个输入框完成验证码录入，支持分组、掩码、粘贴与大小写规范。",
+    "notes": [
+      "分组总位数应等于 length。letterCase 在逐字符校验之前执行。",
+      "complete 仅在用户填满并经 v-model 接受后触发，外部回填和表单重置不会触发。"
+    ]
+  },
+  {
+    "name": "HysStatistic",
+    "shortName": "Statistic",
+    "label": "统计展示",
+    "slug": "hys-statistic",
+    "category": "数据展示",
+    "description": "展示动态指标、基准趋势及地区化数字、货币和百分比。",
+    "notes": [
+      "支持精确的十进制字符串。comparisonValue 用于计算趋势，显式 trend 优先。",
+      "可按金额差或百分比变化展示，耗时等指标可将数值降低设为正向。"
+    ]
+  },
+  {
+    "name": "HysPageHeader",
+    "shortName": "PageHeader",
+    "label": "页面头部",
+    "slug": "hys-page-header",
+    "category": "导航布局",
+    "description": "组织页面身份、状态、面包屑和主要操作，支持窄屏折叠及吸顶。",
+    "notes": [
+      "返回由应用响应 back，操作通过 action 返回键。窄容器优先保留首个直显操作。",
+      "标题级别可配置。leading 与 meta 可显示头像、负责人和状态。"
+    ]
+  },
+  {
+    "name": "HysMenu",
+    "shortName": "Menu",
+    "label": "菜单",
+    "slug": "hys-menu",
+    "category": "导航布局",
+    "description": "导航或操作菜单，支持搜索、同级手风琴和键盘查找。",
+    "notes": [
+      "search 匹配标签和 keywords，保留祖先路径；清空恢复原展开状态。",
+      "箭头、Home、End 和字符定位可移动焦点。shortcut 用于展示应用快捷键。"
+    ]
+  },
+  {
+    "name": "HysDropdown",
+    "shortName": "Dropdown",
+    "label": "下拉菜单",
+    "slug": "hys-dropdown",
+    "category": "反馈浮层",
+    "description": "带搜索及单选或多选的操作浮层，支持点击、悬停和自定义触发。",
+    "notes": [
+      "多选默认在选择后保持打开，关闭后保留选中键。",
+      "搜索时保留菜单路径。在输入框按下方向键可进入结果列表，Escape 退回触发器。"
+    ]
+  },
+  {
+    "name": "HysTimePicker",
+    "shortName": "TimePicker",
+    "label": "时间选择器",
+    "slug": "hys-time-picker",
+    "category": "表单输入",
+    "description": "选择或输入时间，支持 12 小时制、快捷选项、秒级步长和禁用时段。",
+    "notes": [
+      "十二小时制只改变输入显示，模型始终使用 24 小时制。",
+      "同一套规则约束手动输入、面板和快捷预设。"
+    ]
+  },
+  {
+    "name": "HysImageViewer",
+    "shortName": "ImageViewer",
+    "label": "图片预览",
+    "slug": "hys-image-viewer",
+    "category": "数据展示",
+    "description": "使用缩略图、键盘和缩放工具浏览图集，支持原始尺寸、平移和循环切换。",
+    "notes": [
+      "v-model:index 支持让页面和图片位置同步。切图后恢复适应视口。",
+      "在放大的图片上可拖动平移。开启 wheelZoom 后按 Ctrl 或 ⌘ 滚轮缩放。"
+    ]
+  },
+  {
+    "name": "HysFilterBar", "shortName": "FilterBar", "label": "筛选栏",
+    "slug": "hys-filter-bar", "category": "表单输入",
+    "description": "组合文本、下拉、数值及日期范围筛选，支持预设与可移除的条件摘要。",
+    "notes": [
+      "条件摘要包括折叠字段。移除条件只修改草稿，点击查询应用。",
+      "常用条件合并到可编辑字段。开启 searchOnPreset 后应用预设时立即查询。"
+    ]
+  },
+  {
+    "name": "HysActionBar", "shortName": "ActionBar", "label": "批量操作栏",
+    "slug": "hys-action-bar", "category": "导航布局",
+    "description": "批量操作、跨页全选和确认，支持每个操作的选择数量限制。",
+    "notes": [
+      "应用维护选择数据，selectAll 发出当前 totalCount。",
+      "minSelection 和 maxSelection 约束操作可用性，危险操作默认要求确认。"
+    ]
+  },
+  {
+    "name": "HysDataView", "shortName": "DataView", "label": "数据视图",
+    "slug": "hys-data-view", "category": "数据展示",
+    "description": "列表和网格视图可搜索、排序、分页，支持加载、错误和重试。",
+    "notes": [
+      "开启 localPagination 从 items 切分本地页。传入 total 时由应用提供当前页并处理筛选排序。",
+      "搜索或排序自动回到第一页，切换布局保留页码。"
+    ]
+  },
+  {
+    "name": "HysRecordPicker", "shortName": "RecordPicker", "label": "记录选择器",
+    "slug": "hys-record-picker", "category": "表单输入",
+    "description": "弹窗选记录，支持跨页多选、已选标签、数量限制和防抖搜索。",
+    "notes": [
+      "已选标签可移除其他页的选项。超过上限的选择不会修改草稿。",
+      "提供 total 启用外部分页，search 与 update:page 变更查询，确认后提交已选键。"
+    ]
+  },
+  {
+    "name": "HysTreeTable", "shortName": "TreeTable", "label": "树形表格",
+    "slug": "hys-tree-table", "category": "数据展示",
+    "description": "展开与检索树形记录，支持按需加载、同级排序和独立或级联选择。",
+    "notes": [
+      "搜索仅查找已加载的数据，匹配子项会保留祖先路径。",
+      "hasChildrenKey 标记尚未加载的分支。读取失败后可从行内重试。"
+    ]
   }
 ] as const

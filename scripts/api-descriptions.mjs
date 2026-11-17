@@ -71,6 +71,117 @@ const textInput = {
 };
 
 const annotations = {
+  HysRecordPicker: { slots: {
+    trigger: '自定义打开入口，提供 open、disabled 和已确认的 keys。',
+    'body-cell': '自定义记录单元格，提供 row、column、value 和当前页显示 index。',
+    empty: '替换没有匹配记录时的内容。',
+  }, events: {
+    'update:modelValue': '确认时发出新的已选键数组，受控宿主接受后才提交变更。',
+    'update:open': '用户打开入口或通过对话框关闭时发出新的显隐状态。',
+    'update:page': '切换分页或搜索回到首页时发出新页码。',
+    search: '提交或清空关键词时发出修剪空白后的关键词。',
+    confirm: '确定成功后发出本次已确认的记录键数组。',
+    cancel: '用户点击取消、关闭按钮、遮罩或按 Escape 关闭时发出，无载荷。',
+    selectionLimit: '选择超出上限时发出上限和请求的选择数量，原有选择保持有效。',
+  } },
+  HysTreeTable: { slots: {
+    'body-cell': '自定义行单元格，提供 row、column、value 和当前视图 index。',
+    'header-cell': '自定义表头，提供 column 和当前排序数组 sorts。',
+    'expand-icon': '自定义分支按钮图标，提供 row、index、expanded、loading 和从 0 开始的 depth。',
+    empty: '替换没有可展示行时的内容。',
+  }, events: {
+    'update:expandedKeys': '操作分支时发出新的展开键数组，配合 v-model:expandedKeys。',
+    'update:selectedRowKeys': '选择变更时发出已选键数组。',
+    expand: '展开生效后发出原始行和当前展开键数组。',
+    collapse: '收起生效后发出原始行和当前展开键数组。',
+    rowClick: '点击数据行时发出行对象、显示索引和鼠标事件。',
+    'update:search': '搜索输入变化时发出关键词，支持 v-model:search。',
+    load: '异步读取分支成功时发出父行和子项数组。',
+    loadError: '异步读取分支失败时发出父行和异常。',
+  } },
+  HysFilterBar: { events: {
+    'update:values': '用户编辑字段或重置到不同值时发出完整筛选草稿，使用 v-model:values 接收。',
+    search: '提交查询后发出当前筛选值的快照。',
+    reset: '点击重置后发出 initialValues 的快照，业务方可据此刷新结果。',
+    preset: '预设应用后发出预设键和已接受的筛选值快照。',
+  } },
+  HysActionBar: { slots: {
+    left: '在选择数量旁添加内容，提供 selectedCount。',
+    right: '在操作按钮后追加入口，提供 selectedCount。',
+  }, events: {
+    action: '激活可用操作后发出操作键。需要确认的项目在确认成功后发出。',
+    clearSelection: '点击清空选择时发出，无载荷。',
+    selectAll: '点击全选时发出 totalCount，调用方负责更新选择。',
+  } },
+  HysDataView: { slots: {
+    'list-item': '渲染列表项，提供当前页的 item 和从 0 开始的 index。',
+    'grid-item': '渲染网格卡片内容，提供当前页的 item 和从 0 开始的 index。',
+    empty: '覆盖加载结束后没有数据时的内容。',
+    toolbar: '在视图切换器前放置搜索或标题，提供 view 和 page。',
+  }, events: {
+    'update:view': '用户请求切换列表或网格时发出新视图，使用 v-model:view 接收。',
+    'update:page': '用户切页或页码因总数减少需要调整时发出新页码。',
+    'update:pageSize': '切换每页条数时发出新的正整数，支持 v-model:pageSize。',
+    'update:search': '编辑搜索框时发出当前关键词，支持 v-model:search。',
+    'update:sort': '改选排序方式时发出排序键，恢复原始顺序时发出 null。',
+    retry: '点击错误状态的重试按钮或调用错误插槽的 retry 时发出，无载荷。',
+  } },
+  HysDropdown: {
+    props: {
+      popupTransition: '菜单的展开和收起动效，支持 scale、fade、slide、slide-fade、none。',
+      popupTransitionDuration: '浮层动画时长，单位毫秒。0 立即切换。',
+    },
+    events: {
+      'update:open': '点击、键盘或悬停请求打开，或者选择操作、点击外部、按 Escape 请求关闭时发出。',
+      select: '激活非禁用的叶子项后发出键以及原始菜单项、路径和原始事件。',
+      'update:selectedKeys': '单选或多选状态变化时发出选中键数组，支持 v-model:selectedKeys。',
+    },
+  },
+  HysMenu: {
+    events: {
+      'update:selectedKeys': '激活叶子项时发出新的选中键数组。',
+      'update:openKeys': '用户展开或收起子菜单时发出新的展开键数组。',
+      select: '激活叶子项时发出键、原始项目、路径和事件。重复激活同一个项目也会发出。',
+    },
+    exposed: {
+      focus: '聚焦第一个或最后一个可用菜单项，参数取 first（默认）或 last。',
+    },
+  },
+  HysImageViewer: { events: {
+    'update:open': '点击关闭按钮、遮罩或按 Escape 时请求关闭。',
+    'update:index': '用户切换图片时发出请求索引，从 0 开始，支持 v-model:index。',
+    change: '切换到不同图片后发出从 0 开始的索引。',
+    close: '关闭生效时发出，无载荷。',
+  }, exposed: {
+    goTo: 'goTo(index) 跳转到指定图片，受控更新被接受时返回 true。',
+    actualSize: '按原始像素大小显示，保留旋转角度。',
+    fit: '缩放至适应视口，保留旋转角度。',
+  } },
+  HysTimePicker: { events: {
+    'update:modelValue': '提交有效时间或清空时发出格式化字符串或 null。',
+    change: '用户提交后值实际更新时发出新值。',
+    invalid: '输入未通过校验时发出原始文本及原因 format 或 range。',
+  } },
+  HysCopyButton: { events: {
+    copy: '剪贴板写入成功后发出实际复制的文本。',
+    error: '写入失败时发出异常及请求复制的文本。',
+  }, exposed: {
+    copy: '执行一次复制，剪贴板写入成功时返回 true。复制进行中拒绝重复请求。',
+  } },
+  HysInputOtp: { events: {
+    'update:modelValue': '用户输入或粘贴后发出过滤及截断的字符串。',
+    complete: '用户输入达到配置位数且被调用方接受后发出完整验证码。外部赋值不触发。',
+    change: '用户编辑被接受后发出当前验证码，可为未填满的字符串。',
+  } },
+  HysPageHeader: { events: {
+    back: '点击或用键盘激活返回按钮时发出点击事件。',
+    action: '点击可用的页面操作或从更多菜单选择时发出操作键。',
+  } },
+  HysQRCode: { events: {
+    refresh: '用户在过期状态下请求刷新时发出，调用方更新 value 和 status。',
+  }, exposed: {
+    exportImage: 'exportImage(format, size) 导出 SVG 或 PNG Blob，默认 SVG 和当前边长。PNG 采用整数模块，空值、非 active 或导出失败时返回 null。',
+  } },
   HysAccordion: {
     props: { headingLevel: '面板标题使用的原生标题级别，接受 2–6，默认 3。' },
     exposed: {
