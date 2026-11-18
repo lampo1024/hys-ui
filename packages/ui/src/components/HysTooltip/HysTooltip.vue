@@ -31,7 +31,7 @@ const emit = defineEmits<{
   opened: [];
   closed: [];
 }>();
-defineSlots<HysTooltipSlots>();
+const slots = defineSlots<HysTooltipSlots>();
 const skin = useHysRootAttrs(),
   surface = usePopupSurface(props, "tooltip", (name, ...args) =>
     (emit as any)(name, ...args),
@@ -71,7 +71,7 @@ defineExpose({
       @element="surface.referenceElement.value = $event"
       ><slot v-bind="surface.scope.value"
     /></PopupReference>
-    <PopupSurfacePanel :surface="surface" :options="props" kind="tooltip">
+    <PopupSurfacePanel :surface="surface" :options="props" kind="tooltip" :empty="!text?.trim() && !slots.content">
       <template #default="scope"
         ><slot name="content" v-bind="scope">{{ text }}</slot></template
       >

@@ -1008,10 +1008,13 @@ export const catalog=[
     "label": "富文本编辑",
     "slug": "hys-rich-text-editor",
     "category": "编辑工具",
-    "description": "富文本编辑的独立交互示例、配置场景与类型参考。",
+    "description": "编辑公告、知识库和商品详情，通过 HTML 保存正文。",
     "notes": [
-      "通过下面的交互示例体验组件，配置区可即时调整属性。",
-      "v-model 与事件由调用方维护状态；点击重置可恢复当前场景。"
+      "开启 showBlockTools 可使用标题与引用。图片使用 HTTPS 地址，点击正文中的图片可选中并编辑。",
+      "选中图片后可拖动右下角手柄调整宽高。按住 Shift 锁定原始比例，按 Esc 可取消本次拖动。",
+      "表格外可插入 1–50 行、1–20 列的新表格。表格内可增删行列，删除最后一行或一列会移除表格。按 Tab 或 Shift + Tab 切换单元格，到表格边界时恢复常规焦点导航。",
+      "可粘贴 HTML 表格和制表符分隔的数据。粘贴到现有表格时从当前单元格开始覆盖，按需扩展行列。含合并单元格的源表可作为独立表格粘贴到正文。",
+      "用 HTML v-model 保存正文。粘贴时可保留安全格式，也可按需切换为纯文本。"
     ]
   },
   {
@@ -1166,5 +1169,140 @@ export const catalog=[
       "搜索仅查找已加载的数据，匹配子项会保留祖先路径。",
       "hasChildrenKey 标记尚未加载的分支。读取失败后可从行内重试。"
     ]
+  },
+  {
+    "name": "HysOverflowText",
+    "shortName": "OverflowText",
+    "label": "文本溢出",
+    "slug": "hys-overflow-text",
+    "category": "基础组件",
+    "description": "按容器宽度测量文本，支持单行或多行省略、提示全文和展开。",
+    "notes": []
+  },
+  {
+    "name": "HysTag",
+    "shortName": "Tag",
+    "label": "标签",
+    "slug": "hys-tag",
+    "category": "数据展示",
+    "description": "展示语义标签，支持外观、尺寸、关闭和选择。",
+    "notes": []
+  },
+  {
+    "name": "HysBarcode",
+    "shortName": "Barcode",
+    "label": "条形码",
+    "slug": "hys-barcode",
+    "category": "数据展示",
+    "description": "编码商品与物流条码，支持五种格式、校验位、SVG 和 Canvas。",
+    "notes": []
+  },
+  {
+    "name": "HysSplitButton",
+    "shortName": "SplitButton",
+    "label": "分割按钮",
+    "slug": "hys-split-button",
+    "category": "基础组件",
+    "description": "并列放置主操作与更多操作，共用按钮和菜单交互。",
+    "notes": []
+  },
+  {
+    "name": "HysDateTimePicker",
+    "shortName": "DateTimePicker",
+    "label": "日期时间选择",
+    "slug": "hys-date-time-picker",
+    "category": "表单输入",
+    "description": "一次选择日期与时间，可配置显示格式、时间限制和快捷项。",
+    "notes": []
+  },
+  {
+    "name": "HysList",
+    "shortName": "List",
+    "label": "列表",
+    "slug": "hys-list",
+    "category": "数据展示",
+    "description": "用标题、头像、描述和操作整理分组记录。",
+    "notes": []
+  },
+  {
+    "name": "HysStepForm",
+    "shortName": "StepForm",
+    "label": "分步表单",
+    "slug": "hys-step-form",
+    "category": "表单输入",
+    "description": "将共同的数据模型分步展示和校验，完成后交给业务提交。",
+    "notes": []
+  },
+  {
+    "name": "HysKeyValueEditor",
+    "shortName": "KeyValueEditor",
+    "label": "键值编辑器",
+    "slug": "hys-key-value-editor",
+    "category": "表单输入",
+    "description": "编辑并排序键值对，反馈重复键错误，并将有效结果转换为对象。",
+    "notes": []
+  },
+  {
+    "name": "HysVirtualList",
+    "shortName": "VirtualList",
+    "label": "虚拟列表",
+    "slug": "hys-virtual-list",
+    "category": "数据展示",
+    "description": "在固定行高的滚动视口中按需渲染，支持按索引或稳定键定位。",
+    "notes": []
+  },
+  {
+    "name": "HysInputMask",
+    "shortName": "InputMask",
+    "label": "输入掩码",
+    "slug": "hys-input-mask",
+    "category": "表单输入",
+    "description": "自动整理手机、日期、时间及自定义编号，输出原始文本。",
+    "notes": []
+  },
+  {
+    "name": "HysSidebar",
+    "shortName": "Sidebar",
+    "label": "侧边导航",
+    "slug": "hys-sidebar",
+    "category": "导航布局",
+    "description": "把同一菜单放入内嵌、固定或抽屉式导航，支持图标折叠。",
+    "notes": []
+  },
+  {
+    "name": "HysImageGallery",
+    "shortName": "ImageGallery",
+    "label": "图片画廊",
+    "slug": "hys-image-gallery",
+    "category": "数据展示",
+    "description": "用网格或缩略列表浏览图片，支持多选及原图预览。",
+    "notes": []
+  },
+  {
+    "name": "HysAnchor",
+    "shortName": "Anchor",
+    "label": "锚点导航",
+    "slug": "hys-anchor",
+    "category": "导航布局",
+    "description": "随页面或指定容器滚动高亮目录，支持嵌套章节与页头偏移。",
+    "notes": []
+  },
+  {
+    "name": "HysFloatButton",
+    "shortName": "FloatButton",
+    "label": "悬浮操作",
+    "slug": "hys-float-button",
+    "category": "导航布局",
+    "description": "将常用操作和返回顶部放在视口或容器角落。",
+    "notes": []
+  },
+  {
+    "name": "HysWatermark",
+    "shortName": "Watermark",
+    "label": "水印",
+    "slug": "hys-watermark",
+    "category": "数据展示",
+    "description": "为指定区域平铺文字或图片水印，保留正文操作。",
+    "notes": []
   }
 ] as const

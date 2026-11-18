@@ -29,8 +29,20 @@ function path(regions: QrLogo["regions"]) {
     .map(({ x, y, width }) => `M${x} ${y}h${width}v1h-${width}z`)
     .join("");
 }
-export function qrPath(matrix: Int8Array[], margin: number) {
-  return path(runs(matrix, margin));
+export type QrModuleShape = "square" | "rounded" | "dot";
+export function qrPath(matrix: Int8Array[], margin: number, modules?: Int16Array[], shape: QrModuleShape = "square") {
+  if (shape === "square" || !modules) return path(runs(matrix, margin));
+  const result: string[] = [];
+  for (let row = 0; row < matrix.length; row++) {
+    for (let column = 0; column < matrix[row].length; column++) {
+      if (!matrix[row][column]) continue;
+      const x = margin + column, y = margin + row;
+      if (modules[row][column] < 0) result.push(`M${x} ${y}h1v1h-1z`);
+      else if (shape === "dot") result.push(`M${x + .5} ${y + .04}a.46 .46 0 1 1 0 .92a.46 .46 0 1 1 0 -.92z`);
+      else result.push(`M${x + .2} ${y}h.6q.2 0 .2 .2v.6q0 .2 -.2 .2h-.6q-.2 0 -.2 -.2v-.6q0 -.2 .2 -.2z`);
+    }
+  }
+  return result.join("");
 }
 export function logoRegion(
   symbol: QrSymbol,
@@ -76,6 +88,7 @@ export function drawCode(
   background: string,
   logo?: QrLogo,
   image?: HTMLImageElement,
+  styledPath?: string,
 ) {
   const extent = matrix.length + margin * 2;
   const scale = Math.max(1, Math.floor(Math.min(4096, requested) / extent));
@@ -87,8 +100,9 @@ export function drawCode(
   context.fillStyle = background;
   context.fillRect(0, 0, extent, extent);
   context.fillStyle = foreground;
-  for (const { x, y, width } of runs(matrix, margin))
-    context.fillRect(x, y, width, 1);
+  const Path = typeof Path2D === "function" ? Path2D : undefined;
+  if (styledPath && Path) context.fill(new Path(styledPath));
+  else for (const { x, y, width } of runs(matrix, margin)) context.fillRect(x, y, width, 1);
   if (logo && image) {
     context.save();
     context.beginPath();

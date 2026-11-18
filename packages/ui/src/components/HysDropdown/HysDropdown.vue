@@ -54,6 +54,10 @@ export interface HysDropdownProps extends HysPopupMotionProps {
   maxHeight?: number | string;
   /** 选择后关闭。默认普通操作和单选关闭，多选保持打开。 */
   closeOnSelect?: boolean;
+  /** 按 Escape 时关闭，默认 true。 */
+  closeOnEscape?: boolean;
+  /** 点击浮层外部时关闭，默认 true。 */
+  closeOnOutside?: boolean;
   /** 启用带选中标记的单选或多选菜单。 */
   selectionMode?: "single" | "multiple";
   /** 受控选中键，支持 v-model:selectedKeys。 */
@@ -70,6 +74,8 @@ export interface HysDropdownProps extends HysPopupMotionProps {
 
 const props = withDefaults(defineProps<HysDropdownProps>(), {
   open: undefined,
+  closeOnEscape: true,
+  closeOnOutside: true,
   trigger: "click",
   placement: "bottom-end",
   label: "更多操作",
@@ -78,6 +84,8 @@ const props = withDefaults(defineProps<HysDropdownProps>(), {
   searchLabel: "搜索选项",
 });
 const emit = defineEmits<{
+  /** 异步菜单操作失败时发出键和错误。 */
+  selectError: [key: HysMenuKey, error: unknown];
   "update:open": [open: boolean];
   select: [key: HysMenuKey, context: HysMenuSelection];
   /** 单选或多选值变化时发出选中的键。 */
@@ -119,13 +127,15 @@ const showSelection = computed(() =>
     props.selectionMode || props.selectedKeys || props.defaultSelectedKeys,
   ),
 );
-function updateSelection(next: readonly HysMenuKey[]) {
-  if (showSelection.value)
-    void selection.commit(
-      next,
-      (keys) => emit("update:selectedKeys", keys),
-      () => {},
-    );
+function updateSelection(key: HysMenuKey) {
+  if (!showSelection.value) return;
+  const current = menuKeys(selection.current.value);
+  const next = props.selectionMode !== "multiple"
+    ? [key]
+    : current.includes(key)
+      ? current.filter(value => value !== key)
+      : [...current, key];
+  void selection.commit(next, keys => emit("update:selectedKeys", keys), () => {});
 }
 const options = reactive({
   ...toRefs(props),
@@ -142,6 +152,7 @@ const surface = usePopupSurface(options, "popover", (event, value) => {
   if (event === "update:open") emit("update:open", value);
 });
 const menuId = surface.id + "-menu";
+let openRevision = 0;
 
 function customOptions() {
   return Array.from(
@@ -196,6 +207,7 @@ function customKey(event: KeyboardEvent) {
 watch(
   surface.open,
   (open) => {
+    openRevision++;
     if (!open) {
       focusRequest.value = undefined;
       query.value = "";
@@ -226,7 +238,7 @@ function activate(event: MouseEvent) {
 }
 
 function triggerKey(event: KeyboardEvent) {
-  if (disabled.value || event.defaultPrevented || event.isComposing) return;
+  if (disabled.value || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
   event.preventDefault();
   const edge = event.key === "ArrowUp" ? "last" : "first";
@@ -238,9 +250,37 @@ function triggerKey(event: KeyboardEvent) {
 function close() {
   return surface.request(false, true);
 }
-function select(key: HysMenuKey, context: HysMenuSelection) {
+const pending = ref<HysMenuKey>();
+const pendingItems = computed(() => {
+  if (pending.value === undefined) return props.items ?? [];
+  const render = (items: readonly HysMenuItem[]): HysMenuItem[] => items.map(item => {
+    if ("children" in item && item.children?.length) return { ...item, children: render(item.children) };
+    if ("key" in item && item.key === pending.value) return { ...item, loading: true };
+    return item;
+  });
+  return render(props.items ?? []);
+});
+async function select(key: HysMenuKey, context: HysMenuSelection) {
+  if (pending.value !== undefined) {
+    context.event.preventDefault();
+    return;
+  }
+  const revision = openRevision;
+  const action = "action" in context.item ? context.item.action : undefined;
+  if (action) {
+    pending.value = key;
+    try {
+      if (await action(context) === false) return;
+    } catch (error) {
+      emit("selectError", key, error);
+      return;
+    } finally {
+      pending.value = undefined;
+    }
+  }
+  updateSelection(key);
   emit("select", key, context);
-  if (props.closeOnSelect ?? props.selectionMode !== "multiple") void close();
+  if (surface.open.value && revision === openRevision && (props.closeOnSelect ?? props.selectionMode !== "multiple")) void close();
 }
 </script>
 
@@ -308,7 +348,7 @@ function select(key: HysMenuKey, context: HysMenuSelection) {
         <HysMenu
           :id="menuId"
           ref="menu"
-          :items="items ?? []"
+          :items="pendingItems"
           mode="actions"
           :aria-label="ariaLabel ?? label"
           :max-height="maxHeight"
@@ -316,7 +356,6 @@ function select(key: HysMenuKey, context: HysMenuSelection) {
           :selection-mode="selectionMode"
           :selected-keys="showSelection ? selection.current.value : undefined"
           :empty-text="emptyText"
-          @update:selected-keys="updateSelection"
           @select="select"
         >
           <template v-if="$slots.item" #item="scope"

@@ -71,11 +71,128 @@ const textInput = {
 };
 
 const annotations = {
+  HysBarcode: { exposed: { exportImage: "导出 PNG 或 SVG Blob，默认 SVG，编码无效时返回 null。" } },
+  HysVirtualList: {
+    "events": {
+      "scroll": "滚动时发出视口主轴当前的像素位置。",
+      "loadMore": "滚动至加载距离时发出，当前数据长度最多触发一次。",
+      "activate": "键盘按 Enter 后发出当前条目和索引。"
+    }
+  },
+  HysTag: {
+    "events": {
+      "close": "点击关闭按钮后发出，由调用方移除标签。",
+      "closeError": "关闭拦截回调抛出错误时发出。",
+      "selectItem": "标签组内某项改变选中时发出键和状态。",
+      "closeItem": "关闭标签组内某项时发出键和点击事件。",
+      "click": "激活未禁用的标签主体时发出点击事件。",
+      "update:selected": "可选标签激活时发出新状态。"
+    }
+  },
+  HysStepForm: {
+    "events": {
+      "change": "进入不同步骤时发出从 0 开始的新索引。",
+      "cancel": "用户激活取消入口时发出。",
+      "finish": "最后一步通过校验时发出完整模型数据。",
+      "invalid": "提交当前步骤但校验失败时发出表单验证结果。",
+      "update:current": "进入另一可用步骤时发出其原始索引。",
+      "restoreDraft": "读取有效草稿时发出草稿字段和步骤索引。",
+      "processError": "草稿操作或步骤校验回调异常时发出错误。"
+    }
+  },
+  HysSplitButton: {
+    "events": {
+      "click": "点击主操作时发出 MouseEvent。",
+      "select": "选择更多操作时发出键及原始菜单项、路径和事件。",
+      "selectError": "下拉操作的异步回调失败时发出操作键和错误。",
+      "primary": "激活主按钮时发出当前主操作键和点击事件。",
+      "update:primaryKey": "记忆下拉选中操作时请求更新主操作键。"
+    }
+  },
+  HysSidebar: {
+    "events": {
+      "update:open": "请求打开或关闭导航抽屉时发出。",
+      "select": "激活导航叶项时发出菜单键及原始上下文。",
+      "update:collapsed": "切换图标与完整模式时发出折叠状态。",
+      "update:selectedKeys": "菜单选中项变化后发出所选键数组。",
+      "update:openKeys": "菜单展开状态变化后发出键数组。",
+      "update:width": "拖拽或键盘调整宽度时请求更新像素值。"
+    }
+  },
+  HysOverflowText: {
+    "events": {
+      "overflow": "文本布局从可完整展示变为溢出，或从溢出恢复时，发出布尔状态。",
+      "update:expanded": "激活展开或收起按钮时发出新展开状态。"
+    }
+  },
+  HysList: {
+    "events": {
+      "itemClick": "可操作行被激活时发出条目数据和点击事件。",
+      "update:items": "排序后请求更新条目数组。",
+      "update:selectedKeys": "激活单选或多选项时请求更新键数组。",
+      "loadMore": "操作加载入口或虚拟视口滚动到末端时发出。"
+    }
+  },
+  HysKeyValueEditor: {
+    "events": {
+      "update:modelValue": "编辑、插入、删除或重新排序时发出新行数组。",
+      "change": "发出新行数组和有效对象，存在无效键或重复键时结果为 null。"
+    },
+    "exposed": {
+      "getObject": "读取当前有效的键值对象，存在行错误时返回 null。",
+      "importText": "追加 JSON 对象或每行键值文本到编辑器，完成请求时返回 true。"
+    }
+  },
+  HysInputMask: {
+    "events": {
+      "update:modelValue": "合法字符变化时发出不含格式分隔符的原始值。",
+      "change": "原始值变化时发出原始字符串和格式化文本。",
+      "update:formatted": "原始值变化后发出含分隔符的字符串。",
+      "clear": "通过清空按钮清除内容后发出。"
+    },
+    "exposed": {
+      "focus": "聚焦内部的输入框。"
+    }
+  },
+  HysImageGallery: {
+    "events": {
+      "update:selectedKeys": "选择、全选或清理本页选择后，发出所有选中的图片键。",
+      "preview": "点击缩略图时发出图片及其从 0 开始的索引。",
+      "update:layout": "切换列表、网格或瀑布流时发出布局。",
+      "update:items": "同组内拖拽后发出完整图片数组。",
+      "remove": "确认批量删除后发出本页可移除的选中键。",
+      "upload": "选择图片附件后发出 File 数组。"
+    }
+  },
+  HysFloatButton: {
+    "events": {
+      "action": "点击可用子操作时发出该操作的键。",
+      "click": "激活主按钮时发出原始点击事件。",
+      "update:open": "打开或收起操作组时发出，支持 v-model:open。"
+    }
+  },
+  HysDateTimePicker: {
+    "events": {
+      "invalid": "日期时间无效或超出配置的范围时发出原因及解析结果。",
+      "update:modelValue": "提交日期时间或清空时请求更新绑定值。",
+      "change": "接受新值时发出值及日期控件操作上下文。",
+      "clear": "用户通过输入框清空按钮清除值后发出。"
+    }
+  },
+  HysAnchor: {
+    "events": {
+      "update:modelValue": "点击或滚动确定当前章节时发出目标 id。",
+      "navigate": "点击并滚动到有效目标后发出目录条目。"
+    }
+  },
   HysRecordPicker: { slots: {
     trigger: '自定义打开入口，提供 open、disabled 和已确认的 keys。',
     'body-cell': '自定义记录单元格，提供 row、column、value 和当前页显示 index。',
     empty: '替换没有匹配记录时的内容。',
   }, events: {
+    "retry": "用户点击重试时发出，由调用方重新加载当前查询结果。",
+    "update:view": "切换表格或卡片布局时发出新视图。",
+    "update:pageSize": "分页控件选择新页大小时请求更改条数。",
     'update:modelValue': '确认时发出新的已选键数组，受控宿主接受后才提交变更。',
     'update:open': '用户打开入口或通过对话框关闭时发出新的显隐状态。',
     'update:page': '切换分页或搜索回到首页时发出新页码。',
@@ -99,8 +216,14 @@ const annotations = {
     load: '异步读取分支成功时发出父行和子项数组。',
     loadError: '异步读取分支失败时发出父行和异常。',
   } },
-  HysFilterBar: { events: {
+  HysFilterBar: { exposed: {
+    serialize: '返回可序列化的筛选草稿 JSON 字符串。',
+    validate: '校验当前字段，返回是否通过。',
+  }, events: {
+    presetSave: '用户确认保存筛选方案后发出名称和筛选值快照。',
+    "clear": "点击清空全部时提供空对象，区别于恢复初始值的重置。",
     'update:values': '用户编辑字段或重置到不同值时发出完整筛选草稿，使用 v-model:values 接收。',
+    'update:hiddenKeys': '字段显隐改变时发出完整隐藏字段键数组，使用 v-model:hiddenKeys 接收。已填写的条件仍参与查询。',
     search: '提交查询后发出当前筛选值的快照。',
     reset: '点击重置后发出 initialValues 的快照，业务方可据此刷新结果。',
     preset: '预设应用后发出预设键和已接受的筛选值快照。',
@@ -112,6 +235,7 @@ const annotations = {
     action: '激活可用操作后发出操作键。需要确认的项目在确认成功后发出。',
     clearSelection: '点击清空选择时发出，无载荷。',
     selectAll: '点击全选时发出 totalCount，调用方负责更新选择。',
+    undo: '激活撤销入口时发出。',
   } },
   HysDataView: { slots: {
     'list-item': '渲染列表项，提供当前页的 item 和从 0 开始的 index。',
@@ -119,7 +243,10 @@ const annotations = {
     empty: '覆盖加载结束后没有数据时的内容。',
     toolbar: '在视图切换器前放置搜索或标题，提供 view 和 page。',
   }, events: {
-    'update:view': '用户请求切换列表或网格时发出新视图，使用 v-model:view 接收。',
+    'update:view': '用户请求切换列表、卡片或网格时发出新视图，使用 v-model:view 接收。',
+    'update:selectedKeys': '当前选择变化后发出全部选中记录键。',
+    batchAction: '批量操作生效后发出动作键和选中记录键。',
+    loadMore: '滚动到加载入口或点击加载更多时发出。',
     'update:page': '用户切页或页码因总数减少需要调整时发出新页码。',
     'update:pageSize': '切换每页条数时发出新的正整数，支持 v-model:pageSize。',
     'update:search': '编辑搜索框时发出当前关键词，支持 v-model:search。',
@@ -133,7 +260,8 @@ const annotations = {
     },
     events: {
       'update:open': '点击、键盘或悬停请求打开，或者选择操作、点击外部、按 Escape 请求关闭时发出。',
-      select: '激活非禁用的叶子项后发出键以及原始菜单项、路径和原始事件。',
+      select: '激活叶子项且其异步操作成功后发出键、菜单项、路径和原始事件。',
+      selectError: '异步菜单操作失败时发出键和异常。',
       'update:selectedKeys': '单选或多选状态变化时发出选中键数组，支持 v-model:selectedKeys。',
     },
   },
@@ -179,8 +307,11 @@ const annotations = {
   } },
   HysQRCode: { events: {
     refresh: '用户在过期状态下请求刷新时发出，调用方更新 value 和 status。',
+    copyImage: '二维码 PNG 成功写入剪贴板时发出。',
+    copyError: '图片生成或写入剪贴板失败时发出异常。',
   }, exposed: {
     exportImage: 'exportImage(format, size) 导出 SVG 或 PNG Blob，默认 SVG 和当前边长。PNG 采用整数模块，空值、非 active 或导出失败时返回 null。',
+    copyImage: '复制当前二维码 PNG，返回是否成功。',
   } },
   HysAccordion: {
     props: { headingLevel: '面板标题使用的原生标题级别，接受 2–6，默认 3。' },

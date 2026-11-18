@@ -7,9 +7,9 @@ const items: HysMenuItem[] = [
     key: "delivery",
     label: "交付操作",
     children: [
-      { key: "packing", label: "打印装箱单", keywords: ["print", "PDF"] },
+      { key: "packing", label: "打印装箱单", keywords: ["print", "PDF"], shortcut: "Alt+P" },
       { key: "export", label: "导出核对数据", keywords: ["csv", "download"] },
-      { key: "reopen", label: "重新打开批次", disabled: true },
+      { key: "reopen", label: "重新打开批次", description: "批次已签收", disabled: true },
     ],
   },
   {

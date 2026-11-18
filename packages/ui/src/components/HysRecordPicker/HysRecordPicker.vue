@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends object">
-import { computed, ref, watch, type VNodeChild } from "vue";
+import { computed, ref, shallowRef, watch, type VNodeChild } from "vue";
 import { useChoiceModel } from "../../composables/choiceModel";
 import { isGridKey } from "../../composables/gridCore";
 import {
@@ -8,8 +8,12 @@ import {
   type HysTableKey,
 } from "../../composables/table";
 import HysButton from "../HysButton/HysButton.vue";
+import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
+import HysDataView from "../HysDataView/HysDataView.vue";
+import HysSegmented from "../HysSegmented/HysSegmented.vue";
 import HysBadge from "../HysBadge/HysBadge.vue";
 import HysScrollbar from "../HysScrollbar/HysScrollbar.vue";
+import HysDrawer from "../HysDrawer/HysDrawer.vue";
 import HysModal from "../HysModal/HysModal.vue";
 import HysPagination from "../HysPagination/HysPagination.vue";
 import HysSearch from "../HysSearch/HysSearch.vue";
@@ -38,6 +42,8 @@ export interface HysRecordPickerProps<T extends object> {
   page?: number;
   /** 每页条数，默认 10。 */
   pageSize?: number;
+  /** 提供页大小选项并启用切换，由调用方回写 pageSize。 */
+  pageSizes?: readonly number[];
   /** 传入后启用外部分页，搜索与页码变化交由宿主处理。 */
   total?: number;
   /** 正在加载记录。加载期间暂停选择、确定和分页。 */
@@ -58,10 +64,22 @@ export interface HysRecordPickerProps<T extends object> {
   maxSelected?: number;
   /** 在弹窗内显示可移除的已选记录标记，跨页保留名称。 */
   showSelected?: boolean;
+  /** 在弹窗中提供只看已选的开关。未知记录保留键和移除入口。 */
+  selectionFilter?: boolean;
+  /** 确认后记住最近选择的键，并提供回选入口。数量范围 0–20，默认 0。 */
+  recentLimit?: number;
+  /** 表格或卡片视图，支持 v-model:view。省略时默认表格。 */
+  view?: "table" | "cards";
+  /** 允许在表格和卡片之间切换。 */
+  viewSwitch?: boolean;
   /** 格式化已选记录名称。默认使用首列标量字段或记录键。 */
   recordLabel?: (row: T, key: HysTableKey) => string;
   /** 弹窗标题，默认「选择记录」。 */
   title?: string;
+  /** 使用弹窗或右侧抽屉，默认 modal。 */
+  presentation?: "modal" | "drawer";
+  /** 加载失败时的提示。错误状态暂停选择。 */
+  error?: string;
   /** 覆盖入口、搜索、状态和操作文案。selected 支持 {count}。 */
   labels?: Partial<{
     trigger: string;
@@ -91,10 +109,16 @@ const emit = defineEmits<{
   "update:modelValue": [keys: HysTableKey[]];
   "update:open": [open: boolean];
   "update:page": [page: number];
+  /** 请求更新每页条数，页码变更沿用分页事件。 */
+  "update:pageSize": [size: number];
+  /** 在表格和卡片之间切换时发出视图。 */
+  "update:view": [view: "table" | "cards"];
   search: [keyword: string];
   confirm: [keys: HysTableKey[]];
   cancel: [];
   /** 选择操作超出上限时发出上限和本次请求数量。 */
+  /** 点击重试时发出，调用方重新加载当前页。 */
+  retry: [];
   selectionLimit: [limit: number, requested: number];
 }>();
 defineSlots<{
@@ -110,6 +134,10 @@ defineSlots<{
     index: number;
   }) => VNodeChild;
   empty?: () => VNodeChild;
+  /** 搜索区下方的业务筛选控件。 */
+  filters?: () => VNodeChild;
+  /** 卡片中的自定义记录信息与选中状态。 */
+  card?: (scope: { row: T; selected: boolean }) => VNodeChild;
 }>();
 const labels = computed(() => ({
   trigger: "选择记录",
@@ -158,6 +186,17 @@ const paging = useChoiceModel(
   () => 1,
 );
 const open = visibility.current;
+const selectedOnly = ref(false);
+const localView = ref<"table" | "cards">("table");
+const activeView = computed(() => props.view ?? localView.value);
+const viewOptions = [{ value: "table", label: "表格" }, { value: "cards", label: "卡片" }] as const;
+const recent = ref<HysTableKey[]>([]);
+const cached = shallowRef(new Map<HysTableKey, T>());
+const recentMax = computed(() => Number.isFinite(props.recentLimit) ? Math.max(0, Math.min(20, Math.floor(props.recentLimit!))) : 0);
+function setView(view: "table" | "cards") {
+  localView.value = view;
+  emit("update:view", view);
+}
 const confirmed = computed(() => keys(selection.current.value));
 const draft = ref<HysTableKey[]>([]);
 const selectedNames = ref(new Map<HysTableKey, string>());
@@ -181,6 +220,7 @@ const validSelection = computed(
 const searchText = ref("");
 const term = ref("");
 const busy = computed(() => !!(props.disabled || props.loading));
+const selectionBlocked = computed(() => busy.value || !!props.error);
 const isRemote = computed(() => props.total !== undefined);
 const size = computed(() =>
   Number.isFinite(props.pageSize)
@@ -190,6 +230,7 @@ const size = computed(() =>
 watch(
   [open, confirmed],
   ([visible, keys], [wasVisible, previous]) => {
+    if (visible && !wasVisible) selectedOnly.value = false;
     if (visible && (!wasVisible || !previous || !sameKeys(keys, previous))) {
       draft.value = [...keys];
       limitNotice.value = false;
@@ -227,26 +268,41 @@ const searchFields = computed(() => {
   }
   return fields;
 });
+function rowLabel(row: T, key: HysTableKey) {
+  const first = searchFields.value[0];
+  const label = first === undefined ? undefined : tableValue(row, first);
+  return props.recordLabel?.(row, key) ??
+    (typeof label === "string" || typeof label === "number" ? String(label) : String(key));
+}
+watch([validRows, draft, confirmed, recent], () => {
+  const wanted = new Set([...draft.value, ...confirmed.value, ...recent.value]);
+  const records = new Map([...cached.value].filter(([key]) => wanted.has(key)));
+  for (const row of validRows.value) {
+    const key = getKey(row);
+    if (isGridKey(key) && wanted.has(key)) records.set(key, row);
+  }
+  cached.value = records;
+}, { immediate: true });
+const chosenRows = computed(() => draft.value.flatMap(key => {
+  const row = cached.value.get(key);
+  return row ? [row] : [];
+}));
+const recentRows = computed(() => recent.value.slice(0, recentMax.value).flatMap(key => {
+  const row = cached.value.get(key);
+  return row ? [{ key, row }] : [];
+}));
 watch(
-  [validRows, draft, () => props.recordLabel, () => props.showSelected, open],
+  [validRows, draft, () => props.recordLabel, () => props.showSelected, () => props.selectionFilter, open],
   () => {
-    if (!props.showSelected || !open.value) return;
+    if ((!props.showSelected && !props.selectionFilter) || !open.value) return;
     const wanted = new Set(draft.value);
     const names = new Map(
       [...selectedNames.value].filter(([key]) => wanted.has(key)),
     );
-    const first = searchFields.value[0];
     for (const row of validRows.value) {
       const key = getKey(row);
       if (!isGridKey(key) || !wanted.has(key)) continue;
-      const label = first === undefined ? undefined : tableValue(row, first);
-      names.set(
-        key,
-        props.recordLabel?.(row, key) ??
-          (typeof label === "string" || typeof label === "number"
-            ? String(label)
-            : String(key)),
-      );
+      names.set(key, rowLabel(row, key));
     }
     selectedNames.value = names;
   },
@@ -318,7 +374,7 @@ function search(text: string) {
   emit("search", term.value);
 }
 function updateDraft(next: readonly HysTableKey[]) {
-  if (busy.value) return;
+  if (selectionBlocked.value) return;
   const normalized = keys(next);
   if (
     normalized.length > maximum.value &&
@@ -331,15 +387,27 @@ function updateDraft(next: readonly HysTableKey[]) {
   limitNotice.value = false;
   draft.value = normalized;
 }
+function toggleRow(row: T) {
+  const key = getKey(row);
+  if (!isGridKey(key) || selectionBlocked.value || props.rowDisabled?.(row)) return;
+  updateDraft(draft.value.includes(key)
+    ? (props.multiple ? draft.value.filter(item => item !== key) : draft.value)
+    : (props.multiple ? [...draft.value, key] : [key]));
+}
+const cardRows = computed(() => (selectedOnly.value ? chosenRows.value : displayed.value).flatMap(row => {
+  const key = getKey(row);
+  return isGridKey(key) ? [{ key, row, label: rowLabel(row, key) }] : [];
+}));
 async function save() {
-  if (busy.value || !validSelection.value) return false;
+  if (selectionBlocked.value || !validSelection.value) return false;
   const next = [...draft.value];
-  if (sameKeys(selection.current.value, next)) return true;
-  return selection.commit(
+  const accepted = sameKeys(selection.current.value, next) || await selection.commit(
     next,
     (value) => emit("update:modelValue", [...value]),
     () => {},
   );
+  if (accepted && recentMax.value) recent.value = [...new Set([...next, ...recent.value])].slice(0, recentMax.value);
+  return accepted;
 }
 </script>
 
@@ -362,17 +430,18 @@ async function save() {
       }}<template v-if="confirmed.length"> · {{ confirmed.length }}</template>
     </HysButton>
   </slot>
-  <HysModal
+  <component
+    :is="presentation === 'drawer' ? HysDrawer : HysModal"
     :open="open"
     :title="title"
     width="min(94vw, 780px)"
-    drag-mode="preview"
+    v-bind="presentation === 'drawer' ? {} : { dragMode: 'preview' }"
     footer
     initial-focus=".hys-record-picker-search input"
     :ok-text="labels.confirm"
     :cancel-text="labels.cancel"
     :close-text="labels.close"
-    :confirm-disabled="busy || !validSelection"
+    :confirm-disabled="selectionBlocked || !validSelection"
     :before-confirm="save"
     @update:open="setOpen"
     @cancel="emit('cancel')"
@@ -400,7 +469,7 @@ async function save() {
           v-if="draft.length"
           size="sm"
           variant="ghost"
-          :disabled="busy"
+          :disabled="selectionBlocked"
           @click="updateDraft([])"
           >{{ labels.clear }}</HysButton
         >
@@ -420,8 +489,13 @@ async function save() {
           )
         }}
       </div>
+      <div v-if="selectionFilter || viewSwitch" class="hys-record-picker-view-options">
+        <HysCheckbox v-if="selectionFilter" v-model="selectedOnly" :disabled="busy">只看已选</HysCheckbox>
+        <HysSegmented v-if="viewSwitch" :options="viewOptions" :model-value="activeView" :disabled="busy"
+          size="sm" aria-label="记录视图" @update:model-value="setView" />
+      </div>
       <HysScrollbar
-        v-if="showSelected && draft.length"
+        v-if="(showSelected || selectedOnly) && draft.length"
         direction="vertical"
         :max-height="82"
       >
@@ -433,7 +507,7 @@ async function save() {
           <HysBadge
             v-for="key in draft"
             :key="key"
-            :closable="!busy"
+            :closable="!selectionBlocked"
             :close-label="'移除 ' + (selectedNames.get(key) ?? String(key))"
             @close="updateDraft(draft.filter((item) => item !== key))"
           >
@@ -441,8 +515,30 @@ async function save() {
           </HysBadge>
         </div>
       </HysScrollbar>
-      <HysTable
-        :rows="displayed"
+      <slot name="filters" />
+      <div v-if="!selectedOnly && recentRows.length" class="hys-record-picker-view-options" role="group" aria-label="最近使用">
+        <span>最近使用</span>
+        <HysButton v-for="{ key, row } in recentRows" :key="key" size="sm" variant="secondary"
+          :disabled="selectionBlocked || rowDisabled?.(row)" :aria-pressed="draft.includes(key)"
+          @click="toggleRow(row)">{{ rowLabel(row, key) }}</HysButton>
+      </div>
+      <div v-if="error" class="hys-record-picker-limit" role="alert">
+        {{ error }}
+        <HysButton size="sm" variant="text" :disabled="loading" @click="emit('retry')">重试</HysButton>
+      </div>
+      <HysScrollbar v-else-if="activeView === 'cards'" direction="vertical" max-height="min(40dvh, 370px)">
+        <HysDataView class="hys-record-picker-cards" :items="cardRows" view="grid" hide-view-switch item-key="key" :loading="loading" :labels="{ empty: labels.empty }">
+          <template #item="{ item }">
+            <HysButton block variant="secondary" :disabled="busy || rowDisabled?.(item.row)" :aria-pressed="draft.includes(item.key)"
+              @click="toggleRow(item.row)">
+              <slot name="card" :row="item.row" :selected="draft.includes(item.key)">{{ item.label }}</slot>
+            </HysButton>
+          </template>
+          <template v-if="$slots.empty" #empty><slot name="empty" /></template>
+        </HysDataView>
+      </HysScrollbar>
+      <HysTable v-else
+        :rows="selectedOnly ? chosenRows : displayed"
         :columns="columns"
         :row-key="rowKey"
         :loading="loading"
@@ -463,17 +559,20 @@ async function save() {
         <template v-if="$slots.empty" #empty><slot name="empty" /></template>
       </HysTable>
       <HysPagination
+        v-if="!selectedOnly"
+        :page-size-options="pageSizes ? [...pageSizes] : undefined" :show-size-changer="!!pageSizes?.length"
+        @update:page-size="emit('update:pageSize', $event)"
         :page="paging.current.value"
         :page-size="size"
         :total="count"
         :loading="loading"
         :disabled="disabled"
         size="sm"
-        hide-on-single-page
+        :hide-on-single-page="!pageSizes?.length"
         @update:page="setPage"
       />
     </section>
-  </HysModal>
+  </component>
 </template>
 
 <style scoped>
@@ -481,6 +580,8 @@ async function save() {
   display: grid;
   gap: 12px;
   min-width: 0;
+  /* Keep the search focus outline inside the modal's scroll viewport. */
+  padding: 4px;
 }
 .hys-record-picker-tools {
   display: flex;
@@ -488,6 +589,8 @@ async function save() {
   gap: 8px 12px;
   flex-wrap: wrap;
 }
+.hys-record-picker-view-options { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.hys-record-picker-cards { padding: 4px; }
 .hys-record-picker-search {
   flex: 1 1 230px;
   min-width: 0;

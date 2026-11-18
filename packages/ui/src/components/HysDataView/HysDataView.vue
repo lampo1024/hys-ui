@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T">
-import { computed, type VNodeChild } from "vue";
+import { computed, onActivated, onDeactivated, onMounted, ref, useTemplateRef, watch, type VNodeChild } from "vue";
 import { useChoiceModel } from "../../composables/choiceModel";
 import { useHysRootAttrs } from "../../config";
 import HysButton from "../HysButton/HysButton.vue";
@@ -10,8 +10,10 @@ import HysSearch from "../HysSearch/HysSearch.vue";
 import HysSelect from "../HysSelect/HysSelect.vue";
 import HysSegmented from "../HysSegmented/HysSegmented.vue";
 import HysSkeleton from "../HysSkeleton/HysSkeleton.vue";
+import HysCheckbox from "../HysCheckbox/HysCheckbox.vue";
+import HysActionBar, { type HysActionBarItem } from "../HysActionBar/HysActionBar.vue";
 
-export type HysDataViewMode = "list" | "grid";
+export type HysDataViewMode = "list" | "grid" | "card";
 export interface HysDataViewSort<T> {
   key: string;
   label: string;
@@ -21,10 +23,26 @@ export interface HysDataViewSort<T> {
 export interface HysDataViewProps<T> {
   /** 当前数据。启用分页时传入当前页的数据。 */
   items: readonly T[];
-  /** 列表或网格，支持 v-model:view。 */
+  /** 列表、单列卡片或网格，支持 v-model:view。 */
   view?: HysDataViewMode;
   /** 非受控初始视图，默认 list。 */
   defaultView?: HysDataViewMode;
+  /** 可供切换的视图。默认 list 和 grid。 */
+  views?: readonly HysDataViewMode[];
+  /** 隐藏内置视图切换控件。 */
+  hideViewSwitch?: boolean;
+  /** 对非受控视图保存本地偏好。 */
+  viewStorageKey?: string;
+  /** 指定条目分组。分组按首次出现排列。 */
+  groupBy?: (item: T) => string;
+  /** 选择模式，结合 itemKey 维护跨页选择。 */
+  selectionMode?: "single" | "multiple";
+  /** 受控选中的原始条目键。 */
+  selectedKeys?: readonly (string | number)[];
+  /** 在选区操作栏中显示的批量动作。 */
+  batchActions?: readonly HysActionBarItem[];
+  /** 启用接近列表末端时请求下一批数据。 */
+  hasMore?: boolean;
   /** 网格最多展示的列数，默认 3。可用宽度不足时自动减少。 */
   gridColumns?: number;
   /** 列表项的稳定 key 字段或取值函数。 */
@@ -53,10 +71,11 @@ export interface HysDataViewProps<T> {
   sort?: string | null;
   /** 出错提示。可通过重试重新请求，默认无错误。 */
   error?: string;
-  /** 覆盖列表、网格、空状态与加载提示。 */
+  /** 覆盖视图切换、空状态与加载提示。 */
   labels?: Partial<{
     list: string;
     grid: string;
+    card: string;
     empty: string;
     loading: string;
     view: string;
@@ -81,11 +100,19 @@ const emit = defineEmits<{
   "update:sort": [sort: string | null];
   /** 用户请求重试当前视图。 */
   retry: [];
+  /** 选择变化时发出完整的选中键数组。 */
+  "update:selectedKeys": [keys: (string | number)[]];
+  /** 激活批量操作时发出动作键和选中键。 */
+  batchAction: [key: string | number, selectedKeys: (string | number)[]];
+  /** 加载更多入口进入视口或被激活时发出。 */
+  loadMore: [];
 }>();
 defineSlots<{
   "list-item"?: (scope: { item: T; index: number }) => VNodeChild;
   "grid-item"?: (scope: { item: T; index: number }) => VNodeChild;
-  /** 同一内容可复用于两种视图，各自的专用插槽优先。 */
+  /** 自定义单列卡片视图，未提供时沿用网格内容。 */
+  "card-item"?: (scope: { item: T; index: number }) => VNodeChild;
+  /** 同一内容可复用于各种视图，各自的专用插槽优先。 */
   item?: (scope: {
     item: T;
     index: number;
@@ -98,9 +125,11 @@ defineSlots<{
   toolbar?: (scope: { view: HysDataViewMode; page: number }) => VNodeChild;
 }>();
 const skin = useHysRootAttrs();
+const loadGate = useTemplateRef<HTMLElement>("loadGate");
 const labels = computed(() => ({
   list: "列表",
   grid: "网格",
+  card: "卡片",
   empty: "暂无记录",
   loading: "正在加载数据",
   view: "数据视图",
@@ -110,11 +139,10 @@ const labels = computed(() => ({
   retry: "重试",
   ...props.labels,
 }));
-const modes = computed(() => [
-  { value: "list" as const, label: labels.value.list },
-  { value: "grid" as const, label: labels.value.grid },
-]);
-const views = useChoiceModel(
+const modes = computed(() => (props.views ?? ["list", "grid"] as const).map(value => ({
+  value, label: labels.value[value],
+})));
+const viewModel = useChoiceModel(
   {
     get modelValue() {
       return props.view;
@@ -130,7 +158,15 @@ const pages = useChoiceModel(
   },
   () => 1,
 );
-const view = views.current;
+const view = viewModel.current;
+onMounted(() => {
+  if (!props.viewStorageKey || props.view !== undefined) return;
+  try {
+    const saved = localStorage.getItem(props.viewStorageKey);
+    const mode = modes.value.find(({ value }) => value === saved);
+    if (mode) void changeView(mode.value);
+  } catch { /* Preferences may be unavailable. */ }
+});
 const page = pages.current;
 const pageSizes = useChoiceModel(
   {
@@ -204,7 +240,7 @@ const items = computed(() => {
       !keys.has(value);
     const key = validKey ? `key:${typeof value}:${value}` : `index:${index}`;
     if (validKey) keys.add(value);
-    return { key, item, index };
+    return { key, item, index, selectionKey: validKey ? value : key };
   });
 });
 const filtered = computed(() => {
@@ -237,13 +273,55 @@ const displayed = computed(() => {
   const start = (Math.min(last, Math.max(1, page.value || 1)) - 1) * size.value;
   return filtered.value.slice(start, start + size.value);
 });
-function changeView(next: HysDataViewMode) {
-  void views.commit(
-    next,
-    (accepted) => emit("update:view", accepted),
-    () => {},
-  );
+async function changeView(next: HysDataViewMode) {
+  const accepted = await viewModel.commit(next, value => emit("update:view", value), () => {});
+  if (accepted && props.viewStorageKey && props.view === undefined) {
+    try { localStorage.setItem(props.viewStorageKey, next); } catch { /* Preferences may be unavailable. */ }
+  }
 }
+const groups = computed(() => {
+  const groups = new Map<string, typeof displayed.value>();
+  for (const entry of displayed.value) {
+    const label = props.groupBy?.(entry.item) ?? "";
+    const bucket = groups.get(label);
+    if (bucket) bucket.push(entry);
+    else groups.set(label, [entry]);
+  }
+  return [...groups.entries()];
+});
+const localSelected = ref<(string | number)[]>([]);
+const selection = computed(() => props.selectedKeys ?? localSelected.value);
+function commitKeys(keys: (string | number)[]) {
+  localSelected.value = keys;
+  emit("update:selectedKeys", keys);
+}
+function toggle(key: string | number, checked: boolean) {
+  if (props.loading) return;
+  commitKeys(checked ? (props.selectionMode === "single" ? [key] : [...new Set([...selection.value, key])]) : selection.value.filter(value => value !== key));
+}
+let requested = -1;
+const active = ref(true);
+onActivated(() => { active.value = true; });
+onDeactivated(() => { active.value = false; });
+const canLoad = computed(() => active.value && props.hasMore && !props.loading && !props.error);
+function more(manual = false) {
+  if (!canLoad.value || (!manual && requested === props.items.length)) return;
+  requested = props.items.length;
+  emit("loadMore");
+}
+watch(() => props.hasMore, hasMore => { if (!hasMore) requested = -1; });
+watch([loadGate, canLoad, () => props.items.length], ([node, enabled], _, cleanup) => {
+  if (!node || !enabled || typeof IntersectionObserver === "undefined") return;
+  let watching = true;
+  const observer = new IntersectionObserver(entries => {
+    if (watching && entries.some(entry => entry.isIntersecting)) more();
+  });
+  observer.observe(node);
+  cleanup(() => {
+    watching = false;
+    observer.disconnect();
+  });
+}, { flush: "post" });
 function changePage(next: number) {
   void pages.commit(
     next,
@@ -276,7 +354,7 @@ const retry = () => emit("retry");
 
 <template>
   <section v-bind="skin" class="hys-data-view">
-    <div class="hys-data-view-toolbar">
+    <div v-if="$slots.toolbar || searchable || sortChoices.length > 1 || !hideViewSwitch" class="hys-data-view-toolbar">
       <slot name="toolbar" :view="view" :page="page" />
       <HysSearch
         v-if="searchable"
@@ -298,14 +376,16 @@ const retry = () => emit("retry");
         @update:model-value="sort"
       />
       <HysSegmented
-        :model-value="view"
+        v-if="!hideViewSwitch" :model-value="view"
         :options="modes"
         :aria-label="labels.view"
         size="sm"
         @update:model-value="changeView"
       />
     </div>
-    <div v-if="loading" class="hys-data-view-feedback" aria-busy="true">
+    <HysActionBar v-if="selectionMode && selection.length" :selected-count="selection.length" :actions="batchActions" :loading="loading"
+      @clear-selection="commitKeys([])" @action="emit('batchAction', $event, [...selection])" />
+    <div v-if="loading && (!hasMore || !displayed.length)" class="hys-data-view-feedback" aria-busy="true">
       <slot name="loading"
         ><HysSkeleton :loading-text="labels.loading" :lines="3"
       /></slot>
@@ -324,19 +404,23 @@ const retry = () => emit("retry");
     <div v-else-if="!displayed.length" class="hys-data-view-feedback">
       <slot name="empty"><HysEmpty :description="labels.empty" /></slot>
     </div>
-    <ul
-      v-else
-      class="hys-data-view-items"
+    <template v-else>
+      <section v-for="[label, entries] in groups" :key="label" class="hys-data-view-group" :aria-label="label || undefined">
+      <h3 v-if="label">{{ label }}</h3>
+      <ul
+        class="hys-data-view-items"
       :data-view="view"
       :style="{ '--hys-data-columns': columns }"
     >
       <li
-        v-for="entry in displayed"
+        v-for="entry in entries"
         :key="entry.key"
         class="hys-data-view-item"
       >
-        <HysCard v-if="view === 'grid'" class="hys-data-view-card">
-          <slot name="grid-item" :item="entry.item" :index="entry.index">
+        <HysCheckbox v-if="selectionMode" :model-value="selection.includes(entry.selectionKey)" :disabled="loading"
+          :aria-label="'选择第 ' + (entry.index + 1) + ' 项'" @update:model-value="toggle(entry.selectionKey, $event === true)" />
+        <HysCard v-if="view === 'grid' || view === 'card'" class="hys-data-view-card">
+          <slot :name="view === 'card' && $slots['card-item'] ? 'card-item' : 'grid-item'" :item="entry.item" :index="entry.index">
             <slot
               name="item"
               :item="entry.item"
@@ -356,7 +440,12 @@ const retry = () => emit("retry");
           >
         </slot>
       </li>
-    </ul>
+      </ul>
+      </section>
+    </template>
+    <div v-if="hasMore && !error" ref="loadGate" class="hys-data-view-load">
+      <HysButton size="sm" variant="secondary" :loading="loading" @click="more(true)">加载更多</HysButton>
+    </div>
     <HysPagination
       v-if="totalCount !== undefined"
       :total="totalCount"
@@ -430,6 +519,9 @@ const retry = () => emit("retry");
   padding: 10px 12px;
   border-bottom: 1px solid var(--hys-ui-theme-border);
 }
+.hys-data-view-group { min-width: 0; }
+.hys-data-view-group h3 { margin: 0 0 6px; font-size: 13px; }
+.hys-data-view-load { justify-self: center; }
 .hys-data-view-card {
   height: 100%;
 }

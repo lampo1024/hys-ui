@@ -7,13 +7,17 @@ import {
   type Component,
   type VNodeChild,
 } from "vue";
+import type { HysMenuItem } from "../HysMenu/HysMenu.vue";
 import type { HysMenuKey } from "../../composables/menu";
 import { useContainerWidth } from "../../composables/useContainerWidth";
 import { useHysRootAttrs } from "../../config";
 import HysButton, { type HysButtonVariant } from "../HysButton/HysButton.vue";
 import HysDropdown from "../HysDropdown/HysDropdown.vue";
 import HysPopconfirm from "../HysPopconfirm/HysPopconfirm.vue";
+import HysTooltip from "../HysTooltip/HysTooltip.vue";
+import HysProgress from "../HysProgress/HysProgress.vue";
 import { Ellipsis } from "../HysIcon/svgIcons";
+import { shortcutMatches } from "../../composables/shortcutMatch";
 
 export interface HysActionBarItem {
   key: HysMenuKey;
@@ -22,12 +26,18 @@ export interface HysActionBarItem {
   variant?: HysButtonVariant;
   disabled?: boolean;
   loading?: boolean;
+  /** 禁用时显示的业务原因，直显按钮以提示浮层呈现，更多菜单在操作下方呈现。 */
+  disabledReason?: string;
+  /** 聚焦操作栏时激活操作的快捷键，例如 Alt+A。 */
+  shortcut?: string;
   /** 在选择数低于此值时禁用，默认至少选中一项。0 允许空选择时使用。 */
   minSelection?: number;
   /** 在选择数超过此值时禁用。 */
   maxSelection?: number;
   /** 暂时隐藏操作。 */
   hidden?: boolean;
+  /** 同名操作在更多菜单内使用同一组标题。 */
+  group?: string;
   /** 始终放入更多操作菜单。 */
   overflow?: boolean;
   /** 危险操作默认确认。true 使用默认文案，false 明确跳过确认。 */
@@ -53,8 +63,14 @@ export interface HysActionBarProps {
   maxVisibleActions?: number;
   /** 可操作的记录总数，用于选择进度及全选。 */
   totalCount?: number;
+  /** 批处理进度，单位百分比。 */
+  progress?: number;
+  /** 提供撤销上一操作的入口和文字。 */
+  undoText?: string;
   /** 显示由调用方处理的全选入口。 */
   showSelectAll?: boolean;
+  /** 普通布局、吸顶、吸底或视口下方浮动。 */
+  placement?: "inline" | "top" | "bottom" | "floating";
   /** 覆盖文案。selected 支持 {count}，confirmTitle 支持 {action}。 */
   labels?: Partial<{
     selected: string;
@@ -77,6 +93,8 @@ const emit = defineEmits<{
   clearSelection: [];
   /** 用户请求选中全部时发出记录总数，由应用更新选择。 */
   selectAll: [total: number];
+  /** 用户激活撤销入口时发出。 */
+  undo: [];
 }>();
 defineSlots<{
   left?: (scope: { selectedCount: number }) => VNodeChild;
@@ -142,17 +160,33 @@ const visible = computed(() => {
     width.value > 0 && width.value < 480 ? Math.min(1, configured) : configured;
   return all.value.filter((item) => !item.overflow).slice(0, limit);
 });
-const overflow = computed(() =>
-  all.value
-    .filter((item) => !visible.value.includes(item))
-    .map((item) => ({
+const overflowActions = computed(() => all.value.filter(item => !visible.value.includes(item)));
+const overflow = computed<HysMenuItem[]>(() => {
+  const rows: HysMenuItem[] = [];
+  const groups = new Map<string, HysMenuItem[]>();
+  for (const item of overflowActions.value) {
+    const disabled = !enabled(item);
+    const row: HysMenuItem = {
       key: item.key,
       label: item.label,
       icon: item.icon,
+      shortcut: item.shortcut,
       danger: item.variant === "danger",
-      disabled: !enabled(item),
-    })),
-);
+      description: disabled ? item.disabledReason : undefined,
+      loading: item.loading,
+      disabled,
+    };
+    if (!item.group) { rows.push(row); continue; }
+    let group = groups.get(item.group);
+    if (!group) {
+      group = [];
+      groups.set(item.group, group);
+      rows.push({ type: "group", label: item.group, children: group });
+    }
+    group.push(row);
+  }
+  return rows;
+});
 const request = shallowRef<{
   key: HysMenuKey;
   count: number;
@@ -181,6 +215,15 @@ function activate(item: HysActionBarItem, anchor?: HTMLElement) {
     if (anchor) request.value = { key: item.key, count: count.value, anchor };
   } else emit("action", item.key);
 }
+function keydown(event: KeyboardEvent) {
+  if (event.defaultPrevented || event.repeat || event.isComposing ||
+    (event.target as HTMLElement)?.closest("input,textarea,[contenteditable]")) return;
+  const item = all.value.find(item => enabled(item) && shortcutMatches(event, item.shortcut));
+  if (!item) return;
+  const anchor = root.value?.querySelector<HTMLElement>('[data-action-order="' + visible.value.indexOf(item) + '"]') ?? overflowTrigger.value?.element;
+  event.preventDefault();
+  activate(item, anchor);
+}
 function fromOverflow(key: HysMenuKey) {
   const item = all.value.find((action) => action.key === key);
   if (item) activate(item, overflowTrigger.value?.element);
@@ -193,10 +236,10 @@ function confirm() {
 
 <template>
   <section
-    v-if="count || visibleWhenEmpty || canSelectAll"
+    v-if="count || visibleWhenEmpty || canSelectAll || undoText || progress !== undefined"
     ref="root"
     v-bind="skin"
-    class="hys-action-bar"
+    class="hys-action-bar" :data-placement="placement ?? 'inline'" @keydown="keydown"
   >
     <div class="hys-action-bar-selection">
       <span role="status">{{
@@ -225,24 +268,27 @@ function confirm() {
       </HysButton>
     </div>
     <div class="hys-action-bar-actions">
+      <HysProgress v-if="progress !== undefined" class="hys-action-progress" :value="progress" :stroke-width="5" aria-label="批处理进度" />
+      <HysButton v-if="undoText" size="sm" variant="text" :disabled="loading" @click="emit('undo')">{{ undoText }}</HysButton>
+      <HysTooltip v-for="(item, index) in visible" :key="item.key"
+        :disabled="enabled(item) || !item.disabledReason" :text="item.disabledReason"
+        :tabindex="!enabled(item) && item.disabledReason ? 0 : undefined">
       <HysButton
-        v-for="item in visible"
-        :key="item.key"
         size="sm"
         :variant="item.variant ?? 'secondary'"
         :icon="item.icon"
+        :data-action-order="index" :aria-keyshortcuts="item.shortcut"
         :disabled="!enabled(item)"
         :loading="item.loading"
         @click="activate(item, $event.currentTarget as HTMLElement)"
-        >{{ item.label }}</HysButton
+        >{{ item.label }} <kbd v-if="item.shortcut">{{ item.shortcut }}</kbd></HysButton
       >
+      </HysTooltip>
       <HysDropdown
         v-if="overflow.length"
         :items="overflow"
         :aria-label="labels.more"
-        :disabled="
-          loading || (count === 0 && !overflow.some((item) => !item.disabled))
-        "
+        :disabled="loading"
         @select="fromOverflow"
       >
         <template #trigger="{ disabled }">
@@ -278,6 +324,9 @@ function confirm() {
 </template>
 
 <style scoped>
+.hys-action-bar[data-placement="top"] { position: sticky; top: 0; z-index: 2; }
+.hys-action-bar[data-placement="bottom"] { position: sticky; bottom: 0; z-index: 2; }
+.hys-action-bar[data-placement="floating"] { position: fixed; inset-inline: max(12px, calc((100% - 720px)/2)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 20; box-shadow: 0 6px 24px #0002; }
 .hys-action-bar,
 .hys-action-bar-selection,
 .hys-action-bar-actions {
@@ -295,6 +344,8 @@ function confirm() {
   border-radius: var(--hys-ui-radius, 8px);
   color: var(--hys-ui-theme-text);
 }
+.hys-action-progress { min-inline-size: 104px; }
+kbd { font-size: .82em; opacity: .7; }
 .hys-action-bar-selection > [role="status"] {
   font-weight: 600;
   margin-inline: 2px;

@@ -26,12 +26,20 @@ export interface HysInputOtpProps {
   length?: number;
   /** 每位允许的字符正则表达式，默认 [0-9]。无效表达式退回数字。 */
   pattern?: string;
+  /** 字符预设；显式 pattern 优先。 */
+  mode?: "numeric" | "alpha" | "alphanumeric";
+  /** 显示在相邻组之间的分隔符。 */
+  separator?: string;
+  /** error 由调用方设为 true 时清空当前值。 */
+  clearOnError?: boolean;
   /** 禁止输入及聚焦，默认 false。 */
   disabled?: boolean;
   /** 保留可聚焦及选择状态，禁止修改，默认 false。 */
   readonly?: boolean;
   /** 启用错误外观及 aria-invalid，默认 false。 */
   error?: boolean;
+  /** 已通过验证的成功外观；错误状态优先。 */
+  success?: boolean;
   /** 挂载时聚焦输入框，默认 false。 */
   autoFocus?: boolean;
   /** 原生表单提交的字段名称。 */
@@ -50,7 +58,7 @@ export interface HysInputOtpProps {
 
 const props = withDefaults(defineProps<HysInputOtpProps>(), {
   length: 6,
-  pattern: "[0-9]",
+  mode: "numeric",
   ariaLabel: "验证码",
 });
 const emit = defineEmits<{
@@ -75,9 +83,10 @@ const length = computed(() =>
     ? Math.min(12, Math.max(1, Math.floor(props.length)))
     : 6,
 );
+const expression = computed(() => props.pattern ?? ({ numeric: "[0-9]", alpha: "[a-zA-Z]", alphanumeric: "[a-zA-Z0-9]" }[props.mode]));
 const allowed = computed(() => {
   try {
-    return new RegExp("^(?:" + props.pattern + ")$", "u");
+    return new RegExp("^(?:" + expression.value + ")$", "u");
   } catch {
     return /^[0-9]$/u;
   }
@@ -104,14 +113,18 @@ const layout = computed(() => {
     groups.reduce((total, item) => total + item, 0) === length.value;
   const tracks: string[] = [];
   const positions: number[] = [];
+  const separators: number[] = [];
   for (const size of valid ? groups : [length.value]) {
-    if (tracks.length) tracks.push("minmax(1px, 0.28fr)");
+    if (tracks.length) {
+      tracks.push("minmax(1px, 0.28fr)");
+      separators.push(tracks.length);
+    }
     for (let index = 0; index < size; index++) {
       tracks.push("minmax(0, 1fr)");
       positions.push(tracks.length);
     }
   }
-  return { tracks: tracks.join(" "), positions };
+  return { tracks: tracks.join(" "), positions, separators };
 });
 
 function syncSelection() {
@@ -132,7 +145,7 @@ function placeCaret(event: MouseEvent) {
     input.selectionStart !== input.selectionEnd
   )
     return;
-  const index = Array.from(cells.value?.children ?? []).findIndex(
+  const index = Array.from(cells.value?.querySelectorAll(".hys-otp-cell") ?? []).findIndex(
     (element) => event.clientX <= element.getBoundingClientRect().right,
   );
   if (index >= 0) {
@@ -182,6 +195,12 @@ watch(
     if (resetting) reset();
   },
 );
+watch(
+  () => props.error && props.clearOnError,
+  (shouldClear) => {
+    if (shouldClear) void update("");
+  },
+);
 defineExpose({
   /** 聚焦单一验证码输入框。 */
   focus: () => editor.value?.focus(),
@@ -195,7 +214,7 @@ defineExpose({
 <template>
   <div
     v-bind="skin"
-    class="hys-input-otp"
+    class="hys-input-otp" :data-success="success && !invalid"
     :class="{ 'is-disabled': disabled, 'is-invalid': invalid }"
   >
     <div
@@ -209,6 +228,7 @@ defineExpose({
       }"
       aria-hidden="true"
     >
+      <span v-for="track in separator ? layout.separators : []" :key="'separator-' + track" class="hys-otp-separator" :style="{ gridColumn: track }">{{ separator }}</span>
       <span
         v-for="index in length"
         :key="index"
@@ -233,7 +253,7 @@ defineExpose({
       :status="error ? 'error' : undefined"
       :autofocus="autoFocus"
       :aria-label="ariaLabel"
-      :inputmode="inputMode ?? (pattern === '[0-9]' ? 'numeric' : 'text')"
+      :inputmode="inputMode ?? (expression === '[0-9]' ? 'numeric' : 'text')"
       autocomplete="one-time-code"
       @update:model-value="update"
       @focus="
@@ -249,6 +269,9 @@ defineExpose({
 </template>
 
 <style scoped>
+.hys-otp-separator, .hys-otp-cell { grid-row: 1; }
+.hys-otp-separator { align-self: center; text-align: center; color: var(--hys-ui-theme-muted); }
+.hys-input-otp[data-success="true"] .hys-otp-cell { border-color: var(--hys-ui-theme-success, #13875e); }
 .hys-input-otp {
   position: relative;
   display: inline-grid;

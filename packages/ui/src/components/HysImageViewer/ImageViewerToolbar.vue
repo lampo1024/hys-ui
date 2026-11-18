@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, useTemplateRef } from "vue";
 import HysButton from "../HysButton/HysButton.vue";
 import HysTooltip from "../HysTooltip/HysTooltip.vue";
 import {
   ChevronLeft,
   ChevronRight,
+  Maximize,
   Maximize2,
+  Minimize,
   ScanLine,
   Minus,
   Plus,
@@ -22,6 +24,7 @@ const props = defineProps<{
   factor: number;
   labels: HysImageViewerLabels;
   loop?: boolean;
+  fullscreen: boolean;
 }>();
 const emit = defineEmits<{
   move: [offset: number];
@@ -30,7 +33,14 @@ const emit = defineEmits<{
   reset: [];
   fit: [];
   actual: [];
+  toggleFullscreen: [];
 }>();
+const fullscreenHint = useTemplateRef<InstanceType<typeof HysTooltip>>("fullscreenHint");
+const fullscreenLabel = computed(() => props.fullscreen ? props.labels.exitFullscreen : props.labels.fullscreen);
+async function toggleFullscreen() {
+  if (fullscreenHint.value?.open) await fullscreenHint.value.hide();
+  emit("toggleFullscreen");
+}
 const tools = computed(() => [
   {
     label: props.labels.zoomOut,
@@ -125,6 +135,10 @@ const tools = computed(() => [
           :disabled="tool.disabled"
           @click="tool.action"
         />
+      </HysTooltip>
+      <HysTooltip ref="fullscreenHint" :text="fullscreenLabel" placement="top" :trigger-keys="[]">
+        <HysButton size="sm" variant="ghost" :icon="fullscreen ? Minimize : Maximize"
+          :aria-label="fullscreenLabel" :aria-pressed="fullscreen" @click="toggleFullscreen" />
       </HysTooltip>
       <span v-if="ready" class="hys-image-tool-value" aria-live="polite"
         >{{ zoom }}%</span

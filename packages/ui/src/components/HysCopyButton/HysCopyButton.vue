@@ -46,7 +46,9 @@ export interface HysCopyButtonProps {
     text: string;
     signal: AbortSignal;
   }) => string | Promise<string>;
-  /** 仅显示图标，保留 label 作为辅助名称。默认 false。 */
+  /** 按钮内容为图标、文字或两者。省略时按 iconOnly 决定。 */
+  display?: "icon" | "text" | "both";
+  /** 仅显示图标，保留 label 作为辅助名称。显式 display 优先。 */
   iconOnly?: boolean;
   /** 失败时提供可选中的原文供手动复制。默认 false。 */
   manualFallback?: boolean;
@@ -82,12 +84,17 @@ let resetTimer: ReturnType<typeof setTimeout> | undefined;
 let controller: AbortController | undefined;
 const fallback = ref<string>();
 const original = useTemplateRef("original");
+const displayMode = computed(() => props.display ?? (props.iconOnly ? "icon" : "both"));
+const accessibleLabel = computed(() => props.label.trim() || "复制");
 const feedbackText = computed(() =>
   state.value === "success"
     ? props.successText
     : state.value === "error"
       ? props.errorText
       : "",
+);
+const tooltipText = computed(() =>
+  feedbackText.value.trim() || props.tooltip?.trim() || (displayMode.value === "icon" ? accessibleLabel.value : ""),
 );
 
 function reset() {
@@ -138,8 +145,7 @@ async function copy() {
       const duration = Number.isFinite(props.feedbackDuration)
         ? Math.min(60_000, Math.max(0, props.feedbackDuration))
         : 2000;
-      if (duration && fallback.value === undefined)
-        resetTimer = setTimeout(reset, duration);
+      if (duration) resetTimer = setTimeout(() => { state.value = "idle"; }, duration);
     }
   }
 }
@@ -157,8 +163,8 @@ onBeforeUnmount(reset);
 <template>
   <span v-bind="skin" class="hys-copy-button">
     <HysTooltip
-      :disabled="(!tooltip?.trim() && !iconOnly) || disabled"
-      :text="tooltip?.trim() || label"
+      :disabled="!tooltipText || disabled"
+      :text="tooltipText"
       :trigger-keys="[]"
       placement="top"
       :show-delay="300"
@@ -166,15 +172,15 @@ onBeforeUnmount(reset);
       <HysButton
         :loading="state === 'copying'"
         :disabled="disabled"
-        :aria-label="label"
+        :aria-label="accessibleLabel"
         :size="size"
         :variant="variant"
         :icon="
-          state === 'success' ? Check : state === 'error' ? CircleAlert : Copy
+          displayMode === 'text' ? undefined : state === 'success' ? Check : state === 'error' ? CircleAlert : Copy
         "
         @click="copy"
       >
-        <slot :state="state">{{ iconOnly ? "" : label }}</slot>
+        <slot :state="state">{{ displayMode === "icon" ? "" : label }}</slot>
       </HysButton>
     </HysTooltip>
     <span

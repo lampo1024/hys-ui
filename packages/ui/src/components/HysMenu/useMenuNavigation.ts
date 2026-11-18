@@ -84,24 +84,38 @@ export function useMenuNavigation(
     () => new Set(menuKeys(expanded.current.value).map(menuToken)),
   );
   const active = ref<string>();
+  const routeClosed = ref(new Set<string>());
+  const routeItem = computed(() => {
+    if (props.selectedKeys !== undefined || !props.activePath) return;
+    const path = props.activePath.split(/[?#]/, 1)[0].replace(/\/$/, "") || "/";
+    return graph.value.all.find(row => row.href && (row.href.split(/[?#]/, 1)[0].replace(/\/$/, "") || "/") === path);
+  });
+  watch(() => props.activePath, () => { routeClosed.value = new Set(); });
 
   function isSelected(row: Row) {
-    return row.key !== undefined && selectedSet.value.has(menuToken(row.key));
+    return routeItem.value ? routeItem.value === row : row.key !== undefined && selectedSet.value.has(menuToken(row.key));
+  }
+  const activeAncestors = computed(() => new Set(
+    graph.value.all.filter(isSelected).flatMap(row => row.parents),
+  ));
+  function isActiveBranch(row: Row) {
+    return activeAncestors.value.has(row);
   }
   function isOpen(row: Row) {
     if (matched.value)
       return hasChildren(row) && !searchClosed.value.has(row.id);
-    return row.key !== undefined && openSet.value.has(menuToken(row.key));
+    return (props.openKeys === undefined && routeItem.value?.parents.includes(row) && !routeClosed.value.has(row.id)) ||
+      (row.key !== undefined && openSet.value.has(menuToken(row.key)));
   }
   function isDisabled(row: Row) {
-    return disabled.value || row.disabled;
+    return disabled.value || row.disabled || ("loading" in row.raw && !!row.raw.loading);
   }
   const visible = computed(() =>
     disabled.value
       ? []
       : graph.value.all.filter(
           (row) =>
-            !row.disabled &&
+            !isDisabled(row) &&
             isShown(row) &&
             row.key !== undefined &&
             row.type === "item" &&
@@ -125,6 +139,10 @@ export function useMenuNavigation(
       else searchClosed.value.add(row.id);
       return Promise.resolve(true);
     }
+    if (routeItem.value?.parents.includes(row)) {
+      if (open) routeClosed.value.delete(row.id);
+      else routeClosed.value.add(row.id);
+    }
     let keys = menuKeys(expanded.current.value).filter(
       (key) => key !== row.key,
     );
@@ -139,16 +157,16 @@ export function useMenuNavigation(
               candidate.children.length,
           ),
         );
-        const blockingKeys = new Set(
-          graph.value.all
-            .filter(
-              (candidate) =>
-                siblings.has(candidate) ||
-                candidate.parents.some((ancestor) => siblings.has(ancestor)),
-            )
-            .map((candidate) => candidate.key),
+        const blocked = graph.value.all.filter(
+          candidate => siblings.has(candidate) || candidate.parents.some(ancestor => siblings.has(ancestor)),
         );
-        keys = keys.filter((key) => !blockingKeys.has(key));
+        const blockingKeys = new Set(blocked.map(candidate => candidate.key));
+        keys = keys.filter(key => !blockingKeys.has(key));
+        if (props.openKeys === undefined && routeItem.value) {
+          for (const branch of blocked) {
+            if (routeItem.value.parents.includes(branch)) routeClosed.value.add(branch.id);
+          }
+        }
       }
       keys.push(row.key);
     }
@@ -310,6 +328,7 @@ export function useMenuNavigation(
     isShown,
     hasChildren,
     isSelected,
+    isActiveBranch,
     isDisabled,
     focus,
     keydown,

@@ -47,6 +47,7 @@ function attrs(row: Row) {
       "hys-menu-item",
       {
         "is-selected": props.navigation.isSelected(row),
+        "is-active-branch": props.navigation.isActiveBranch(row),
         "is-danger": row.danger,
       },
     ],
@@ -60,6 +61,7 @@ function attrs(row: Row) {
         ? "menuitem"
         : undefined,
     "aria-checked": checkable ? props.navigation.isSelected(row) : undefined,
+    "aria-describedby": row.description ? props.idBase + "-description-" + row.id : undefined,
     tabindex: props.actions
       ? props.navigation.tabId.value === row.id
         ? 0
@@ -107,6 +109,8 @@ function attrs(row: Row) {
           :style="{ paddingInlineStart: depth * 14 + 10 + 'px' }"
           :variant="safeHref(row) ? undefined : 'ghost'"
           :disabled="safeHref(row) ? undefined : navigation.isDisabled(row)"
+          :loading="'loading' in row.raw ? row.raw.loading : undefined"
+          :aria-busy="'loading' in row.raw && row.raw.loading || undefined"
           :href="safeHref(row)"
           :target="safeHref(row) ? row.target : undefined"
           :rel="safeHref(row) ? menuSafeRel(row.target, row.rel) : undefined"
@@ -121,13 +125,18 @@ function attrs(row: Row) {
             aria-hidden="true"
           />
           <span class="hys-menu-label">
-            <slot
-              name="item"
-              :item="row.raw"
-              :label="row.label"
-              :selected="navigation.isSelected(row)"
-              >{{ row.label }}</slot
-            >
+            <span>
+              <slot
+                name="item"
+                :item="row.raw"
+                :label="row.label"
+                :selected="navigation.isSelected(row)"
+                >{{ row.label }}</slot
+              >
+            </span>
+            <small v-if="row.description" :id="idBase + '-description-' + row.id" class="hys-menu-description">
+              {{ row.description }}
+            </small>
           </span>
           <span
             v-if="'badge' in row.raw && row.raw.badge != null"
@@ -205,6 +214,9 @@ function attrs(row: Row) {
   background: var(--hys-ui-theme-primary-soft);
   color: var(--hys-ui-theme-primary);
 }
+.hys-menu-item.is-active-branch {
+  color: var(--hys-ui-theme-primary);
+}
 .hys-menu-item.is-danger {
   color: var(--hys-ui-theme-red);
 }
@@ -222,6 +234,11 @@ function attrs(row: Row) {
   min-inline-size: 0;
   overflow-wrap: anywhere;
   white-space: normal;
+}
+.hys-menu-description {
+  display: block;
+  color: var(--hys-ui-theme-muted);
+  font-size: 11px;
 }
 .hys-menu-group {
   padding: 6px 9px 3px;

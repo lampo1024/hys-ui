@@ -7,6 +7,7 @@ import HysBreadcrumb, {
   type HysBreadcrumbItem,
 } from "../HysBreadcrumb/HysBreadcrumb.vue";
 import HysButton, { type HysButtonVariant } from "../HysButton/HysButton.vue";
+import HysTag, { type HysTagProps } from "../HysTag/HysTag.vue";
 import HysDropdown from "../HysDropdown/HysDropdown.vue";
 import { ArrowLeft, Ellipsis } from "../HysIcon/svgIcons";
 
@@ -29,10 +30,18 @@ export interface HysPageHeaderProps {
   showBack?: boolean;
   /** 返回按钮的无障碍名称，默认「返回」。 */
   backLabel?: string;
+  /** 自定义返回入口图标。 */
+  backIcon?: Component;
+  /** 标题旁的状态标签。 */
+  status?: string;
+  /** 状态标签主题颜色，默认 neutral。 */
+  statusTone?: HysTagProps["tone"];
   /** 面包屑路径，breadcrumb 插槽优先。 */
   breadcrumbs?: readonly HysBreadcrumbItem[];
   /** 使用紧凑的标题、留白和按钮尺寸。 */
   compact?: boolean;
+  /** 隐藏外框及背景，适合嵌入现有卡片。 */
+  frameless?: boolean;
   /** 标题级别 1–6，默认 1。 */
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   /** 随最近的滚动容器吸顶，默认 false。 */
@@ -72,6 +81,10 @@ defineSlots<{
   meta?: () => VNodeChild;
   /** 标题左侧的头像、图标或品牌。 */
   leading?: () => VNodeChild;
+  /** 底部导航区，适合放置页面级 Tabs。 */
+  tabs?: () => VNodeChild;
+  /** 替换标题旁的状态标签。 */
+  status?: () => VNodeChild;
 }>();
 
 const skin = useHysRootAttrs();
@@ -116,7 +129,7 @@ const overflow = computed(() =>
     ref="root"
     v-bind="skin"
     class="hys-page-header"
-    :class="{ 'is-compact': compact, 'is-sticky': sticky }"
+    :class="{ 'is-compact': compact, 'is-sticky': sticky, 'is-frameless': frameless }"
     :style="sticky ? { insetBlockStart: offset + 'px' } : undefined"
   >
     <div
@@ -134,22 +147,25 @@ const overflow = computed(() =>
           class="hys-page-back"
           variant="ghost"
           :size="compact ? 'sm' : 'md'"
-          :icon="ArrowLeft"
+          :icon="backIcon ?? ArrowLeft"
           :aria-label="backLabel"
           @click="emit('back', $event)"
         />
         <slot name="leading" />
         <div
           v-if="
-            title || subtitle || $slots.title || $slots.subtitle || $slots.meta
+            title || subtitle || status || $slots.title || $slots.subtitle || $slots.status || $slots.meta
           "
           class="hys-page-heading"
         >
-          <slot name="title"
-            ><component :is="heading" v-if="title" class="hys-page-title">{{
-              title
-            }}</component></slot
-          >
+          <div v-if="title || status || $slots.title || $slots.status" class="hys-page-title-line">
+            <slot name="title">
+              <component :is="heading" v-if="title" class="hys-page-title">{{ title }}</component>
+            </slot>
+            <slot name="status">
+              <HysTag v-if="status" :tone="statusTone ?? 'neutral'" size="sm">{{ status }}</HysTag>
+            </slot>
+          </div>
           <slot name="subtitle"
             ><p v-if="subtitle">{{ subtitle }}</p></slot
           >
@@ -187,10 +203,13 @@ const overflow = computed(() =>
         <slot name="extra" />
       </div>
     </div>
+    <div v-if="$slots.tabs" class="page-tabs"><slot name="tabs" /></div>
   </header>
 </template>
 
 <style scoped>
+.page-tabs { margin-block-start: 10px; min-inline-size: 0; }
+.hys-page-header.is-frameless { background: transparent; border-color: transparent; padding-inline: 0; }
 .hys-page-header {
   display: grid;
   gap: 10px;
@@ -222,6 +241,13 @@ const overflow = computed(() =>
   display: grid;
   min-inline-size: 0;
   gap: 3px;
+}
+.hys-page-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-inline-size: 0;
 }
 .hys-page-title {
   margin: 0;

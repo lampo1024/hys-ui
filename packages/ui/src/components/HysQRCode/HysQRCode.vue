@@ -8,7 +8,7 @@ import {
   watchPostEffect,
   type VNodeChild,
 } from "vue";
-import { drawCode, logoRegion, qrPath } from "./qrArtwork";
+import { drawCode, logoRegion, qrPath, type QrModuleShape } from "./qrArtwork";
 import { qrSymbol } from "./qrMatrix";
 import type { QrCorrection } from "./qrPayload";
 import { useHysRootAttrs } from "../../config";
@@ -46,6 +46,10 @@ export interface HysQRCodeProps {
   iconSize?: number;
   /** 显示外部细边框，默认 true，二维码静区不受影响。 */
   bordered?: boolean;
+  /** 数据模块外观，默认 square。定位与计时模块保持方形。 */
+  moduleShape?: QrModuleShape;
+  /** 显示复制二维码图片按钮。 */
+  copyable?: boolean;
   /** 由业务控制的扫描状态，默认 active。 */
   status?: HysQRCodeStatus;
   /** 辅助技术使用的名称，默认「二维码」。 */
@@ -73,6 +77,10 @@ const props = withDefaults(defineProps<HysQRCodeProps>(), {
 const emit = defineEmits<{
   /** 过期状态下用户请求刷新。更新 value 和 status 由调用方完成。 */
   refresh: [];
+  /** 复制二维码 PNG 成功后发出。 */
+  copyImage: [];
+  /** 复制失败时发出原因。 */
+  copyError: [error: unknown];
 }>();
 defineSlots<{
   /** 自定义无内容或编码失败时的占位。 */
@@ -166,6 +174,7 @@ const logo = computed(() =>
       )
     : undefined,
 );
+const styled = computed(() => props.moduleShape !== undefined && props.moduleShape !== "square");
 const path = computed(() => {
   if (!symbol.value) return "";
   const matrix = logo.value
@@ -177,7 +186,7 @@ const path = computed(() => {
       region.x - margin.value,
       region.x - margin.value + region.width,
     );
-  return qrPath(matrix, margin.value);
+  return qrPath(matrix, margin.value, symbol.value.modules, props.moduleShape);
 });
 
 function paint(element: string, fallback: string) {
@@ -201,6 +210,7 @@ watchPostEffect(() => {
       paint("rect", background.value),
       logo.value,
       image.value ?? undefined,
+      styled.value ? path.value : undefined,
     );
 });
 
@@ -233,6 +243,7 @@ async function exportImage(
           paper,
           logo.value,
           image.value ?? undefined,
+          styled.value ? path.value : undefined,
         )
       )
         return null;
@@ -272,7 +283,35 @@ async function exportImage(
     return null;
   }
 }
-defineExpose({ exportImage });
+const copying = ref(false);
+const copyNotice = ref("");
+watch([() => props.value, () => props.status], () => { copyNotice.value = ""; });
+/** 将当前二维码以 PNG 写入剪贴板，成功时返回 true。 */
+async function copyImage() {
+  if (copying.value || !symbol.value || props.status !== "active") return false;
+  copying.value = true;
+  copyNotice.value = "";
+  try {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") throw new Error("浏览器不支持复制图片");
+    const png = exportImage("png").then(blob => {
+      if (!blob) throw new Error("无法生成图片");
+      return blob;
+    });
+    // Clipboard writes may be rejected before the browser reads the PNG.
+    void png.catch(() => undefined);
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    copyNotice.value = "已复制图片";
+    emit("copyImage");
+    return true;
+  } catch (error) {
+    copyNotice.value = "复制图片失败";
+    emit("copyError", error);
+    return false;
+  } finally {
+    copying.value = false;
+  }
+}
+defineExpose({ exportImage, copyImage });
 </script>
 
 <template>
@@ -295,7 +334,7 @@ defineExpose({ exportImage });
         :aria-label="ariaLabel"
         :aria-hidden="status !== 'active' || type === 'canvas' || undefined"
         :viewBox="'0 0 ' + extent + ' ' + extent"
-        shape-rendering="crispEdges"
+        :shape-rendering="styled ? undefined : 'crispEdges'"
       >
         <rect :width="extent" :height="extent" :fill="background" />
         <path
@@ -378,6 +417,10 @@ defineExpose({ exportImage });
       :version="symbol.version"
       :correction="correction"
     />
+    <div v-if="copyable && status === 'active' && symbol" class="hys-qr-copy">
+      <HysButton size="sm" variant="text" :loading="copying" @click="copyImage">复制图片</HysButton>
+      <span aria-live="polite">{{ copyNotice }}</span>
+    </div>
   </div>
 </template>
 
@@ -388,6 +431,7 @@ defineExpose({ exportImage });
   gap: 4px;
   color: var(--hys-ui-theme-muted);
 }
+.hys-qr-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
 .hys-qr-frame {
   position: relative;
   aspect-ratio: 1;

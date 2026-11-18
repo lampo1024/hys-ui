@@ -14,6 +14,10 @@ export const imageViewerLabels = {
   fit: "适应视口",
   actual: "原始尺寸",
   thumbnails: "图片缩略图",
+  minimap: "图片小地图",
+  moveMinimap: "移动小地图",
+  fullscreen: "全屏查看图片",
+  exitFullscreen: "退出图片全屏",
   reset: "重置变换",
 };
 

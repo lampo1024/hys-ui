@@ -5,6 +5,7 @@ import { useHysControlState } from "../../composables/formContext";
 import type { HysMenuKey } from "../../composables/menu";
 import HysScrollbar from "../HysScrollbar/HysScrollbar.vue";
 import MenuItems from "./MenuItems.vue";
+import MenuPopupStrip from "./MenuPopupStrip.vue";
 import type {
   NavigationMenuItem,
   NavigationMenuMode,
@@ -18,7 +19,7 @@ export type HysMenuItem = NavigationMenuItem;
 export type HysMenuMode = NavigationMenuMode;
 export type HysMenuSelection = NavigationMenuSelection;
 
-const props = withDefaults(defineProps<HysMenuProps>(), { mode: "vertical" });
+const props = withDefaults(defineProps<HysMenuProps>(), { mode: "vertical", overflow: true });
 const emit = defineEmits<{
   "update:selectedKeys": [keys: readonly HysMenuKey[]];
   "update:openKeys": [keys: readonly HysMenuKey[]];
@@ -38,6 +39,7 @@ const skin = useHysRootAttrs();
 const { disabled } = useHysControlState(props);
 const root = useTemplateRef<HTMLElement>("root");
 const id = useId();
+const strip = useTemplateRef("strip");
 const navigation = useMenuNavigation(props, root, disabled, {
   select: (key, context) => emit("select", key, context),
   expand: (keys) => emit("update:openKeys", keys),
@@ -45,7 +47,8 @@ const navigation = useMenuNavigation(props, root, disabled, {
 });
 /** 聚焦首个或最后一个可操作项。 */
 function focus(edge: "first" | "last" = "first") {
-  navigation.focus(edge);
+  if (strip.value) strip.value.focus(edge);
+  else navigation.focus(edge);
 }
 defineExpose({ focus });
 </script>
@@ -59,9 +62,14 @@ defineExpose({ focus });
     :role="mode === 'actions' ? 'menu' : undefined"
     :aria-label="ariaLabel ?? (mode === 'actions' ? '操作菜单' : '导航菜单')"
     :tabindex="mode === 'actions' ? -1 : undefined"
-    @keydown="navigation.keydown"
+    @keydown="!strip && navigation.keydown($event)"
   >
-    <HysScrollbar direction="vertical" :max-height="maxHeight">
+    <MenuPopupStrip v-if="mode !== 'actions' && (mode === 'horizontal' || collapsed)"
+      ref="strip" :navigation="navigation" :collapsed="collapsed" :overflow="overflow !== false" :empty-text="emptyText">
+      <template v-if="$slots.item" #item="scope"><slot name="item" v-bind="scope" /></template>
+      <template v-if="$slots.empty" #empty><slot name="empty" /></template>
+    </MenuPopupStrip>
+    <HysScrollbar v-else direction="vertical" :max-height="maxHeight">
       <MenuItems
         :rows="navigation.graph.value.roots"
         :actions="mode === 'actions'"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, type VNodeChild } from "vue";
+import { computed, onBeforeUnmount, ref, watch, type VNodeChild } from "vue";
 import { useHysRootAttrs } from "../../config";
 import type {
   HysNumberFormat,
@@ -9,9 +9,11 @@ import {
   createNumberPresentation,
   numberTrend,
 } from "../../composables/animatedNumberFormat";
-import { decimal } from "../../composables/numberInput";
+import { decimal, decimalCompare } from "../../composables/numberInput";
+import { useMotion } from "../../motion/useMotion";
+import HysTooltip from "../HysTooltip/HysTooltip.vue";
 import HysAnimatedNumber from "../HysAnimatedNumber/HysAnimatedNumber.vue";
-import { ArrowDown, ArrowUp, Minus } from "../HysIcon/svgIcons";
+import { ArrowDown, ArrowUp, Info, Minus } from "../HysIcon/svgIcons";
 import HysSkeleton from "../HysSkeleton/HysSkeleton.vue";
 
 export interface HysStatisticTrend {
@@ -23,6 +25,10 @@ export interface HysStatisticTrend {
 export interface HysStatisticProps {
   /** 指标名称，title 插槽优先。 */
   title?: string;
+  /** 数值与标题的对齐方式，默认 start。 */
+  align?: "start" | "center" | "end";
+  /** 统计项密度，默认 md。 */
+  size?: "sm" | "md" | "lg";
   /** 数字或十进制字符串，无效或缺失时显示占位。 */
   value?: HysNumberValue | null;
   /** 固定小数位数，范围 0–100，缺省保留有效精度。 */
@@ -59,10 +65,22 @@ export interface HysStatisticProps {
   comparisonMode?: "absolute" | "relative";
   /** 趋势是否以数值减小为正向。默认 increase。 */
   positiveDirection?: "increase" | "decrease";
+  /** 趋势说明，例如「同比」或「较上月」。 */
+  comparisonLabel?: string;
+  /** 指标口径说明，显示在标题旁的提示中。 */
+  help?: string;
+  /** 目标值，沿用指标的数值格式。 */
+  target?: HysNumberValue;
+  /** 数值小于等于下限或大于等于上限时标出阈值。 */
+  thresholds?: { low?: HysNumberValue; high?: HysNumberValue };
+  /** 有效数值变动时短暂高亮，遵从减少动态效果设置。 */
+  highlightChanges?: boolean;
 }
 
 const props = withDefaults(defineProps<HysStatisticProps>(), {
   grouping: true,
+  align: "start",
+  size: "md",
   locale: "zh-CN",
   emptyText: "—",
   comparisonMode: "relative",
@@ -78,7 +96,37 @@ defineSlots<{
   trend?: (scope: HysStatisticTrend) => VNodeChild;
 }>();
 const skin = useHysRootAttrs();
-const valid = computed(() => props.value != null && !!decimal(props.value));
+const numberValue = computed(() => decimal(props.value));
+const valid = computed(() => !!numberValue.value);
+const threshold = computed(() => {
+  const value = numberValue.value;
+  if (!value) return undefined;
+  const low = decimal(props.thresholds?.low);
+  const high = decimal(props.thresholds?.high);
+  if (high && decimalCompare(value, high) >= 0) return { tone: "high", label: "达到上限" };
+  if (low && decimalCompare(value, low) <= 0) return { tone: "low", label: "达到下限" };
+  return undefined;
+});
+const targetText = computed(() => props.target === undefined || !decimal(props.target) ? "" : createNumberPresentation({
+  locale: props.locale, grouping: props.grouping, numberFormat: props.numberFormat, currency: props.currency,
+  percentInput: props.percentInput, precision: props.precision, compact: props.compact,
+}).format(props.target).text);
+const reading = ref<HTMLElement>();
+const { effectiveMotion } = useMotion();
+let highlight: Animation | undefined;
+function clearHighlight() {
+  highlight?.cancel();
+  highlight = undefined;
+}
+watch([effectiveMotion, () => props.highlightChanges, () => props.loading], ([motion, enabled, loading]) => {
+  if (motion === "off" || !enabled || loading) clearHighlight();
+});
+onBeforeUnmount(clearHighlight);
+watch(numberValue, (next, old) => {
+  if (!next || !old || decimalCompare(next, old) === 0 || !props.highlightChanges || effectiveMotion.value === "off") return;
+  clearHighlight();
+  highlight = reading.value?.animate?.([{ backgroundColor: "var(--hys-ui-theme-primary-soft)" }, { backgroundColor: "transparent" }], 550);
+}, { flush: "post" });
 const derivedTrend = computed<HysStatisticTrend | undefined>(() => {
   if (props.trend) return props.trend;
   if (props.comparisonValue == null || props.value == null) return;
@@ -109,9 +157,12 @@ const directions = {
 </script>
 
 <template>
-  <div v-bind="skin" class="hys-statistic" :aria-busy="loading || undefined">
-    <div v-if="title || $slots.title" class="hys-statistic-title">
+  <div v-bind="skin" class="hys-statistic" :data-align="align" :data-size="size" :aria-busy="loading || undefined">
+    <div v-if="title || $slots.title || help" class="hys-statistic-title">
       <slot name="title">{{ title }}</slot>
+      <HysTooltip v-if="help" :text="help" placement="top">
+        <span class="hys-statistic-help" tabindex="0" :aria-label="help"><Info :size="14" aria-hidden="true" /></span>
+      </HysTooltip>
     </div>
     <HysSkeleton
       v-if="loading"
@@ -120,7 +171,7 @@ const directions = {
       :height="28"
       loading-text="正在加载指标"
     />
-    <div v-else class="hys-statistic-reading">
+    <div v-else ref="reading" class="hys-statistic-reading">
       <HysAnimatedNumber
         v-if="valid"
         class="hys-statistic-value"
@@ -165,10 +216,14 @@ const directions = {
           aria-hidden="true"
         />
         <slot name="trend" v-bind="derivedTrend"
-          >{{ directions[derivedTrend.direction].text }}
+          >{{ comparisonLabel || directions[derivedTrend.direction].text }}
           {{ derivedTrend.text }}</slot
         >
       </span>
+    </div>
+    <div v-if="!loading && (targetText || threshold)" class="hys-statistic-meta">
+      <span v-if="targetText">目标 {{ targetText }}</span>
+      <span v-if="threshold" class="hys-statistic-threshold" :data-tone="threshold.tone">{{ threshold.label }}</span>
     </div>
     <div v-if="$slots.footer" class="hys-statistic-footer">
       <slot name="footer" />
@@ -177,6 +232,10 @@ const directions = {
 </template>
 
 <style scoped>
+.hys-statistic[data-align="center"] { text-align: center; justify-items: center; }
+.hys-statistic[data-align="end"] { text-align: end; justify-items: end; }
+.hys-statistic[data-size="sm"] .hys-statistic-value { font-size: 20px; }
+.hys-statistic[data-size="lg"] .hys-statistic-value { font-size: 34px; }
 .hys-statistic {
   display: grid;
   gap: 6px;
@@ -189,6 +248,11 @@ const directions = {
   color: var(--hys-ui-theme-muted);
   font-size: 13px;
 }
+.hys-statistic-title, .hys-statistic-meta { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.hys-statistic-help { display: inline-flex; cursor: help; }
+.hys-statistic-meta { font-size: 12px; color: var(--hys-ui-theme-muted); }
+.hys-statistic-threshold[data-tone="high"] { color: var(--hys-ui-theme-red); }
+.hys-statistic-threshold[data-tone="low"] { color: var(--hys-ui-theme-orange); }
 .hys-statistic-reading {
   display: flex;
   flex-wrap: wrap;

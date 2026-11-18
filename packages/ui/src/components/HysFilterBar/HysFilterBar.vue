@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, type VNodeChild } from "vue";
+import { computed, nextTick, onBeforeUnmount, onDeactivated, ref, useId, watch, type VNodeChild } from "vue";
 import type { HysDatePickerValue } from "../../composables/datePicker";
 import { useChoiceModel } from "../../composables/choiceModel";
+import type { HysMenuKey } from "../../composables/menu";
 import { sameFormValue, snapshotForm } from "../../composables/formValidation";
 import type {
   HysSelectDataOption,
@@ -16,6 +17,8 @@ import HysNumberInput from "../HysNumberInput/HysNumberInput.vue";
 import HysDatePicker from "../HysDatePicker/HysDatePicker.vue";
 import HysDateRangePicker from "../HysDateRangePicker/HysDateRangePicker.vue";
 import HysForm from "../HysForm/HysForm.vue";
+import HysModal from "../HysModal/HysModal.vue";
+import type { HysFormRule } from "../../composables/formContext";
 import HysFormItem from "../HysFormItem/HysFormItem.vue";
 import { ChevronDown, ChevronUp } from "../HysIcon/svgIcons";
 import HysInput from "../HysInput/HysInput.vue";
@@ -33,6 +36,10 @@ export type HysFilterField = {
   placeholder?: string;
   disabled?: boolean;
   clearable?: boolean;
+  /** 仅在高级筛选中显示该字段。 */
+  hidden?: boolean;
+  /** 使用 HysForm 校验该项的原始值。 */
+  rules?: HysFormRule | HysFormRule[];
   /** 生成条件摘要中的值文本。 */
   formatValue?: (value: unknown) => string;
 } & (
@@ -72,8 +79,26 @@ export interface HysFilterBarProps {
   presets?: readonly HysFilterPreset[];
   /** 应用常用条件后立即查询，默认 false。 */
   searchOnPreset?: boolean;
+  /** 修改条件后自动查询，默认 manual。 */
+  searchMode?: "manual" | "auto";
+  /** 自动查询防抖，毫秒，默认 280。 */
+  searchDelay?: number;
+  /** 显示高级筛选弹窗，确认后应用草稿。 */
+  advanced?: boolean;
+  /** 显示保存条件方案的入口。 */
+  savePreset?: boolean;
+  /** 在操作栏中提供字段显隐菜单，默认 false。 */
+  fieldVisibility?: boolean;
+  /** 用户隐藏的常用字段键。支持 v-model:hiddenKeys，隐藏时仍保留条件值。 */
+  hiddenKeys?: readonly string[];
+  /** 隐藏内置的查询及重置栏。 */
+  hideActions?: boolean;
   /** 展示可移除的当前条件，包含折叠字段。 */
   showSummary?: boolean;
+  /** 显示独立的清空全部入口，重置仍恢复初始值。 */
+  showClear?: boolean;
+  /** 操作区的对齐方式，默认 start。 */
+  actionsAlign?: "start" | "end";
   /** 覆盖查询、重置、展开和收起按钮文案。 */
   labels?: Partial<{
     search: string;
@@ -96,10 +121,16 @@ const props = withDefaults(defineProps<HysFilterBarProps>(), {
 });
 const emit = defineEmits<{
   "update:values": [values: HysFilterValues];
+  /** 字段显隐改变时发出新的隐藏字段键。 */
+  "update:hiddenKeys": [keys: string[]];
   search: [values: HysFilterValues];
   reset: [values: HysFilterValues];
+  /** 点击清空全部时发出空值快照。 */
+  clear: [values: HysFilterValues];
   /** 预设应用后发出预设键和接受的值快照。 */
   preset: [key: string, values: HysFilterValues];
+  /** 保存方案时发出名称及条件快照。 */
+  presetSave: [name: string, values: HysFilterValues];
 }>();
 defineSlots<{
   /** 渲染 type 为 custom 的字段，使用 setValue 写回草稿。 */
@@ -108,6 +139,15 @@ defineSlots<{
 const skin = useHysRootAttrs();
 const id = useId();
 const expanded = ref(props.defaultExpanded);
+const form = ref<InstanceType<typeof HysForm>>();
+const modalForm = ref<{ validate: () => Promise<boolean> }>();
+const advancedOpen = ref(false);
+const draft = ref<HysFilterValues>({});
+const presetOpen = ref(false);
+const presetName = ref("");
+let pending: ReturnType<typeof setTimeout> | undefined;
+let autoDirty = false;
+const blocked = computed(() => props.loading || props.disabled);
 const initial = () =>
   snapshotForm(props.initialValues ?? {}) as HysFilterValues;
 const model = useChoiceModel(
@@ -142,6 +182,28 @@ const visibleFields = computed(() => {
     return true;
   });
 });
+const standardFields = computed(() => visibleFields.value.filter(field => !field.hidden));
+const fieldVisibilityModel = useChoiceModel(
+  { get modelValue() { return props.hiddenKeys; } },
+  () => [] as readonly string[],
+  sameFormValue,
+);
+const shownFields = computed(() =>
+  standardFields.value.filter(field => !fieldVisibilityModel.current.value.includes(field.key)),
+);
+const inlineFields = computed(() => new Set(
+  (expanded.value ? shownFields.value : shownFields.value.slice(0, collapsed.value)).map(field => field.key),
+));
+const visibilityItems = computed(() => standardFields.value.map(field => ({
+  key: field.key,
+  label: field.label,
+})));
+function updateVisibleFields(keys: readonly HysMenuKey[]) {
+  const selected = new Set(keys);
+  const hidden = standardFields.value.filter(field => !selected.has(field.key)).map(field => field.key);
+  void fieldVisibilityModel.commit(hidden, value => emit("update:hiddenKeys", [...value]), () => {});
+}
+const advancedFields = computed(() => visibleFields.value.map(field => ({ ...field, hidden: false })));
 const selectOptions = computed(() => {
   const options = new Map<string, HysSelectDataOption[]>();
   for (const field of visibleFields.value)
@@ -163,7 +225,46 @@ function edit(field: HysFilterField, value: unknown) {
   );
 }
 const snapshot = () => snapshotForm(values.value) as HysFilterValues;
-const blocked = computed(() => props.loading || props.disabled);
+/** 把当前筛选快照序列化为 JSON 字符串。 */
+function serialize() { return JSON.stringify(snapshot()); }
+/** 校验当前显示的筛选条件，校验失败返回 false。 */
+async function validate() { return (await form.value?.validateResult())?.valid ?? false; }
+defineExpose({ serialize, validate });
+function cancelPending() { clearTimeout(pending); pending = undefined; }
+function showAdvanced() { draft.value = snapshot(); advancedOpen.value = true; }
+function saveCurrentPreset() {
+  const name = presetName.value.trim();
+  if (!name || blocked.value) return false;
+  emit("presetSave", name, snapshot());
+  return true;
+}
+async function acceptAdvanced() {
+  if (blocked.value || !(await modalForm.value?.validate())) return false;
+  return sameFormValue(values.value, draft.value) || model.commit(draft.value, publish, () => {});
+}
+function scheduleAutoSearch() {
+  cancelPending();
+  if (!autoDirty || blocked.value || !model.isLive()) return;
+  const delay = Number.isFinite(props.searchDelay) ? Math.max(0, props.searchDelay!) : 280;
+  pending = setTimeout(() => {
+    pending = undefined;
+    if (blocked.value || !model.isLive()) return;
+    autoDirty = false;
+    void form.value?.submit();
+  }, delay);
+}
+watch(values, () => {
+  autoDirty = props.searchMode === "auto" && !props.disabled;
+  scheduleAutoSearch();
+}, { deep: true });
+watch(blocked, scheduleAutoSearch);
+function clearAutoSearch() {
+  autoDirty = false;
+  cancelPending();
+}
+watch(() => [props.searchMode, props.disabled], clearAutoSearch);
+onDeactivated(clearAutoSearch);
+onBeforeUnmount(clearAutoSearch);
 const presetItems = computed(() =>
   (props.presets ?? []).map(({ key, label }) => ({ key, label })),
 );
@@ -191,7 +292,10 @@ async function applyPreset(key: string | number) {
     return;
   const updated = snapshot();
   emit("preset", preset.key, updated);
-  if (props.searchOnPreset) emit("search", snapshot());
+  if (props.searchOnPreset) {
+    clearAutoSearch();
+    void form.value?.submit();
+  }
 }
 const numeric = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -240,9 +344,15 @@ function remove(field: HysFilterField) {
   void model.commit(next, publish, () => {});
 }
 async function search() {
+  clearAutoSearch();
   await nextTick();
   if (props.loading || props.disabled || !model.isLive()) return;
   emit("search", snapshotForm(values.value) as HysFilterValues);
+}
+function clear() {
+  if (blocked.value) return;
+  void model.commit({}, publish, () => {});
+  emit("clear", {});
 }
 function reset() {
   if (props.loading || props.disabled) return;
@@ -255,7 +365,7 @@ function reset() {
 <template>
   <section v-bind="skin" class="hys-filter-bar">
     <HysForm
-      layout="vertical"
+      ref="form" layout="vertical" :model="values"
       :size="size"
       :disabled="disabled"
       @submit="search"
@@ -263,15 +373,13 @@ function reset() {
       <div
         :id="id"
         class="hys-filter-bar-fields"
-        :class="{
-          'has-fields': visibleFields.length && (expanded || collapsed > 0),
-        }"
+        :class="{ 'has-fields': inlineFields.size > 0 }"
       >
         <HysFormItem
-          v-for="(field, index) in visibleFields"
-          v-show="expanded || index < collapsed"
+          v-for="field in standardFields"
+          v-show="inlineFields.has(field.key)"
           :key="field.key"
-          :label="field.label"
+          :label="field.label" :prop="field.rules ? [field.key] : undefined" :rules="field.rules"
           class="hys-filter-bar-field"
         >
           <HysInput
@@ -376,7 +484,7 @@ function reset() {
           />
         </HysFormItem>
       </div>
-      <div class="hys-filter-bar-actions">
+      <div v-if="!hideActions" class="hys-filter-bar-actions" :style="{ justifyContent: actionsAlign ?? 'start' }">
         <HysButton type="submit" :size="size" :loading="loading">{{
           labels.search
         }}</HysButton>
@@ -387,8 +495,9 @@ function reset() {
           @click="reset"
           >{{ labels.reset }}</HysButton
         >
+        <HysButton v-if="showClear" variant="ghost" :size="size" :disabled="blocked" @click="clear">清空全部</HysButton>
         <HysButton
-          v-if="visibleFields.length > collapsed"
+          v-if="shownFields.length > collapsed"
           variant="ghost"
           :size="size"
           :icon="expanded ? ChevronUp : ChevronDown"
@@ -405,6 +514,15 @@ function reset() {
           :searchable="presetItems.length > 8"
           @select="applyPreset"
         />
+        <HysDropdown
+          v-if="fieldVisibility && visibilityItems.length"
+          :items="visibilityItems"
+          :disabled="disabled"
+          :selected-keys="shownFields.map(field => field.key)"
+          label="显示字段"
+          selection-mode="multiple"
+          @update:selected-keys="updateVisibleFields"
+        />
       </div>
       <div
         v-if="summary.length"
@@ -412,7 +530,7 @@ function reset() {
         role="group"
         :aria-label="labels.conditions"
       >
-        <span>{{ labels.conditions }}</span>
+        <span>{{ labels.conditions }}（{{ summary.length }}）</span>
         <HysBadge
           v-for="{ field, formatted } in summary"
           :key="field.key"
@@ -428,10 +546,27 @@ function reset() {
         </HysBadge>
       </div>
     </HysForm>
+    <div v-if="advanced || savePreset" class="hys-filter-extra">
+      <HysButton v-if="advanced" variant="secondary" :size="size" :disabled="blocked" @click="showAdvanced">高级筛选</HysButton>
+      <HysButton v-if="savePreset" variant="secondary" :size="size" :disabled="blocked" @click="presetName = ''; presetOpen = true">保存方案</HysButton>
+    </div>
+    <HysModal v-if="advanced" v-model:open="advancedOpen" title="高级筛选" footer :before-confirm="acceptAdvanced">
+      <div class="hys-filter-modal-content">
+        <HysFilterBar ref="modalForm" v-model:values="draft" :fields="advancedFields" :collapsed-count="advancedFields.length" :size="size" show-summary hide-actions>
+          <template v-if="$slots.field" #field="scope"><slot name="field" v-bind="scope" /></template>
+        </HysFilterBar>
+      </div>
+    </HysModal>
+    <HysModal v-if="savePreset" v-model:open="presetOpen" title="保存筛选方案" footer :confirm-disabled="!presetName.trim()"
+      :before-confirm="saveCurrentPreset">
+      <div class="hys-filter-modal-content"><HysInput v-model="presetName" label="方案名称" :maxlength="60" /></div>
+    </HysModal>
   </section>
 </template>
 
 <style scoped>
+.hys-filter-extra { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 8px; }
+.hys-filter-modal-content { padding: 4px; }
 .hys-filter-bar {
   min-width: 0;
 }

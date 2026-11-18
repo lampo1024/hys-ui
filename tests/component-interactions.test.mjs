@@ -60,7 +60,7 @@ async function settle() {
     await nextTick();
   }
 }
-async function mount(component, input, bindings = [], slots) {
+async function mount(component, input, bindings = [], slots, motion = "off") {
   const host = document.createElement("div");
   document.body.append(host);
   const props = reactive(input);
@@ -106,7 +106,7 @@ async function mount(component, input, bindings = [], slots) {
 
   const app = createApp({
     setup() {
-      ui.provideHysConfig({ motion: "off" });
+      ui.provideHysConfig({ motion });
       return () => h(component, { ...props, ...handlers }, slots);
     },
   });
@@ -144,6 +144,29 @@ async function fill(input, text) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
   await settle();
 }
+
+test("VirtualList positions an indexed row and keeps its buffer", async () => {
+  const host = document.createElement("div");
+  const component = createApp({
+    render: () => h(ui.HysVirtualList, {
+      ref: "list",
+      items: Array.from({ length: 250 }, (_, i) => i),
+      rowHeight: 24,
+      height: 96,
+      overscan: 2,
+    }, { item: ({ item }) => String(item) }),
+  });
+  document.body.append(host);
+  const view = component.mount(host);
+  dispose = () => { component.unmount(); host.remove(); };
+  assert.equal(view.$refs.list.scrollToIndex(48, "start"), true);
+  await settle();
+  const viewport = host.querySelector(".hys-ui-scrollbar-viewport");
+  assert.equal(viewport.scrollTop, 48 * 24);
+  assert.equal(host.querySelector('[aria-posinset="49"]').textContent, "48");
+  assert.ok(host.querySelectorAll('[role="listitem"]').length < 12);
+  assert.equal(view.$refs.list.scrollToIndex(250), false);
+});
 
 test("RecordPicker reserves draft keys across externally supplied pages and commits only on confirmation", async () => {
   const app = await mount(
@@ -780,6 +803,7 @@ test("ImageViewer starts at the requested image, fits large sources, resets tran
     {
       open: true,
       initialIndex: 1,
+      loop: false,
       images: [
         { src: "/a.png", alt: "A" },
         { src: "/b.png", alt: "B" },
@@ -827,6 +851,151 @@ test("ImageViewer starts at the requested image, fits large sources, resets tran
   assert(app.events.some((e) => e[0] === "close"));
 });
 
+test("ImageViewer zooms with the wheel, preserves explicit wheel modes and supports independent minimap controls", async () => {
+  const app = await mount(ui.HysImageViewer, {
+    defaultOpen: true,
+    images: [{ src: "/chart.png", alt: "Chart" }],
+  });
+  const img = await markImageLoaded(600, 400);
+  const stage = img.closest(".hys-image-stage");
+  Object.defineProperties(stage, {
+    clientWidth: { value: 620 },
+    clientHeight: { value: 420 },
+  });
+  window.dispatchEvent(new Event("resize"));
+  await settle();
+  const view = stage.querySelector('[role="region"]');
+  const minimap = () => stage.querySelector('[aria-label="图片小地图"]');
+  assert.equal(minimap(), null);
+  assert.equal(view, img.closest(".hys-image-viewport"));
+  assert.equal(stage.querySelector(".hys-ui-scrollbar-root"), null);
+
+  async function wheel(deltaY, ctrlKey = false) {
+    const event = new dom.window.WheelEvent("wheel", {
+      deltaY, ctrlKey, bubbles: true, cancelable: true,
+    });
+    img.dispatchEvent(event);
+    await settle();
+    return event.defaultPrevented;
+  }
+  assert(await wheel(-100));
+  assert.equal(parseFloat(img.style.width), 750);
+  assert(minimap());
+  const direction = new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true });
+  const previous = view.scrollLeft;
+  minimap().dispatchEvent(direction);
+  assert(direction.defaultPrevented);
+  assert(view.scrollLeft > previous);
+  const panel = minimap().closest(".hys-image-minimap");
+  const initialLeft = parseFloat(panel.style.left);
+  const position = view.scrollLeft;
+  await press(panel.querySelector('[aria-label="移动小地图"]'), "ArrowLeft");
+  assert(parseFloat(panel.style.left) < initialLeft);
+  assert.equal(view.scrollLeft, position);
+  assert(await wheel(100));
+  assert.equal(parseFloat(img.style.width), 600);
+  assert.equal(minimap(), null);
+
+  app.props.wheelZoom = true;
+  await settle();
+  assert.equal(await wheel(-100), false);
+  assert(await wheel(-100, true));
+  assert.equal(parseFloat(img.style.width), 750);
+
+  app.props.wheelZoom = false;
+  await settle();
+  assert.equal(await wheel(100, true), false);
+  assert.equal(parseFloat(img.style.width), 750);
+  app.props.showMinimap = false;
+  await settle();
+  assert.equal(minimap(), null);
+});
+
+test("ImageViewer enters fullscreen and Escape returns to the same image before closing", async () => {
+  const app = await mount(ui.HysImageViewer, {
+    open: true,
+    initialIndex: 1,
+    images: [{ src: "/a.png", alt: "A" }, { src: "/b.png", alt: "B" }],
+  }, ["open"]);
+  const dialog = document.querySelector('[role="dialog"]');
+  const photo = await markImageLoaded(800, 500);
+  button(dialog, "放大").click();
+  await settle();
+  const width = photo.style.width;
+
+  button(dialog, "全屏查看图片").click();
+  await settle();
+  assert(dialog.closest(".hys-ui-modal-fullscreen"));
+  assert.equal(button(dialog, "退出图片全屏").getAttribute("aria-pressed"), "true");
+  assert.equal(photo.alt, "B");
+  assert.equal(photo.style.width, width);
+
+  await press(dialog, "Escape");
+  assert(!dialog.closest(".hys-ui-modal-fullscreen"));
+  assert.equal(app.props.open, true);
+  assert.equal(photo.style.width, width);
+  await press(dialog, "Escape");
+  assert.equal(app.props.open, false);
+});
+
+test("ImageViewer keeps the previous photo until the next one loads and cancels interrupted transitions", async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "animate");
+  const animations = [];
+  Object.defineProperty(HTMLElement.prototype, "animate", {
+    configurable: true,
+    value(frames) {
+      const animation = { cancel() { this.cancelled = true; } };
+      if (this.matches(".hys-image-photo, .hys-image-outgoing")) {
+        animations.push({ element: this, frames, animation });
+      }
+      return animation;
+    },
+  });
+  try {
+    const app = await mount(
+      ui.HysImageViewer,
+      { open: true, images: ["/one.png", "/two.png", "/three.png"] },
+      [],
+      undefined,
+      "subtle",
+    );
+    const dialog = document.querySelector('[role="dialog"]');
+    const stage = dialog.querySelector(".hys-image-stage");
+    Object.defineProperties(stage, {
+      clientWidth: { value: 620 },
+      clientHeight: { value: 420 },
+    });
+    window.dispatchEvent(new Event("resize"));
+    await markImageLoaded(800, 500);
+    button(dialog, "上一张").click();
+    await settle();
+    assert.match(stage.querySelector(".hys-image-outgoing")?.src ?? "", /one\.png$/);
+    assert.equal(animations.length, 0);
+
+    const photo = await markImageLoaded(900, 500);
+    assert.match(photo.src, /three\.png$/);
+    const entering = animations.find(({ element }) => element === photo);
+    assert.match(entering.frames[0].transform, /^translateX\(-[0-9.]+px\)/);
+
+    await press(dialog, "ArrowRight");
+    assert(entering.animation.cancelled);
+    assert.match(stage.querySelector(".hys-image-outgoing")?.src ?? "", /three\.png$/);
+    const first = await markImageLoaded(800, 500);
+    assert.match(first.src, /one\.png$/);
+    assert.match(animations.find(({ element }) => element === first).frames[0].transform, /^translateX\([0-9.]+px\)/);
+    button(dialog, "下一张").click();
+    await settle();
+    app.props.imageTransition = "none";
+    await settle();
+    assert.equal(stage.querySelector(".hys-image-outgoing"), null);
+    await markImageLoaded(900, 500);
+    assert.equal(animations.length, 4);
+  } finally {
+    if (descriptor) Object.defineProperty(HTMLElement.prototype, "animate", descriptor);
+    else delete HTMLElement.prototype.animate;
+  }
+});
+
 test("ImageViewer provides failure recovery and ignores obsolete image events", async () => {
   const app = await mount(ui.HysImageViewer, {
     defaultOpen: true,
@@ -848,4 +1017,22 @@ test("ImageViewer provides failure recovery and ignores obsolete image events", 
   app.props.images = [];
   await settle();
   assert.match(dialog.textContent, /没有可预览的图片/);
+});
+
+test("Tooltip visually hides an empty bubble and displays content on the same trigger", async () => {
+  const app = await mount(ui.HysTooltip, { text: "   ", showDelay: 0 }, [], {
+    default: () => h(ui.HysButton, {}, () => "完整说明"),
+  });
+  const wrapper = app.host.querySelector(".hys-ui-tooltip-wrap");
+  wrapper.dispatchEvent(new MouseEvent("pointerenter", { bubbles: true }));
+  await new Promise(resolve => setTimeout(resolve, 35));
+  await settle();
+  assert(document.body.querySelector('[role="tooltip"]')?.classList.contains("hys-ui-popup-no-content"));
+  wrapper.dispatchEvent(new MouseEvent("pointerleave", { bubbles: true }));
+  app.props.text = "完整的工作交接说明";
+  await settle();
+  wrapper.dispatchEvent(new MouseEvent("pointerenter", { bubbles: true }));
+  await new Promise(resolve => setTimeout(resolve, 35));
+  await settle();
+  assert.equal(document.body.querySelector('[role="tooltip"]')?.textContent.trim(), "完整的工作交接说明");
 });

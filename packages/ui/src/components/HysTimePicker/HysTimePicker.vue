@@ -15,6 +15,7 @@ import {
   useHysFormItemContext,
 } from "../../composables/formContext";
 import { useChoiceModel } from "../../composables/choiceModel";
+import type { Placement } from "../../composables/useFloating";
 import HysButton from "../HysButton/HysButton.vue";
 import { Clock } from "../HysIcon/svgIcons";
 import HysInput from "../HysInput/HysInput.vue";
@@ -73,6 +74,14 @@ export interface HysTimePickerProps {
   disabledTime?: (time: string) => boolean;
   /** 单击应用的常用时间。越界、禁用或格式错误的预设不可选。 */
   presets?: readonly HysTimePickerPreset[];
+  /** 面板优先位置，实际可自动翻转避开视口边缘。 */
+  placement?: Placement;
+  /** 自定义输入框显示格式。模型、禁用规则和预设仍使用标准 24 小时格式。 */
+  formatter?: (value: string) => string;
+  /** 将手动输入转换为标准时间。标准时间本身始终可输入。 */
+  parser?: (text: string) => string | undefined;
+  /** 占位及输入校验中的格式说明。 */
+  formatHint?: string;
 }
 
 const props = withDefaults(defineProps<HysTimePickerProps>(), {
@@ -102,22 +111,29 @@ let focusPending = false;
 const options = computed(() => createTimeOptions(props));
 const labels = computed(() => ({ ...timeLabels, ...props.labels }));
 const inputPattern = computed(() =>
-  props.twelveHour
+  props.formatHint ?? (props.twelveHour
     ? props.showSeconds
       ? "hh:mm:ss AM/PM"
       : "hh:mm AM/PM"
     : props.showSeconds
       ? "HH:mm:ss"
-      : "HH:mm",
+      : "HH:mm"),
 );
 const shortcuts = computed(() =>
   (props.presets ?? []).map((preset) => ({
     ...preset,
-    disabled: !!invalidReason(preset.value.trim()) || !preset.value.trim(),
+    disabled: !!invalidReason(preset.value.trim(), parseTime(preset.value.trim(), props.showSeconds)) || !preset.value.trim(),
   })),
 );
-const parseInput = (text: string) =>
-  parseTimeInput(text, props.showSeconds, props.twelveHour);
+function parseInput(text: string) {
+  const value = model.current.value;
+  if (value && !editing.value && props.formatter?.(value).trim() === text)
+    return parseTime(value, props.showSeconds);
+  const standard = parseTimeInput(text, props.showSeconds, props.twelveHour);
+  if (standard !== undefined) return standard;
+  const parsed = props.parser?.(text);
+  return parsed === undefined ? undefined : parseTime(parsed, props.showSeconds);
+}
 
 function sync() {
   const value = model.current.value ?? "";
@@ -125,7 +141,7 @@ function sync() {
   draft.value =
     parsed === undefined
       ? value
-      : formatTimeInput(parsed, props.showSeconds, props.twelveHour);
+      : props.formatter?.(value) ?? formatTimeInput(parsed, props.showSeconds, props.twelveHour);
   activeTime.value =
     parsed !== undefined && usesTime(options.value, parsed)
       ? parsed
@@ -133,7 +149,7 @@ function sync() {
   error.value = "";
   editing.value = false;
 }
-watch([model.current, () => props.showSeconds, () => props.twelveHour], sync, {
+watch([model.current, () => props.showSeconds, () => props.twelveHour, () => props.formatter], sync, {
   immediate: true,
 });
 watch(options, () => {
@@ -166,15 +182,15 @@ function message(reason: "format" | "range") {
     ? labels.value.invalidFormat.replace("{format}", inputPattern.value)
     : labels.value.invalidRange;
 }
-function invalidReason(text: string) {
+function invalidReason(text: string, time: number | undefined) {
   if (!text) return;
-  const time = parseInput(text);
   if (time === undefined) return "format";
   if (!usesTime(options.value, time)) return "range";
 }
 const removeRule = fieldContext?.registerControlRule?.({
   validator: () => {
-    const reason = invalidReason(draft.value.trim());
+    const clean = draft.value.trim();
+    const reason = invalidReason(clean, parseInput(clean));
     return !model.isLive() || control.disabled.value || !reason
       ? true
       : message(reason);
@@ -186,17 +202,24 @@ function rejected(reason: "format" | "range", deferringValidation: boolean) {
   emit("invalid", draft.value, reason);
   return false;
 }
-async function commit(text: string, deferringValidation = false) {
+async function commit(
+  text: string,
+  { deferValidation = false, canonical = false } = {},
+) {
   if (blocked.value) return false;
   const clean = text.trim();
-  const reason = invalidReason(clean);
-  if (reason) return rejected(reason, deferringValidation);
-  const parsed = clean ? parseInput(clean) : undefined;
+  const parsed = !clean
+    ? undefined
+    : canonical
+      ? parseTime(clean, props.showSeconds)
+      : parseInput(clean);
+  const reason = invalidReason(clean, parsed);
+  if (reason) return rejected(reason, deferValidation);
   const next =
     parsed === undefined ? null : formatTime(parsed, props.showSeconds);
   if (next !== model.current.value) {
     // Keep the form footer stable until the submit control receives its click.
-    const release = deferringValidation
+    const release = deferValidation
       ? fieldContext?.deferChangeValidation?.()
       : undefined;
     try {
@@ -242,12 +265,12 @@ function close(restore = false) {
 async function confirm() {
   if (
     activeTime.value !== undefined &&
-    (await commit(formatTime(activeTime.value, props.showSeconds)))
+    (await commit(formatTime(activeTime.value, props.showSeconds), { canonical: true }))
   )
     close(true);
 }
 async function selectPreset(value: string) {
-  if (await commit(value)) close(true);
+  if (await commit(value, { canonical: true })) close(true);
 }
 defineExpose({
   /** 聚焦时间输入框。 */
@@ -269,7 +292,7 @@ async function blur(event: FocusEvent) {
   );
   const submitting =
     !!submit?.form && submit.form === editor.value?.input?.form;
-  if (editing.value) await commit(draft.value, submitting);
+  if (editing.value) await commit(draft.value, { deferValidation: submitting });
   if (!submitting) void field.validate("blur");
 }
 function keyboard(event: KeyboardEvent) {
@@ -296,7 +319,7 @@ function keyboard(event: KeyboardEvent) {
     trigger="manual"
     :open="open"
     :disabled="blocked"
-    placement="bottom-start"
+    :placement="placement ?? 'bottom-start'"
     :aria-label="labels.panel"
     max-width="calc(100vw - 16px)"
     @update:open="$event ? (open = true) : close()"

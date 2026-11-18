@@ -18,16 +18,7 @@ const limit = (
 ) =>
   Number.isFinite(value) ? Math.min(high, Math.max(low, value!)) : fallback;
 
-function unitAt(offsets: number[], point: number) {
-  let low = 0;
-  let high = offsets.length - 1;
-  while (low < high) {
-    const middle = Math.ceil((low + high) / 2);
-    if (offsets[middle] <= point) low = middle;
-    else high = middle - 1;
-  }
-  return Math.min(low, Math.max(0, offsets.length - 2));
-}
+import { virtualOffsetIndex as unitAt } from "../../composables/virtualOffsets";
 
 export function useSortWindow<T extends object>(
   props: HysSortableListProps<T>,

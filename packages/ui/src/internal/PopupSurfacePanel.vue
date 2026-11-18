@@ -14,6 +14,7 @@ const props = defineProps<{
   describedBy?: string;
   tabindex?: number;
   panelRole?: "presentation";
+  empty?: boolean;
 }>();
 // Only floating content owns nested popups; the reference keeps its original owner.
 provide(
@@ -49,7 +50,7 @@ const skin = useHysRootAttrs();
             ? 'hys-ui-tooltip-bubble hys-ui-floating-tooltip'
             : 'hys-ui-popover-panel hys-ui-floating-surface',
           options.overlayClass,
-          { 'hys-ui-popup-enterable': options.enterable !== false },
+          { 'hys-ui-popup-enterable': options.enterable !== false, 'hys-ui-popup-no-content': empty },
         ]"
         :style="surface.style.value"
         :role="panelRole ?? (kind === 'tooltip' ? 'tooltip' : 'dialog')"
@@ -104,6 +105,7 @@ const skin = useHysRootAttrs();
   </Teleport>
 </template>
 <style scoped>
+.hys-ui-popup-no-content { visibility: hidden !important; }
 .hys-ui-popup-surface-panel.hys-ui-tooltip-bubble,
 .hys-ui-popup-surface-panel.hys-ui-popover-panel {
   box-sizing: border-box;

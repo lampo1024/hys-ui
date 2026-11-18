@@ -137,6 +137,37 @@ test("CopyButton writes exact strings, blocks repeat activation, and reports a d
   assert.equal(form.events.length, 2);
 });
 
+test("CopyButton supports all display modes and restores feedback without removing manual text", async () => {
+  const app = await mount(ui.HysCopyButton, {
+    text: "delivery-42",
+    label: "复制编号",
+    iconOnly: true,
+    manualFallback: true,
+    feedbackDuration: 15,
+    writeText: () => Promise.reject(new Error("denied")),
+  });
+  const button = app.host.querySelector("button");
+  assert(button.querySelector("svg"));
+  assert.equal(button.textContent.trim(), "");
+  app.props.display = "text";
+  await settled();
+  assert.equal(button.querySelector("svg"), null);
+  assert.equal(button.textContent.trim(), "复制编号");
+  app.props.display = "both";
+  await settled();
+  assert(button.querySelector("svg"));
+  assert.equal(button.textContent.trim(), "复制编号");
+
+  await app.instance.value.copy();
+  await settled();
+  const result = app.host.querySelector("[role=status]");
+  assert.equal(result.getAttribute("data-state"), "error");
+  await new Promise(resolve => setTimeout(resolve, 30));
+  await settled();
+  assert.equal(result.getAttribute("data-state"), "idle");
+  assert.equal(app.host.querySelector("textarea").value, "delivery-42");
+});
+
 test("CopyButton shows the configured tooltip text and skips a blank tooltip", async () => {
   const form = await mount(ui.HysCopyButton, {
     text: "123",
